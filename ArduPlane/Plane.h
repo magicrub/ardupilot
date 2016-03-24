@@ -1,11 +1,11 @@
 /// -*- tab-width: 4; Mode: C++; c-basic-offset: 4; indent-tabs-mode: nil -*-
 #pragma once
 
-#define THISFIRMWARE "ArduPlane V3.5.2"
+#define THISFIRMWARE "ArduPlane V3.5.2 - Airphrame v3.1.0"
 #define FIRMWARE_VERSION 3,5,2,FIRMWARE_VERSION_TYPE_OFFICIAL
 
 /*
-   Lead developer: Andrew Tridgell
+   Lead developer: Andrew Tridgell & Tom Pittenger
  
    Authors:    Doug Weibel, Jose Julio, Jordi Munoz, Jason Short, Randy Mackay, Pat Hickey, John Arne Birkeland, Olivier Adler, Amilcar Lucas, Gregory Fletcher, Paul Riseborough, Brandon Jones, Jon Challinger, Tom Pittenger
    Thanks to:  Chris Anderson, Michael Oborne, Paul Mather, Bill Premerlani, James Cohen, JB from rotorFX, Automatik, Fefenin, Peter Meister, Remzibi, Yury Smirnov, Sandro Benigno, Max Levine, Roberto Navoni, Lorenz Meier, Yury MonZon
@@ -43,6 +43,7 @@
 #include <AP_Baro/AP_Baro.h>        // ArduPilot barometer library
 #include <AP_Compass/AP_Compass.h>     // ArduPilot Mega Magnetometer Library
 #include <AP_Math/AP_Math.h>        // ArduPilot Mega Vector/Matrix math Library
+#include <AP_Math/location.h>
 #include <AP_ADC/AP_ADC.h>         // ArduPilot Mega Analog to Digital Converter Library
 #include <AP_InertialSensor/AP_InertialSensor.h> // Inertial Sensor Library
 #include <AP_AccelCal/AP_AccelCal.h>                // interface and maths for accelerometer calibration
@@ -199,8 +200,11 @@ private:
         bool in_use:1;
         float initial_range;
         float correction;
+        float correction_raw;
+        float correction_derivitive;
         float initial_correction;
         uint32_t last_correction_time_ms;
+        uint32_t freeze_correction_time_ms;
         uint8_t in_range_count;
         float height_estimate;
     } rangefinder_state;
@@ -463,6 +467,9 @@ private:
         // Minimum pitch to hold during takeoff command execution.  Hundredths of a degree
         int16_t takeoff_pitch_cd;
 
+        // Begin leveling out the enforced takeoff pitch angle min at this height to reduce/eliminate overshoot
+        int32_t height_below_takeoff_to_level_off_cm;
+
         // the highest airspeed we have reached since entering AUTO. Used
         // to control ground takeoff
         float highest_airspeed;
@@ -514,6 +521,9 @@ private:
 
         // debounce timer
         uint32_t debounce_timer_ms;
+
+        // delay time for debounce to count to
+        uint32_t debounce_time_total_ms;
 
         // length of time impact_detected has been true. Times out after a few seconds. Used to clip isFlyingProbability
         uint32_t impact_timer_ms;
@@ -618,6 +628,35 @@ private:
         uint32_t time_max_ms;
     } loiter;
 
+    struct  {
+        // waypoint rotation and offsets are applied in realtime because writing a mission
+        // to flash that has an offset and then rebooting means you boot up with the
+        // wrong mission which you then offset again. Must be done in RAM and applied to
+        // waypoints as they're executed.
+
+        // apply this offset to a waypoint. Feature is disabled when offset and angle = 0
+        int16_t offset;
+
+        // apply this rotation angle around NAV_LAND. Feature is disabled when offset and angle = 0
+        float angle;
+
+        // approach bearing for the direction of the offset
+        float bearing;
+
+        // Location which we rotate around
+        Location land_wp;
+
+        // only apply offset and rotation if between DO_ROTATE_LAND and NAV_LAND
+        uint16_t start_index;
+        uint16_t land_index;
+
+        bool is_enabled(uint16_t current_index) {
+            return( (!is_zero(angle) || offset != 0) &&
+                    (start_index <= current_index) &&
+                    (current_index <= land_index)); }
+
+        void disable() { angle = 0; offset = 0; start_index = 0; land_index = 0;}
+    } land_approach_rotation;
 
     // Conditional command
     // A value used in condition commands (eg delay, change alt, etc.)
@@ -734,6 +773,7 @@ private:
     void demo_servos(uint8_t i);
     void adjust_nav_pitch_throttle(void);
     void update_load_factor(void);
+    void rotate_location_around_another_location(const float rotation_angle, const Location locA, Location& locB);
     void send_heartbeat(mavlink_channel_t chan);
     void send_attitude(mavlink_channel_t chan);
     void send_fence_status(mavlink_channel_t chan);
@@ -928,6 +968,7 @@ private:
     void takeoff_calc_roll(void);
     void takeoff_calc_pitch(void);
     int8_t takeoff_tail_hold(void);
+    int16_t get_takeoff_pitch_min_cd(void);
     void print_hit_enter();
     void ahrs_update();
     void update_speed_height(void);
@@ -989,7 +1030,7 @@ private:
     bool suppress_throttle(void);
     void channel_output_mixer(uint8_t mixing_type, int16_t &chan1_out, int16_t &chan2_out);
     void flaperon_update(int8_t flap_percent);
-    bool start_command(const AP_Mission::Mission_Command& cmd);
+    bool start_command(const AP_Mission::Mission_Command& const_cmd);
     bool verify_command(const AP_Mission::Mission_Command& cmd);
     void do_takeoff(const AP_Mission::Mission_Command& cmd);
     void do_nav_wp(const AP_Mission::Mission_Command& cmd);
@@ -1011,6 +1052,8 @@ private:
     void do_set_home(const AP_Mission::Mission_Command& cmd);
     void do_digicam_configure(const AP_Mission::Mission_Command& cmd);
     void do_digicam_control(const AP_Mission::Mission_Command& cmd);
+    void do_rotate_landing_direction(const AP_Mission::Mission_Command& cmd);
+    void offset_then_rotate(const float rotation_angle, const float approach_bearing, const int16_t offset, const Location locA, Location& locB);
     bool start_command_callback(const AP_Mission::Mission_Command &cmd);
     bool verify_command_callback(const AP_Mission::Mission_Command& cmd);
     void print_flight_mode(AP_HAL::BetterStream *port, uint8_t mode);

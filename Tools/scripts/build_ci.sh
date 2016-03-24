@@ -25,20 +25,9 @@ declare -A build_concurrency
 declare -A build_extra_clean
 declare -A waf_supported_boards
 
-build_platforms=(  ["ArduPlane"]="navio raspilot minlure bebop sitl linux px4-v2"
-                   ["ArduCopter"]="navio raspilot minlure bebop sitl linux px4-v2 px4-v4"
-                   ["APMrover2"]="navio raspilot minlure bebop sitl linux px4-v2"
-                   ["AntennaTracker"]="navio raspilot minlure bebop sitl linux px4-v2"
-                   ["Tools/Replay"]="linux")
+build_platforms=(  ["ArduPlane"]="px4-v2")
 
-build_concurrency=(["navio"]="-j2"
-                   ["raspilot"]="-j2"
-                   ["minlure"]="-j2"
-                   ["bebop"]="-j2"
-                   ["sitl"]="-j2"
-                   ["linux"]="-j2"
-                   ["px4-v2"]=""
-                   ["px4-v4"]="")
+build_concurrency=(["px4-v2"]="")
 
 build_extra_clean=(["px4-v2"]="make px4-cleandep")
 

@@ -42,6 +42,9 @@ public:
         AP_Float land_flare_sec;
         AP_Float land_pre_flare_airspeed;
         AP_Int8  stall_prevention;
+        AP_Float test1;
+        AP_Float test2;
+        AP_Float test3;
     };
 
     /*

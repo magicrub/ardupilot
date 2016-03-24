@@ -1281,11 +1281,19 @@ void AP_InertialSensor::set_accel_peak_hold(uint8_t instance, const Vector3f &ac
     }
     uint32_t now = AP_HAL::millis();
 
-    // negative x peak(min) hold detector
-    if (accel.x < _peak_hold_state.accel_peak_hold_neg_x ||
-        _peak_hold_state.accel_peak_hold_neg_x_age <= now) {
-        _peak_hold_state.accel_peak_hold_neg_x = accel.x;
-        _peak_hold_state.accel_peak_hold_neg_x_age = now + AP_INERTIAL_SENSOR_ACCEL_PEAK_DETECT_TIMEOUT_MS;
+    // negative and positive x,y,z peak(min/max) hold detector
+    for (uint8_t i = 0; i < 3; i++) {
+        if (accel[i] < _peak_hold_state.accel_peak_hold_neg[i] ||
+            _peak_hold_state.accel_peak_hold_neg_age[i] <= now) {
+            _peak_hold_state.accel_peak_hold_neg[i] = accel[i];
+            _peak_hold_state.accel_peak_hold_neg_age[i] = now + AP_INERTIAL_SENSOR_ACCEL_PEAK_DETECT_TIMEOUT_MS;
+        }
+
+        if (accel[i] > _peak_hold_state.accel_peak_hold_pos[i] ||
+            _peak_hold_state.accel_peak_hold_pos_age[i] <= now) {
+            _peak_hold_state.accel_peak_hold_pos[i] = accel[i];
+            _peak_hold_state.accel_peak_hold_pos_age[i] = now + AP_INERTIAL_SENSOR_ACCEL_PEAK_DETECT_TIMEOUT_MS;
+        }
     }
 }
 

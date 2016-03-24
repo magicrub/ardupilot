@@ -156,6 +156,13 @@ public:
         float horiz_max;        // max horizontal distance the vehicle can move before the command will be aborted.  0 for no horizontal limit
     };
 
+    // Rotate landing depending on wind. See MAV_CMD_DO_ROTATE_LANDING_DIR
+    struct PACKED Rotate_Landing_Command {
+        uint8_t action;     // see enum MAV_ROTATE_LANDING_DIR_ACTION
+        uint8_t type;       // see enum MAV_ROTATE_LANDING_DIR_TYPE
+        int16_t offset;     // axis of rotation offset in meters
+    };
+
     union PACKED Content {
         // jump structure
         Jump_Command jump;
@@ -204,6 +211,9 @@ public:
 
         // cam trigg distance
         Altitude_Wait altitude_wait;
+
+        // rotate landing direction
+        Rotate_Landing_Command rotate_landing;
 
         // location
         Location location;      // Waypoint location

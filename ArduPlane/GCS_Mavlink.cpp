@@ -837,6 +837,11 @@ bool GCS_MAVLINK::try_send_message(enum ap_message id)
         send_vibration(plane.ins);
         break;
 
+    case MSG_ACCEL_PEAKS:
+        CHECK_PAYLOAD_SIZE(ACCEL_PEAKS);
+        send_accel_peaks(plane.ins);
+        break;
+
     case MSG_RPM:
         CHECK_PAYLOAD_SIZE(RPM);
         plane.send_rpm(chan);
@@ -1096,6 +1101,7 @@ GCS_MAVLINK::data_stream_send(void)
         send_message(MSG_EKF_STATUS_REPORT);
         send_message(MSG_GIMBAL_REPORT);
         send_message(MSG_VIBRATION);
+        send_message(MSG_ACCEL_PEAKS);
     }
 }
 

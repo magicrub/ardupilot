@@ -152,6 +152,7 @@ public:
         k_param_fence_retalt = 105,
         k_param_fence_autoenable,
         k_param_fence_ret_rally,
+        k_param_takeoff_pitch_limit_reduction_sec,
 
         // 110: Telemetry control
         //
@@ -333,6 +334,14 @@ public:
         k_param_pidNavPitchAltitude, // unused
         k_param_pidWheelSteer, // unused
 
+        // Airphrame specific
+        // ---------------
+        k_param_land_bidirectional = 248, // no longer used
+        k_param_test1 = 250,
+        k_param_test2 = 251,
+        k_param_test3 = 252,
+        // ---------------
+
         k_param_DataFlash = 253, // Logging Group
 
         // 254,255: reserved
@@ -465,6 +474,7 @@ public:
     AP_Int8 land_disarm_delay;
     AP_Int8 land_then_servos_neutral;
     AP_Int8 land_abort_throttle_enable;
+    AP_Int8 land_bidirectional;
     AP_Float land_pre_flare_alt;
     AP_Float land_pre_flare_sec;
     AP_Int32 min_gndspeed_cm;
@@ -491,6 +501,7 @@ public:
     AP_Float takeoff_tdrag_speed1;
     AP_Float takeoff_rotate_speed;
     AP_Int8 takeoff_throttle_slewrate;
+    AP_Float takeoff_pitch_limit_reduction_sec;
     AP_Int8 land_throttle_slewrate;
     AP_Int8 level_roll_limit;
     AP_Int8 flapin_channel;

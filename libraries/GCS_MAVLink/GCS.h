@@ -74,6 +74,7 @@ enum ap_message {
     MSG_VIBRATION,
     MSG_RPM,
     MSG_MISSION_ITEM_REACHED,
+    MSG_ACCEL_PEAKS,
     MSG_RETRY_DEFERRED // this must be last
 };
 
@@ -160,6 +161,7 @@ public:
     void send_autopilot_version(uint8_t major_version, uint8_t minor_version, uint8_t patch_version, uint8_t version_type) const;
     void send_local_position(const AP_AHRS &ahrs) const;
     void send_vibration(const AP_InertialSensor &ins) const;
+    void send_accel_peaks(const AP_InertialSensor &ins) const;
     void send_home(const Location &home) const;
     static void send_home_all(const Location &home);
 

@@ -5,8 +5,10 @@
 /********************************************************************************/
 // Command Event Handlers
 /********************************************************************************/
-bool Plane::start_command(const AP_Mission::Mission_Command& cmd)
+bool Plane::start_command(const AP_Mission::Mission_Command& const_cmd)
 {
+    AP_Mission::Mission_Command cmd = const_cmd;
+
     // log when new commands start
     if (should_log(MASK_LOG_CMD)) {
         DataFlash.Log_Write_Mission_Cmd(mission, cmd);
@@ -19,7 +21,7 @@ bool Plane::start_command(const AP_Mission::Mission_Command& cmd)
         auto_state.land_pre_flare = false;
         auto_state.sink_rate = 0;
 
-        // set takeoff_complete to true so we don't add extra evevator
+        // set takeoff_complete to true so we don't add extra elevator
         // except in a takeoff
         auto_state.takeoff_complete = true;
 
@@ -35,7 +37,26 @@ bool Plane::start_command(const AP_Mission::Mission_Command& cmd)
         // reset loiter start time. New command is a new loiter
         loiter.start_time_ms = 0;
 
-        gcs_send_text_fmt(MAV_SEVERITY_INFO, "Executing nav command ID #%i",cmd.id);
+        // enabled when angle or offset != 0. Othwise there is no work to be done.
+        if (land_approach_rotation.is_enabled(cmd.index)) {
+
+            if (cmd.id == MAV_CMD_NAV_LAND) {
+                // this was already computed when initialized
+                cmd.content.location = land_approach_rotation.land_wp;
+            } else {
+                offset_then_rotate( land_approach_rotation.angle,
+                                    land_approach_rotation.bearing,
+                                    land_approach_rotation.offset,
+                                    land_approach_rotation.land_wp,
+                                    cmd.content.location);
+            }
+            gcs_send_text_fmt(MAV_SEVERITY_INFO, "Executing nav command ID #%i offset %d, angle %d",
+                    cmd.id,
+                    land_approach_rotation.offset,
+                    (int)land_approach_rotation.angle);
+        } else {
+            gcs_send_text_fmt(MAV_SEVERITY_INFO, "Executing nav command ID #%i",cmd.id);
+        }
     } else {
         gcs_send_text_fmt(MAV_SEVERITY_INFO, "Executing command ID #%i",cmd.id);
     }
@@ -143,6 +164,10 @@ bool Plane::start_command(const AP_Mission::Mission_Command& cmd)
     case MAV_CMD_DO_LAND_START:
         //ensure go around hasn't been set
         auto_state.commanded_go_around = false;
+        break;
+
+    case MAV_CMD_DO_ROTATE_LANDING_DIR:
+        do_rotate_landing_direction(cmd);
         break;
 
     case MAV_CMD_DO_FENCE_ENABLE:
@@ -302,6 +327,7 @@ bool Plane::verify_command(const AP_Mission::Mission_Command& cmd)        // Ret
     case MAV_CMD_DO_MOUNT_CONFIGURE:
     case MAV_CMD_DO_INVERTED_FLIGHT:
     case MAV_CMD_DO_LAND_START:
+    case MAV_CMD_DO_ROTATE_LANDING_DIR:
     case MAV_CMD_DO_FENCE_ENABLE:
     case MAV_CMD_DO_AUTOTUNE_ENABLE:
         return true;
@@ -360,6 +386,7 @@ void Plane::do_takeoff(const AP_Mission::Mission_Command& cmd)
     next_WP_loc.lng = home.lng + 10;
     auto_state.takeoff_speed_time_ms = 0;
     auto_state.takeoff_complete = false;                            // set flag to use gps ground course during TO.  IMU will be doing yaw drift correction
+    auto_state.height_below_takeoff_to_level_off_cm = 0;
     // Flag also used to override "on the ground" throttle disable
 
     // zero locked course
@@ -1054,7 +1081,11 @@ bool Plane::verify_loiter_heading(bool init)
     if (labs(heading_err_cd) <= 1000  ||
             loiter.sum_cd > loiter.total_cd) {
         // Want to head in a straight line from _here_ to the next waypoint instead of center of loiter wp
-        next_WP_loc = current_loc;
+
+        // 0 to xtrack from center of waypoint, 1 to xtrack from tangent exit location
+        if (next_WP_loc.flags.loiter_xtrack) {
+            next_WP_loc = current_loc;
+        }
         return true;
     }
     return false;

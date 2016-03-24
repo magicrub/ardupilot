@@ -89,6 +89,8 @@ void Plane::init_ardupilot()
     //
     load_parameters();
 
+    GCS_MAVLINK::set_dataflash(&DataFlash);
+
 #if HIL_SUPPORT
     if (g.hil_mode == 1) {
         // set sensors to HIL mode

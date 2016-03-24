@@ -1413,6 +1413,21 @@ void GCS_MAVLINK::send_vibration(const AP_InertialSensor &ins) const
         ins.get_accel_clip_count(2));
 }
 
+void GCS_MAVLINK::send_accel_peaks(const AP_InertialSensor &ins) const
+{
+    Vector3f accel_peaks_pos = ins.get_accel_peak_hold_pos();
+    Vector3f accel_peaks_neg = ins.get_accel_peak_hold_neg();
+
+    mavlink_msg_accel_peaks_send(
+        chan,
+        accel_peaks_pos.x,
+        accel_peaks_pos.y,
+        accel_peaks_pos.z,
+        accel_peaks_neg.x,
+        accel_peaks_neg.y,
+        accel_peaks_neg.z);
+}
+
 void GCS_MAVLINK::send_home(const Location &home) const
 {
     if (comm_get_txspace(chan) >= MAVLINK_NUM_NON_PAYLOAD_BYTES + MAVLINK_MSG_ID_HOME_POSITION_LEN) {

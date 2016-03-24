@@ -91,6 +91,9 @@ public:
     AP_Int8  _address[RANGEFINDER_MAX_INSTANCES];
     AP_Int16 _powersave_range;
 
+    AP_Float _object_rejection_height;
+    AP_Float _object_rejection_width;
+
     static const struct AP_Param::GroupInfo var_info[];
     
     // Return the number of range finder instances
@@ -175,6 +178,9 @@ public:
       the min and 2m can be captured
      */
     bool pre_arm_check() const;
+
+    float get_object_rejection_height(void) { return _object_rejection_height; }
+    float get_object_rejection_width(void) { return _object_rejection_width; }
 
 private:
     RangeFinder_State state[RANGEFINDER_MAX_INSTANCES];

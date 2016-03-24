@@ -401,6 +401,7 @@ struct PACKED log_Attitude {
     uint16_t yaw;
     uint16_t error_rp;
     uint16_t error_yaw;
+    float alf;
 };
 
 struct PACKED log_PID {
@@ -746,7 +747,7 @@ Format characters in the format string for binary log messages
     { LOG_CURRENT_MSG, sizeof(log_Current), \
       "CURR", "QhhhHfh","TimeUS,Throttle,Volt,Curr,Vcc,CurrTot,Volt2" },\
 	{ LOG_ATTITUDE_MSG, sizeof(log_Attitude),\
-      "ATT", "QccccCCCC", "TimeUS,DesRoll,Roll,DesPitch,Pitch,DesYaw,Yaw,ErrRP,ErrYaw" }, \
+      "ATT", "QccccCCCCf", "TimeUS,DesRoll,Roll,DesPitch,Pitch,DesYaw,Yaw,ErrRP,ErrYaw,ALF" }, \
     { LOG_COMPASS_MSG, sizeof(log_Compass), \
       "MAG", "QhhhhhhhhhB",    "TimeUS,MagX,MagY,MagZ,OfsX,OfsY,OfsZ,MOfsX,MOfsY,MOfsZ,Health" }, \
     { LOG_MODE_MSG, sizeof(log_Mode), \

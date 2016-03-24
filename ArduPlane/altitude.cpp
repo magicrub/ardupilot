@@ -561,6 +561,7 @@ void Plane::rangefinder_height_update(void)
         if (!rangefinder_state.have_initial_reading) {
             rangefinder_state.have_initial_reading = true;
             rangefinder_state.initial_range = distance;
+            gcs_send_text_fmt(MAV_SEVERITY_INFO, "Rangefinder initial1 at %.2fm", (double)distance);
         }
         // correct the range for attitude (multiply by DCM.c.z, which
         // is cos(roll)*cos(pitch))
@@ -611,6 +612,7 @@ void Plane::rangefinder_height_update(void)
         if (millis() - rangefinder_state.last_correction_time_ms > 5000) {
             rangefinder_state.correction = correction;
             rangefinder_state.initial_correction = correction;
+            gcs_send_text_fmt(MAV_SEVERITY_INFO, "Rangefinder initial2 at %.2fm", (double)correction);
         } else {
             rangefinder_state.correction = 0.8f*rangefinder_state.correction + 0.2f*correction;
             if (fabsf(rangefinder_state.correction - rangefinder_state.initial_correction) > 30) {
@@ -621,7 +623,7 @@ void Plane::rangefinder_height_update(void)
                 memset(&rangefinder_state, 0, sizeof(rangefinder_state));
             }
         }
-        rangefinder_state.last_correction_time_ms = millis();    
+        rangefinder_state.last_correction_time_ms = millis();
     }
 }
 #endif

@@ -364,10 +364,21 @@ void AP_TECS::_update_speed(float load_factor)
     if (_TASmax < _TASmin) {
         _TASmax = _TASmin;
     }
-    if (_TASmin > _TAS_dem) {
+    if (_ahrs.airspeed_sensor_enabled()) {
+        if ((_flight_stage == FLIGHT_LAND_APPROACH || _flight_stage == FLIGHT_LAND_FINAL) && _landAirspeed >= 0) {
+            _TAS_dem = _landAirspeed * EAS2TAS;
+            if (_TASmin > _TAS_dem) {
+                _TASmin = _TAS_dem;
+            }
+        } else if (_flight_stage == FLIGHT_LAND_PREFLARE && aparm.land_pre_flare_airspeed > 0) {
+            _TAS_dem = aparm.land_pre_flare_airspeed * EAS2TAS;
+            if (_TASmin > _TAS_dem) {
+                _TASmin = _TAS_dem;
+            }
+        }
+    } else if (_TASmin > _TAS_dem) {
         _TASmin = _TAS_dem;
     }
-
     // Reset states of time since last update is too large
     if (DT > 1.0f) {
         _integ5_state = (_EAS * EAS2TAS);
@@ -1063,6 +1074,7 @@ void AP_TECS::update_pitch_throttle(int32_t hgt_dem_cm,
     log_tuning.dspd_dem = _TAS_rate_dem;
     log_tuning.flags    = _flags_byte;
     log_tuning.time_us  = AP_HAL::micros64();
+    log_tuning.underspd = _underspeed;
 }
 
 // log the contents of the log_tuning structure to dataflash

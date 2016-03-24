@@ -118,8 +118,6 @@ const AP_Param::GroupInfo RangeFinder::var_info[] = {
     // @User: Standard
     AP_GROUPINFO("_GNDCLEAR", 11, RangeFinder, _ground_clearance_cm[0], RANGEFINDER_GROUND_CLEARANCE_CM_DEFAULT),
 
-    // 10..12 left for future expansion
-
 #if RANGEFINDER_MAX_INSTANCES > 1
     // @Param: 2_TYPE
     // @DisplayName: Second Rangefinder type
@@ -392,6 +390,21 @@ const AP_Param::GroupInfo RangeFinder::var_info[] = {
     AP_GROUPINFO("4_ADDR", 48, RangeFinder, _address[3], 0),
 #endif
     
+
+    // @Param: _OBJECT_H
+    // @DisplayName: For a plane landing reject objects with this height
+    // @Description: For rangefinder assisted plane landing, detect and reject objects with this height. When a height delta of this height is detected, the correction freezes. The width is defined by RNGFND_OBJECT_W
+    // @Units: meters
+    // @User: Advanced
+    AP_GROUPINFO("_OBJECT_H", 49, RangeFinder, _object_rejection_height, 0),
+
+    // @Param: _OBJECT_W
+    // @DisplayName: For a plane landing reject objects with this didth
+    // @Description: For rangefinder assisted plane landing, detect and reject objects with this width. When a height delta of RNGFND_OBJECT_H is detected, the correction freezes for the duration of this width of the object.
+    // @Units: meters
+    // @User: Advanced
+    AP_GROUPINFO("_OBJECT_W", 50, RangeFinder, _object_rejection_width, 0),
+
     AP_GROUPEND
 };
 
