@@ -92,6 +92,14 @@ const AP_Param::GroupInfo AP_Camera::var_info[] = {
     // @User: Standard
     AP_GROUPINFO("FEEDBACK_POL",  9, AP_Camera, _feedback_polarity, 1),
     
+    // @Param: PAUSE_THR
+    // @DisplayName: Pause throttle before Camera capture
+    // @Description: Pause (inhibit) throttle breifly before a camera is triggered to reduce vibrations and improve image quality. This is used with param CAM_TRIGG_DIST and/or mission item DO_SET_CAM_TRIGG_DIST. Use 0 to disable and should not be any longer than is absolutely needed.
+    // @User: Standard
+    // @Units: milliseconds
+    // @Range: 0 5000
+    AP_GROUPINFO("PAUSE_THR",  10, AP_Camera, _pause_throttle_ms, 0),
+
     AP_GROUPEND
 };
 
@@ -291,7 +299,11 @@ bool AP_Camera::update_location(const struct Location &loc, const AP_AHRS &ahrs)
         return false;
     }
 
-    if (get_distance(loc, _last_location) < _trigg_dist) {
+    const float distance_to_trigger = get_distance(loc, _last_location);
+    const float time_to_trigger = ahrs.groundspeed() / distance_to_trigger;
+
+
+    if (distance_to_trigger < _trigg_dist) {
         return false;
     }
 
