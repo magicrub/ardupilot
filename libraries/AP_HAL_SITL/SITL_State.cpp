@@ -343,10 +343,51 @@ void SITL_State::_simulator_servos(SITL::Aircraft::sitl_input &input)
     float altitude = _barometer?_barometer->get_altitude():0;
     float wind_speed = 0;
     float wind_direction = 0;
+    float wind_up = 0;
     if (_sitl) {
         // The EKF does not like step inputs so this LPF keeps it happy.
         wind_speed = _sitl->wind_speed_active = (0.95f*_sitl->wind_speed_active) + (0.05f*_sitl->wind_speed);
         wind_direction = _sitl->wind_direction_active = (0.95f*_sitl->wind_direction_active) + (0.05f*_sitl->wind_direction);
+
+        // sanity check the wind_up params. They must be localized
+        if (_sitl->wind_up_speed > 0)
+        {
+            // check for localized updrafts
+            if (_sitl->wind_up_radius > 0)
+            {
+                struct Location location_sim;
+                location_sim.lat = _sitl->state.latitude*1.0e7;
+                location_sim.lng = _sitl->state.longitude*1.0e7;
+
+                // localized
+                if (_sitl->wind_up_lat1 != 0 || _sitl->wind_up_lng1 != 0)
+                {
+                    // are we in the radius of updraft location 1?
+                    struct Location location1;
+                    location1.lat =  _sitl->wind_up_lat1*1.0e7;
+                    location1.lng =  _sitl->wind_up_lng1*1.0e7;
+                    if (get_distance(location_sim, location1) < _sitl->wind_up_radius) {
+                        // we're inside a localized thermal
+                        wind_up = _sitl->wind_up;
+                    }
+                }
+                else if (_sitl->wind_up_lat2 != 0 || _sitl->wind_up_lng2 != 0)
+                {
+                    // are we in the radius of updraft location 2?
+                    struct Location location2;
+                    location2.lat =  _sitl->wind_up_lat2*1.0e7;
+                    location2.lng =  _sitl->wind_up_lng2*1.0e7;
+                    if (get_distance(location_sim, location2) < _sitl->wind_up_radius) {
+                        // we're inside a localized thermal
+                        wind_up = _sitl->wind_up;
+                    }
+                }
+            } else {
+
+            }
+        }
+
+        wind_up = _sitl->wind_up = (0.9f*_sitl->wind_up_active) + (0.1f*_sitl->wind_up);
     }
 
     if (altitude < 0) {
@@ -356,6 +397,7 @@ void SITL_State::_simulator_servos(SITL::Aircraft::sitl_input &input)
         wind_speed *= sqrtf(MAX(altitude / 60, 0));
     }
 
+    input.wind.thermal = wind_up;
     input.wind.speed = wind_speed;
     input.wind.direction = wind_direction;
     input.wind.turbulence = _sitl?_sitl->wind_turbulance:0;

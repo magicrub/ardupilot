@@ -45,6 +45,7 @@ public:
             float speed;      // m/s
             float direction;  // degrees 0..360
             float turbulence;
+            float up;         // m/s thermal (updrafts). positive is up
         } wind;
     };
 

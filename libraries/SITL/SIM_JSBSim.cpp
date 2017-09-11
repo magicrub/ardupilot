@@ -342,6 +342,7 @@ void JSBSim::send_servos(const struct sitl_input &input)
         rudder   = (ch2+ch1)/2.0f;
     }
     float wind_speed_fps = input.wind.speed / FEET_TO_METERS;
+    float wind_down_speed_fps = (-1 * input.wind.up) / FEET_TO_METERS; // note: wind.thermal is up positive, jsbsim is down positive
     asprintf(&buf,
              "set fcs/aileron-cmd-norm %f\n"
              "set fcs/elevator-cmd-norm %f\n"
@@ -351,12 +352,14 @@ void JSBSim::send_servos(const struct sitl_input &input)
              "set atmosphere/wind-mag-fps %f\n"
              "set atmosphere/turbulence/milspec/windspeed_at_20ft_AGL-fps %f\n"
              "set atmosphere/turbulence/milspec/severity %f\n"
+             "set atmosphere/wind-down-fps %f\n",
              "step\n",
              aileron, elevator, rudder, throttle,
              radians(input.wind.direction),
              wind_speed_fps,
              wind_speed_fps/3,
-             input.wind.turbulence);
+             input.wind.turbulence,
+             wind_down_speed_fps);
     ssize_t buflen = strlen(buf);
     ssize_t sent = sock_control.send(buf, buflen);
     free(buf);

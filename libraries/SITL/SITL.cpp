@@ -106,6 +106,13 @@ const AP_Param::GroupInfo SITL::var_info2[] = {
     AP_GROUPINFO("GPS_LOCKTIME", 5, SITL,  gps_lock_time, 0),
     AP_GROUPINFO("ARSPD_FAIL_P", 6, SITL,  arspd_fail_pressure, 0),
     AP_GROUPINFO("ARSPD_PITOT",  7, SITL,  arspd_fail_pitot_pressure, 0),
+    AP_GROUPINFO("WIND_UP_SPD",  8, SITL,  wind_up, 0),
+    AP_GROUPINFO("WIND_UP_RAD",  9, SITL,  wind_up_radius, 200),
+    AP_GROUPINFO("WIND_UP_LAT1", 10, SITL,  wind_up_lat[0], 0),
+    AP_GROUPINFO("WIND_UP_LNG1", 11, SITL,  wind_up_lng[0], 0),
+    AP_GROUPINFO("WIND_UP_LAT2", 12, SITL,  wind_up_lat[1], 0),
+    AP_GROUPINFO("WIND_UP_LNG2", 13, SITL,  wind_up_lng[1], 0),
+
     AP_GROUPEND
 };
     

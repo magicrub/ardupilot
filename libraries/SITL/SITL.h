@@ -127,9 +127,16 @@ public:
     // wind control
     float wind_speed_active;
     float wind_direction_active;
+    float wind_up_active;
     AP_Float wind_speed;
     AP_Float wind_direction;
     AP_Float wind_turbulance;
+    AP_Float wind_up;            // Soaring thermal updraft speed, z velocity. Up is positive
+    AP_Float wind_up_radius;     // Soaring thermal updraft radius in meters.
+    AP_Float wind_up_lat1;       // Soaring thermal updraft latitude, point 1
+    AP_Float wind_up_lng1;       // Soaring thermal updraft longitude, point 1
+    AP_Float wind_up_lat2;       // Soaring thermal updraft latitude, point 2
+    AP_Float wind_up_lng2;       // Soaring thermal updraft longitude, point 2
     AP_Float gps_drift_alt;
 
     AP_Int16  baro_delay; // barometer data delay in ms

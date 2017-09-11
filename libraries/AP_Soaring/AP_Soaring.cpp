@@ -8,10 +8,10 @@ extern const AP_HAL::HAL& hal;
 const AP_Param::GroupInfo SoaringController::var_info[] = {
     // @Param: ENABLE
     // @DisplayName: Is the soaring mode enabled or not
-    // @Description: Toggles the soaring mode on and off
-    // @Values: 0:Disable,1:Enable
+    // @Description: Enabled the soaring feature. Use 0 to disable, 1 for soaring gliders emphasising limited throttle, 2 for normal aircraft in AUTO to try and benefit from thermals but without pausing to loiter - allow thermal updrafts to give us altitude boosts.
+    // @Values: 0:Disable,1:Enable,2:EnableForNormalPlanes
     // @User: Advanced
-    AP_GROUPINFO_FLAGS("ENABLE", 1, SoaringController, soar_active, 0, AP_PARAM_FLAG_ENABLE),
+    AP_GROUPINFO_FLAGS("ENABLE", 1, SoaringController, enable, 0, AP_PARAM_FLAG_ENABLE),
 
     // @Param: VSPEED
     // @DisplayName: Vertical v-speed
@@ -123,7 +123,7 @@ const AP_Param::GroupInfo SoaringController::var_info[] = {
     // @Description: Toggles the soaring controller on and off. This parameter has any effect only if SOAR_ENABLE is set to 1 and this parameter is set to a valid non-zero channel number. When set, soaring will be activated when RC input to the specified channel is greater than or equal to 1700.
     // @Range: 0 16
     // @User: Advanced
-    AP_GROUPINFO("ENABLE_CH", 15, SoaringController, soar_active_ch, 0),
+    AP_GROUPINFO("ENABLE_CH", 15, SoaringController, enable_rc_ch, 0),
 
     AP_GROUPEND
 };
@@ -169,7 +169,7 @@ bool SoaringController::suppress_throttle()
 
 bool SoaringController::check_thermal_criteria()
 {
-    return (soar_active
+    return (enable
             && ((AP_HAL::micros64() - _cruise_start_time_us) > ((unsigned)min_cruise_s * 1e6))
             && _vario.filtered_reading > thermal_vspeed
             && _vario.alt < alt_max
@@ -181,10 +181,10 @@ bool SoaringController::check_cruise_criteria()
     float thermalability = (_ekf.X[0]*expf(-powf(_loiter_rad / _ekf.X[1], 2))) - EXPECTED_THERMALLING_SINK;
     float alt = _vario.alt;
 
-    if (soar_active && (AP_HAL::micros64() - _thermal_start_time_us) > ((unsigned)min_thermal_s * 1e6) && thermalability < McCready(alt)) {
+    if (enable && (AP_HAL::micros64() - _thermal_start_time_us) > ((unsigned)min_thermal_s * 1e6) && thermalability < McCready(alt)) {
         gcs().send_text(MAV_SEVERITY_INFO, "Thermal weak, recommend quitting: W %f R %f th %f alt %f Mc %f\n", (double)_ekf.X[0], (double)_ekf.X[1], (double)thermalability, (double)alt, (double)McCready(alt));
         return true;
-    } else if (soar_active && (alt>alt_max || alt<alt_min)) {
+    } else if (enable && (alt>alt_max || alt<alt_min)) {
         gcs().send_text(MAV_SEVERITY_ALERT, "Out of allowable altitude range, beginning cruise. Alt = %f\n", (double)alt);
         return true;
     }
@@ -194,7 +194,7 @@ bool SoaringController::check_cruise_criteria()
 
 bool SoaringController::check_init_thermal_criteria()
 {
-    if (soar_active && (AP_HAL::micros64() - _thermal_start_time_us) < ((unsigned)min_thermal_s * 1e6)) {
+    if (enable && (AP_HAL::micros64() - _thermal_start_time_us) < ((unsigned)min_thermal_s * 1e6)) {
         return true;
     }
 
@@ -324,13 +324,13 @@ float SoaringController::McCready(float alt)
 
 bool SoaringController::is_active() const
 {
-    if (!soar_active) {
+    if (!enable) {
         return false;
     }
-    if (soar_active_ch <= 0) {
+    if (enable_rc_ch <= 0) {
         // no activation channel
         return true;
     }
     // active when above 1700
-    return hal.rcin->read(soar_active_ch-1) >= 1700;
+    return hal.rcin->read(enable_rc_ch-1) >= 1700;
 }

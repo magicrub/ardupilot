@@ -52,8 +52,8 @@ class SoaringController {
     void get_altitude_wrt_home(float *alt);
 
 protected:
-    AP_Int8 soar_active;
-    AP_Int8 soar_active_ch;
+    AP_Int8 enable;
+    AP_Int8 enable_rc_ch;
     AP_Float thermal_vspeed;
     AP_Float thermal_q1;
     AP_Float thermal_q2;

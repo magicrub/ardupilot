@@ -780,6 +780,9 @@ void AP_TECS::_update_pitch(void)
         } else {
             SKE_weighting = constrain_float(_spdWeightLand, 0.0f, 2.0f);
         }
+    } else if (_soaring_controller.is_active() == 2) {
+        // if soaring, focus on airspeed and allow sloppy height management
+        SKE_weighting = 2.0f;
     }
 
     logging.SKE_weighting = SKE_weighting;
