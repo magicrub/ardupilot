@@ -646,6 +646,10 @@ void Plane::set_servos(void)
         SRV_Channels::set_output_scaled(SRV_Channel::k_throttle, override_pct);
     }
 
+    servo_set_reverse_thrust_flags(SRV_Channel::k_throttle, SRV_Channel::k_throttle_reverse_flag);
+    servo_set_reverse_thrust_flags(SRV_Channel::k_throttleLeft, SRV_Channel::k_throttleLeft_reverse_flag);
+    servo_set_reverse_thrust_flags(SRV_Channel::k_throttleRight, SRV_Channel::k_throttleRight_reverse_flag);
+
     // run output mixer and send values to the hal for output
     servos_output();
 }
@@ -685,6 +689,25 @@ void Plane::servos_output(void)
 
     if (g2.servo_channels.auto_trim_enabled()) {
         servos_auto_trim();
+    }
+}
+
+/*
+ * Implement reverse thrust for ESCs that require an additional PWM input signaling to control fwd/rev and the main PWM input is the usual speed command
+ */
+void Plane::servo_set_reverse_thrust_flags(SRV_Channel::Aux_servo_function_t throttle_func, SRV_Channel::Aux_servo_function_t throttle_rev_flag_func)
+{
+    // if throttle_func throttle_rev_flag_func are both assigned
+    if (SRV_Channels::function_assigned(throttle_func) && SRV_Channels::function_assigned(throttle_rev_flag_func)) {
+
+        // then set throttle_rev_flag_func to min/max to depending on throttle_func being fwd/rev
+        if (SRV_Channels::get_output_scaled(throttle_func) >= 0) {
+            // set pwm flag to forward
+            SRV_Channels::set_output_scaled(throttle_rev_flag_func, 0);
+        } else {
+            // set pwm flag to reverse
+            SRV_Channels::set_output_scaled(throttle_rev_flag_func, 100);
+        }
     }
 }
 
