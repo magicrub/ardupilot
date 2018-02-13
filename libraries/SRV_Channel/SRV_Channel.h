@@ -120,6 +120,9 @@ public:
         k_dspoilerLeft2         = 86,           ///< differential spoiler 2 (left wing)
         k_dspoilerRight2        = 87,           ///< differential spoiler 2 (right wing)
         k_winch                 = 88,
+        k_throttle_reverse_flag = 89,           ///< pwm output "flag" signifying throttle is forward (output RC_MIN) or reverse (output RC_MAX) for normal single throttle
+        k_throttleLeft_reverse_flag = 90,       ///< pwm output "flag" signifying throttle is forward (output RC_MIN) or reverse (output RC_MAX) for left of dual throttle configuration
+        k_throttleRight_reverse_flag = 91,      ///< pwm output "flag" signifying throttle is forward (output RC_MIN) or reverse (output RC_MAX) for right of dual throttle configuration
         k_nr_aux_servo_functions         ///< This must be the last enum value (only add new values _before_ this one)
     } Aux_servo_function_t;
 
