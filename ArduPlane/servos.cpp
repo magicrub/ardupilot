@@ -505,7 +505,6 @@ void Plane::servos_twin_engine_mix(void)
     }
     SRV_Channels::set_output_scaled(SRV_Channel::k_throttleLeft, throttle_left);
     SRV_Channels::set_output_scaled(SRV_Channel::k_throttleRight, throttle_right);
-
 }
 
 
@@ -646,10 +645,6 @@ void Plane::set_servos(void)
         SRV_Channels::set_output_scaled(SRV_Channel::k_throttle, override_pct);
     }
 
-    servo_set_reverse_thrust_flags(SRV_Channel::k_throttle, SRV_Channel::k_throttle_reverse_flag);
-    servo_set_reverse_thrust_flags(SRV_Channel::k_throttleLeft, SRV_Channel::k_throttleLeft_reverse_flag);
-    servo_set_reverse_thrust_flags(SRV_Channel::k_throttleRight, SRV_Channel::k_throttleRight_reverse_flag);
-
     // run output mixer and send values to the hal for output
     servos_output();
 }
@@ -669,7 +664,12 @@ void Plane::servos_output(void)
 
     // cope with tailsitters
     quadplane.tailsitter_output();
-    
+
+    // after throttle is updated by all modules, update the reverse flag outputs
+    servo_set_reverse_thrust_flags(SRV_Channel::k_throttle, SRV_Channel::k_throttle_reverse_flag);
+    servo_set_reverse_thrust_flags(SRV_Channel::k_throttleLeft, SRV_Channel::k_throttleLeft_reverse_flag);
+    servo_set_reverse_thrust_flags(SRV_Channel::k_throttleRight, SRV_Channel::k_throttleRight_reverse_flag);
+
     // the mixers need pwm to be calculated now
     SRV_Channels::calc_pwm();
     
