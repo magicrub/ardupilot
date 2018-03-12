@@ -921,6 +921,10 @@ const AP_Param::Info Plane::var_info[] = {
     GSCALAR(parachute_channel,      "CHUTE_CHAN",  0),
 #endif
 
+    // @Group: LGR_
+    // @Path: ../libraries/AP_LandingGear/AP_LandingGear.cpp
+    GOBJECT(landinggear,    "LGR_", AP_LandingGear),
+
     // @Group: RNGFND
     // @Path: ../libraries/AP_RangeFinder/RangeFinder.cpp
     GOBJECT(rangefinder,            "RNGFND", RangeFinder),

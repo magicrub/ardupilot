@@ -54,6 +54,8 @@ public:
         k_param_landing,
         k_param_NavEKF3,
         k_param_BoardConfig_CAN,
+        k_param_landinggear,    // 9
+
 
         // Misc
         //

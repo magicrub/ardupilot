@@ -97,6 +97,7 @@
 #include <AP_ICEngine/AP_ICEngine.h>
 #include <AP_Gripper/AP_Gripper.h>
 #include <AP_Landing/AP_Landing.h>
+#include <AP_LandingGear/AP_LandingGear.h>     // Landing Gear library
 
 #include "GCS_Mavlink.h"
 #include "GCS_Plane.h"
@@ -622,6 +623,7 @@ private:
             FUNCTOR_BIND_MEMBER(&Plane::adjusted_relative_altitude_cm, int32_t),
             FUNCTOR_BIND_MEMBER(&Plane::disarm_if_autoland_complete, void),
             FUNCTOR_BIND_MEMBER(&Plane::update_flight_stage, void)};
+    AP_LandingGear landinggear;
 
     AP_ADSB adsb;
 
