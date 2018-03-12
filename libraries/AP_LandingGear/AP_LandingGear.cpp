@@ -32,13 +32,53 @@ const AP_Param::GroupInfo AP_LandingGear::var_info[] = {
     // @Values: 0:WaitForPilotInput, 1:Retract, 2:Deploy
     // @User: Standard
     AP_GROUPINFO("STARTUP", 2, AP_LandingGear, _startup_behaviour, (uint8_t)AP_LandingGear::LandingGear_Startup_WaitForPilotInput),
+    
+    // @Param: DEPLOY_PIN
+    // @DisplayName: Chassis deployment feedback pin
+    // @Description: Pin number to use for feedback of gear deployment. If set to -1 feedback is disabled.
+    // @Values: -1:Disabled,50:PX4 AUX1,51:PX4 AUX2,52:PX4 AUX3,53:PX4 AUX4,54:PX4 AUX5,55:PX4 AUX6
+    // @User: Standard
+    AP_GROUPINFO("DEPLOY_PIN", 3, AP_LandingGear, _pin_deployed, -1),
 
+    // @Param: DEPLOY_POL
+    // @DisplayName: Chassis deployment feedback pin polarity
+    // @Description: Polarity for feedback pin. If this is 1 then the pin should be high when gear are deployed. If set to 0 then then deployed gear level is low.
+    // @Values: 0:Low,1:High
+    // @User: Standard
+    AP_GROUPINFO("DEPLOY_POL", 4, AP_LandingGear, _pin_deployed_polarity, 0),
+    
+    // @Param: WOW_PIN
+    // @DisplayName: Weight on wheels feedback pin
+    // @Description: Pin number to use for feedback of weight on wheels condition. If set to -1 feedback is disabled.
+    // @Values: -1:Disabled,50:PX4 AUX1,51:PX4 AUX2,52:PX4 AUX3,53:PX4 AUX4,54:PX4 AUX5,55:PX4 AUX6
+    // @User: Standard
+    AP_GROUPINFO("WOW_PIN", 5, AP_LandingGear, _pin_weight_on_wheels, DEFAULT_PIN_WOW),
+
+    // @Param: WOW_POL
+    // @DisplayName: Weight on wheels feedback pin polarity
+    // @Description: Polarity for feedback pin. If this is 1 then the pin should be high when there is weight on wheels. If set to 0 then then weight on wheels level is low.
+    // @Values: 0:Low,1:High
+    // @User: Standard
+    AP_GROUPINFO("WOW_POL", 6, AP_LandingGear, _pin_weight_on_wheels_polarity, DEFAULT_PIN_WOW_POL),
+    
     AP_GROUPEND
 };
+
+AP_LandingGear *AP_LandingGear::_instance;
 
 /// initialise state of landing gear
 void AP_LandingGear::init()
 {
+    if (_pin_deployed != -1) {
+        hal.gpio->pinMode(_pin_deployed, HAL_GPIO_INPUT);
+        hal.gpio->write(_pin_deployed, 1);
+    }
+    
+    if (_pin_weight_on_wheels != -1) {
+        hal.gpio->pinMode(_pin_weight_on_wheels, HAL_GPIO_INPUT);
+        hal.gpio->write(_pin_weight_on_wheels, 1);
+    }
+    
     switch ((enum LandingGearStartupBehaviour)_startup_behaviour.get()) {
         default:
         case LandingGear_Startup_WaitForPilotInput:
@@ -91,4 +131,48 @@ void AP_LandingGear::retract()
 
     // reset deployed flag
     _deployed = false;
+}
+
+bool AP_LandingGear::deployed()
+{
+    if (_pin_deployed == -1) {
+        return _deployed;
+    } else {
+        return hal.gpio->read(_pin_deployed) == _pin_deployed_polarity ? true : false;
+    }
+}
+
+AP_LandingGear::LG_WOW_State AP_LandingGear::wow()
+{
+    if (_pin_weight_on_wheels == -1) {
+        return LG_WOW_UNKNOWN;
+    } else {
+        return hal.gpio->read(_pin_weight_on_wheels) == _pin_weight_on_wheels_polarity ? LG_WOW : LG_NO_WOW;
+    }
+}
+
+AP_LandingGear::LG_LandingGear_State AP_LandingGear::get_state()
+{
+    if (_pin_deployed == -1) {
+        if (_deployed) {
+            return LG_DEPLOYED;
+        } else {
+            return LG_RETRACTED;
+        }
+    } else {
+        if (_deployed && deployed()) {
+            return LG_DEPLOYED;
+        }
+        if (!_deployed && !deployed()) {
+            return LG_RETRACTED;
+        }
+        if (_deployed && !deployed()) {
+            return LG_DEPLOYING;
+        }
+        if (!_deployed && deployed()) {
+            return LG_RETRACTING;
+        }
+        
+        return LG_UNKNOWN;
+    }
 }
