@@ -53,8 +53,8 @@ public:
         k_param_avoidance_adsb,
         k_param_landing,
         k_param_NavEKF3,
-        k_param_BoardConfig_CAN,
-        k_param_landinggear,    // 9
+        k_param_BoardConfig_CAN = 8,
+        // index 9 saved for future use. Please use g2
 
 
         // Misc
@@ -552,6 +552,7 @@ public:
     AP_Gripper gripper;
 #endif
 
+    AP_LandingGear landinggear;
 };
 
 extern const AP_Param::Info var_info[];

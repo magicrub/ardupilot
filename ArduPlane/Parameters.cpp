@@ -921,10 +921,6 @@ const AP_Param::Info Plane::var_info[] = {
     GSCALAR(parachute_channel,      "CHUTE_CHAN",  0),
 #endif
 
-    // @Group: LGR_
-    // @Path: ../libraries/AP_LandingGear/AP_LandingGear.cpp
-    GOBJECT(landinggear,    "LGR_", AP_LandingGear),
-
     // @Group: RNGFND
     // @Path: ../libraries/AP_RangeFinder/RangeFinder.cpp
     GOBJECT(rangefinder,            "RNGFND", RangeFinder),
@@ -1180,6 +1176,10 @@ const AP_Param::GroupInfo ParametersG2::var_info[] = {
     // @Path: ../libraries/AP_Gripper/AP_Gripper.cpp
     AP_SUBGROUPINFO(gripper, "GRIP_", 12, ParametersG2, AP_Gripper),
 #endif
+
+    // @Group: LGR_
+    // @Path: ../libraries/AP_LandingGear/AP_LandingGear.cpp
+    AP_SUBGROUPINFO(landinggear, "LGR_", 13, ParametersG2, AP_LandingGear),
 
     AP_GROUPEND
 };

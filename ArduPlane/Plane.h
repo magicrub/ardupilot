@@ -623,7 +623,6 @@ private:
             FUNCTOR_BIND_MEMBER(&Plane::adjusted_relative_altitude_cm, int32_t),
             FUNCTOR_BIND_MEMBER(&Plane::disarm_if_autoland_complete, void),
             FUNCTOR_BIND_MEMBER(&Plane::update_flight_stage, void)};
-    AP_LandingGear landinggear;
 
     AP_ADSB adsb;
 

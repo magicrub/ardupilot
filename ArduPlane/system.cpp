@@ -167,7 +167,7 @@ void Plane::init_ardupilot()
 #endif
 
     // initialise landing gear position
-    landinggear.init();
+    g2.landinggear.init();
 
 #if FENCE_TRIGGERED_PIN > 0
     hal.gpio->pinMode(FENCE_TRIGGERED_PIN, HAL_GPIO_OUTPUT);
