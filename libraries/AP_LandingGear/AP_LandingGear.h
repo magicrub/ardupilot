@@ -74,7 +74,8 @@ public:
         LG_NO_WOW = 0,
         LG_WOW = 1,
         };
-    LG_WOW_State wow();
+
+    LG_WOW_State get_wow_state();
 
     /// set landing gear position to retract, deploy or deploy-and-keep-deployed
     void set_position(LandingGearCommand cmd);

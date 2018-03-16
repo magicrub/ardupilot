@@ -38,6 +38,7 @@ const AP_Param::GroupInfo AP_LandingGear::var_info[] = {
     // @Description: Pin number to use for feedback of gear deployment. If set to -1 feedback is disabled.
     // @Values: -1:Disabled,50:PX4 AUX1,51:PX4 AUX2,52:PX4 AUX3,53:PX4 AUX4,54:PX4 AUX5,55:PX4 AUX6
     // @User: Standard
+    // @RebootRequired: True
     AP_GROUPINFO("DEPLOY_PIN", 3, AP_LandingGear, _pin_deployed, -1),
 
     // @Param: DEPLOY_POL
@@ -52,6 +53,7 @@ const AP_Param::GroupInfo AP_LandingGear::var_info[] = {
     // @Description: Pin number to use for feedback of weight on wheels condition. If set to -1 feedback is disabled.
     // @Values: -1:Disabled,50:PX4 AUX1,51:PX4 AUX2,52:PX4 AUX3,53:PX4 AUX4,54:PX4 AUX5,55:PX4 AUX6
     // @User: Standard
+    // @RebootRequired: True
     AP_GROUPINFO("WOW_PIN", 5, AP_LandingGear, _pin_weight_on_wheels, DEFAULT_PIN_WOW),
 
     // @Param: WOW_POL
@@ -142,7 +144,7 @@ bool AP_LandingGear::deployed()
     }
 }
 
-AP_LandingGear::LG_WOW_State AP_LandingGear::wow()
+AP_LandingGear::LG_WOW_State AP_LandingGear::get_wow_state()
 {
     if (_pin_weight_on_wheels == -1) {
         return LG_WOW_UNKNOWN;
@@ -154,25 +156,13 @@ AP_LandingGear::LG_WOW_State AP_LandingGear::wow()
 AP_LandingGear::LG_LandingGear_State AP_LandingGear::get_state()
 {
     if (_pin_deployed == -1) {
-        if (_deployed) {
-            return LG_DEPLOYED;
-        } else {
-            return LG_RETRACTED;
-        }
+        return (_deployed == true ? LG_DEPLOYED : LG_RETRACTED);
+
+    } else if (_deployed) {
+        return (deployed() == true ? LG_DEPLOYED : LG_DEPLOYING);
+
     } else {
-        if (_deployed && deployed()) {
-            return LG_DEPLOYED;
-        }
-        if (!_deployed && !deployed()) {
-            return LG_RETRACTED;
-        }
-        if (_deployed && !deployed()) {
-            return LG_DEPLOYING;
-        }
-        if (!_deployed && deployed()) {
-            return LG_RETRACTING;
-        }
-        
-        return LG_UNKNOWN;
+        return (deployed() == false ? LG_RETRACTED : LG_RETRACTING);
     }
 }
+
