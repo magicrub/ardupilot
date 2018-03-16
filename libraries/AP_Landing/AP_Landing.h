@@ -136,7 +136,7 @@ private:
     update_flight_stage_fn_t update_flight_stage_fn;
     
     // saved bearing for yaw correction after touchdown
-    int32_t runway_bearing_cd;
+    float runway_bearing;
     bool touched_down;
 
     // support for deepstall landings

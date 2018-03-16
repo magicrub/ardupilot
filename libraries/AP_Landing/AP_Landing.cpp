@@ -144,7 +144,7 @@ const AP_Param::GroupInfo AP_Landing::var_info[] = {
     
     // @Param: TD_ALT
     // @DisplayName: Touch down altitude
-    // @Description: Altitude to trigger touchdown condition if wheight on wheels is not available. Disabled when LAND_PF_ARSPD is 0.
+    // @Description: Altitude to trigger touchdown condition if weight on wheels sensor is not available. Disabled when 0. Recommend using an RTK GPS or rangefinder for accurate altitude
     // @Units: m
     // @Range: 0 5
     // @Increment: 0.01
