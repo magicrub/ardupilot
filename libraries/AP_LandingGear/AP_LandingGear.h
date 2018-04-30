@@ -9,11 +9,15 @@
 #define AP_LANDINGGEAR_SERVO_DEPLOY_PWM_DEFAULT     1750    // default PWM value to move servo to when landing gear is down
 
 #if CONFIG_HAL_BOARD == HAL_BOARD_SITL
-#define DEFAULT_PIN_WOW 8
-#define DEFAULT_PIN_WOW_POL 1
+    #define DEFAULT_PIN_WOW 8
+    #define DEFAULT_PIN_WOW_POL 1
 #else
-#define DEFAULT_PIN_WOW -1
-#define DEFAULT_PIN_WOW_POL 0
+    #ifndef DEFAULT_PIN_WOW
+        #define DEFAULT_PIN_WOW -1
+    #endif
+    #ifndef DEFAULT_PIN_WOW_POL
+        #define DEFAULT_PIN_WOW_POL 0
+    #endif
 #endif
 
 /// @class	AP_LandingGear
