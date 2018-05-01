@@ -67,7 +67,19 @@ bool AP_Landing::type_slope_verify_land(const Location &prev_WP_loc, Location &n
         }
     }
     
-    if (type_slope_stage != SLOPE_STAGE_FINAL) {
+    // Check for weight-on-wheels touchdown
+    if (!touched_down) {
+        const bool touchdown_alt_override = !is_zero(touchdown_altitude) &&
+                (height < touchdown_altitude);
+        const bool touchdown_debounced = (AP_LandingGear::instance().get_wow_state() == AP_LandingGear::LG_WOW) &&
+                AP_LandingGear::instance().get_wow_state_duration_ms() >= 500;
+
+        if (touchdown_alt_override || touchdown_debounced) {
+            touched_down = true; // sticky flag
+            type_slope_stage == SLOPE_STAGE_FINAL; // force flare
+            gcs().send_text(MAV_SEVERITY_INFO, "Touchdown encountered");
+        }
+    } else if (type_slope_stage != SLOPE_STAGE_FINAL) {
         touched_down = false;
     }
 
@@ -152,14 +164,6 @@ bool AP_Landing::type_slope_verify_land(const Location &prev_WP_loc, Location &n
     // check if we should auto-disarm after a confirmed landing
     if (type_slope_stage == SLOPE_STAGE_FINAL) {
         disarm_if_autoland_complete_fn();
-        
-        // Check for touchdown
-        if (!touched_down &&
-            ((height < touchdown_altitude && !is_zero(touchdown_altitude)) ||
-            AP_LandingGear::instance().get_wow_state() == AP_LandingGear::LG_WOW)) {
-            touched_down = true;
-            gcs().send_text(MAV_SEVERITY_INFO, "Touchdown encountered");
-        }
     }
 
     /*
