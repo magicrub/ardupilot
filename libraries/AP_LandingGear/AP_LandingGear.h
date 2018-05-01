@@ -80,6 +80,7 @@ public:
         };
 
     LG_WOW_State get_wow_state();
+    uint32_t get_wow_state_duration_ms();
 
     /// set landing gear position to retract, deploy or deploy-and-keep-deployed
     void set_position(LandingGearCommand cmd);
@@ -101,6 +102,10 @@ private:
     bool        _deployed;              // true if the landing gear has been deployed, initialized false
     bool        _deploy_lock;           // used to force landing gear to remain deployed until another regular Deploy command is received to reduce accidental retraction
     
+    // debounce
+    LG_WOW_State wow_state_prev = LG_WOW_UNKNOWN;
+    uint32_t last_wow_event_ms;
+
     /// retract - retract landing gear
     void retract();
     

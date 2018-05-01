@@ -147,9 +147,18 @@ bool AP_LandingGear::deployed()
 AP_LandingGear::LG_WOW_State AP_LandingGear::get_wow_state()
 {
     if (_pin_weight_on_wheels == -1) {
+        last_wow_event_ms = 0;
         return LG_WOW_UNKNOWN;
     } else {
-        return hal.gpio->read(_pin_weight_on_wheels) == _pin_weight_on_wheels_polarity ? LG_WOW : LG_NO_WOW;
+
+        LG_WOW_State wow_state_new = hal.gpio->read(_pin_weight_on_wheels) == _pin_weight_on_wheels_polarity ? LG_WOW : LG_NO_WOW;
+
+        if (wow_state_new != wow_state_prev) {
+            // we changed states, lets note the time.
+            last_wow_event_ms = AP_HAL::millis();
+        }
+        wow_state_prev = wow_state_new;
+        return wow_state_new;
     }
 }
 
@@ -164,5 +173,14 @@ AP_LandingGear::LG_LandingGear_State AP_LandingGear::get_state()
     } else {
         return (deployed() == false ? LG_RETRACTED : LG_RETRACTING);
     }
+}
+
+uint32_t AP_LandingGear::get_wow_state_duration_ms()
+{
+    if (last_wow_event_ms == 0) {
+        return 0;
+    }
+
+    return AP_HAL::millis() - last_wow_event_ms;
 }
 
