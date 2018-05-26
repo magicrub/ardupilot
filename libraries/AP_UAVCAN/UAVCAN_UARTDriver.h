@@ -28,6 +28,7 @@ public:
 
     uint32_t handle_inbound(const uint8_t *buffer, uint32_t size);
     int16_t fetch_for_outbound(void);
+    uint32_t tx_available() { return _writebuf.available(); }
 
 private:
     bool _initialised;

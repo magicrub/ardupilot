@@ -793,11 +793,12 @@ bool AP_UAVCAN::tunnel_flush()
         _tunnel.last_send_ms = AP_HAL::millis();
         // we're re-using the same msg, so lets make sure to clear it
         _tunnel.bdcst_msg.buffer.clear();
-    } else {
-        // send failed. Let's quit now and try again on the next cycle
-        _tunnel.resend = true;
+        return true;
     }
-    return result;
+
+    // send failed. Let's quit now and try again on the next cycle
+    _tunnel.resend = true;
+    return false;
 }
 
 void AP_UAVCAN::tunnel_send()
@@ -818,12 +819,14 @@ void AP_UAVCAN::tunnel_send()
         return;
     }
 
+    uint32_t avail = _tunnel.uart->tx_available();
+
     // flush if:
     // - there's something in the outbound Tx buffer waiting but the CAN frame is not full
     // - there's no other data that can be queued
     // - we've timed out
     if (_tunnel.bdcst_msg.buffer.size() > 0 &&
-            !_tunnel.uart->tx_pending() &&
+            avail == 0 &&
             AP_HAL::millis() - _tunnel.last_send_ms >= AP_UAVCAN_TUNNEL_SEND_TIMEOUT_FLUSH_MS)
     {
         // flush it
@@ -836,10 +839,10 @@ void AP_UAVCAN::tunnel_send()
     const uint16_t max_buf_capacity = _tunnel.bdcst_msg.buffer.capacity();
     uint8_t packet_send_count = 0;
 
-    while (_tunnel.uart->tx_pending() && packet_send_count++ < AP_UAVCAN_TUNNEL_SENDS_PER_LOOP_MAX) {
+    while (avail && packet_send_count++ < AP_UAVCAN_TUNNEL_SENDS_PER_LOOP_MAX) {
         // attempt to load as many bytes as can fit into bdcst_msg.buffer
         // if buffer is full, send it. else, wait for timeout then send
-        while (_tunnel.bdcst_msg.buffer.size() < max_buf_capacity) {
+        while (avail && _tunnel.bdcst_msg.buffer.size() < max_buf_capacity) {
 
             // but if there's no more data to send then we're done and can exit to transmit it
             const int16_t data = _tunnel.uart->fetch_for_outbound();
@@ -858,6 +861,7 @@ void AP_UAVCAN::tunnel_send()
             }
 
             // make sure we're only sending pure uint8_t values to push_back
+            avail--;
             const uint8_t data_byte = data;
             _tunnel.bdcst_msg.buffer.push_back(data_byte);
         }
