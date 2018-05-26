@@ -30,11 +30,6 @@ void Sub::init_ardupilot()
     // load parameters from EEPROM
     load_parameters();
 
-    BoardConfig.init();
-#if HAL_WITH_UAVCAN
-    BoardConfig_CAN.init();
-#endif
-
 #if AP_FEATURE_BOARD_DETECT
     // Detection won't work until after BoardConfig.init()
     switch (AP_BoardConfig::get_board_type()) {
@@ -51,7 +46,12 @@ void Sub::init_ardupilot()
 
     // identify ourselves correctly with the ground station
     mavlink_system.sysid = g.sysid_this_mav;
-    
+
+    BoardConfig.init();
+#if HAL_WITH_UAVCAN
+    BoardConfig_CAN.init();
+#endif
+
     // initialise serial port
     serial_manager.init();
 
