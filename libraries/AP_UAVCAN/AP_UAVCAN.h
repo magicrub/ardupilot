@@ -11,6 +11,7 @@
 #include <AP_HAL/Semaphores.h>
 #include <AP_GPS/AP_GPS.h>
 #include <AP_Param/AP_Param.h>
+#include "UAVCAN_UARTDriver.h"
 
 #include <AP_GPS/GPS_Backend.h>
 #include <AP_Baro/AP_Baro_Backend.h>
@@ -19,6 +20,8 @@
 
 #include <uavcan/helpers/heap_based_pool_allocator.hpp>
 #include <uavcan/equipment/indication/RGB565.hpp>
+#include <uavcan/tunnel/Broadcast.hpp>
+
 
 #ifndef UAVCAN_NODE_POOL_SIZE
 #define UAVCAN_NODE_POOL_SIZE 8192
@@ -46,6 +49,9 @@
 
 #define AP_UAVCAN_MAX_LED_DEVICES 4
 #define AP_UAVCAN_LED_DELAY_MILLISECONDS 50
+
+#define AP_UAVCAN_TUNNEL_SENDS_PER_LOOP_MAX         5
+#define AP_UAVCAN_TUNNEL_SEND_TIMEOUT_FLUSH_MS      5
 
 class AP_UAVCAN {
 public:
@@ -131,6 +137,17 @@ public:
     void SRV_send_servos();
     void SRV_send_esc();
 
+    // tunnel output
+    bool tunnel_sem_take();
+    void tunnel_sem_give();
+    void tunnel_send();
+    bool tunnel_flush();
+
+
+    // protocol tunneling uart interface
+    UAVCAN_UARTDriver* get_tunnel_uart();
+    AP_SerialManager::SerialProtocol get_tunnel_protocol() { return (AP_SerialManager::SerialProtocol)_tunnel.protocol.get(); }
+
 private:
     // ------------------------- GPS
     // 255 - means free node
@@ -168,6 +185,15 @@ private:
     uint16_t _bi_BM_listener_to_id[AP_UAVCAN_MAX_LISTENERS];
     AP_BattMonitor_Backend* _bi_BM_listeners[AP_UAVCAN_MAX_LISTENERS];
 
+    // Protocol tunneling
+    struct {
+        AP_Int8 protocol;
+        UAVCAN_UARTDriver* uart;
+        uint32_t last_send_ms;
+        bool resend;
+        uavcan::tunnel::Broadcast bdcst_msg;
+    } _tunnel;
+
     struct {
         uint16_t pulse;
         uint16_t safety_pulse;
@@ -196,6 +222,7 @@ private:
 
     AP_HAL::Semaphore *SRV_sem;
     AP_HAL::Semaphore *_led_out_sem;
+    AP_HAL::Semaphore *_tunnel_sem;
 
     class SystemClock: public uavcan::ISystemClock, uavcan::Noncopyable {
         SystemClock()
