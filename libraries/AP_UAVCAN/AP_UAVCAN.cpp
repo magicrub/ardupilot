@@ -761,10 +761,9 @@ void AP_UAVCAN::do_cyclic(void)
         led_out_sem_give();
     }
 
-    if (tunnel_sem_take()) {
-        tunnel_send();
-        tunnel_sem_give();
-    }
+    _tunnel_sem->take_blocking();
+    tunnel_send();
+    _tunnel_sem->give();
 }
 
 bool AP_UAVCAN::tunnel_sem_take()
@@ -787,6 +786,11 @@ void AP_UAVCAN::tunnel_sem_give()
  */
 bool AP_UAVCAN::tunnel_flush()
 {
+    if (_tunnel.bdcst_msg.buffer.size() == 0) {
+        _tunnel.resend = false;
+        return true;
+    }
+
     int32_t result = tunnel_broadcast_array[_uavcan_i]->broadcast(_tunnel.bdcst_msg);
 
     if (result >= 0) {
