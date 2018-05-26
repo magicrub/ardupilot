@@ -24,6 +24,10 @@
 
 #define SCHED_TASK(func, rate_hz, max_time_micros) SCHED_TASK_CLASS(Plane, &plane, func, rate_hz, max_time_micros)
 
+#if HAL_WITH_UAVCAN
+#include <AP_UAVCAN/AP_UAVCAN.h>
+#endif
+
 
 /*
   scheduler table - all regular tasks are listed here, along with how
@@ -341,6 +345,35 @@ void Plane::one_second_loop()
     // indicates that the sensor or subsystem is present but not
     // functioning correctly
     update_sensor_status_flags();
+
+
+#if HAL_WITH_UAVCAN
+    for (uint8_t can_mgr = 0; can_mgr < MAX_NUMBER_OF_CAN_DRIVERS; can_mgr++) {
+        AP_UAVCAN *ap_uavcan = AP_UAVCAN::get_uavcan(can_mgr);
+        if (ap_uavcan == nullptr) {
+            continue;
+        }
+
+        gcs().send_text(MAV_SEVERITY_INFO, "%u,%u,%u,%u, %u, %u, %u, %u, %u"
+                ,(unsigned)ap_uavcan->_tunnel_stats.retries
+                ,(unsigned)ap_uavcan->_tunnel_stats.fetch_error_1
+                ,(unsigned)ap_uavcan->_tunnel_stats.fetch_error_2
+                ,(unsigned)ap_uavcan->_tunnel_stats.fetch_error_3
+                ,(unsigned)ap_uavcan->_tunnel_stats.flush_failed
+                ,(unsigned)ap_uavcan->_tunnel_stats.buffer_at_max_cap_send_fail
+                ,(unsigned)ap_uavcan->_tunnel_stats.delayed_flushes
+                ,(unsigned)ap_uavcan->_tunnel_stats.buffer_at_max_cap
+                ,(unsigned)ap_uavcan->_tunnel_stats.intake_failed
+//                ,(unsigned)ap_uavcan->get_tunnel_stats().push_back_count
+//                        ,(unsigned)ap_uavcan->get_tunnel_stats().sem_take_fail
+                );
+
+
+    }
+#endif
+
+
+
 }
 
 void Plane::compass_save()
