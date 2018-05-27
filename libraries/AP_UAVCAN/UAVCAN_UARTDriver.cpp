@@ -161,8 +161,13 @@ size_t UAVCAN_UARTDriver::write(const uint8_t *buffer, size_t size)
     if (!_initialised) {
         return 0;
     }
+    if (!_write_mutex->take(2)) {
+        return 0;
+    }
 
-    // the local write() will handle the mutex
-    return _writebuf.write(buffer, size);
+    uint32_t len = _writebuf.write(buffer, size);
+    _write_mutex->give();
+
+    return len;
 }
 
