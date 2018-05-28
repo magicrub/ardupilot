@@ -767,21 +767,6 @@ void AP_UAVCAN::do_cyclic(void)
     _tunnel_sem->give();
 }
 
-bool AP_UAVCAN::tunnel_sem_take()
-{
-    bool sem_ret = _tunnel_sem->take(10);
-    if (!sem_ret) {
-        debug_uavcan(1, "AP_UAVCAN Tunnel semaphore fail\n\r");
-        _tunnel_stats.sem_take_fail++;
-    }
-    return sem_ret;
-}
-
-void AP_UAVCAN::tunnel_sem_give()
-{
-    _tunnel_sem->give();
-}
-
 /*
  *  Transmit all bytes that have been queued in the outbound tunnel object.
  *  returns false if send fails, usually due to UAVCAN tx buffers being full.

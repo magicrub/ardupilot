@@ -138,8 +138,6 @@ public:
     void SRV_send_esc();
 
     // tunnel output
-    bool tunnel_sem_take();
-    void tunnel_sem_give();
     void tunnel_send();
     bool tunnel_flush();
 
