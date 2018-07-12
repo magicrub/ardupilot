@@ -154,6 +154,30 @@ bool AP_Landing::type_slope_verify_land(const Location &prev_WP_loc, Location &n
         disarm_if_autoland_complete_fn();
     }
 
+    // perform touch_and_go "_count" many times
+    if (touch_and_go_count != 0 &&
+        !flags.commanded_go_around &&
+        !is_flying &&
+        fabsf(ahrs.yaw_sensor - land_bearing_cd) < 1500) // still roughly lined up with runway by 15deg (weak crash-land detector)
+    {
+        flags.commanded_go_around = true;
+        touch_and_go_count = constrain_int16(touch_and_go_count,-20,20); // constrain so it doesn't get too crazy
+
+        // inc or dec to go to zero
+        if (touch_and_go_count > 0) {
+            touch_and_go_count = touch_and_go_count - 1 ;
+        } else {
+            // negative, inc to zero
+            touch_and_go_count = touch_and_go_count + 1;
+
+            // we know we're on the ground so reset baro drift
+            AP_Baro &baro = *AP_Baro::get_instance();
+            baro.set_baro_drift_altitude(baro.get_altitude());
+        }
+
+        gcs().send_text(MAV_SEVERITY_INFO, "Performing Touch-and-Go. Remaining: %d", touch_and_go_count);
+    }
+
     /*
       we return false as a landing mission item never completes
 

@@ -142,6 +142,13 @@ const AP_Param::GroupInfo AP_Landing::var_info[] = {
     // @Path: AP_Landing_Deepstall.cpp
     AP_SUBGROUPINFO(deepstall, "DS_", 15, AP_Landing, AP_Landing_Deepstall),
     
+    // @Param: TCHNGO_CNT
+    // @DisplayName: Touch-n-Go Count
+    // @Description: Specfifies how many touch and go landings to perform. This action is performed by triggering the equivalent of an aborted landing after the aircraft slows down after the flare and must be still lined up with runway. When negative it will incrememnt to zero and also reset the baro drift before taking-off
+    // @Range: -20 20
+    // @User: Standard
+    AP_GROUPINFO("TCHNGO_CNT",    16, AP_Landing, touch_and_go_count, 0),
+
     AP_GROUPEND
 };
 
@@ -167,6 +174,7 @@ AP_Landing::AP_Landing(AP_Mission &_mission, AP_AHRS &_ahrs, AP_SpdHgtControl *_
     ,deepstall(*this)
 {
     AP_Param::setup_object_defaults(this, var_info);
+    touch_and_go_count = 0; // reset param, always boot up with zero
 }
 
 void AP_Landing::do_land(const AP_Mission::Mission_Command& cmd, const float relative_altitude)
