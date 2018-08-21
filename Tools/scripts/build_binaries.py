@@ -515,6 +515,7 @@ is bob we will attempt to checkout bob-AVR'''
                 "CUAVv5",
                 "mRoX21",
                 "Pixracer",
+                "fap",
                 "F4BY"]
 
     def build_arducopter(self, tag):

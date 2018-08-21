@@ -1,0 +1,61 @@
+# hw definition file for processing by chibios_hwdef.py
+# for F427 FAP bootloader
+
+# MCU class and specific type
+MCU STM32F4xx STM32F427xx
+
+# board ID for firmware load
+APJ_BOARD_ID 221
+
+# crystal frequency
+OSCILLATOR_HZ 24000000
+
+# board voltage
+STM32_VDD 330U
+
+# ChibiOS system timer
+STM32_ST_USE_TIMER 5
+
+# flash size
+FLASH_SIZE_KB 2048
+
+# location of application code
+define FLASH_BOOTLOADER_LOAD_KB 64
+
+# bootloader loads at start of flash
+FLASH_RESERVE_START_KB 0
+
+# baudrate to run bootloader at on uarts
+define BOOTLOADER_BAUDRATE 115200
+
+# uarts and USB to run bootloader protocol on
+UART_ORDER UART8 USART3 UART6
+# these are the pins for SWD debugging with a STlinkv2 or black-magic probe
+PA13 JTMS-SWDIO SWD
+PA14 JTCK-SWCLK SWD
+# GPS
+PE1 UART8_TX UART8
+PE0 UART8_RX UART8
+
+#debug 1
+PC6 USART6_TX USART6
+PC7 USART6_RX USART6
+
+#debug 2
+PD8 USART3_TX USART3
+PD9 USART3_RX USART3
+
+# define a LED
+PE12 LED_BOOTLOADER OUTPUT
+define HAL_LED_ON 1
+
+# this adds a C define which sets up the ArduPilot architecture
+# define. Any line starting with 'define' is copied literally as
+# a #define in the hwdef.h header
+define HAL_CHIBIOS_ARCH_FMUV3 1
+
+# we need to tell HAL_ChibiOS/Storage.cpp how much storage is
+# available (in bytes)
+define HAL_STORAGE_SIZE 15360
+define HAL_USE_EMPTY_STORAGE 1
+
