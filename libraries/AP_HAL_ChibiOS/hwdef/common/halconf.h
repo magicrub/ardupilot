@@ -158,7 +158,7 @@
 #endif
 
 #if !defined(HAL_USE_SDC_SDIO_1BIT_DATA_WIDTH) || defined(__DOXYGEN__)
-#define HAL_USE_SDC_SDIO_1BIT_DATA_WIDTH                 FALSE
+#define HAL_USE_SDC_SDIO_1BIT_DATA_WIDTH FALSE
 #endif
 
 /**
