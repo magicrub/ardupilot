@@ -47,8 +47,17 @@ void sdcard_init()
 #if HAL_USE_SDC
 
     bouncebuffer_init(&SDCD1.bouncebuffer, 512);
-    
+
+#if HAL_USE_SDC_SDIO_1BIT_DATA_WIDTH
+    const SDCConfig sdc_cfg = {
+      NULL,
+      SDC_MODE_1BIT
+    };
+    sdcStart(&SDCD1, &sdc_cfg);
+#else
+    // use NULL for default configuration which is SDC_MODE_4BIT
     sdcStart(&SDCD1, NULL);
+#endif
 
     if(sdcConnect(&SDCD1) == HAL_FAILED) {
         printf("Err: Failed to initialize SDIO!\n");
