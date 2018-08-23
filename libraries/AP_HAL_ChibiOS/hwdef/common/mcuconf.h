@@ -85,7 +85,7 @@
 
 #ifndef STM32_PLLM_VALUE
     #ifdef STM32_HSECLK                     // == OSCILLATOR_HZ
-        #define STM32_PLLM_VALUE            (STM32_HSECLK/1e6)
+        #define STM32_PLLM_VALUE            (STM32_HSECLK / 1000000)
     #else
         #define STM32_PLLM_VALUE            24 // assume STM32_HSECLK = 24e6 = 24 MHz
     #endif
