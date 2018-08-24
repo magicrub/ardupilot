@@ -5,6 +5,7 @@ MCU STM32F4xx STM32F427xx
 
 # board ID for firmware load
 APJ_BOARD_ID 113
+define CONFIG_HAL_BOARD_SUBTYPE HAL_BOARD_SUBTYPE_CHIBIOS_FAP
 
 # crystal frequency
 OSCILLATOR_HZ 16000000
@@ -19,9 +20,9 @@ STM32_ST_USE_TIMER 5
 # flash size
 FLASH_SIZE_KB 2048
 
-#STDOUT_SERIAL SD7
-#STDOUT_BAUDRATE 57600
-
+# serial port for stdout
+STDOUT_SERIAL SD8
+STDOUT_BAUDRATE 57600
 
 # order of UARTs
 UART_ORDER UART8 USART3 USART6
@@ -52,13 +53,13 @@ PA14 JTCK-SWCLK SWD
 
 # This defines a couple of general purpose outputs, mapped to GPIO
 # numbers 1 and 2 for users.
-PE9 EXTERN_GPIO1 OUTPUT GPIO(1)
-PE10 EXTERN_GPIO2 OUTPUT GPIO(2)
-PE11 EXTERN_GPIO3 OUTPUT GPIO(3)
-#PE12 EXTERN_GPIO4 OUTPUT GPIO(4)
+#PE9 EXTERN_GPIO1 OUTPUT GPIO(1)
+PE10 EXTERN_GPIO2 OUTPUT GPIO(1)
+#PE11 EXTERN_GPIO3 OUTPUT GPIO(3)
+PE12 EXTERN_GPIO4 OUTPUT GPIO(2)
 #PE13 EXTERN_GPIO5 OUTPUT GPIO(5)
 #PE14 EXTERN_GPIO6 OUTPUT GPIO(6)
-#PE15 EXTERN_GPIO7 OUTPUT GPIO(7)
+PE15 EXTERN_GPIO7 OUTPUT GPIO(3)
 
 
 # Now the first I2C bus. The pin speeds are automatically setup
@@ -86,12 +87,12 @@ define HAL_USE_SDC_SDIO_1BIT_DATA_WIDTH TRUE
 # outputs on the primary MCU are setup as PWM and how many as
 # GPIOs. To match HAL_PX4 we number the GPIOs for the PWM outputs
 # starting at 50.
-PE12 TIM1_CH3N TIM1 PWM(1) GPIO(50)
+PE14 TIM1_CH4 TIM1 PWM(1) GPIO(50)
 PE13 TIM1_CH3 TIM1 PWM(2) GPIO(51)
-PE14 TIM1_CH4 TIM1 PWM(3) GPIO(52)
-#PE15 TIM1_CH? TIM1 PWM(4) GPIO(53)
+PE11 TIM1_CH2 TIM1 PWM(3) GPIO(52)
+PE9  TIM1_CH1 TIM1 PWM(4) GPIO(53)
 
-define BOARD_PWM_COUNT_DEFAULT 3
+define BOARD_PWM_COUNT_DEFAULT 4
 
 
 # Now the SPI device table. This table creates all accessible SPI
@@ -110,19 +111,9 @@ define BOARD_PWM_COUNT_DEFAULT 3
 # of ArduPilot so users don't need to re-do their accel and compass
 # calibrations when moving to ChibiOS.
 
-#SPIDEV ms5611         SPI1 DEVID3  BARO_CS      MODE3 20*MHZ 20*MHZ
 SPIDEV mpu6500        SPI1 DEVID1  MPU_CS       MODE3  2*MHZ  8*MHZ
-#SPIDEV mpu9250        SPI1 DEVID4  MPU_CS       MODE3  4*MHZ  8*MHZ
-#SPIDEV hmc5843        SPI1 DEVID5  MAG_CS       MODE3 11*MHZ 11*MHZ
 
-# Now some commented out SPI device names which can be used by
-# developers to test that the clock calculations are right for a
-# bus. This is used in conjunction with the mavproxy devop module.
-
-# This adds a C define which sets up the ArduPilot architecture
-# define. Any line starting with 'define' is copied literally as
-# a #define in the hwdef.h header.
-define HAL_CHIBIOS_ARCH_FMUV3 1
+define CONFIG_ARCH_BOARD_FAP 1
 
 # Nnow some defines for logging and terrain data files.
 define HAL_BOARD_LOG_DIRECTORY "/APM/LOGS"
@@ -130,7 +121,7 @@ define HAL_BOARD_TERRAIN_DIRECTORY "/APM/TERRAIN"
 
 # We need to tell HAL_ChibiOS/Storage.cpp how much storage is
 # available (in bytes).
-define HAL_STORAGE_SIZE 16384
+define HAL_STORAGE_SIZE 15360
 
 # Now define fallback storage location is flash if no FRAM
 # fitted. This needs to be carefully chosen to align with your
@@ -142,10 +133,27 @@ define FLASH_RESERVE_START_KB 64
 # Enable FAT filesystem support (needs a microSD defined via SDIO).
 define HAL_OS_FATFS_IO 1
 
-# This defines the default maximum clock on I2C devices.
-define HAL_I2C_MAX_CLOCK 100000
-
 # We can't share the IO UART (USART6).
-DMA_NOSHARE USART6_TX USART6_RX ADC1
+DMA_NOSHARE USART6_TX USART6_RX
 DMA_PRIORITY USART6*
+
+define HAL_COMPASS_DEFAULT HAL_COMPASS_NONE
+#define HAL_COMPASS_DEFAULT HAL_COMPASS_HMC5843
+#define HAL_COMPASS_DEFAULT HAL_COMPASS_MAG3110
+define HAL_COMPASS_MAG3110_I2C_BUS 0
+define HAL_COMPASS_HMC5883_I2C_BUS 0
+define HAL_COMPASS_MAG3110_I2C_ADDR 0x1C
+define HAL_COMPASS_HMC5883_I2C_ADDR 0x3C
+
+define HAL_INS_DEFAULT HAL_INS_NONE
+#define HAL_INS_DEFAULT HAL_INS_MPU6500
+define HAL_INS_DEFAULT_ROTATION ROTATION_ROLL_180_YAW_270
+
+define HAL_BARO_DEFAULT HAL_BARO_MS5611_I2C
+define HAL_BARO_MS5611_I2C_BUS 0
+define HAL_BARO_MS5611_I2C_ADDR 0x77
+# maybe MS5607 or MS5611
+# maybe I2C_ADDR 0x77 or 0xEE
+
+
 
