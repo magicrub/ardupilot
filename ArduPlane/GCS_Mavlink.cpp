@@ -1525,7 +1525,7 @@ void GCS_MAVLINK_Plane::handleMessage(mavlink_message_t* msg)
  */
 void Plane::mavlink_delay_cb()
 {
-    static uint32_t last_1hz, last_50hz, last_5s;
+    static uint32_t last_1hz, last_400hz, last_5s;
     if (!gcs().chan(0).initialised) return;
 
     DataFlash.EnableWrites(false);
@@ -1536,8 +1536,8 @@ void Plane::mavlink_delay_cb()
         gcs().send_message(MSG_HEARTBEAT);
         gcs().send_message(MSG_EXTENDED_STATUS1);
     }
-    if (tnow - last_50hz > 20) {
-        last_50hz = tnow;
+    if (tnow - last_400hz > 2) {
+        last_400hz = tnow;
         gcs_update();
         gcs_data_stream_send();
         notify.update();

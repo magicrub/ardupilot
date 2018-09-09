@@ -144,7 +144,7 @@ public:
         NUM_STREAMS
     };
 
-    // see if we should send a stream now. Called at 50Hz
+    // see if we should send a stream now. Called at 400Hz
     bool        stream_trigger(enum streams stream_num);
 
     bool is_high_bandwidth() { return chan == MAVLINK_COMM_0; }
