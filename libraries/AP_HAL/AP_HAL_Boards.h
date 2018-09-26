@@ -196,7 +196,7 @@
 #endif
 
 #ifndef HAL_PARAM_DEFAULTS_PATH
-#define HAL_PARAM_DEFAULTS_PATH nullptr
+#define HAL_PARAM_DEFAULTS_PATH "Linux.param"
 #endif
 
 #ifndef HAL_HAVE_IMU_HEATER
