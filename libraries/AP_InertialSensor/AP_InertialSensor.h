@@ -26,6 +26,7 @@
 #include <Filter/LowPassFilter2p.h>
 #include <Filter/LowPassFilter.h>
 #include <Filter/NotchFilter.h>
+#include <GCS_MAVLink/GCS_MAVLink.h>
 
 class AP_InertialSensor_Backend;
 class AuxiliaryBus;
@@ -191,6 +192,10 @@ public:
         _board_orientation = orientation;
         _custom_rotation = custom_rotation;
     }
+
+    // inbound mavlink handler
+    void handle_mavlink_values(const uint16_t msg_id, Vector3f &accel, Vector3f &gyro);
+    bool accept_mavlink_values() { return _enabled_mavlink_injest != 0; }
 
     // return the selected sample rate
     uint16_t get_sample_rate(void) const { return _sample_rate; }
@@ -544,6 +549,9 @@ private:
 
     // threshold for detecting stillness
     AP_Float _still_threshold;
+
+    // enable injecting MAVLink sensor data
+    AP_Int8 _enabled_mavlink_injest;
 
     /*
       state for HIL support

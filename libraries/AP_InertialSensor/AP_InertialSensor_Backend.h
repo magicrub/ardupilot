@@ -48,6 +48,9 @@ public:
     // override with a custom destructor if need be.
     virtual ~AP_InertialSensor_Backend(void) {}
 
+    // inbound mavlink handler
+    virtual void handle_mavlink_values(const uint16_t msg_id, Vector3f &accel, Vector3f &gyro) {}
+
     /*
      * Update the sensor data. Called by the frontend to transfer
      * accumulated sensor readings to the frontend structure via the
@@ -106,6 +109,7 @@ public:
         DEVTYPE_INS_ICM20689 = 0x28,
         DEVTYPE_INS_BMI055   = 0x29,
         DEVTYPE_SITL         = 0x2A,
+        DEVTYPE_MAVLINK      = 0x2B,
     };
 
 protected:

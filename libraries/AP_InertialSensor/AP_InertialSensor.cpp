@@ -9,11 +9,13 @@
 #include <AP_Vehicle/AP_Vehicle.h>
 #include <AP_BoardConfig/AP_BoardConfig.h>
 #include <AP_AHRS/AP_AHRS.h>
+#include <GCS_MAVLink/GCS.h>
 
 #include "AP_InertialSensor.h"
 #include "AP_InertialSensor_BMI160.h"
 #include "AP_InertialSensor_Backend.h"
 #include "AP_InertialSensor_HIL.h"
+#include "AP_InertialSensor_MAV.h"
 #include "AP_InertialSensor_L3G4200D.h"
 #include "AP_InertialSensor_LSM9DS0.h"
 #include "AP_InertialSensor_LSM9DS1.h"
@@ -443,7 +445,15 @@ const AP_Param::GroupInfo AP_InertialSensor::var_info[] = {
     // @Values: 1:FirstIMUOnly,3:FirstAndSecondIMU,7:FirstSecondAndThirdIMU,127:AllIMUs
     // @Bitmask: 0:FirstIMU,1:SecondIMU,2:ThirdIMU
     AP_GROUPINFO("ENABLE_MASK",  40, AP_InertialSensor, _enable_mask, 0x7F),
-    
+
+    // @Param: MAV_EN
+    // @DisplayName: Enable MAVLink sensor sources
+    // @Description: Enable incoming MAVLink packets that contain inertial data to be sources of data
+    // @Values: 0:Disabled,1:Enabled
+    // @User: Advanced
+    // @RebootRequired: True
+    AP_GROUPINFO("MAV_EN", 41, AP_InertialSensor, _enabled_mavlink_injest, 0),
+
     /*
       NOTE: parameter indexes have gaps above. When adding new
       parameters check for conflicts carefully
@@ -692,6 +702,12 @@ AP_InertialSensor::detect_backends(void)
         ADD_BACKEND(AP_InertialSensor_HIL::detect(*this));
         return;
     }
+
+    if (accept_mavlink_values()) {
+        ADD_BACKEND(AP_InertialSensor_MAV::detect(*this));
+        return;
+    }
+
 #if CONFIG_HAL_BOARD == HAL_BOARD_SITL
     ADD_BACKEND(AP_InertialSensor_SITL::detect(*this));
 #elif HAL_INS_DEFAULT == HAL_INS_HIL
@@ -1985,6 +2001,18 @@ MAV_RESULT AP_InertialSensor::simple_accel_cal()
 
     return result;
 }
+
+void AP_InertialSensor::handle_mavlink_values(const uint16_t msg_id, Vector3f &accel, Vector3f &gyro)
+{
+    if (!accept_mavlink_values()) {
+        return;
+    }
+
+    for (uint8_t i=0; i<_backend_count; i++) {
+        _backends[i]->handle_mavlink_values(msg_id, accel, gyro);
+    }
+}
+
 
 
 namespace AP {
