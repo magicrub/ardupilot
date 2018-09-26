@@ -20,6 +20,7 @@
 #include "Storage.h"
 #include "RCOutput.h"
 #include "RCInput.h"
+#include "GCS_MAVLink/GCS.h"
 
 #include <AP_Scheduler/AP_Scheduler.h>
 #include <AP_BoardConfig/AP_BoardConfig.h>
@@ -303,6 +304,7 @@ void *PX4Scheduler::_uart_thread(void *arg)
         hal.uartD->_timer_tick();
         hal.uartE->_timer_tick();
         hal.uartF->_timer_tick();
+        gcs().update();
     }
     return nullptr;
 }
