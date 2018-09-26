@@ -24,6 +24,7 @@
 #include <AP_Math/AP_Math.h>
 #include "Scheduler.h"
 #include "hwdef/common/stm32_util.h"
+#include "GCS_MAVLink/GCS.h"
 
 extern const AP_HAL::HAL& hal;
 
@@ -88,6 +89,7 @@ void UARTDriver::uart_thread(void* arg)
                 uart_drivers[i]->_timer_tick();
             }
         }
+        gcs().update();
     }
 }
 
