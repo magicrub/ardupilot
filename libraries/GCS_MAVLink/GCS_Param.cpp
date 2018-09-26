@@ -307,14 +307,14 @@ bool GCS_MAVLINK::stream_trigger(enum streams stream_num)
 
     if (stream_ticks[stream_num] == 0) {
         // we're triggering now, setup the next trigger point
-        if (rate > 50) {
-            rate = 50;
+        if (rate > 400) {
+            rate = 400;
         }
-        stream_ticks[stream_num] = (50 / rate) - 1 + stream_slowdown;
+        stream_ticks[stream_num] = (400 / rate) - 1 + stream_slowdown;
         return true;
     }
 
-    // count down at 50Hz
+    // count down at 400Hz
     stream_ticks[stream_num]--;
     return false;
 }
