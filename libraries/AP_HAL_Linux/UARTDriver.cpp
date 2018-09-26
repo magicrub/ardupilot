@@ -69,8 +69,13 @@ void UARTDriver::begin(uint32_t b, uint16_t rxS, uint16_t txS)
             _device = _parseDevicePath(device_path);
 
             if (!_device.get()) {
-                ::fprintf(stderr, "Argument is not valid. Fallback to console.\n"
-                          "Launch with --help to see an example.\n");
+                ::fprintf(stderr, "\n"
+                          "**** UARTDriver argument is not valid ****\n"
+                          "\n"
+                          "----->   %s\n"
+                          "\n"
+                          "Fallback to console.\n"
+                          "Launch with --help to see an example.\n", device_path);
                 _device = new ConsoleDevice();
             }
         }
