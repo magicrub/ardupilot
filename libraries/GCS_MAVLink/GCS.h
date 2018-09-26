@@ -276,6 +276,7 @@ protected:
 
     // saveable rate of each stream
     AP_Int16        streamRates[NUM_STREAMS];
+    AP_Int16        highspeed_stream_bitmask;
 
     virtual bool persist_streamrates() const { return false; }
     void handle_request_data_stream(mavlink_message_t *msg);
@@ -385,6 +386,26 @@ protected:
     static constexpr const float magic_force_disarm_value = 21196.0f;
 
 private:
+
+    enum GcsHighspeedStreamMask {
+        GCS_HIGHSPEED_STREAM_MASK_SERVO_OUT     = (1 << 0),
+        GCS_HIGHSPEED_STREAM_MASK_IMU_MAG       = (1 << 1),
+        GCS_HIGHSPEED_STREAM_MASK_GPS           = (1 << 2),
+        GCS_HIGHSPEED_STREAM_MASK_BARO          = (1 << 3),
+        GCS_HIGHSPEED_STREAM_MASK_RC_IN         = (1 << 4),
+    };
+
+    enum GcsHighspeedStreamIndex {
+        GCS_HIGHSPEED_STREAM_INDEX_IMU_MAG      = 0,
+        GCS_HIGHSPEED_STREAM_INDEX_GPS          = 1,
+        GCS_HIGHSPEED_STREAM_INDEX_BARO         = 2,
+        GCS_HIGHSPEED_STREAM_INDEX_SERVO_OUT    = 3,
+        GCS_HIGHSPEED_STREAM_INDEX_RC_IN        = 4,
+        GCS_HIGHSPEED_STREAM_INDEX_COUNT        = 5, // must be last
+    };
+
+    uint32_t highspeed_stream_last_ms[GCS_HIGHSPEED_STREAM_INDEX_COUNT] = {0};
+    void send_highspeed_streams();
 
     float       adjust_rate_for_stream_trigger(enum streams stream_num);
 
@@ -497,6 +518,8 @@ private:
 
     void send_distance_sensor(const AP_RangeFinder_Backend *sensor, const uint8_t instance) const;
 
+    void handle_imu(const mavlink_message_t *msg);
+
     virtual bool handle_guided_request(AP_Mission::Mission_Command &cmd) = 0;
     virtual void handle_change_alt_request(AP_Mission::Mission_Command &cmd) = 0;
     void handle_common_mission_message(mavlink_message_t *msg);
@@ -597,6 +620,7 @@ public:
     virtual const GCS_MAVLINK &chan(const uint8_t ofs) const = 0;
     virtual uint8_t num_gcs() const = 0;
     void send_message(enum ap_message id);
+    void send_servo_output_raw(void);
     void send_mission_item_reached_message(uint16_t mission_index);
     void send_named_float(const char *name, float value) const;
     void send_home() const;

@@ -905,6 +905,216 @@ void GCS_MAVLINK::packetReceived(const mavlink_status_t &status,
     }
 }
 
+void GCS_MAVLINK::send_highspeed_streams()
+{
+    uint32_t now_ms = AP_HAL::millis();
+
+    if ((highspeed_stream_bitmask & GCS_HIGHSPEED_STREAM_MASK_IMU_MAG) &&
+            HAVE_PAYLOAD_SPACE(chan,SCALED_IMU) &&
+            highspeed_stream_last_ms[GCS_HIGHSPEED_STREAM_INDEX_IMU_MAG] != AP::ins().get_last_update_usec())
+    {
+        // NOTE: this is usec but we don't care, we're just looking for it to change
+        highspeed_stream_last_ms[GCS_HIGHSPEED_STREAM_INDEX_IMU_MAG] = AP::ins().get_last_update_usec();
+
+        // fetch data
+        Vector3f accel = AP::ins().get_accel();
+        Vector3f gyro = AP::ins().get_gyro();
+        const Vector3f mag = AP::compass().use_for_yaw() ? AP::compass().get_field() : Vector3f(0,0,0);
+
+#if 0
+        static uint32_t debug_imu_ms = 0;
+        if (now_ms - debug_imu_ms >= 1000) {
+            debug_imu_ms = now_ms;
+            gcs().send_text(MAV_SEVERITY_DEBUG,"%d Tx IMU: a=%.3f,%.3f,%.3f",now_ms,
+                #if 1
+                    accel.x, accel.y, accel.z);
+                #else
+                    gyro.x, gyro.y, gyro.z);
+                #endif
+        }
+#endif
+
+        // convert units to MAVLink
+        accel *= (1000.0f / GRAVITY_MSS);
+        gyro *= 1000.0f;
+
+#if 1
+        mavlink_msg_scaled_imu_send(
+#else
+        mavlink_msg_raw_imu_send(
+#endif
+            chan,
+            now_ms,
+            (int16_t)accel.x,    // units converted above
+            (int16_t)accel.y,    // units converted above
+            (int16_t)accel.z,    // units converted above
+            (int16_t)gyro.x,     // units converted above
+            (int16_t)gyro.y,     // units converted above
+            (int16_t)gyro.z,     // units converted above
+            (int16_t)mag.x,
+            (int16_t)mag.y,
+            (int16_t)mag.z);
+    }
+
+
+
+    if ((highspeed_stream_bitmask & GCS_HIGHSPEED_STREAM_MASK_BARO) &&
+            HAVE_PAYLOAD_SPACE(chan,SCALED_PRESSURE) &&
+            highspeed_stream_last_ms[GCS_HIGHSPEED_STREAM_INDEX_BARO] != AP::baro().get_last_update())
+    {
+        highspeed_stream_last_ms[GCS_HIGHSPEED_STREAM_INDEX_BARO] = AP::baro().get_last_update();
+
+        // fetch data
+        float pressure = AP::baro().get_pressure();
+        const float temperature = AP::baro().get_temperature();
+
+#if 0
+        static uint32_t debug_baro_ms = 0;
+        static uint32_t debug_baro_sends_per_second = 0;
+        debug_baro_sends_per_second++;
+        if (now_ms - debug_baro_ms >= 1000) {
+            debug_baro_ms = now_ms;
+            gcs().send_text(MAV_SEVERITY_DEBUG,"%d Tx Baro: %d, %.1fC, %.2f",now_ms, debug_baro_sends_per_second, temperature, pressure);
+            debug_baro_sends_per_second = 0;
+        }
+#endif
+
+        // convert units to MAVLink
+        pressure *= 0.01f;
+        int16_t temperature_int16 = temperature*100;
+
+        mavlink_msg_scaled_pressure_send(
+            chan,
+            now_ms,
+            pressure, // hectopascal, units converted above
+            0,
+            temperature_int16); // 0.01 degrees C, units converted above
+    }
+
+
+
+    const bool got_new_gps_msg = AP::gps().last_message_time_ms() >= highspeed_stream_last_ms[GCS_HIGHSPEED_STREAM_INDEX_GPS];
+    const bool its_been_a_while = (now_ms - highspeed_stream_last_ms[GCS_HIGHSPEED_STREAM_INDEX_GPS]) >= 500;
+
+    if ((highspeed_stream_bitmask & GCS_HIGHSPEED_STREAM_MASK_GPS) &&
+            HAVE_PAYLOAD_SPACE(chan,GPS_INPUT) &&
+            (got_new_gps_msg || its_been_a_while))
+    {
+        highspeed_stream_last_ms[GCS_HIGHSPEED_STREAM_INDEX_GPS] = now_ms;
+
+        uint16_t ignore_flags = 0;
+
+        float speed_accuracy = 0;
+        if (!AP::gps().speed_accuracy(speed_accuracy)) {
+            ignore_flags |= GPS_INPUT_IGNORE_FLAG_SPEED_ACCURACY;
+        }
+        float horizontal_accuracy = 0;
+        if (!AP::gps().horizontal_accuracy(horizontal_accuracy)) {
+            ignore_flags |= GPS_INPUT_IGNORE_FLAG_HORIZONTAL_ACCURACY;
+        }
+        float vertical_accuracy = 0;
+        if (!AP::gps().vertical_accuracy(vertical_accuracy)) {
+            ignore_flags |= GPS_INPUT_IGNORE_FLAG_VERTICAL_ACCURACY;
+        }
+
+        Vector3f vel = AP::gps().velocity();
+        if (!AP::gps().have_vertical_velocity()) {
+            ignore_flags |= GPS_INPUT_IGNORE_FLAG_VEL_VERT;
+            vel.z = 0;
+        }
+
+        uint16_t hdop = AP::gps().get_hdop();
+        if (hdop == GPS_UNKNOWN_DOP) {
+            ignore_flags |= GPS_INPUT_IGNORE_FLAG_HDOP;
+        }
+
+        uint16_t vdop = AP::gps().get_vdop();
+        if (vdop == GPS_UNKNOWN_DOP) {
+            ignore_flags |= GPS_INPUT_IGNORE_FLAG_VDOP;
+        }
+
+        // convert units:
+        const float alt_f = (float)AP::gps().location().alt * 0.01f;
+        const float hdop_f = (float)hdop * 0.01f;
+        const float vdop_f = (float)vdop * 0.01f;
+
+        mavlink_msg_gps_input_send(
+            chan,
+            now_ms,
+            0, //uint8_t gps_id,
+            ignore_flags,
+            AP::gps().time_week_ms(),
+            AP::gps().time_week(),
+            AP::gps().status(),
+            AP::gps().location().lat,
+            AP::gps().location().lng,
+            alt_f,      // units converted above
+            hdop_f,     // units converted above
+            vdop_f,     // units converted above
+            vel.x,
+            vel.y,
+            vel.z,
+            speed_accuracy,
+            horizontal_accuracy,
+            vertical_accuracy,
+            AP::gps().num_sats());
+
+#if 0
+        static uint32_t debug_gps_ms = 0;
+        if (now_ms - debug_gps_ms >= 1000) {
+            debug_gps_ms = now_ms;
+            gcs().send_text(MAV_SEVERITY_DEBUG,"%d Tx GPS: sats:%d, fix:%d, lat: %d, lng: %d",now_ms, AP::gps().num_sats(), AP::gps().status(), AP::gps().location().lat, AP::gps().location().lng);
+        }
+#endif
+
+    }
+
+
+    if ((highspeed_stream_bitmask & GCS_HIGHSPEED_STREAM_MASK_SERVO_OUT) &&
+            HAVE_PAYLOAD_SPACE(chan,SERVO_OUTPUT_RAW) &&
+            now_ms - highspeed_stream_last_ms[GCS_HIGHSPEED_STREAM_INDEX_SERVO_OUT] >= 10)
+    {
+        highspeed_stream_last_ms[GCS_HIGHSPEED_STREAM_INDEX_SERVO_OUT] = now_ms;
+        send_servo_output_raw();
+    }
+
+
+    if ((highspeed_stream_bitmask & GCS_HIGHSPEED_STREAM_MASK_RC_IN) &&
+            HAVE_PAYLOAD_SPACE(chan,RC_CHANNELS_OVERRIDE) &&
+            now_ms - highspeed_stream_last_ms[GCS_HIGHSPEED_STREAM_INDEX_RC_IN] >= 20)
+    {
+        highspeed_stream_last_ms[GCS_HIGHSPEED_STREAM_INDEX_RC_IN] = now_ms;
+
+        uint16_t values[MAVLINK_MSG_ID_RC_CHANNELS_OVERRIDE_LEN] = {};
+        rc().get_radio_in(values, MAVLINK_MSG_ID_RC_CHANNELS_OVERRIDE_LEN);
+
+
+        mavlink_msg_rc_channels_override_send(
+                chan,
+                0, // target_system
+                0, // target_component
+                values[0],
+                values[1],
+                values[2],
+                values[3],
+                values[4],
+                values[5],
+                values[6],
+                values[7],
+                values[8],
+                values[9],
+                values[10],
+                values[11],
+                values[12],
+                values[13],
+                values[14],
+                values[15],
+                values[16],
+                values[17]);
+    }
+
+}
+
 void
 GCS_MAVLINK::update(uint32_t max_time_us)
 {
@@ -915,6 +1125,12 @@ GCS_MAVLINK::update(uint32_t max_time_us)
     uint32_t now_ms = AP_HAL::millis();
 
     hal.util->perf_begin(_perf_update);
+
+    if (highspeed_stream_bitmask) {
+        // 400 Hz sends
+        send_highspeed_streams();
+    }
+
 
     status.packet_rx_drop_count = 0;
 
@@ -1390,6 +1606,15 @@ void GCS::send_mission_item_reached_message(uint16_t mission_index)
         if (chan(i).initialised) {
             chan(i).mission_item_reached_index = mission_index;
             chan(i).send_message(MSG_MISSION_ITEM_REACHED);
+        }
+    }
+}
+
+void GCS::send_servo_output_raw(void)
+{
+    for (uint8_t i=0; i<num_gcs(); i++) {
+        if (chan(i).initialised) {
+            chan(i).send_servo_output_raw();
         }
     }
 }
@@ -2411,11 +2636,86 @@ void GCS_MAVLINK::handle_common_message(mavlink_message_t *msg)
         handle_att_pos_mocap(msg);
         break;
 
+    case MAVLINK_MSG_ID_RAW_PRESSURE:
+    case MAVLINK_MSG_ID_SCALED_PRESSURE:
+        AP::baro().handle_msg(msg);
+        break;
+
+    case MAVLINK_MSG_ID_RAW_IMU:
+    case MAVLINK_MSG_ID_SCALED_IMU:
+    case MAVLINK_MSG_ID_SCALED_IMU2:
+    case MAVLINK_MSG_ID_SCALED_IMU3:
+        handle_imu(msg);
+        break;
+
     case MAVLINK_MSG_ID_SYSTEM_TIME:
         handle_system_time_message(msg);
         break;
     }
+}
 
+void GCS_MAVLINK::handle_imu(const mavlink_message_t *msg)
+{
+    // since these packets will be coming in very fast (like >100hz), and the
+    // content is for multiple libraries (ins and compass), then lets decode here
+    // and forward up the contents. That lets us decode just once which is a
+    // fairly expensive operation when at very high speeds
+
+    if (!AP::ins().accept_mavlink_values() && !AP::compass().accept_mavlink_values()) {
+        // these are not the packets you are looking for...
+    }
+
+    Vector3f accel, gyro, mag;
+
+    switch (msg->msgid) {
+//    case MAVLINK_MSG_ID_RAW_IMU:
+//        {
+//        mavlink_raw_imu_t packet;
+//        mavlink_msg_raw_imu_decode(msg, &packet);
+//        accel = Vector3f(packet.xacc, packet.yacc, packet.zacc);
+//        gyro = Vector3f(packet.xgyro, packet.ygyro, packet.zgyro);
+//        mag = Vector3f(packet.xmag, packet.ymag, packet.zmag);
+//
+//        // TODO: undefined and therefore unknown units
+//        }
+//        break;
+
+    case MAVLINK_MSG_ID_SCALED_IMU:
+        {
+        mavlink_scaled_imu_t packet;
+        mavlink_msg_scaled_imu_decode(msg, &packet);
+        accel = Vector3f(packet.xacc, packet.yacc, packet.zacc);
+        gyro = Vector3f(packet.xgyro, packet.ygyro, packet.zgyro);
+        mag = Vector3f(packet.xmag, packet.ymag, packet.zmag);
+        }
+        break;
+//
+//    case MAVLINK_MSG_ID_SCALED_IMU2:
+//        {
+//        mavlink_scaled_imu2_t packet;
+//        mavlink_msg_scaled_imu2_decode(msg, &packet);
+//        accel = Vector3f(packet.xacc, packet.yacc, packet.zacc);
+//        gyro = Vector3f(packet.xgyro, packet.ygyro, packet.zgyro);
+//        mag = Vector3f(packet.xmag, packet.ymag, packet.zmag);
+//        }
+//        break;
+//
+//    case MAVLINK_MSG_ID_SCALED_IMU3:
+//        {
+//        mavlink_scaled_imu3_t packet;
+//        mavlink_msg_scaled_imu3_decode(msg, &packet);
+//        accel = Vector3f(packet.xacc, packet.yacc, packet.zacc);
+//        gyro = Vector3f(packet.xgyro, packet.ygyro, packet.zgyro);
+//        mag = Vector3f(packet.xmag, packet.ymag, packet.zmag);
+//        }
+//        break;
+
+    default:
+        return;
+    }
+
+    AP::ins().handle_mavlink_values(msg->msgid, accel, gyro);
+    AP::compass().handle_mavlink_values(msg->msgid, mag);
 }
 
 void GCS_MAVLINK::handle_common_mission_message(mavlink_message_t *msg)
