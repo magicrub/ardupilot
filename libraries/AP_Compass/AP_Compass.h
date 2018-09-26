@@ -132,6 +132,9 @@ public:
         _per_motor.calibration_end();
     }
     
+    void handle_mavlink_values(const uint16_t msg_id, Vector3f &mag);
+    bool accept_mavlink_values() { return _enabled_mavlink_injest != 0; }
+
     void start_calibration_all(bool retry=false, bool autosave=false, float delay_sec=0.0f, bool autoreboot = false);
 
     void cancel_calibration_all();
@@ -376,6 +379,7 @@ private:
         DRIVER_QMC5883  =12,
         DRIVER_SITL     =13,
         DRIVER_MAG3110  =14,
+        DRIVER_MAVLINK  =15,
     };
 
     bool _driver_enabled(enum DriverType driver_type);
@@ -399,6 +403,9 @@ private:
 
     // declination in radians
     AP_Float    _declination;
+
+    // enable injectign MAVLink sensor data
+    AP_Int8     _enabled_mavlink_injest;
 
     // enable automatic declination code
     AP_Int8     _auto_declination;

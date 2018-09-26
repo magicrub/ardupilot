@@ -34,6 +34,9 @@ public:
     // read sensor data
     virtual void read(void) = 0;
 
+    // inbound mavlink handler
+    virtual void handle_mavlink_values(const uint16_t msg_id, Vector3f &mag) {}
+
     /*
       device driver IDs. These are used to fill in the devtype field
       of the device ID, which shows up as COMPASS*ID* parameters to
@@ -57,6 +60,7 @@ public:
         DEVTYPE_QMC5883L = 0x0D,
         DEVTYPE_MAG3110  = 0x0E,
         DEVTYPE_SITL  = 0x0F,
+        DEVTYPE_MAV     = 0x10,
     };
 
 

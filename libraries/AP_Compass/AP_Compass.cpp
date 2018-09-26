@@ -10,6 +10,7 @@
 #include "AP_Compass_Backend.h"
 #include "AP_Compass_BMM150.h"
 #include "AP_Compass_HIL.h"
+#include "AP_Compass_MAV.h"
 #include "AP_Compass_HMC5843.h"
 #include "AP_Compass_IST8310.h"
 #include "AP_Compass_LSM303D.h"
@@ -470,7 +471,15 @@ const AP_Param::GroupInfo Compass::var_info[] = {
     // @Description: The expected value of COMPASS_DEV_ID3, used by arming checks. Setting this to -1 means "don't care."
     // @User: Advanced
     AP_GROUPINFO("EXP_DID3", 38, Compass, _state[2].expected_dev_id, -1),
-    
+
+    // @Param: MAV_EN
+    // @DisplayName: Enable MAVLink sensor sources
+    // @Description: Enable incoming MAVLink packets that contain magnetic data to be sources of data
+    // @Values: 0:Disabled,1:Enabled
+    // @User: Advanced
+    // @RebootRequired: True
+    AP_GROUPINFO("MAV_EN", 39, Compass, _enabled_mavlink_injest, 0),
+
     AP_GROUPEND
 };
 
@@ -704,6 +713,11 @@ void Compass::_detect_backends(void)
     ADD_BACKEND(DRIVER_SITL, new AP_Compass_SITL());
     return;
 #endif
+
+    if (accept_mavlink_values()) {
+        ADD_BACKEND(DRIVER_MAVLINK, new AP_Compass_MAV());
+        return;
+    }
 
 #ifdef HAL_PROBE_EXTERNAL_I2C_COMPASSES
     // allow boards to ask for external probing of all i2c compass types in hwdef.dat
@@ -1309,6 +1323,17 @@ bool Compass::consistent() const
     return true;
 }
 
+
+void Compass::handle_mavlink_values(const uint16_t msg_id, Vector3f &mag)
+{
+    if (!accept_mavlink_values()) {
+        return;
+    }
+
+    for (uint8_t i=0; i<_backend_count; i++) {
+        _backends[i]->handle_mavlink_values(msg_id, mag);
+    }
+}
 
 // singleton instance
 Compass *Compass::_singleton;
