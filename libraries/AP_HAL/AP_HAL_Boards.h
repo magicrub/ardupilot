@@ -95,6 +95,7 @@
 #define HAL_INS_RST         21
 #define HAL_INS_LSM9DS1     22
 #define HAL_INS_ICM20789_SPI 23
+#define HAL_INS_MAV         1313
 
 /* Barometer driver types */
 #define HAL_BARO_NONE        0
@@ -115,6 +116,7 @@
 #define HAL_BARO_LPS25H_IMU_I2C 17
 #define HAL_BARO_FBM320_I2C 18
 #define HAL_BARO_DPS280_I2C 19
+#define HAL_BARO_MAV        1313
 
 /* Compass driver types */
 #define HAL_COMPASS_NONE                0
@@ -138,6 +140,7 @@
 #define HAL_COMPASS_BMM150_I2C         21
 #define HAL_COMPASS_QMC5883L           22
 #define HAL_COMPASS_IST8310            23
+#define HAL_COMPASS_MAV                1313
 
 /* Heat Types */
 #define HAL_LINUX_HEAT_PWM 1
