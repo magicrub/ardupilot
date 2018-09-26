@@ -19,6 +19,7 @@
 *.elf
 *.exe
 *.generated.h
+*.stackdump
 *.hex
 *.lst
 *.o
