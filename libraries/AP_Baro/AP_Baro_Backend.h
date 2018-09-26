@@ -20,6 +20,8 @@ public:
 
     void backend_update(uint8_t instance);
 
+    virtual void handle_msg(const mavlink_message_t *msg) { return ; }
+
     //  Check that the baro valid by using a mean filter.
     // If the value further that filtrer_range from mean value, it is rejected.
     bool pressure_ok(float press);

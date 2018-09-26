@@ -34,6 +34,7 @@
 #include "AP_Baro_BMP085.h"
 #include "AP_Baro_BMP280.h"
 #include "AP_Baro_HIL.h"
+#include "AP_Baro_MAV.h"
 #include "AP_Baro_KellerLD.h"
 #include "AP_Baro_MS5611.h"
 #include "AP_Baro_ICM20789.h"
@@ -161,6 +162,14 @@ const AP_Param::GroupInfo AP_Baro::var_info[] = {
     AP_GROUPINFO("PROBE_EXT", 14, AP_Baro, _baro_probe_ext, HAL_BARO_PROBE_EXT_DEFAULT),
 #endif
 
+    // @Param: MAV_EN
+    // @DisplayName: Enable MAVLink sensor sources
+    // @Description: Enable incoming MAVLink packets that contain barometic data to be sources of data
+    // @Values: 0:Disabled,1:Enabled
+    // @User: Advanced
+    // @RebootRequired: True
+    AP_GROUPINFO("MAV_EN", 15, AP_Baro, _enabled_mavlink_injest, 1),
+
     AP_GROUPEND
 };
 
@@ -183,6 +192,25 @@ void AP_Baro::calibrate(bool save)
 {
     gcs().send_text(MAV_SEVERITY_INFO, "Calibrating barometer");
 
+    if (accept_mavlink_values()) {
+        // for MAVLink based baro, let's check that we're getting data.
+        // If not, we Panic below and that's annoying to deal with so
+        // let's handle it gracefully here
+        uint32_t mav_start_update_ms = sensors[0].last_update_ms;
+        for (uint8_t i = 0; i < 10; i++) {
+            drivers[0]->backend_update(i);
+            if (mav_start_update_ms != sensors[0].last_update_ms) {
+                // sample has been received
+                break;
+            }
+            hal.scheduler->delay(100);
+        }
+        if (mav_start_update_ms == sensors[0].last_update_ms) {
+            gcs().send_text(MAV_SEVERITY_INFO, "Calibration skipped: timed out");
+            return;
+        }
+    }
+
     // reset the altitude offset when we calibrate. The altitude
     // offset is supposed to be for within a flight
     _alt_offset.set_and_save(0);
@@ -201,6 +229,10 @@ void AP_Baro::calibrate(bool save)
         do {
             update();
             if (AP_HAL::millis() - tstart > 500) {
+                if (accept_mavlink_values()) {
+                    gcs().send_text(MAV_SEVERITY_INFO, "Barometer calibration timed out");
+                    return;
+                }
                 AP_HAL::panic("PANIC: AP_Baro::read unsuccessful "
                         "for more than 500ms in AP_Baro::calibrate [2]\r\n");
             }
@@ -221,6 +253,10 @@ void AP_Baro::calibrate(bool save)
         do {
             update();
             if (AP_HAL::millis() - tstart > 500) {
+                if (accept_mavlink_values()) {
+                    gcs().send_text(MAV_SEVERITY_INFO, "Barometer calibration timed out");
+                    return;
+                }
                 AP_HAL::panic("PANIC: AP_Baro::read unsuccessful "
                         "for more than 500ms in AP_Baro::calibrate [3]\r\n");
             }
@@ -431,6 +467,11 @@ void AP_Baro::init(void)
     ADD_BACKEND(new AP_Baro_SITL(*this));
     return;
 #endif
+
+    if (accept_mavlink_values()) {
+        ADD_BACKEND(new AP_Baro_MAV(*this));
+        return;
+    }
 
 #if HAL_WITH_UAVCAN
     // Detect UAVCAN Modules, try as many times as there are driver slots
@@ -844,6 +885,18 @@ void AP_Baro::set_pressure_correction(uint8_t instance, float p_correction)
         sensors[instance].p_correction = p_correction;
     }
 }
+
+void AP_Baro::handle_msg(const mavlink_message_t *msg)
+{
+    if (!accept_mavlink_values()) {
+        return;
+    }
+
+    for (uint8_t i=0; i<_num_drivers; i++) {
+        drivers[i]->handle_msg(msg);
+    }
+}
+
 
 namespace AP {
 

@@ -4,6 +4,7 @@
 #include <AP_Param/AP_Param.h>
 #include <Filter/Filter.h>
 #include <Filter/DerivativeFilter.h>
+#include <GCS_MAVLink/GCS_MAVLink.h>
 
 // maximum number of sensor instances
 #define BARO_MAX_INSTANCES 3
@@ -47,6 +48,9 @@ public:
     // update the barometer object, asking backends to push data to
     // the frontend
     void update(void);
+
+    void handle_msg(const mavlink_message_t *msg);
+    bool accept_mavlink_values() { return _enabled_mavlink_injest != 0; }
 
     // healthy - returns true if sensor and derived altitude are good
     bool healthy(void) const { return healthy(_primary); }
@@ -209,6 +213,7 @@ private:
         PROBE_LPS25H=(1<<7),
         PROBE_KELLER=(1<<8),
         PROBE_MS5837=(1<<9),
+        PROBE_MAV   =(1<<10),
     };
     
     struct sensor {
@@ -238,6 +243,7 @@ private:
     AP_Float                            _user_ground_temperature; // user override of the ground temperature used for EAS2TAS
     bool                                _hil_mode:1;
     float                               _guessed_ground_temperature; // currently ground temperature estimate using our best abailable source
+    AP_Int8                             _enabled_mavlink_injest;
 
     // when did we last notify the GCS of new pressure reference?
     uint32_t                            _last_notify_ms;
