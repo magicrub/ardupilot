@@ -95,6 +95,7 @@ public:
         PRIORITY_RCIN,
         PRIORITY_IO,
         PRIORITY_UART,
+        PRIORITY_GCS,
         PRIORITY_STORAGE
     };
     
