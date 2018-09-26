@@ -459,6 +459,13 @@ const AP_Param::GroupInfo GCS_MAVLINK::var_info[] = {
     // @Increment: 1
     // @User: Advanced
     AP_GROUPINFO("ADSB",   9, GCS_MAVLINK, streamRates[9],  5),
+
+    // @Param: FAST_MASK
+    // @DisplayName: Enable Fast streaming at 400Hz
+    // @Description: Enable Fast streaming at 400Hz bitfield.
+    // @Bitmask: 0:ServoOut,1:IMU,2:Baro,3:GPS,4:RCin
+    // @User: Advanced
+    AP_GROUPINFO("FAST_MASK",   10, GCS_MAVLINK, highspeed_stream_bitmask,  0),
 AP_GROUPEND
 };
 
