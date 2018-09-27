@@ -194,7 +194,7 @@ public:
     void send_home() const;
     void send_ekf_origin() const;
     virtual void send_position_target_global_int() { };
-    void send_servo_output_raw();
+    void send_servo_output_raw(bool useSRVchannelSource);
     static void send_collision_all(const AP_Avoidance::Obstacle &threat, MAV_COLLISION_ACTION behaviour);
     void send_accelcal_vehicle_position(uint32_t position);
 
@@ -620,7 +620,7 @@ public:
     virtual const GCS_MAVLINK &chan(const uint8_t ofs) const = 0;
     virtual uint8_t num_gcs() const = 0;
     void send_message(enum ap_message id);
-    void send_servo_output_raw(void);
+    void send_servo_output_raw(bool useSRVchannelSource);
     void send_mission_item_reached_message(uint16_t mission_index);
     void send_named_float(const char *name, float value) const;
     void send_home() const;

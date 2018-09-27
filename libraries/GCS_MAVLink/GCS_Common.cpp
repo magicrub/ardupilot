@@ -1075,7 +1075,7 @@ void GCS_MAVLINK::send_highspeed_streams()
             now_ms - highspeed_stream_last_ms[GCS_HIGHSPEED_STREAM_INDEX_SERVO_OUT] >= 10)
     {
         highspeed_stream_last_ms[GCS_HIGHSPEED_STREAM_INDEX_SERVO_OUT] = now_ms;
-        send_servo_output_raw();
+        send_servo_output_raw(true);
     }
 
 
@@ -1610,11 +1610,11 @@ void GCS::send_mission_item_reached_message(uint16_t mission_index)
     }
 }
 
-void GCS::send_servo_output_raw(void)
+void GCS::send_servo_output_raw(bool useSRVchannelSource)
 {
     for (uint8_t i=0; i<num_gcs(); i++) {
         if (chan(i).initialised) {
-            chan(i).send_servo_output_raw();
+            chan(i).send_servo_output_raw(useSRVchannelSource);
         }
     }
 }
@@ -1920,10 +1920,10 @@ bool GCS_MAVLINK::telemetry_delayed() const
 /*
   send SERVO_OUTPUT_RAW
  */
-void GCS_MAVLINK::send_servo_output_raw()
+void GCS_MAVLINK::send_servo_output_raw(bool useSRVchannelSource)
 {
     uint16_t values[16] {};
-    if (in_hil_mode()) {
+    if (in_hil_mode() || useSRVchannelSource) {
         for (uint8_t i=0; i<16; i++) {
             values[i] = SRV_Channels::srv_channel(i)->get_output_pwm();
         }
@@ -3380,7 +3380,7 @@ bool GCS_MAVLINK::try_send_message(const enum ap_message id)
 
     case MSG_SERVO_OUTPUT_RAW:
         CHECK_PAYLOAD_SIZE(SERVO_OUTPUT_RAW);
-        send_servo_output_raw();
+        send_servo_output_raw(false);
         break;
 
     case MSG_SIMSTATE:
