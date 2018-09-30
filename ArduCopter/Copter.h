@@ -758,7 +758,6 @@ private:
     void send_rpm(mavlink_channel_t chan);
     void send_pid_tuning(mavlink_channel_t chan);
     void gcs_data_stream_send(void);
-    void gcs_update(void);
 
     // heli.cpp
     void heli_init();
