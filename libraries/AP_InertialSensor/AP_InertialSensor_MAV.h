@@ -27,7 +27,6 @@ public:
 
     bool update() override;
 
-    void accumulate() override;
     void start() override;
 
     void handle_mavlink_values(const uint16_t msg_id, Vector3f &accel, Vector3f &gyro) override;

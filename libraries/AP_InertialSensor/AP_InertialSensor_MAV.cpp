@@ -49,11 +49,6 @@ bool AP_InertialSensor_MAV::init_sensor(void)
     return true;
 }
 
-void AP_InertialSensor_MAV::accumulate()
-{
-    gcs().update();
-}
-
 void AP_InertialSensor_MAV::start()
 {
     const uint32_t dev_id_accel = AP_HAL::Device::make_bus_id(AP_HAL::Device::BUS_TYPE_MAV, 0, 1, DEVTYPE_MAVLINK);
