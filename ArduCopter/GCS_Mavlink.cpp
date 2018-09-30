@@ -1524,7 +1524,7 @@ void Copter::gcs_data_stream_send(void)
  */
 void Copter::gcs_update(void)
 {
-    gcs().update();
+    //gcs().update();
 }
 
 /*

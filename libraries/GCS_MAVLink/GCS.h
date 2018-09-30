@@ -650,6 +650,8 @@ public:
         dataflash_p = dataflash;
     }
 
+    void set_system_initialized() { system_initialized = true; }
+
     // pointer to static dataflash for logging of text messages
     DataFlash_Class *dataflash_p;
 
@@ -695,6 +697,8 @@ private:
 
     // true if we are running short on time in our main loop
     bool _out_of_time;
+
+    bool system_initialized;
 };
 
 GCS &gcs();

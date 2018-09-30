@@ -283,7 +283,13 @@ void Scheduler::_uart_task()
 
 void Scheduler::_gcs_task()
 {
+    if (!_gcs_semaphore.take(HAL_SEMAPHORE_BLOCK_FOREVER)) {
+        return;
+    }
+
     gcs().update();
+
+    _gcs_semaphore.give();
 }
 
 void Scheduler::_io_task()

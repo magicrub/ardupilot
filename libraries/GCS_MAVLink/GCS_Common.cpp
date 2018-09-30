@@ -1593,6 +1593,10 @@ void GCS::data_stream_send()
 
 void GCS::update(void)
 {
+    if (!system_initialized) {
+        return;
+    }
+
     for (uint8_t i=0; i<num_gcs(); i++) {
         if (chan(i).initialised) {
             chan(i).update();

@@ -104,6 +104,7 @@ private:
     pthread_t _main_ctx;
 
     Semaphore _io_semaphore;
+    Semaphore _gcs_semaphore;
 };
 
 }
