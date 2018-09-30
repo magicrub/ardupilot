@@ -22,7 +22,7 @@ export CCACHE_SLOPPINESS="include_file_ctime,include_file_mtime"
 
 # If CI_BUILD_TARGET is not set, build 3 different ones
 if [ -z "$CI_BUILD_TARGET" ]; then
-    CI_BUILD_TARGET="sitl linux px4-v2"
+    CI_BUILD_TARGET="sitl linux px4-v3"
 fi
 
 declare -A waf_supported_boards
