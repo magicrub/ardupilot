@@ -1412,7 +1412,7 @@ void AP_InertialSensor::wait_for_sample(void)
     }
 
 check_sample:
-    if (!_hil_mode) {
+    if (!_hil_mode && !accept_mavlink_values()) {
         // we also wait for at least one backend to have a sample of both
         // accel and gyro. This normally completes immediately.
         bool gyro_available = false;
