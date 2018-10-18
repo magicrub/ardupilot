@@ -66,7 +66,8 @@ public:
             FLIGHT_VTOL          = 2,
             FLIGHT_NORMAL        = 3,
             FLIGHT_LAND          = 4,
-            FLIGHT_ABORT_LAND    = 7
+            FLIGHT_ABORT_LAND    = 7,
+            FLIGHT_GLIDE         = 8
         };
     };
 
