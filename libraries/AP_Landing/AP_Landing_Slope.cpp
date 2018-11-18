@@ -30,6 +30,8 @@ void AP_Landing::type_slope_do_land(const AP_Mission::Mission_Command& cmd, cons
     // once landed, post some landing statistics to the GCS
     type_slope_flags.post_stats = false;
 
+    type_slope_flags.force_flare = false;
+
     type_slope_stage = SLOPE_STAGE_NORMAL;
     gcs().send_text(MAV_SEVERITY_INFO, "Landing approach start at %.1fm", (double)relative_altitude);
 }
@@ -90,8 +92,10 @@ bool AP_Landing::type_slope_verify_land(const Location &prev_WP_loc, Location &n
     if ((on_approach_stage && below_flare_alt) ||
         (on_approach_stage && below_flare_sec && (wp_proportion > 0.5)) ||
         (!rangefinder_state_in_range && wp_proportion >= 1) ||
+        type_slope_flags.force_flare ||
         probably_crashed) {
 
+        type_slope_flags.force_flare = false;
         if (type_slope_stage != SLOPE_STAGE_FINAL) {
             type_slope_flags.post_stats = true;
             if (is_flying && (AP_HAL::millis()-last_flying_ms) > 3000) {
