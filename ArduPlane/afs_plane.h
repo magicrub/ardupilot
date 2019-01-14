@@ -38,6 +38,8 @@ protected:
 
     // return the AFS mapped control mode
     enum control_mode afs_mode(void);
+
+    void check_vehicle(void) override;
 };
 
 #endif // ADVANCED_FAILSAFE

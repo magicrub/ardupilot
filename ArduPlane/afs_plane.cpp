@@ -92,4 +92,9 @@ AP_AdvancedFailsafe::control_mode AP_AdvancedFailsafe_Plane::afs_mode(void)
     }
     return AP_AdvancedFailsafe::AFS_STABILIZED;
 }
+
+void check_vehicle(void)
+{
+
+}
 #endif // ADVANCED_FAILSAFE
