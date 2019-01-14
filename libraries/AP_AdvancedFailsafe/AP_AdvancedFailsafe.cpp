@@ -145,6 +145,13 @@ const AP_Param::GroupInfo AP_AdvancedFailsafe::var_info[] = {
     // @Units: s
     AP_GROUPINFO("RC_FAIL_TIME",   19, AP_AdvancedFailsafe, _rc_fail_time_seconds,    0),
 
+    // @Param: WIND
+    // @DisplayName: Unsafe windspeed threshold
+    // @Description: Wind speed threshold that is considered unsafe. The failsafe will trigger when this value is exceeded for 30 seconds. The duration is long to ensure an accurate windspeed estimate. Use 0 to disable.
+    // @User: Advanced
+    // @Units: m/s
+    AP_GROUPINFO("WIND",   20, AP_AdvancedFailsafe, _windspeed_threshold,    0),
+
     AP_GROUPEND
 };
 
@@ -292,6 +299,36 @@ AP_AdvancedFailsafe::check(uint32_t last_heartbeat_ms, bool geofence_breached, u
         hal.gpio->pinMode(_terminate_pin, HAL_GPIO_OUTPUT);
         hal.gpio->write(_terminate_pin, _terminate?1:0);
     }    
+
+    check_wind();
+
+    check_vehicle();
+}
+
+void AP_AdvancedFailsafe::check_wind(void)
+{
+    if (_windspeed_threshold <= 0) {
+        // disabled
+        _time_above_wind_threshold = 0;
+        _prev_windspeed = -1;
+        return;
+    }
+
+    const float wind_estimate = AP::ahrs().wind_estimate().length();
+    if (_prev_windspeed < 0) {
+        // initialize
+        _prev_windspeed = wind_estimate;
+    } else {
+        // all another layer of LPF
+        _prev_windspeed = _prev_windspeed*0.8f + wind_estimate*0.2f;
+    }
+
+
+    if (_prev_windspeed < _windspeed_threshold) {
+        if (_time_last_below_wind_threshold_ms == 0) {
+            _time_last_below_wind_threshold_ms = AP_HAL:millis();
+        }
+    }
 }
 
 

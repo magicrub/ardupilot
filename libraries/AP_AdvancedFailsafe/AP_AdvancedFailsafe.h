@@ -95,6 +95,9 @@ protected:
     // return the AFS mapped control mode
     virtual enum control_mode afs_mode(void) = 0;
 
+    // check that everything is OK specific to vehicle type
+    virtual void check_vehicle(void) { }
+
     enum state _state;
 
     AP_Mission &mission;
@@ -122,6 +125,11 @@ protected:
     AP_Int8  _enable_RC_fs;
     AP_Int8  _rc_term_manual_only;
     AP_Int8  _enable_dual_loss;
+    AP_Float _windspeed_threshold;
+
+    // lpf and timer
+    float _prev_windspeed;
+    uint32_t _time_last_below_wind_threshold_ms;
 
     bool _heartbeat_pin_value;
 
@@ -144,4 +152,6 @@ protected:
     bool _failsafe_setup:1;
 
     bool check_altlimit(void);
+
+    void check_wind(void);
 };
