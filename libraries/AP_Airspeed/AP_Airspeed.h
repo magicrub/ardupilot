@@ -152,7 +152,9 @@ public:
 
     enum pitot_tube_order { PITOT_TUBE_ORDER_POSITIVE = 0,
                             PITOT_TUBE_ORDER_NEGATIVE = 1,
-                            PITOT_TUBE_ORDER_AUTO     = 2 };
+                            PITOT_TUBE_ORDER_AUTO     = 2,
+                            PITOT_TUBE_ORDER_NONE     = 3,
+                            };
 
     enum airspeed_type {
         TYPE_NONE=0,

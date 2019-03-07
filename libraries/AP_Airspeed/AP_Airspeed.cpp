@@ -391,6 +391,12 @@ void AP_Airspeed::read(uint8_t i)
             state[i].healthy = false;
         }
         break;
+    case PITOT_TUBE_ORDER_NONE:
+        // use as-is, no sqrt.
+        state[i].last_pressure  = fabsf(airspeed_pressure);
+        state[i].raw_airspeed   = fabsf(airspeed_pressure * param[i].ratio);
+        state[i].airspeed       = fabsf(state[i].filtered_pressure * param[i].ratio);
+        break;
     case PITOT_TUBE_ORDER_AUTO:
     default:
         state[i].last_pressure  = fabsf(airspeed_pressure);

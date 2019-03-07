@@ -20,6 +20,12 @@ extern const AP_HAL::HAL &hal;
 
 // Driver info from EagleTree:
 // https://www.eagletreesystems.com/Manuals/microsensor-i2c.pdf
+// Device should be put into Third Party mode and KPH units
+// ProTip: KPH units are better integer resultion than MPH
+// TUBE_ORDER = 4
+// OFFSET = 0
+// SCALE = 0.27778 for KPH -> m/s
+// SCALE = 0.44704 for MPH -> m/s
 
 #define EAGLETREE_AIRSPEED_I2C_ADDR         0x75 // (7bit version of 0xEA)
 #define EAGLETREE_AIRSPEED_I2C_READ_CMD     0x07
@@ -72,15 +78,23 @@ void AP_Airspeed_EagleTree::timer()
         return;
     }
 
-    pressure_sum += (float)sample16;
-    press_count++;
+    airspeed_value_sum += (float)sample16;
+    airspeed_value_count++;
     last_sample_time_ms = AP_HAL::millis();
     sem->give();
 }
 
-// return the current differential_pressure in Pascal
+// return the current airspeed_value in either KPH or MPH units, dependind on what the devices is configured for
 bool AP_Airspeed_EagleTree::get_differential_pressure(float &_pressure)
 {
+    // ----------------------------------
+    // ----------------------------------
+    // NOTE -----------------------------
+    // This device talks in KPH or MPH
+    // units, not pressure.
+    // ----------------------------------
+    // ----------------------------------
+
     if ((AP_HAL::millis() - last_sample_time_ms) > 100) {
         return false;
     }
@@ -89,13 +103,14 @@ bool AP_Airspeed_EagleTree::get_differential_pressure(float &_pressure)
         return false;
     }
 
-    if (press_count > 0) {
-        pressure = pressure_sum / press_count;
-        press_count = 0;
-        pressure_sum = 0;
+    if (airspeed_value_count > 0) {
+        _pressure = airspeed_value_sum / airspeed_value_count;
+        airspeed_value_count = 0;
+        airspeed_value_sum = 0;
+        sem->give();
+        return true;
     }
-    sem->give();
 
-    // _pressure = pressure;
-     return true;
+    sem->give();
+    return false;
 }

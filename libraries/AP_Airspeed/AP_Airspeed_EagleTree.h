@@ -43,9 +43,9 @@ public:
 private:
     void timer();
 
-    float pressure;
-    float pressure_sum;
-    uint32_t press_count;
+    float    airspeed_value;
+    float    airspeed_value_sum;
+    uint32_t airspeed_value_count;
     
     uint32_t last_sample_time_ms;
 
