@@ -406,6 +406,8 @@ public:
     // attributes of the mode
     bool is_autopilot_mode() const override { return true; }
     bool in_guided_mode() const override { return true; }
+    bool requires_position() const override { return false; }
+    bool requires_velocity() const override { return false; }
 
 protected:
     bool _enter() override;
