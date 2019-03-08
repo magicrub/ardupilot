@@ -400,8 +400,8 @@ public:
     uint32_t mode_number() const override { return GUIDED_NOGPS; }
     const char *name4() const override { return "GNGP"; }
 
-    // methods that affect movement of the vehicle in this mode
-    void update() override;
+    // // methods that affect movement of the vehicle in this mode
+    // void update() override;
 
     // attributes of the mode
     bool is_autopilot_mode() const override { return true; }
