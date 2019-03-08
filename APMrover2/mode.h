@@ -31,7 +31,8 @@ public:
         RTL          = 11,
         SMART_RTL    = 12,
         GUIDED       = 15,
-        INITIALISING = 16
+        INITIALISING = 16,
+        GUIDED_NOGPS = 17,
     };
 
     // Constructor
@@ -88,6 +89,9 @@ public:
     virtual float wp_bearing() const;
     virtual float nav_bearing() const;
     virtual float crosstrack_error() const;
+
+    // if mode GUIDED or GUIDED_NOGPS
+    virtual bool in_guided_mode() const { return false; }
 
     //
     // navigation methods
@@ -351,6 +355,7 @@ public:
 
     // attributes of the mode
     bool is_autopilot_mode() const override { return true; }
+    bool in_guided_mode() const override { return true; }
 
     // return distance (in meters) to destination
     float get_distance_to_destination() const override;
@@ -365,6 +370,9 @@ public:
 
     // vehicle start loiter
     bool start_loiter();
+
+    //TODO: move to protected
+    void update_TurnRateAndSpeed();
 
 protected:
 
@@ -385,6 +393,23 @@ protected:
     float _desired_yaw_rate_cds;// target turn rate centi-degrees per second
 };
 
+
+class ModeGuidedNoGPS : public ModeGuided
+{
+public:
+    uint32_t mode_number() const override { return GUIDED_NOGPS; }
+    const char *name4() const override { return "GNGP"; }
+
+    // methods that affect movement of the vehicle in this mode
+    void update() override;
+
+    // attributes of the mode
+    bool is_autopilot_mode() const override { return true; }
+    bool in_guided_mode() const override { return true; }
+
+protected:
+    bool _enter() override;
+};
 
 class ModeHold : public Mode
 {

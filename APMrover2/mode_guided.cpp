@@ -68,32 +68,9 @@ void ModeGuided::update()
         }
 
         case Guided_TurnRateAndSpeed:
-        {
             // stop vehicle if target not updated within 3 seconds
-            if (have_attitude_target && (millis() - _des_att_time_ms) > 3000) {
-                gcs().send_text(MAV_SEVERITY_WARNING, "target not received last 3secs, stopping");
-                have_attitude_target = false;
-            }
-            if (have_attitude_target) {
-                // run steering and throttle controllers
-                float steering_out = attitude_control.get_steering_out_rate(radians(_desired_yaw_rate_cds / 100.0f),
-                                                                            g2.motors.limit.steer_left,
-                                                                            g2.motors.limit.steer_right,
-                                                                            rover.G_Dt);
-                g2.motors.set_steering(steering_out * 4500.0f);
-                calc_throttle(_desired_speed, true, true);
-            } else {
-                // we have reached the destination so stay here
-                if (rover.is_boat()) {
-                    if (!start_loiter()) {
-                        stop_vehicle();
-                    }
-                } else {
-                    stop_vehicle();
-                }
-            }
+            update_TurnRateAndSpeed();
             break;
-        }
 
         case Guided_Loiter:
         {
@@ -104,6 +81,33 @@ void ModeGuided::update()
         default:
             gcs().send_text(MAV_SEVERITY_WARNING, "Unknown GUIDED mode");
             break;
+    }
+}
+
+void ModeGuided::update_TurnRateAndSpeed()
+{
+    // stop vehicle if target not updated within 3 seconds
+    if (have_attitude_target && (millis() - _des_att_time_ms) > 3000) {
+        gcs().send_text(MAV_SEVERITY_WARNING, "target not received last 3secs, stopping");
+        have_attitude_target = false;
+    }
+    if (have_attitude_target) {
+        // run steering and throttle controllers
+        float steering_out = attitude_control.get_steering_out_rate(radians(_desired_yaw_rate_cds / 100.0f),
+                                                                    g2.motors.limit.steer_left,
+                                                                    g2.motors.limit.steer_right,
+                                                                    rover.G_Dt);
+        g2.motors.set_steering(steering_out * 4500.0f);
+        calc_throttle(_desired_speed, true, true);
+    } else {
+        // we have reached the destination so stay here
+        if (rover.is_boat()) {
+            if (!start_loiter()) {
+                stop_vehicle();
+            }
+        } else {
+            stop_vehicle();
+        }
     }
 }
 

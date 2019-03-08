@@ -351,6 +351,7 @@ private:
     ModeManual mode_manual;
     ModeAcro mode_acro;
     ModeGuided mode_guided;
+    ModeGuidedNoGPS mode_guided_nogps;
     ModeAuto mode_auto;
     ModeLoiter mode_loiter;
     ModeSteering mode_steering;
