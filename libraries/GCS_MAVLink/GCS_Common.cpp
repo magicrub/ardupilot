@@ -22,6 +22,7 @@
 #include <AP_RangeFinder/RangeFinder_Backend.h>
 #include <AP_Airspeed/AP_Airspeed.h>
 #include <AP_Gripper/AP_Gripper.h>
+#include <AP_ICEngine/AP_ICEngine.h>
 #include <AP_BLHeli/AP_BLHeli.h>
 #include <AP_Common/Semaphore.h>
 #include <AP_Scheduler/AP_Scheduler.h>
@@ -3553,6 +3554,18 @@ MAV_RESULT GCS_MAVLINK::handle_command_do_set_home(const mavlink_command_long_t 
     return MAV_RESULT_ACCEPTED;
 }
 
+MAV_RESULT GCS_MAVLINK::handle_engine_control(const mavlink_command_long_t &packet)
+{
+    AP_ICEngine *ice = AP::ice();
+    if (ice == nullptr) {
+        return MAV_RESULT_UNSUPPORTED;
+    }
+
+    if (ice->engine_control(packet.param1, packet.param2, packet.param3)) {
+        return MAV_RESULT_ACCEPTED;
+    }
+    return MAV_RESULT_FAILED;
+}
 
 MAV_RESULT GCS_MAVLINK::handle_command_long_packet(const mavlink_command_long_t &packet)
 {
@@ -3666,6 +3679,10 @@ MAV_RESULT GCS_MAVLINK::handle_command_long_packet(const mavlink_command_long_t 
 
     case MAV_CMD_DO_FLIGHTTERMINATION:
         result = handle_flight_termination(packet);
+        break;
+
+    case MAV_CMD_DO_ENGINE_CONTROL:
+        result = handle_engine_control(packet);
         break;
 
     default:
