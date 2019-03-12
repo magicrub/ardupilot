@@ -3,6 +3,7 @@
 #include <GCS_MAVLink/GCS.h>
 #include <AP_Gripper/AP_Gripper.h>
 #include <AP_Parachute/AP_Parachute.h>
+#include <AP_ICEngine/AP_ICEngine.h>
 #include <AP_ServoRelayEvents/AP_ServoRelayEvents.h>
 
 bool AP_Mission::start_command_do_gripper(const AP_Mission::Mission_Command& cmd)
@@ -31,6 +32,18 @@ bool AP_Mission::start_command_do_gripper(const AP_Mission::Mission_Command& cmd
 #endif
         return false;
     }
+}
+
+bool AP_Mission::start_command_do_engine_control(const AP_Mission::Mission_Command& cmd)
+{
+    AP_ICEngine *ice = AP::ice();
+    if (ice == nullptr) {
+        return false;
+    }
+
+    return ice->engine_control(cmd.content.do_engine_control.start_control,
+                            cmd.content.do_engine_control.cold_start,
+                            cmd.content.do_engine_control.height_delay_cm*0.01f);
 }
 
 bool AP_Mission::start_command_do_servorelayevents(const AP_Mission::Mission_Command& cmd)

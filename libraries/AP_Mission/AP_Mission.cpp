@@ -269,6 +269,7 @@ bool AP_Mission::verify_command(const Mission_Command& cmd)
     case MAV_CMD_DO_DIGICAM_CONFIGURE:
     case MAV_CMD_DO_DIGICAM_CONTROL:
     case MAV_CMD_DO_SET_CAM_TRIGG_DIST:
+    case MAV_CMD_DO_ENGINE_CONTROL:
     case MAV_CMD_DO_PARACHUTE:
         return true;
     default:
@@ -281,6 +282,10 @@ bool AP_Mission::start_command(const Mission_Command& cmd)
     switch (cmd.id) {
     case MAV_CMD_DO_GRIPPER:
         return start_command_do_gripper(cmd);
+        
+    case MAV_CMD_DO_ENGINE_CONTROL:
+        return start_command_do_engine_control(cmd);
+        
     case MAV_CMD_DO_SET_SERVO:
     case MAV_CMD_DO_SET_RELAY:
     case MAV_CMD_DO_REPEAT_SERVO:
