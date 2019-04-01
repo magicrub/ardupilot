@@ -63,6 +63,12 @@ public:
 	// set path_proportion accessor
     virtual void set_path_proportion(float path_proportion) = 0;
 
+    // set gliding requested flag
+    virtual void set_gliding_requested_flag(bool gliding_requested) = 0;
+
+    // set propulsion failed flag
+    virtual void set_propulsion_failed_flag(bool propulsion_failed) = 0;
+
 	// add new controllers to this enum. Users can then
 	// select which controller to use by setting the
 	// SPDHGT_CONTROLLER parameter

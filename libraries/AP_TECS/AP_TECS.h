@@ -107,6 +107,17 @@ public:
         _path_proportion = constrain_float(path_proportion, 0.0f, 1.0f);
     }
 
+    // set soaring flag
+    void set_gliding_requested_flag(bool gliding_requested) override {
+        _flags.gliding_requested = gliding_requested;
+    }
+
+    // set propulsion failed flag
+    void set_propulsion_failed_flag(bool propulsion_failed) override {
+        _flags.propulsion_failed = propulsion_failed;
+    }
+
+
     // set pitch max limit in degrees
     void set_pitch_max_limit(int8_t pitch_limit) {
         _pitch_max_limit = pitch_limit;
@@ -261,6 +272,18 @@ private:
 
         // true when we have reached target speed in takeoff
         bool reached_speed_takeoff:1;
+
+        // true if the soaring feature has requested gliding flight
+        bool gliding_requested:1;
+
+        // true when we are in gliding flight, in one of three situations;
+        //   - THR_MAX=0
+        //   - gliding has been requested e.g. by soaring feature
+        //   - engine failure detected (detection not implemented currently)
+        bool is_gliding:1;
+
+        // true if a propulsion failure is detected.
+        bool propulsion_failed:1;
     };
     union {
         struct flags _flags;

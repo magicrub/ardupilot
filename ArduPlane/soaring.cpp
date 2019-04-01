@@ -10,6 +10,8 @@
 void Plane::update_soaring() {
     
     if (!g2.soaring_controller.is_active()) {
+        // This also sets the TECS gliding_requested to false.
+        g2.soaring_controller.set_throttle_suppressed(false);
         return;
     }
     
@@ -22,7 +24,7 @@ void Plane::update_soaring() {
         break;
     case Mode::Number::FLY_BY_WIRE_B:
     case Mode::Number::CRUISE:
-        if (!g2.soaring_controller.suppress_throttle()) {
+        if (!g2.soaring_controller.suppress_throttle() && aparm.throttle_max > 0) {
             gcs().send_text(MAV_SEVERITY_INFO, "Soaring: forcing RTL");
             set_mode(mode_rtl, MODE_REASON_SOARING_FBW_B_WITH_MOTOR_RUNNING);
         }
