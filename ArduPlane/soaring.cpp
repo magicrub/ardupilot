@@ -35,7 +35,7 @@ void Plane::update_soaring() {
     default:
         // This does not affect the throttle since suppressed is only checked in the above three modes. 
         // It ensures that the soaring always starts with throttle suppressed though.
-        g2.soaring_controller.set_throttle_suppressed(true);
+        g2.soaring_controller.set_throttle_suppressed(false);
         break;
     }
 
