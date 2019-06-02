@@ -256,7 +256,7 @@ void SoaringController::init_thermalling()
 
 void SoaringController::init_cruising()
 {
-    if (is_active() && suppress_throttle()) {
+    if (is_active()) {
         _cruise_start_time_us = AP_HAL::micros64();
         // Start glide. Will be updated on the next loop.
         set_throttle_suppressed(true);
