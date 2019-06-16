@@ -142,6 +142,7 @@ public:
         TYPE_I2C_SDP3X=6,
         TYPE_I2C_DLVR=7,
         TYPE_UAVCAN=8,
+        TYPE_I2C_EAGLETREE=9,
     };
 
     // get current primary sensor
