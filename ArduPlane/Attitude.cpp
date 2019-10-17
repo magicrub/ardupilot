@@ -147,7 +147,24 @@ void Plane::stabilize_pitch(float speed_scaler)
         SRV_Channels::set_output_scaled(SRV_Channel::k_elevator, 45*force_elevator);
         return;
     }
-    int32_t demanded_pitch = nav_pitch_cd + g.pitch_trim_cd + SRV_Channels::get_output_scaled(SRV_Channel::k_throttle) * g.kff_throttle_to_pitch;
+
+    float kff =  0.0f;
+
+    uint16_t nav_cmd_id = plane.mission.get_current_nav_cmd().id;
+
+    if (control_mode == &mode_auto && nav_cmd_id == MAV_CMD_NAV_TAKEOFF && auto_state.highest_airspeed < g.takeoff_rotate_speed) {
+        // No feedforward if we are still in takeoff.
+        kff = 0.0f;
+    } else if (plane.airspeed_error > 4.0f) {
+        // Don't apply any pitch-up if we're slow.
+        kff = 0.0f;
+    } else {
+        // Apply proportionately, with full effect at target airspeed minus 2.
+        kff = constrain_float((4.0f - plane.airspeed_error) / 2.0f, 0.0f, 1.0f) * g.kff_throttle_to_pitch;
+    }
+
+
+    int32_t demanded_pitch = nav_pitch_cd + g.pitch_trim_cd + constrain_int32(SRV_Channels::get_output_scaled(SRV_Channel::k_throttle), 0, 100) * kff;
     bool disable_integrator = false;
     if (control_mode == &mode_stabilize && channel_pitch->get_control_in() != 0) {
         disable_integrator = true;
@@ -175,6 +192,18 @@ void Plane::stabilize_pitch(float speed_scaler)
         pitch_out = pitchController.get_servo_out(demanded_pitch - ahrs.pitch_sensor, speed_scaler, disable_integrator);
     }
     SRV_Channels::set_output_scaled(SRV_Channel::k_elevator, pitch_out);
+
+    AP::logger().Write(
+        "TPFF",
+        "TimeUS,AspdE,kff,nav_pitch,pitch_dem",
+        "sn-dd",
+        "FB0BB",
+        "Qffcc",
+         AP_HAL::micros64(),
+        (double)plane.airspeed_error,
+        (double)kff,
+        (int16_t)nav_pitch_cd,
+        (int16_t)demanded_pitch);
 }
 
 /*
