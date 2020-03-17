@@ -77,6 +77,10 @@
 #define AP_SERIALMANAGER_SToRM32_BUFSIZE_RX     128
 #define AP_SERIALMANAGER_SToRM32_BUFSIZE_TX     128
 
+#define AP_SERIALMANAGER_UAVVISION_BAUD         115200
+#define AP_SERIALMANAGER_UAVVISION_BUFSIZE_RX   256
+#define AP_SERIALMANAGER_UAVVISION_BUFSIZE_TX   256
+
 #define AP_SERIALMANAGER_VOLZ_BAUD           115
 #define AP_SERIALMANAGER_VOLZ_BUFSIZE_RX     128
 #define AP_SERIALMANAGER_VOLZ_BUFSIZE_TX     128
@@ -137,6 +141,7 @@ public:
         SerialProtocol_RunCam = 26,
         SerialProtocol_Hott = 27,
         SerialProtocol_Scripting = 28,
+        SerialProtocol_UAVVision = 29,
     };
 
     // get singleton instance
