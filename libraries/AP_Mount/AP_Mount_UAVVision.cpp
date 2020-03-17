@@ -115,14 +115,15 @@ void AP_Mount_UAVVision::send_target_angles(float pitch_deg, float roll_deg, flo
     // datasheet section 3.2.1
     // encode float degrees to encoded uint16_t derived by U16_VALUE = angle * (32768 / 360)
     const float degree_to_encoded_U16 = 91.02222;
-    const uint16_t pitch = pitch_deg * degree_to_encoded_U16;
-    const uint16_t yaw =   yaw_deg * degree_to_encoded_U16;
+
+    const uint16_t pan = pitch_deg * degree_to_encoded_U16;
+    const uint16_t tilt = yaw_deg * degree_to_encoded_U16;
 
     send_command(AP_MOUNT_UAVVISION_ID_SET_PAN_TILT_POSITION,
-            yaw >> 8,
-            yaw,
-            pitch >> 8,
-            pitch);
+            pan >> 8,
+            pan,
+            tilt >> 8,
+            tilt);
 }
 
 /*
