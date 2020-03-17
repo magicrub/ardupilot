@@ -196,8 +196,8 @@ void AP_Mount_UAVVision::decode_packet()
 
     switch (_rx_id) {
     case AP_MOUNT_UAVVISION_ID_CURRENT_POSITION_AND_RATE:
-        _current_angle_deg.x = (float)((int16_t)_rx_payload[0] * 256 + _rx_payload[1]) * position_scaler;
-        _current_angle_deg.y = (float)((int16_t)_rx_payload[2] * 256 + _rx_payload[3]) * position_scaler;
+        _current_angle_deg.x = (float)((int16_t)_rx_payload[0] * 256 + _rx_payload[1]) * position_scaler;   // pan
+        _current_angle_deg.y = (float)((int16_t)_rx_payload[2] * 256 + _rx_payload[3]) * position_scaler;   // tilt
         break;
     case AP_MOUNT_UAVVISION_ID_ACK:
         //_rx_payload[0]; // Identifier of packet being acknowledged
