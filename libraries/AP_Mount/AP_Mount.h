@@ -34,6 +34,7 @@ class AP_Mount_SoloGimbal;
 class AP_Mount_Alexmos;
 class AP_Mount_SToRM32;
 class AP_Mount_SToRM32_serial;
+class AP_Mount_UAVVision;
 
 /*
   This is a workaround to allow the MAVLink backend access to the
@@ -49,6 +50,7 @@ class AP_Mount
     friend class AP_Mount_Alexmos;
     friend class AP_Mount_SToRM32;
     friend class AP_Mount_SToRM32_serial;
+    friend class AP_Mount_UAVVision;
 
 public:
     AP_Mount();
@@ -69,7 +71,8 @@ public:
         Mount_Type_SoloGimbal = 2,      /// Solo's gimbal
         Mount_Type_Alexmos = 3,         /// Alexmos mount
         Mount_Type_SToRM32 = 4,         /// SToRM32 mount using MAVLink protocol
-        Mount_Type_SToRM32_serial = 5   /// SToRM32 mount using custom serial protocol
+        Mount_Type_SToRM32_serial = 5,  /// SToRM32 mount using custom serial protocol
+        Mount_Type_UAVVision = 6,       /// UAV Vision Gimbal custom serial protocol
     };
 
     // init - detect and initialise all mounts
@@ -125,6 +128,8 @@ public:
 
     // send a MOUNT_STATUS message to GCS:
     void send_mount_status(mavlink_channel_t chan);
+
+    void handle_passthrough(const mavlink_channel_t chan, const mavlink_passthrough_t &packet);
 
     // parameter var table
     static const struct AP_Param::GroupInfo        var_info[];
