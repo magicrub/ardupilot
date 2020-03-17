@@ -10,6 +10,35 @@
 #include <AP_AHRS/AP_AHRS.h>
 #include "AP_Mount_Backend.h"
 
+// config
+#define AP_MOUNT_UAVVISION_SERIAL_MINIMUM_INTERVAL_MS       1000
+#define AP_MOUNT_UAVVISION_SERIAL_LARGEST_RX_PAYLOAD_SIZE   50
+#define AP_MOUNT_UAVVISION_CURRENT_POS_STREAM_RATE_HZ       20
+
+
+// boring protocol stuff
+#define AP_MOUNT_UAVVISION_SYNC1                            0x24
+#define AP_MOUNT_UAVVISION_SYNC2                            0x40
+
+
+#define AP_MOUNT_UAVVISION_STOW_STATE_EXIT_or_NOT_STOWED    0
+#define AP_MOUNT_UAVVISION_STOW_STATE_ENTER_or_DO_STOW      1
+#define AP_MOUNT_UAVVISION_STOW_STATE_READ                  255
+
+#define AP_MOUNT_UAVVISION_ID_ENABLE_GYRO_STABILISATION     0
+#define AP_MOUNT_UAVVISION_ID_ACK                           1
+#define AP_MOUNT_UAVVISION_ID_ENABLE_STREAM_MODE            5
+#define AP_MOUNT_UAVVISION_ID_INITILISE                     13
+#define AP_MOUNT_UAVVISION_ID_CURRENT_POSITION_AND_RATE     19
+#define AP_MOUNT_UAVVISION_ID_STOW_CFG                      11
+#define AP_MOUNT_UAVVISION_ID_STOW_MODE                     12
+#define AP_MOUNT_UAVVISION_ID_SET_PAN_POSITION              20
+#define AP_MOUNT_UAVVISION_ID_SET_PAN_TILT_POSITION         22
+#define AP_MOUNT_UAVVISION_ID_SET_PAN_TILT_VELOCITY         23
+#define AP_MOUNT_UAVVISION_ID_SET_TILT_POSITION             25
+#define AP_MOUNT_UAVVISION_ID_SET_PAN_VELOCITY              90
+#define AP_MOUNT_UAVVISION_ID_SET_TILT_VELOCITY             95
+
 class AP_Mount_UAVVision : public AP_Mount_Backend
 {
 public:
@@ -37,13 +66,44 @@ public:
 
 private:
 
-
-    static constexpr const uint8_t SYNC1 = 0x24;
-    static constexpr const uint8_t SYNC2 = 0x40;
-
     void send_command(const uint8_t cmd, const uint8_t* data, const uint8_t size);
+    void send_command(const uint8_t cmd) { send_command(cmd, nullptr, 0); }
+    void send_command(const uint8_t cmd, const uint8_t data1) { uint8_t data[1] = {data1}; send_command(cmd, data, 1); }
+    void send_command(const uint8_t cmd, const uint8_t data1, const uint8_t data2) { uint8_t data[2] = {data1, data2}; send_command(cmd, data, 2); }
+    void send_command(const uint8_t cmd, const uint8_t data1, const uint8_t data2, const uint8_t data3) { uint8_t data[3] = {data1,data2,data3}; send_command(cmd, data, 3); }
+    void send_command(const uint8_t cmd, const uint8_t data1, const uint8_t data2, const uint8_t data3, const uint8_t data4) { uint8_t data[4] = {data1,data2,data3,data4}; send_command(cmd, data, 4); }
+
+    void send_target_angles(float pitch_deg, float roll_deg, float yaw_deg);
+    void send_target_angles(Vector3f angle, bool target_in_degrees);
+
+    void read_incoming();
+
+    void decode_packet();
 
     AP_HAL::UARTDriver *_port;
     bool _initialised : 1;
+    bool _stab_pan : 1;
+    bool _stab_tilt : 1;
+
+    uint8_t     _stow_status = 255;
+    uint32_t    _last_send;
+
+    // rx parsing
+    enum PACKET_FORMAT {
+        SYNC1_START = 0,
+        SYNC2,
+        SIZE,
+        ID,
+        PAYLOAD,
+        CHECKSUM,
+    } _rx_step;
+    uint8_t     _rx_payload[AP_MOUNT_UAVVISION_SERIAL_LARGEST_RX_PAYLOAD_SIZE+5];
+    uint8_t     _rx_payload_index;
+    uint8_t     _rx_payload_size;
+    uint8_t     _rx_sum;
+    uint8_t     _rx_id;
+
+    // keep the last _current_angle values
+    Vector3f _current_angle_deg; // in degrees
 
 };
