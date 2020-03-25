@@ -6,30 +6,96 @@ extern const AP_HAL::HAL& hal;
 
 void AP_Mount_UAVVision::init()
 {
-    const AP_SerialManager& serial_manager = AP::serialmanager();
+    // check for UAV Vision Gimbal protocol
+    _port = AP::serialmanager().find_serial(AP_SerialManager::SerialProtocol_UAVVision, 0);
 
-    // check for UAV Vision Gimbal protcol
-    _port = serial_manager.find_serial(AP_SerialManager::SerialProtocol_UAVVision, 0);
+    // reset boot state
+    memset(&_booting, 0, sizeof(_booting));
 
     if (_port != nullptr) {
         _port->set_unbuffered_writes(true);
         _port->set_flow_control(AP_HAL::UARTDriver::FLOW_CONTROL_DISABLE);
-        _initialised = true;
 
         set_mode((enum MAV_MOUNT_MODE)_state._default_mode.get());
+    }
+}
 
-        send_command(AP_MOUNT_UAVVISION_ID_ENABLE_STREAM_MODE, 2, AP_MOUNT_UAVVISION_CURRENT_POS_STREAM_RATE_HZ);
+void AP_Mount_UAVVision::init_hw()
+{
+    if (_booting.done || _booting.retries >= 3) {
+        return;
+    }
+
+    const uint32_t now_ms = AP_HAL::millis();
+    if (now_ms - _booting.timestamp_ms < _booting.duration_ms) {
+        return;
+    }
+
+    if (_booting.rx_expected_cmd_id || _booting.rx_expected_ack_id) {
+        // time has expired and this was supposed to be cleared by now. so thats a boot failure - no response.
+        // backup retries, reset booting sequence, restore retries count. If we reach max retries then we stop retrying and stay in done=false state forever
+        const uint8_t retries = _booting.retries;
+        memset(&_booting, 0, sizeof(_booting));
+        _booting.retries = retries;
+    }
+
+    _booting.timestamp_ms = now_ms;
+
+    uint8_t cmd_id = 0;
+    bool expect_ack = AP_MOUNT_UAVVISION_REQUIRE_ACKS;
+
+    switch (_booting.step++) {
+    case 0:
+        _booting.duration_ms = 200;
+
+        // I'm not sure this acks or not, so lets just not expect an ack for this.
+        // If it's false then we'll move on. If its true and we don't get an ack then this step will always fail
+        expect_ack = false;
+
+        cmd_id = AP_MOUNT_UAVVISION_ID_ENABLE_MESSAGE_ACK;
+        send_command(cmd_id, AP_MOUNT_UAVVISION_REQUIRE_ACKS, AP_MOUNT_UAVVISION_REQUIRE_ACKS);   // 1,1 means gimbal will ACK all packets we send it
+        break;
+
+    case 1:
+        _booting.duration_ms = 5000;
+        cmd_id = AP_MOUNT_UAVVISION_ID_INITILISE;
+        send_command(cmd_id, 1, 1); // (1,1) means auto-initialize
+        break;
+
+    case 2:
+        _booting.duration_ms = 5000;
+        cmd_id = AP_MOUNT_UAVVISION_ID_ENABLE_STREAM_MODE;
+        send_command(cmd_id, 2, AP_MOUNT_UAVVISION_CURRENT_POS_STREAM_RATE_HZ);
+        break;
+
+    case 3:
+    case 4:
+    case 5:
+    case 6:
+    case 7:
+    case 8:
+    case 9:
+    case 10:
+        // TODO: add more hw init commands to complete the hw boot-up process without a factory-reseted device ever needing to connect to the company-provided software
+    default:
+        _booting.done = true;
+        break;
+    }
+
+    if (expect_ack) {
+        _booting.rx_expected_ack_id = cmd_id;
     }
 }
 
 // update mount position - should be called periodically
 void AP_Mount_UAVVision::update()
 {
-    if (!_initialised) {
+    read_incoming(); // read the incoming messages from the gimbal. This must be done before _booting.done is checked
+
+    if (!_booting.done) {
+        init_hw();
         return;
     }
-
-    read_incoming(); // read the incoming messages from the gimbal
 
     // flag to trigger sending target angles to gimbal
     bool resend_now = false;
@@ -131,6 +197,10 @@ void AP_Mount_UAVVision::send_target_angles(float pitch_deg, float roll_deg, flo
  */
 void AP_Mount_UAVVision::read_incoming()
 {
+    if (_port == nullptr) {
+        return;
+    }
+
     int16_t num_available = _port->available();
 
     while (num_available-- > 0) {        // Process bytes received
@@ -184,33 +254,85 @@ void AP_Mount_UAVVision::read_incoming()
         case PACKET_FORMAT::CHECKSUM:
             _rx_step = PACKET_FORMAT::SYNC1_START;
             if (_rx_sum == data) {
-                decode_packet();
+                handle_packet();
             }
             break;
         }
     }
 }
 
-void AP_Mount_UAVVision::decode_packet()
+const char *AP_Mount_UAVVision::get_model_name(const uint8_t gimbal_model_flags)
 {
-    const float position_scaler = 0.0109863; // 360 / 32768 per datasheet
+    switch (gimbal_model_flags) {
+    case 0x00: return "GD170";
+    case 0x01: return "CM160";
+    case 0x02: return "CM100";
+    case 0x03: return "CM202";
+    default:   return "?????";
+    }
+}
+
+
+void AP_Mount_UAVVision::handle_packet()
+{
+    const float position_scaler = 0.0109863f; // (360 / 32768) per datasheet
 
     switch (_rx_id) {
     case AP_MOUNT_UAVVISION_ID_CURRENT_POSITION_AND_RATE:
-        _current_angle_deg.x = (float)((int16_t)_rx_payload[0] * 256 + _rx_payload[1]) * position_scaler;   // pan
-        _current_angle_deg.y = (float)((int16_t)_rx_payload[2] * 256 + _rx_payload[3]) * position_scaler;   // tilt
+        _current_angle_deg.x = (float)((int32_t)_rx_payload[0] * 256 + _rx_payload[1]) * position_scaler;   // pan
+        _current_angle_deg.y = (float)((int32_t)_rx_payload[2] * 256 + _rx_payload[3]) * position_scaler;   // tilt
         break;
+
+    case AP_MOUNT_UAVVISION_ID_VERSION: {
+        const uint16_t sn = (uint16_t)_rx_payload[0]<<8 | (uint16_t)_rx_payload[1];
+        const char *model = get_model_name(_rx_payload[9]);
+        gcs().send_text(MAV_SEVERITY_DEBUG, "Detected %s serial %d", model, sn);
+        }
+        break;
+
     case AP_MOUNT_UAVVISION_ID_ACK:
-        //_rx_payload[0]; // Identifier of packet being acknowledged
+        handle_ack();
         break;
     }
 
+    if (_booting.rx_expected_cmd_id != 0 && _rx_id == _booting.rx_expected_cmd_id) {
+        // expected packet received! Forget it because we should have handled it in the above switch
+        _booting.rx_expected_cmd_id = 0;
+
+        // clear the duration so we immediately continue booting after handling the expected packet
+        _booting.duration_ms = 0;
+    }
+}
+
+void AP_Mount_UAVVision::handle_ack()
+{
+    const uint8_t ack_id = _rx_payload[0]; // Identifier of packet being acknowledged
+    //const uint8_t ack_data = _rx_payload[1]; // RESERVED
+
+    switch (ack_id) {
+    case AP_MOUNT_UAVVISION_ID_INITILISE:
+    case AP_MOUNT_UAVVISION_ID_STOW_MODE:
+    case AP_MOUNT_UAVVISION_ID_ENABLE_STREAM_MODE:
+    case AP_MOUNT_UAVVISION_ID_ENABLE_GYRO_STABILISATION:
+    case AP_MOUNT_UAVVISION_ID_ENABLE_MESSAGE_ACK:
+    default:
+        // TODO: add special handling for when we get an ACK
+        break;
+    } // ack_id
+
+    if (_booting.rx_expected_ack_id != 0 && ack_id == _booting.rx_expected_ack_id) {
+        // expected packet received! Forget it because we should have handled it in the above switch
+        _booting.rx_expected_ack_id = 0;
+
+        // clear the duration so we immediately continue booting after handling the expected packet
+        _booting.duration_ms = 0;
+    }
 }
 
 // send_mount_status - called to allow mounts to send their status to GCS using the MOUNT_STATUS message
 void AP_Mount_UAVVision::send_mount_status(mavlink_channel_t chan)
 {
-    if (!_initialised) {
+    if (!_booting.done) {
         return;
     }
 
@@ -224,7 +346,7 @@ void AP_Mount_UAVVision::send_mount_status(mavlink_channel_t chan)
 */
 void AP_Mount_UAVVision::send_command(const uint8_t cmd, const uint8_t* data, const uint8_t size)
 {
-    if (_port->txspace() < (size + 5U)) {
+    if (_port == nullptr || (_port->txspace() < (size + 5U))) {
         return;
     }
     uint8_t checksum = 0;

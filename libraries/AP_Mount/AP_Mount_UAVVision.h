@@ -13,8 +13,8 @@
 // config
 #define AP_MOUNT_UAVVISION_SERIAL_MINIMUM_INTERVAL_MS       1000
 #define AP_MOUNT_UAVVISION_SERIAL_LARGEST_RX_PAYLOAD_SIZE   50
-#define AP_MOUNT_UAVVISION_CURRENT_POS_STREAM_RATE_HZ       20
-
+#define AP_MOUNT_UAVVISION_CURRENT_POS_STREAM_RATE_HZ       2
+#define AP_MOUNT_UAVVISION_REQUIRE_ACKS                     (uint8_t)0      // 0 = FALSE, 1 = TRUE
 
 // boring protocol stuff
 #define AP_MOUNT_UAVVISION_SYNC1                            0x24
@@ -25,9 +25,13 @@
 #define AP_MOUNT_UAVVISION_STOW_STATE_ENTER_or_DO_STOW      1
 #define AP_MOUNT_UAVVISION_STOW_STATE_READ                  255
 
+// Command IDs
 #define AP_MOUNT_UAVVISION_ID_ENABLE_GYRO_STABILISATION     0
 #define AP_MOUNT_UAVVISION_ID_ACK                           1
+#define AP_MOUNT_UAVVISION_ID_ENABLE_MESSAGE_ACK            2
 #define AP_MOUNT_UAVVISION_ID_ENABLE_STREAM_MODE            5
+#define AP_MOUNT_UAVVISION_ID_VERSION                       6
+#define AP_MOUNT_UAVVISION_ID_REQUEST_READ                  9
 #define AP_MOUNT_UAVVISION_ID_INITILISE                     13
 #define AP_MOUNT_UAVVISION_ID_CURRENT_POSITION_AND_RATE     19
 #define AP_MOUNT_UAVVISION_ID_STOW_CFG                      11
@@ -38,6 +42,8 @@
 #define AP_MOUNT_UAVVISION_ID_SET_TILT_POSITION             25
 #define AP_MOUNT_UAVVISION_ID_SET_PAN_VELOCITY              90
 #define AP_MOUNT_UAVVISION_ID_SET_TILT_VELOCITY             95
+#define AP_MOUNT_UAVVISION_ID_CURRENT_GIMBAL_MODE           124
+
 
 class AP_Mount_UAVVision : public AP_Mount_Backend
 {
@@ -78,15 +84,28 @@ private:
 
     void read_incoming();
 
-    void decode_packet();
+    void handle_packet();
+    void handle_ack();
+    const char *get_model_name(const uint8_t gimbal_model_flags);
+
+    void init_hw();
 
     AP_HAL::UARTDriver *_port;
-    bool _initialised : 1;
     bool _stab_pan : 1;
     bool _stab_tilt : 1;
 
     uint8_t     _stow_status = 255;
     uint32_t    _last_send;
+
+    struct {
+        uint32_t    timestamp_ms;
+        uint32_t    duration_ms;
+        uint16_t    step;
+        uint8_t     rx_expected_cmd_id;
+        uint8_t     rx_expected_ack_id;
+        uint8_t     retries;
+        bool        done : 1;
+    } _booting;
 
     // rx parsing
     enum PACKET_FORMAT {
