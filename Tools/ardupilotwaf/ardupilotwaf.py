@@ -90,6 +90,7 @@ COMMON_VEHICLE_DEPENDENT_LIBRARIES = [
     'AP_NMEA_Output',
     'AP_Filesystem',
     'AP_ADSB',
+    'AP_OpenDroneID',
     'AC_PID',
     'AP_SerialLED',
     'AP_EFI',
