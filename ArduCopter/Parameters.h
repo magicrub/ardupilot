@@ -603,6 +603,11 @@ public:
     AP_OAPathPlanner oa;
 #endif
 
+#if OPENDRONEID_ENABLED == ENABLED
+    // Open DroneID
+    AP_OpenDroneID odid;
+#endif
+
 #if MODE_SYSTEMID_ENABLED == ENABLED
     // we need a pointer to the mode for the G2 table
     void *mode_systemid_ptr;

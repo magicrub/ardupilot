@@ -48,6 +48,7 @@
 //#define MODE_ZIGZAG_ENABLED   DISABLED            // disable zigzag mode support
 //#define OSD_ENABLED           DISABLED            // disable on-screen-display support
 //#define BUTTON_ENABLED        DISABLED            // disable button support
+//#define OPENDRONEID_ENABLED   DISABLED            // disable Open DroneID
 
 // features below are disabled by default on all boards
 //#define CAL_ALWAYS_REBOOT                         // flight controller will reboot after compass or accelerometer calibration completes

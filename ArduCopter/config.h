@@ -264,6 +264,12 @@
 #endif
 
 //////////////////////////////////////////////////////////////////////////////
+// OpenDroneID support
+#ifndef OPENDRONEID_ENABLED
+# define OPENDRONEID_ENABLED !HAL_MINIMIZE_FEATURES
+#endif
+
+//////////////////////////////////////////////////////////////////////////////
 // Nav-Guided - allows external nav computer to control vehicle
 #ifndef NAV_GUIDED
  # define NAV_GUIDED    !HAL_MINIMIZE_FEATURES

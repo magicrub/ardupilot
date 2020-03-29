@@ -107,6 +107,9 @@
  #include <AC_WPNav/AC_WPNav_OA.h>
  #include <AC_Avoidance/AP_OAPathPlanner.h>
 #endif
+#if OPENDRONEID_ENABLED == ENABLED
+ #include <AP_OpenDroneID/AP_OpenDroneID.h>
+#endif
 #if GRIPPER_ENABLED == ENABLED
  # include <AP_Gripper/AP_Gripper.h>
 #endif

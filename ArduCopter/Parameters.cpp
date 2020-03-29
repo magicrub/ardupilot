@@ -976,6 +976,11 @@ const AP_Param::GroupInfo ParametersG2::var_info[] = {
     AP_GROUPINFO("ZIGZAG_AUTO_PUMP", 38, ParametersG2, zigzag_auto_pump_enabled, ZIGZAG_AUTO_PUMP_ENABLED),
 #endif
 
+#if OPENDRONEID_ENABLED == ENABLED
+    // @Group: ODID_
+    // @Path: ../libraries/AP_OpenDroneID/AP_OpenDroneID.cpp
+    AP_SUBGROUPINFO(odid, "ODID_", 39, ParametersG2, AP_OpenDroneID),
+#endif
 
     AP_GROUPEND
 };
