@@ -1248,6 +1248,10 @@ const AP_Param::GroupInfo ParametersG2::var_info[] = {
     AP_SUBGROUPINFO(efi, "EFI", 22, ParametersG2, AP_EFI),
 #endif
 
+    // @Group: ODID_
+    // @Path: ../libraries/AP_OpenDroneID/AP_OpenDroneID.cpp
+    AP_SUBGROUPINFO(odid, "ODID_", 23, ParametersG2, AP_OpenDroneID),
+
     AP_GROUPEND
 };
 

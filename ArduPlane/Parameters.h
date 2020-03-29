@@ -560,6 +560,9 @@ public:
     AP_LandingGear landing_gear;
 #endif
 
+    // Open DroneID
+    AP_OpenDroneID odid;
+
     // crow flaps weighting
     AP_Int8 crow_flap_weight_outer;
     AP_Int8 crow_flap_weight_inner;

@@ -80,6 +80,7 @@
 #include <AP_OpticalFlow/AP_OpticalFlow.h>     // Optical Flow library
 #include <AP_Parachute/AP_Parachute.h>
 #include <AP_ADSB/AP_ADSB.h>
+#include <AP_OpenDroneID/AP_OpenDroneID.h>
 #include <AP_ICEngine/AP_ICEngine.h>
 #include <AP_EFI/AP_EFI.h>
 #include <AP_Gripper/AP_Gripper.h>
@@ -626,6 +627,8 @@ private:
 #if ADVANCED_FAILSAFE == ENABLED
     AP_AdvancedFailsafe_Plane afs {mission};
 #endif
+
+    AP_OpenDroneID odid;
 
     /*
       meta data to support counting the number of circles in a loiter
