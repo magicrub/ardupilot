@@ -323,6 +323,15 @@ public:
         return time_week(primary_instance);
     }
 
+    // returns the desired gps update rate in milliseconds
+    // this does not provide any guarantee that the GPS is updating at the requested
+    // rate it is simply a helper for use in the backends for determining what rate
+    // they should be configuring the GPS to run at
+    uint16_t get_rate_ms() const {
+        return get_rate_ms(primary_instance);
+    }
+    uint16_t get_rate_ms(uint8_t instance) const;
+
     // horizontal dilution of precision
     uint16_t get_hdop(uint8_t instance) const {
         return state[instance].hdop;
@@ -499,12 +508,6 @@ protected:
 private:
     static AP_GPS *_singleton;
     HAL_Semaphore rsem;
-
-    // returns the desired gps update rate in milliseconds
-    // this does not provide any guarantee that the GPS is updating at the requested
-    // rate it is simply a helper for use in the backends for determining what rate
-    // they should be configuring the GPS to run at
-    uint16_t get_rate_ms(uint8_t instance) const;
 
     struct GPS_timing {
         // the time we got our last fix in system milliseconds
