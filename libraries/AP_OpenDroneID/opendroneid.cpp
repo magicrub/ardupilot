@@ -28,18 +28,16 @@ gabriel.c.cox@intel.com
 */
 
 #include "opendroneid.h"
-#include <stdlib.h>
 #include <math.h>
 #include <string.h>
-#include <stdio.h>
 #define ENABLE_DEBUG 1
 
 const float SPEED_DIV[2] = {0.25,0.75};
 const float VSPEED_DIV = 0.5;
 const int32_t LATLON_MULT = 10000000;
 const float ALT_DIV = 0.5;
-const int ALT_ADDER = 1000;
-const int DATA_AGE_DIV = 10;
+const int32_t ALT_ADDER = 1000;
+const int32_t DATA_AGE_DIV = 10;
 
 /**
 * Encode speed into units defined by Open Drone ID
@@ -53,12 +51,12 @@ const int DATA_AGE_DIV = 10;
 * @param mult a (write only) value that sets the multiplier flag
 * @return Encoded Speed in a single byte or max speed if over max encoded speed.
 */
-static int8_t encodeSpeed(float Speed_data, uint8_t *mult)
+int8_t opendroneid::encodeSpeed(float Speed_data, uint8_t *mult)
 {
     int8_t signMult = 1;
-    int big_value = 0;
+    int32_t big_value = 0;
 
-    if (abs((int)Speed_data)/SPEED_DIV[0] <= INT8_MAX) {
+    if (abs((int32_t)Speed_data)/SPEED_DIV[0] <= INT8_MAX) {
         // Value fits within adjusted units
         (*mult) = 0;
         return Speed_data / SPEED_DIV[0];
@@ -69,7 +67,7 @@ static int8_t encodeSpeed(float Speed_data, uint8_t *mult)
         if (Speed_data < 0) signMult = -1;  // It's negative, set sign multiplier
         
         // Calculated value expressed in a big int
-        big_value = (int) (Speed_data-(signMult*(INT8_MAX/SPEED_DIV[0]))) / SPEED_DIV[1];
+        big_value = (int32_t) (Speed_data-(signMult*(INT8_MAX/SPEED_DIV[0]))) / SPEED_DIV[1];
 
         return (int8_t) intRangeMax(big_value, INT8_MIN, INT8_MAX);
     }
@@ -81,9 +79,9 @@ static int8_t encodeSpeed(float Speed_data, uint8_t *mult)
 * @param SpeedVertical_data vertical speed (in m/s)
 * @return Encoded vertical speed
 */
-static int8_t encodeSpeedVertical(float SpeedVertical_data)
+int8_t opendroneid::encodeSpeedVertical(float SpeedVertical_data)
 {
-    int encValue = (int) (SpeedVertical_data / VSPEED_DIV);
+    int32_t encValue = (int32_t) (SpeedVertical_data / VSPEED_DIV);
     return (int8_t) intRangeMax(encValue, INT8_MIN, INT8_MAX);
 }
 
@@ -96,7 +94,7 @@ static int8_t encodeSpeedVertical(float SpeedVertical_data)
 * @param LatLon_data Either Lat or Lon double float value
 * @return Encoded Lat or Lon
 */
-static int32_t encodeLatLon(double LatLon_data)
+int32_t opendroneid::encodeLatLon(double LatLon_data)
 {
     return (int32_t) intRangeMax(LatLon_data * LATLON_MULT, -180 * LATLON_MULT, 180 * LATLON_MULT);
 }
@@ -110,9 +108,9 @@ static int32_t encodeLatLon(double LatLon_data)
 * @param Alt_data Altitude to encode (in meters)
 * @return Encoded Altitude
 */
-static int16_t encodeAltitude(float Alt_data)
+int16_t opendroneid::encodeAltitude(float Alt_data)
 {
-    return (uint16_t) intRangeMax( (int) ((Alt_data + ALT_ADDER) / ALT_DIV), 0, UINT16_MAX);
+    return (uint16_t) intRangeMax( (int32_t) ((Alt_data + ALT_ADDER) / ALT_DIV), 0, UINT16_MAX);
 }
 
 /**
@@ -123,7 +121,7 @@ static int16_t encodeAltitude(float Alt_data)
 * @param Accuracy The horizontal accuracy in meters
 * @return Enum value representing the accuracy
 */
-static ODID_Horizontal_accuracy_t encodeHorizontalAccuracy(float Accuracy)
+opendroneid::ODID_Horizontal_accuracy_t opendroneid::encodeHorizontalAccuracy(float Accuracy)
 {
     if (Accuracy >= 18520)
         return ODID_HOR_ACC_UNKNOWN;
@@ -163,7 +161,7 @@ static ODID_Horizontal_accuracy_t encodeHorizontalAccuracy(float Accuracy)
 * @param Accuracy The vertical accuracy in meters
 * @return Enum value representing the accuracy
 */
-static ODID_Vertical_accuracy_t encodeVerticalAccuracy(float Accuracy)
+opendroneid::ODID_Vertical_accuracy_t opendroneid::encodeVerticalAccuracy(float Accuracy)
 {
     if (Accuracy >= 150)
         return ODID_VER_ACC_UNKNOWN;
@@ -191,7 +189,7 @@ static ODID_Vertical_accuracy_t encodeVerticalAccuracy(float Accuracy)
 * @param Accuracy The speed accuracy in m/s
 * @return Enum value representing the accuracy
 */
-static ODID_Speed_accuracy_t encodeSpeedAccuracy(float Accuracy)
+opendroneid::ODID_Speed_accuracy_t opendroneid::encodeSpeedAccuracy(float Accuracy)
 {
     if (Accuracy >= 10)
         return ODID_SPEED_ACC_UNKNOWN;
@@ -216,7 +214,7 @@ static ODID_Speed_accuracy_t encodeSpeedAccuracy(float Accuracy)
 * @param Accuracy The timestamp accuracy in seconds
 * @return Encoded timestamp accuracy (Tenths of seconds)
 */
-static uint16_t encodeTimeStampAccuracy(float Accuracy)
+uint16_t opendroneid::encodeTimeStampAccuracy(float Accuracy)
 {
     return (uint8_t) intRangeMax(round(Accuracy*10), 1, 15);
 }
@@ -230,7 +228,7 @@ static uint16_t encodeTimeStampAccuracy(float Accuracy)
 * @param Seconds_data Seconds (to at least 1 decimal place) since the hour
 * @return Encoded timestamp (Tenths of seconds since the hour)
 */
-static uint16_t encodeTimeStamp(float Seconds_data)
+uint16_t opendroneid::encodeTimeStamp(float Seconds_data)
 {
     // max should be 60s * 60m * 10 = number of tenths within an hour
     return (uint16_t) intRangeMax(round(Seconds_data*10), 0, 60 * 60 * 10);
@@ -244,7 +242,7 @@ static uint16_t encodeTimeStamp(float Seconds_data)
 * @param Radius The radius of the drone group/swarm
 * @return Encoded group radius
 */
-static uint16_t encodeGroupRadius(uint16_t Radius)
+uint16_t opendroneid::encodeGroupRadius(uint16_t Radius)
 {
     return (uint8_t) intRangeMax(Radius / 10, 0, 255);
 }
@@ -256,7 +254,7 @@ static uint16_t encodeGroupRadius(uint16_t Radius)
 * @param inData input data (non encoded/packed) structure
 * @return success code (0 = failure, 1 = success)
 */
-int encodeBasicIDMessage(ODID_BasicID_encoded *outEncoded, ODID_BasicID_data *inData)
+int32_t opendroneid::encodeBasicIDMessage(ODID_BasicID_encoded *outEncoded, ODID_BasicID_data *inData)
 {
     if (!outEncoded || !inData) {
         return 0;
@@ -277,7 +275,7 @@ int encodeBasicIDMessage(ODID_BasicID_encoded *outEncoded, ODID_BasicID_data *in
 * @param inData input data (non encoded/packed) structure
 * @return success code (0 = failure, 1 = success)
 */
-int encodeLocationMessage(ODID_Location_encoded *outEncoded, ODID_Location_data *inData)
+int32_t opendroneid::encodeLocationMessage(ODID_Location_encoded *outEncoded, ODID_Location_data *inData)
 {
     uint8_t multflag = 0;
     if (!outEncoded || !inData) {
@@ -314,7 +312,7 @@ int encodeLocationMessage(ODID_Location_encoded *outEncoded, ODID_Location_data 
 * @param inData input data (non encoded/packed) structure
 * @return success code (0 = failure, 1 = success)
 */
-int encodeAuthMessage(ODID_Auth_encoded *outEncoded, ODID_Auth_data *inData)
+int32_t opendroneid::encodeAuthMessage(ODID_Auth_encoded *outEncoded, ODID_Auth_data *inData)
 {
     if (!inData || !intInRange(inData->AuthType,0,15) || !outEncoded) {
         return 0;
@@ -336,7 +334,7 @@ int encodeAuthMessage(ODID_Auth_encoded *outEncoded, ODID_Auth_data *inData)
 * @param inData input data (non encoded/packed) structure
 * @return success code (0 = failure, 1 = success)
 */
-int encodeSelfIDMessage(ODID_SelfID_encoded *outEncoded, ODID_SelfID_data *inData)
+int32_t opendroneid::encodeSelfIDMessage(ODID_SelfID_encoded *outEncoded, ODID_SelfID_data *inData)
 {
     if (!inData || !intInRange(inData->DescType,0,UINT8_MAX) || !outEncoded) {
         return 0;
@@ -356,7 +354,7 @@ int encodeSelfIDMessage(ODID_SelfID_encoded *outEncoded, ODID_SelfID_data *inDat
 * @param inData input data (non encoded/packed) structure
 * @return success code (0 = failure, 1 = success)
 */
-int encodeSystemMessage(ODID_System_encoded *outEncoded, ODID_System_data *inData)
+int32_t opendroneid::encodeSystemMessage(ODID_System_encoded *outEncoded, ODID_System_data *inData)
 {
     if (!inData || !intInRange(inData->LocationSource,0,15) || !outEncoded) {
         return 0;
@@ -382,7 +380,7 @@ int encodeSystemMessage(ODID_System_encoded *outEncoded, ODID_System_data *inDat
 * @param mult multiplier flag
 * @return decoded speed in m/s
 */
-static float decodeSpeed(int8_t Speed_enc, uint8_t mult)
+float opendroneid::decodeSpeed(int8_t Speed_enc, uint8_t mult)
 {
     float retValue = 0;
     if (mult == 0) {
@@ -403,7 +401,7 @@ static float decodeSpeed(int8_t Speed_enc, uint8_t mult)
 * @param SpeedVertical_enc Encoded Vertical Speed
 * @return decoded Vertical Speed in m/s
 */
-static float decodeSpeedVertical(int8_t SpeedVertical_enc)
+float opendroneid::decodeSpeedVertical(int8_t SpeedVertical_enc)
 {
     return (float) SpeedVertical_enc * VSPEED_DIV;
 }
@@ -414,7 +412,7 @@ static float decodeSpeedVertical(int8_t SpeedVertical_enc)
 * @param LatLon_enc Either Lat or Lon ecoded int value
 * @return decoded (double) Lat or Lon
 */
-static double decodeLatLon(int32_t LatLon_enc)
+double opendroneid::decodeLatLon(int32_t LatLon_enc)
 {
     return (double) LatLon_enc / LATLON_MULT;
 }
@@ -425,7 +423,7 @@ static double decodeLatLon(int32_t LatLon_enc)
 * @param Alt_enc Encoded Altitude to decode
 * @return decoded Altitude (in meters)
 */
-static float decodeAltitude(uint16_t Alt_enc)
+float opendroneid::decodeAltitude(uint16_t Alt_enc)
 {
     return (float) ((float) Alt_enc * ALT_DIV - ALT_ADDER) ;
 }
@@ -438,7 +436,7 @@ static float decodeAltitude(uint16_t Alt_enc)
 * @param Accuracy Enum value representing the accuracy
 * @return The maximum horizontal accuracy in meters
 */
-static float decodeHorizontalAccuracy(ODID_Horizontal_accuracy_t Accuracy)
+float opendroneid::decodeHorizontalAccuracy(ODID_Horizontal_accuracy_t Accuracy)
 {
     switch (Accuracy)
     {
@@ -481,7 +479,7 @@ static float decodeHorizontalAccuracy(ODID_Horizontal_accuracy_t Accuracy)
 * @param Accuracy Enum value representing the accuracy
 * @return The maximum vertical accuracy in meters
 */
-static float decodeVerticalAccuracy(ODID_Vertical_accuracy_t Accuracy)
+float opendroneid::decodeVerticalAccuracy(ODID_Vertical_accuracy_t Accuracy)
 {
     switch (Accuracy)
     {
@@ -512,7 +510,7 @@ static float decodeVerticalAccuracy(ODID_Vertical_accuracy_t Accuracy)
 * @param Accuracy Enum value representing the accuracy
 * @return The maximum speed accuracy in m/s
 */
-static float decodeSpeedAccuracy(ODID_Speed_accuracy_t Accuracy)
+float opendroneid::decodeSpeedAccuracy(ODID_Speed_accuracy_t Accuracy)
 {
     switch (Accuracy)
     {
@@ -539,7 +537,7 @@ static float decodeSpeedAccuracy(ODID_Speed_accuracy_t Accuracy)
 * @param Accuracy Encoded timestamp accuracy (Tenths of seconds)
 * @return The maximum timestamp accuracy in seconds
 */
-static float decodeTimeStampAccuracy(uint16_t Accuracy)
+float opendroneid::decodeTimeStampAccuracy(uint16_t Accuracy)
 {
     return (float) Accuracy / 10;
 }
@@ -550,7 +548,7 @@ static float decodeTimeStampAccuracy(uint16_t Accuracy)
 * @param Seconds_enc Encoded Timestamp
 * @return Decoded timestamp (seconds since the hour)
 */
-static float decodeTimeStamp(uint16_t Seconds_enc)
+float opendroneid::decodeTimeStamp(uint16_t Seconds_enc)
 {
     return (float) Seconds_enc / 10;
 }
@@ -563,7 +561,7 @@ static float decodeTimeStamp(uint16_t Seconds_enc)
 * @param Radius_enc Encoded group radius
 * @return The radius of the drone group/swarm in meters
 */
-static uint16_t decodeGroupRadius(uint8_t Radius_enc)
+uint16_t opendroneid::decodeGroupRadius(uint8_t Radius_enc)
 {
     return (uint16_t) Radius_enc * 10;
 }
@@ -575,7 +573,7 @@ static uint16_t decodeGroupRadius(uint8_t Radius_enc)
 * @param inEncoded input message (encoded/packed) structure
 * @return success code (0 = failure, 1 = success)
 */
-int decodeBasicIDMessage(ODID_BasicID_data *outData, ODID_BasicID_encoded *inEncoded)
+int32_t opendroneid::decodeBasicIDMessage(ODID_BasicID_data *outData, ODID_BasicID_encoded *inEncoded)
 {
     if (!outData || !inEncoded) {
         return 0;
@@ -594,7 +592,7 @@ int decodeBasicIDMessage(ODID_BasicID_data *outData, ODID_BasicID_encoded *inEnc
 * @param inEncoded input message (encoded/packed) structure
 * @return success code (0 = failure, 1 = success)
 */
-int decodeLocationMessage(ODID_Location_data *outData, ODID_Location_encoded *inEncoded)
+int32_t opendroneid::decodeLocationMessage(ODID_Location_data *outData, ODID_Location_encoded *inEncoded)
 {
     if (!outData || !inEncoded) {
         return 0;
@@ -624,7 +622,7 @@ int decodeLocationMessage(ODID_Location_data *outData, ODID_Location_encoded *in
 * @param inEncoded input message (encoded/packed) structure
 * @return success code (0 = failure, 1 = success)
 */
-int decodeAuthMessage(ODID_Auth_data *outData, ODID_Auth_encoded *inEncoded)
+int32_t opendroneid::decodeAuthMessage(ODID_Auth_data *outData, ODID_Auth_encoded *inEncoded)
 {
     if (!inEncoded || !intInRange(inEncoded->AuthType,0,15) || !outData) {
         return 0;
@@ -644,7 +642,7 @@ int decodeAuthMessage(ODID_Auth_data *outData, ODID_Auth_encoded *inEncoded)
 * @param inEncoded input message (encoded/packed) structure
 * @return success code (0 = failure, 1 = success)
 */
-int decodeSelfIDMessage(ODID_SelfID_data *outData, ODID_SelfID_encoded *inEncoded)
+int32_t opendroneid::decodeSelfIDMessage(ODID_SelfID_data *outData, ODID_SelfID_encoded *inEncoded)
 {
     if (!inEncoded || !intInRange(inEncoded->DescType,0,UINT8_MAX) || !outData) {
         return 0;
@@ -662,7 +660,7 @@ int decodeSelfIDMessage(ODID_SelfID_data *outData, ODID_SelfID_encoded *inEncode
 * @param inEncoded input message (encoded/packed) structure
 * @return success code (0 = failure, 1 = success)
 */
-int decodeSystemMessage(ODID_System_data *outData, ODID_System_encoded *inEncoded)
+int32_t opendroneid::decodeSystemMessage(ODID_System_data *outData, ODID_System_encoded *inEncoded)
 {
     if (!inEncoded || !intInRange(inEncoded->LocationSource,0,15) || !outData) {
         return 0;
@@ -686,7 +684,7 @@ int decodeSystemMessage(ODID_System_data *outData, ODID_System_encoded *inEncode
 * @param srcStr Source string
 * @param dstSize Destination size
 */
-char *safe_copyfill(char *dstStr, const char *srcStr, int dstSize)
+char* opendroneid::safe_copyfill(char *dstStr, const char *srcStr, int32_t dstSize)
 {
     memset(dstStr,0,dstSize);  // fills destination with nulls
     strncpy(dstStr,srcStr,dstSize); // copy only up to dst size (no overruns)
@@ -704,7 +702,7 @@ char *safe_copyfill(char *dstStr, const char *srcStr, int dstSize)
 * @param srcStr Source string
 * @param dstSize Destination size
 */
-char *safe_dec_copyfill(char *dstStr, const char *srcStr, int dstSize)
+char* opendroneid::safe_dec_copyfill(char *dstStr, const char *srcStr, int32_t dstSize)
 {
     memset(dstStr,0,dstSize);  // fills destination with nulls
     strncpy(dstStr,srcStr,dstSize-1); // copy only up to dst size-1 (no overruns)
@@ -719,13 +717,13 @@ char *safe_dec_copyfill(char *dstStr, const char *srcStr, int dstSize)
 * @param endRange End of range to compare
 * @return same value if it fits, otherwise, min or max of range as appropriate.
 */
-int intRangeMax(int64_t inValue, int startRange, int endRange) {
+int32_t opendroneid::intRangeMax(int32_t inValue, int32_t startRange, int32_t endRange) {
     if ( inValue < startRange ) {
         return startRange;
     } else if (inValue > endRange) {
         return endRange;
     } else {
-        return (int) inValue;
+        return (int32_t) inValue;
     }
 }
 
@@ -737,7 +735,7 @@ int intRangeMax(int64_t inValue, int startRange, int endRange) {
  * @param endRange End of range to compare
  * @return 1 = yes, 0 = no
  */
-int intInRange(int inValue, int startRange, int endRange)
+int32_t opendroneid::intInRange(int32_t inValue, int32_t startRange, int32_t endRange)
 {
     if (inValue < startRange || inValue > endRange) {
         return 0;
@@ -755,12 +753,12 @@ int intInRange(int inValue, int startRange, int endRange)
 * @param asize Size of array of bytes to be printed
 */
 
-void printByteArray(uint8_t *byteArray, uint16_t asize, int spaced)
+void opendroneid::printByteArray(uint8_t *byteArray, uint16_t asize, int32_t spaced)
 {
     if (ENABLE_DEBUG) {
-        int x;
+        int32_t x;
         for (x=0;x<asize;x++) {
-            printf("%02x", (unsigned int) byteArray[x]);
+            printf("%02x", (uint32_t) byteArray[x]);
             if (spaced) {
                 printf(" ");
             }
@@ -774,7 +772,7 @@ void printByteArray(uint8_t *byteArray, uint16_t asize, int spaced)
 *
 * @param BasicID structure to be printed
 */
-void printBasicID_data(ODID_BasicID_data BasicID)
+void opendroneid::printBasicID_data(ODID_BasicID_data BasicID)
 {
     const char ODID_BasicID_data_format[] = "UASType: %d\nIDType: %d\nUASID: %s\n";
     printf(ODID_BasicID_data_format, BasicID.IDType, BasicID.UASType, BasicID.UASID);
@@ -785,7 +783,7 @@ void printBasicID_data(ODID_BasicID_data BasicID)
 *
 * @param Location structure to be printed
 */
-void printLocation_data(ODID_Location_data Location)
+void opendroneid::printLocation_data(ODID_Location_data Location)
 {
     const char ODID_Location_data_format[] = "Status: %d\nSpeedNS/EW: %.2f, %.2f\nSpeedVert: %.2f\nLat/Lon: %.7f, %.7f\nAlt: Baro, Geo, AboveTO: %.2f, %.2f, %.2f\nHoriz, Vert, Speed, TS Accuracy: %.1f, %.1f, %.1f, %.1f\nTimeStamp: %.2f\n";
     printf(ODID_Location_data_format, Location.Status, Location.SpeedNS, Location.SpeedEW,
@@ -799,7 +797,7 @@ void printLocation_data(ODID_Location_data Location)
 *
 * @param Auth structure to be printed
 */
-void printAuth_data(ODID_Auth_data Auth)
+void opendroneid::printAuth_data(ODID_Auth_data Auth)
 {
     const char ODID_Auth_data_format[] = "AuthType: %d\nDataPage: %d\nAuthData: %s\n";
     printf(ODID_Auth_data_format, Auth.AuthType, Auth.DataPage, Auth.AuthData);
@@ -810,7 +808,7 @@ void printAuth_data(ODID_Auth_data Auth)
 *
 * @param SelfID structure to be printed
 */
-void printSelfID_data(ODID_SelfID_data SelfID)
+void opendroneid::printSelfID_data(ODID_SelfID_data SelfID)
 {
     const char ODID_SelfID_data_format[] = "DescType: %d\nDesc: %s\n";
     printf(ODID_SelfID_data_format, SelfID.DescType, SelfID.Desc);
@@ -821,10 +819,12 @@ void printSelfID_data(ODID_SelfID_data SelfID)
 *
 * @param System_data structure to be printed
 */
-void printSystem_data(ODID_System_data System_data)
+void opendroneid::printSystem_data(ODID_System_data System_data)
 {
     const char ODID_System_data_format[] = "Location Source: %d\nLat/Lon: %.7f, %.7f\nGroup Count, Radius, Ceiling: %d, %d, %.2f\n";
     printf(ODID_System_data_format, System_data.LocationSource, System_data.Latitude, System_data.Longitude, System_data.GroupCount, System_data.GroupRadius, System_data.GroupCeiling);
 }
 
 #endif // ODID_DISABLE_PRINTF
+
+

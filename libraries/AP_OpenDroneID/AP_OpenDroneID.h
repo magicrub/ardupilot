@@ -66,43 +66,63 @@ private:
     void send_operator_id(const mavlink_channel_t chan);
     void send_message_pack(const mavlink_channel_t chan);
 
+    void populate_basic_id();
+    void populate_location();
+    void populate_authentication();
+    void populate_self_id();
+    void populate_system();
+    void populate_operator_id();
+    void populate_message_pack();
+
     const static uint16_t interval_static_ms   = 3000;
     const static uint16_t interval_dynamic_ms  = 333;
 
     struct odid_basic_id_t {
         mavlink_open_drone_id_basic_id_t info; // the whole mavlink struct with all the juicy details.
         uint32_t last_send_ms[MAVLINK_COMM_NUM_BUFFERS]; // last time this was transmitted
+        uint32_t last_populate_ms; // last time this was populated. Data age
         const uint16_t interval_max_ms = interval_static_ms;
+        bool has_changed;
     } _odid_basic_id;
 
     struct odid_location_t {
         mavlink_open_drone_id_location_t info; // the whole mavlink struct with all the juicy details.
         uint32_t last_send_ms[MAVLINK_COMM_NUM_BUFFERS]; // last time this was transmitted
+        uint32_t last_populate_ms; // last time this was populated. Data age
         const uint32_t interval_max_ms = interval_dynamic_ms;
+        bool has_changed;
     } _odid_location;
 
     struct odid_authentication_t {
         mavlink_open_drone_id_authentication_t info; // the whole mavlink struct with all the juicy details.
         uint32_t last_send_ms[MAVLINK_COMM_NUM_BUFFERS]; // last time this was transmitted
+        uint32_t last_populate_ms; // last time this was populated. Data age
         const uint32_t interval_max_ms = interval_static_ms;
+        bool has_changed;
     } _odid_authentication;
 
     struct odid_self_id_t {
         mavlink_open_drone_id_self_id_t info; // the whole mavlink struct with all the juicy details.
         uint32_t last_send_ms[MAVLINK_COMM_NUM_BUFFERS]; // last time this was transmitted
+        uint32_t last_populate_ms; // last time this was populated. Data age
         const uint32_t interval_max_ms = interval_static_ms;
+        bool has_changed;
     } _odid_self_id;
 
     struct odid_system_t {
         mavlink_open_drone_id_system_t info; // the whole mavlink struct with all the juicy details.
         uint32_t last_send_ms[MAVLINK_COMM_NUM_BUFFERS]; // last time this was transmitted
+        uint32_t last_populate_ms; // last time this was populated. Data age
         const uint32_t interval_max_ms = interval_static_ms;
+        bool has_changed;
     } _odid_system;
 
     struct odid_operator_id_t {
         mavlink_open_drone_id_operator_id_t info; // the whole mavlink struct with all the juicy details.
         uint32_t last_send_ms[MAVLINK_COMM_NUM_BUFFERS]; // last time this was transmitted
+        uint32_t last_populate_ms; // last time this was populated. Data age
         const uint32_t interval_max_ms = interval_static_ms;
+        bool has_changed;
     } _odid_operator_id;
 
 };

@@ -28,11 +28,17 @@ gabriel.c.cox@intel.com
 */
 
 #include <stdint.h>
+
 #define ODID_MESSAGE_SIZE 25
 #define ODID_ID_SIZE 20
 #define ODID_STR_SIZE 23
 #define ODID_PROTOCOL_VERSION 0
 #define ODID_SPEC_VERSION 0.64.3
+
+#define ODID_DISABLE_PRINTF
+
+class opendroneid {
+public:
 
 /*
 ENUMERATION NOTES
@@ -113,7 +119,7 @@ ENUMERATION NOTES
 ---------------------------------------------------------
 */
 
-typedef enum ODID_messagetype {
+typedef enum {
     ODID_MESSAGETYPE_BASIC_ID = 0,
     ODID_MESSAGETYPE_LOCATION = 1,
     ODID_MESSAGETYPE_AUTH = 2,
@@ -121,14 +127,14 @@ typedef enum ODID_messagetype {
     ODID_MESSAGETYPE_SYSTEM = 4,
 } ODID_messagetype_t;
 
-typedef enum ODID_idtype {
+typedef enum {
     ODID_IDTYPE_NONE = 0,
     ODID_IDTYPE_SERIAL_NUMBER = 1,
     ODID_IDTYPE_CAA_ASSIGNED_ID = 2,
     ODID_IDTYPE_UTM_ASSIGNED_ID = 3,
 } ODID_idtype_t;
 
-typedef enum ODID_uavtype {
+typedef enum {
     ODID_UAVTYPE_NONE = 0,
     ODID_UAVTYPE_FIXED_WING_POWERED = 1,
     ODID_UAVTYPE_ROTORCRAFT_MULTIROTOR = 2,
@@ -142,14 +148,14 @@ typedef enum ODID_uavtype {
     // 10 to 15 reserved
 } ODID_uavtype_t;
 
-typedef enum ODID_status {
+typedef enum {
     ODID_STATUS_UNDECLARED = 0,
     ODID_STATUS_GROUND = 1,
     ODID_STATUS_AIRBORNE = 2,
     // 3 to 15 reserved
 } ODID_status_t;
 
-typedef enum ODID_Horizontal_accuracy {
+typedef enum {
     ODID_HOR_ACC_UNKNOWN = 0,
     ODID_HOR_ACC_10NM = 1,
     ODID_HOR_ACC_4NM = 2,
@@ -166,7 +172,7 @@ typedef enum ODID_Horizontal_accuracy {
     // 13 to 15 reserved
 } ODID_Horizontal_accuracy_t;
 
-typedef enum ODID_Vertical_accuracy {
+typedef enum {
     ODID_VER_ACC_UNKNOWN = 0,
     ODID_VER_ACC_150_METER = 1,
     ODID_VER_ACC_45_METER = 2,
@@ -177,7 +183,7 @@ typedef enum ODID_Vertical_accuracy {
     // 7 to 15 reserved
 } ODID_Vertical_accuracy_t;
 
-typedef enum ODID_Speed_accuracy {
+typedef enum {
     ODID_SPEED_ACC_UNKNOWN = 0,
     ODID_SPEED_ACC_10_METERS_SECOND = 1,
     ODID_SPEED_ACC_3_METERS_SECOND = 2,
@@ -361,28 +367,54 @@ typedef struct __attribute__((__packed__)) {
     ODID_Message Messages[];
 } ODID_Message_Pack;
 
+// Encode functions
+static int8_t encodeSpeed(float Speed_data, uint8_t *mult);
+static int8_t encodeSpeedVertical(float SpeedVertical_data);
+static int32_t encodeLatLon(double LatLon_data);
+static int16_t encodeAltitude(float Alt_data);
+static ODID_Horizontal_accuracy_t encodeHorizontalAccuracy(float Accuracy);
+static ODID_Vertical_accuracy_t encodeVerticalAccuracy(float Accuracy);
+static ODID_Speed_accuracy_t encodeSpeedAccuracy(float Accuracy);
+static uint16_t encodeTimeStampAccuracy(float Accuracy);
+static uint16_t encodeTimeStamp(float Seconds_data);
+static uint16_t encodeGroupRadius(uint16_t Radius);
+
+
+// Decode functions
+static float decodeSpeed(int8_t Speed_enc, uint8_t mult);
+static float decodeSpeedVertical(int8_t SpeedVertical_enc);
+static double decodeLatLon(int32_t LatLon_enc);
+static float decodeAltitude(uint16_t Alt_enc);
+static float decodeHorizontalAccuracy(ODID_Horizontal_accuracy_t Accuracy);
+static float decodeVerticalAccuracy(ODID_Vertical_accuracy_t Accuracy);
+static float decodeSpeedAccuracy(ODID_Speed_accuracy_t Accuracy);
+static float decodeTimeStampAccuracy(uint16_t Accuracy);
+static float decodeTimeStamp(uint16_t Seconds_enc);
+static uint16_t decodeGroupRadius(uint8_t Radius_enc);
+
+
 
 // API Calls
-int encodeBasicIDMessage(ODID_BasicID_encoded *outEncoded, ODID_BasicID_data *inData);
-int encodeLocationMessage(ODID_Location_encoded *outEncoded, ODID_Location_data *inData);
-int encodeAuthMessage(ODID_Auth_encoded *outEncoded, ODID_Auth_data *inData);
-int encodeSelfIDMessage(ODID_SelfID_encoded *outEncoded, ODID_SelfID_data *inData);
-int encodeSystemMessage(ODID_System_encoded *outEncoded, ODID_System_data *inData);
+static int32_t encodeBasicIDMessage(ODID_BasicID_encoded *outEncoded, ODID_BasicID_data *inData);
+static int32_t encodeLocationMessage(ODID_Location_encoded *outEncoded, ODID_Location_data *inData);
+static int32_t encodeAuthMessage(ODID_Auth_encoded *outEncoded, ODID_Auth_data *inData);
+static int32_t encodeSelfIDMessage(ODID_SelfID_encoded *outEncoded, ODID_SelfID_data *inData);
+static int32_t encodeSystemMessage(ODID_System_encoded *outEncoded, ODID_System_data *inData);
 
-int decodeBasicIDMessage(ODID_BasicID_data *outData, ODID_BasicID_encoded *inEncoded);
-int decodeLocationMessage(ODID_Location_data *outData, ODID_Location_encoded *inEncoded);
-int decodeAuthMessage(ODID_Auth_data *outData, ODID_Auth_encoded *inEncoded);
-int decodeSelfIDMessage(ODID_SelfID_data *outData, ODID_SelfID_encoded *inEncoded);
-int decodeSystemMessage(ODID_System_data *outData, ODID_System_encoded *inEncoded);
+static int32_t decodeBasicIDMessage(ODID_BasicID_data *outData, ODID_BasicID_encoded *inEncoded);
+static int32_t decodeLocationMessage(ODID_Location_data *outData, ODID_Location_encoded *inEncoded);
+static int32_t decodeAuthMessage(ODID_Auth_data *outData, ODID_Auth_encoded *inEncoded);
+static int32_t decodeSelfIDMessage(ODID_SelfID_data *outData, ODID_SelfID_encoded *inEncoded);
+static int32_t decodeSystemMessage(ODID_System_data *outData, ODID_System_encoded *inEncoded);
 
 // Helper Functions
-char *safe_copyfill(char *dstStr, const char *srcStr, int dstSize);
-char *safe_dec_copyfill(char *dstStr, const char *srcStr, int dstSize);
-int intRangeMax(int64_t inValue, int startRange, int endRange);
-int intInRange(int inValue, int startRange, int endRange);
+static char *safe_copyfill(char *dstStr, const char *srcStr, int32_t dstSize);
+static char *safe_dec_copyfill(char *dstStr, const char *srcStr, int32_t dstSize);
+static int32_t intRangeMax(int32_t inValue, int32_t startRange, int32_t endRange);
+static int32_t intInRange(int32_t inValue, int32_t startRange, int32_t endRange);
 
 #ifndef ODID_DISABLE_PRINTF
-void printByteArray(uint8_t *byteArray, uint16_t asize, int spaced);
+void printByteArray(uint8_t *byteArray, uint16_t asize, int32_t spaced);
 void printBasicID_data(ODID_BasicID_data BasicID);
 void printLocation_data(ODID_Location_data Location);
 void printAuth_data(ODID_Auth_data Auth);
@@ -392,3 +424,5 @@ void test_InOut(void);
 void ODID_getSimData(uint8_t *message, uint8_t msgType);
 void test_sim(void);
 #endif // ODID_DISABLE_PRINTF
+
+};
