@@ -19,6 +19,9 @@ public:
 
     void backend_update(uint8_t instance);
 
+    // get estimated altitude accuracy from device driver - in meters
+    virtual float get_vertical_accuracy(void) { return 0.2f; }
+
     //  Check that the baro valid by using a mean filter.
     // If the value further that filtrer_range from mean value, it is rejected.
     bool pressure_ok(float press);

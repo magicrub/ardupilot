@@ -119,6 +119,10 @@ public:
     // settable parameters
     static const struct AP_Param::GroupInfo var_info[];
 
+    // get estimated altitude accuracy from device driver - in meters
+    float get_vertical_accuracy(void) { return get_vertical_accuracy(_primary); }
+    float get_vertical_accuracy(uint8_t instance);
+
     float get_external_temperature(void) const { return get_external_temperature(_primary); };
     float get_external_temperature(const uint8_t instance) const;
 

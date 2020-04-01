@@ -866,6 +866,15 @@ void AP_Baro::set_pressure_correction(uint8_t instance, float p_correction)
     }
 }
 
+// get estimated altitude accuracy from device driver - in meters
+float AP_Baro::get_vertical_accuracy(uint8_t instance)
+{
+    if (instance < _num_sensors && healthy(instance)) {
+        return drivers[instance]->get_vertical_accuracy();
+    }
+    return 0;
+}
+
 namespace AP {
 
 AP_Baro &baro()
