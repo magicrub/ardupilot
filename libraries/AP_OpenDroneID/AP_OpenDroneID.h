@@ -44,6 +44,9 @@ public:
     // periodic task that maintains vehicle_list
     void update(void);
 
+    // update the data via external mavlink messages
+    MAV_RESULT handle_message(const mavlink_channel_t chan, const mavlink_message_t &msg);
+
     // get singleton instance
     static AP_OpenDroneID *get_singleton(void) {
         return _singleton;
@@ -66,13 +69,24 @@ private:
     void send_operator_id(const mavlink_channel_t chan);
     void send_message_pack(const mavlink_channel_t chan);
 
-    void populate_basic_id();
-    void populate_location();
-    void populate_authentication();
-    void populate_self_id();
-    void populate_system();
-    void populate_operator_id();
-    void populate_message_pack();
+    // populate the data. Dynamic pckets are internally generated, static ones are done in init - unless overwritten by external mavlink msgs
+    void populate_basic_id();           // set in init
+    void populate_basic_id(const mavlink_message_t &msg);
+
+    void populate_location();           // dynamic
+    void populate_location(const mavlink_message_t &msg);
+
+    void populate_authentication();     // set in init
+    void populate_authentication(const mavlink_message_t &msg);
+
+    void populate_self_id();            // set in init
+    void populate_self_id(const mavlink_message_t &msg);
+
+    void populate_system();             // set in init
+    void populate_system(const mavlink_message_t &msg);
+
+    void populate_operator_id();        // set in init
+    void populate_operator_id(const mavlink_message_t &msg);
 
     const static uint16_t interval_static_ms   = 3000;
     const static uint16_t interval_dynamic_ms  = 333;
@@ -91,7 +105,8 @@ private:
         uint32_t last_populate_ms; // last time this was populated. Data age
         const uint32_t interval_max_ms = interval_dynamic_ms;
         bool has_changed;
-    } _odid_location;
+        bool set_externally;
+     } _odid_location;
 
     struct odid_authentication_t {
         mavlink_open_drone_id_authentication_t info; // the whole mavlink struct with all the juicy details.
@@ -124,7 +139,6 @@ private:
         const uint32_t interval_max_ms = interval_static_ms;
         bool has_changed;
     } _odid_operator_id;
-
 };
 
 namespace AP {

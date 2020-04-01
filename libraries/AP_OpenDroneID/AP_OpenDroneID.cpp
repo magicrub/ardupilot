@@ -64,6 +64,20 @@ AP_OpenDroneID::AP_OpenDroneID()
  */
 void AP_OpenDroneID::init(void)
 {
+    _odid_basic_id.info = {};
+    _odid_location.info = {};
+    _odid_authentication.info = {};
+    _odid_self_id.info = {};
+    _odid_system.info = {};
+    _odid_operator_id.info = {};
+
+    // populate with internal dynamic or user-param data
+    populate_basic_id();
+    populate_location();
+    populate_authentication();
+    populate_self_id();
+    populate_system();
+    populate_operator_id();
 
     // randomize all last_send_ms values so they're all out of phase so we don't hammer the mavlink buffers
     const uint32_t now_ms = AP_HAL::millis();
@@ -92,10 +106,6 @@ void AP_OpenDroneID::deinit(void)
     _initialized = false;
 }
 
-AP_OpenDroneID *AP::OpenDroneID()
-{
-    return AP_OpenDroneID::get_singleton();
-}
 
 /*
  * periodic update
@@ -116,26 +126,33 @@ void AP_OpenDroneID::update(void)
     const uint32_t now_ms = AP_HAL::millis();
 
 
-
-    // populate all the fields faster than we normally send them to check if we need to set the has_changed flag to push an update sooner
-    if (now_ms - _odid_basic_id.last_populate_ms >= _odid_basic_id.interval_max_ms*.2f) {
-        populate_basic_id();
-    }
-    if (now_ms - _odid_location.last_populate_ms >= _odid_location.interval_max_ms*.2f) {
+    // if dynamiac data is set externally, don't self-populate unless it times out
+    const uint32_t location_interval = _odid_location.set_externally ? _odid_location.interval_max_ms*2.5f : _odid_location.interval_max_ms*0.2f;
+    if (now_ms - _odid_location.last_populate_ms >= location_interval) {
+        _odid_location.set_externally = false;
         populate_location();
     }
-    if (now_ms - _odid_authentication.last_populate_ms >= _odid_authentication.interval_max_ms*.2f) {
-        populate_authentication();
-    }
-    if (now_ms - _odid_self_id.last_populate_ms >= _odid_self_id.interval_max_ms*.2f) {
-        populate_self_id();
-    }
-    if (now_ms - _odid_system.last_populate_ms >= _odid_system.interval_max_ms*.2f) {
-        populate_system();
-    }
-    if (now_ms - _odid_operator_id.last_populate_ms >= _odid_operator_id.interval_max_ms*.2f) {
-        populate_operator_id();
-    }
+
+
+    // populate all the fields faster than we normally send them to check if we need to set the has_changed flag to push an update sooner
+//    if (now_ms - _odid_basic_id.last_populate_ms >= _odid_basic_id.interval_max_ms*.2f) {
+//        populate_basic_id();
+//    }
+//    if (now_ms - _odid_location.last_populate_ms >= _odid_location.interval_max_ms*.2f) {
+//        populate_location();
+//    }
+//    if (now_ms - _odid_authentication.last_populate_ms >= _odid_authentication.interval_max_ms*.2f) {
+//        populate_authentication();
+//    }
+//    if (now_ms - _odid_self_id.last_populate_ms >= _odid_self_id.interval_max_ms*.2f) {
+//        populate_self_id();
+//    }
+//    if (now_ms - _odid_system.last_populate_ms >= _odid_system.interval_max_ms*.2f) {
+//        populate_system();
+//    }
+//    if (now_ms - _odid_operator_id.last_populate_ms >= _odid_operator_id.interval_max_ms*.2f) {
+//        populate_operator_id();
+//    }
 
 
 
@@ -182,8 +199,37 @@ void AP_OpenDroneID::update(void)
     _odid_operator_id.has_changed = false;
 }
 
+void AP_OpenDroneID::populate_basic_id(const mavlink_message_t &msg)
+{
+    mavlink_open_drone_id_set_basic_id_t packet {};
+    mavlink_msg_open_drone_id_set_basic_id_decode(&msg, &packet);
+
+    memcpy(&_odid_basic_id.info, &packet, sizeof(_odid_basic_id.info));
+
+    _odid_basic_id.has_changed = true;
+    _odid_basic_id.last_populate_ms = AP_HAL::millis();
+}
 void AP_OpenDroneID::populate_basic_id()
 {
+//    <field type="uint8_t" name="id_type" enum="MAV_ODID_ID_TYPE">Indicates the format for the uas_id field of this message.</field>
+//    <field type="uint8_t" name="ua_type" enum="MAV_ODID_UA_TYPE">Indicates the type of UA (Unmanned Aircraft).</field>
+//    <field type="uint8_t[20]" name="uas_id">UAS (Unmanned Aircraft System) ID following the format specified by id_type. Shall be filled with nulls in the unused portion of the field.</field>
+//
+//    MAV_ODID_ID_TYPE_NONE
+//    MAV_ODID_ID_TYPE_SERIAL_NUMBER // Manufacturer Serial Number (ANSI/CTA-2063 format)
+//    MAV_ODID_ID_TYPE_CAA_REGISTRATION_ID //CAA (Civil Aviation Authority) registered ID. Format: [ICAO Country Code].[CAA Assigned ID]
+//    MAV_ODID_ID_TYPE_UTM_ASSIGNED_UUID
+
+
+    _odid_basic_id.info.id_type = MAV_ODID_ID_TYPE_NONE;
+    _odid_basic_id.info.ua_type = MAV_ODID_UA_TYPE_NONE;
+
+    const char* uas_id = "ArduPilot Test";
+
+    memset(&_odid_basic_id.info.uas_id, 0, sizeof(_odid_basic_id.info.uas_id));
+    memcpy(_odid_basic_id.info.uas_id, uas_id, sizeof(*uas_id));
+
+    _odid_basic_id.has_changed = true;
     _odid_basic_id.last_populate_ms = AP_HAL::millis();
 }
 void AP_OpenDroneID::send_basic_id(const mavlink_channel_t chan)
@@ -196,6 +242,10 @@ void AP_OpenDroneID::send_basic_id(const mavlink_channel_t chan)
 }
 
 
+void AP_OpenDroneID::populate_location(const mavlink_message_t &msg)
+{
+
+}
 void AP_OpenDroneID::populate_location()
 {
     AP_AHRS &ahrs = AP::ahrs();
@@ -293,9 +343,16 @@ void AP_OpenDroneID::send_location(const mavlink_channel_t chan)
 }
 
 
+
+void AP_OpenDroneID::populate_authentication(const mavlink_message_t &msg)
+{
+//    memcpy(&_odid_authentication.info, msg, sizeof(_odid_authentication.info));
+
+    _odid_authentication.last_populate_ms = AP_HAL::millis();
+}
 void AP_OpenDroneID::populate_authentication()
 {
-    _odid_authentication.last_populate_ms = AP_HAL::millis();
+
 }
 void AP_OpenDroneID::send_authentication(const mavlink_channel_t chan)
 {
@@ -307,6 +364,9 @@ void AP_OpenDroneID::send_authentication(const mavlink_channel_t chan)
 }
 
 
+void AP_OpenDroneID::populate_self_id(const mavlink_message_t &msg)
+{
+}
 void AP_OpenDroneID::populate_self_id()
 {
     _odid_self_id.last_populate_ms = AP_HAL::millis();
@@ -348,3 +408,43 @@ void AP_OpenDroneID::send_operator_id(const mavlink_channel_t chan)
     _odid_operator_id.last_send_ms[chan] = AP_HAL::millis();
 }
 
+MAV_RESULT AP_OpenDroneID::handle_message(const mavlink_channel_t chan, const mavlink_message_t &msg)
+{
+    switch (msg.msgid) {
+    // we only handle the _SET_ msgs
+    case MAVLINK_MSG_ID_OPEN_DRONE_ID_SET_BASIC_ID:
+        populate_basic_id(msg);
+        break;
+    case MAVLINK_MSG_ID_OPEN_DRONE_ID_SET_LOCATION:
+        populate_location(msg);
+        break;
+    case MAVLINK_MSG_ID_OPEN_DRONE_ID_SET_AUTHENTICATION:
+        populate_authentication(msg);
+        break;
+    case MAVLINK_MSG_ID_OPEN_DRONE_ID_SET_SELF_ID:
+        populate_self_id(msg);
+        break;
+    case MAVLINK_MSG_ID_OPEN_DRONE_ID_SET_SYSTEM:
+        populate_system(msg);
+        break;
+    case MAVLINK_MSG_ID_OPEN_DRONE_ID_SET_OPERATOR_ID:
+        populate_operator_id(msg);
+        break;
+
+    case MAVLINK_MSG_ID_OPEN_DRONE_ID_BASIC_ID:
+    case MAVLINK_MSG_ID_OPEN_DRONE_ID_LOCATION:
+    case MAVLINK_MSG_ID_OPEN_DRONE_ID_AUTHENTICATION:
+    case MAVLINK_MSG_ID_OPEN_DRONE_ID_SELF_ID:
+    case MAVLINK_MSG_ID_OPEN_DRONE_ID_SYSTEM:
+    case MAVLINK_MSG_ID_OPEN_DRONE_ID_OPERATOR_ID:
+    default:
+        // status messages are unhandled
+        return MAV_RESULT_FAILED;
+    }
+    return MAV_RESULT_ACCEPTED;
+}
+
+AP_OpenDroneID *AP::OpenDroneID()
+{
+    return AP_OpenDroneID::get_singleton();
+}
