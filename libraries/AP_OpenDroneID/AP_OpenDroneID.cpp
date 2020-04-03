@@ -33,6 +33,7 @@
 #include <AP_Baro/AP_Baro.h>
 #include <AP_AHRS/AP_AHRS.h>
 #include <AP_Vehicle/AP_Vehicle.h>
+#include <StorageManager/StorageManager.h>
 
 extern const AP_HAL::HAL& hal;
 AP_OpenDroneID *AP_OpenDroneID::_singleton;
@@ -64,20 +65,16 @@ AP_OpenDroneID::AP_OpenDroneID()
  */
 void AP_OpenDroneID::init(void)
 {
-    _odid_basic_id.info = {};
-    _odid_location.info = {};
-    _odid_authentication.info = {};
-    _odid_self_id.info = {};
-    _odid_system.info = {};
-    _odid_operator_id.info = {};
-
     // populate with internal dynamic or user-param data
-    populate_basic_id();
+    init_basic_id();
     populate_location();
-    populate_authentication();
-    populate_self_id();
-    populate_system();
-    populate_operator_id();
+    init_authentication();
+    init_self_id();
+    init_system();
+    init_operator_id();
+
+    // if there's any values stored in eeprom, use them!
+    eeprom_load_info();
 
     // randomize all last_send_ms values so they're all out of phase so we don't hammer the mavlink buffers
     const uint32_t now_ms = AP_HAL::millis();
@@ -127,34 +124,11 @@ void AP_OpenDroneID::update(void)
 
 
     // if dynamiac data is set externally, don't self-populate unless it times out
-    const uint32_t location_interval = _odid_location.set_externally ? _odid_location.interval_max_ms*2.5f : _odid_location.interval_max_ms*0.2f;
+    const uint32_t location_interval = _odid_location.set_externally ? _odid_location.interval_max_ms*3 : _odid_location.interval_max_ms*0.2f;
     if (now_ms - _odid_location.last_populate_ms >= location_interval) {
         _odid_location.set_externally = false;
         populate_location();
     }
-
-
-    // populate all the fields faster than we normally send them to check if we need to set the has_changed flag to push an update sooner
-//    if (now_ms - _odid_basic_id.last_populate_ms >= _odid_basic_id.interval_max_ms*.2f) {
-//        populate_basic_id();
-//    }
-//    if (now_ms - _odid_location.last_populate_ms >= _odid_location.interval_max_ms*.2f) {
-//        populate_location();
-//    }
-//    if (now_ms - _odid_authentication.last_populate_ms >= _odid_authentication.interval_max_ms*.2f) {
-//        populate_authentication();
-//    }
-//    if (now_ms - _odid_self_id.last_populate_ms >= _odid_self_id.interval_max_ms*.2f) {
-//        populate_self_id();
-//    }
-//    if (now_ms - _odid_system.last_populate_ms >= _odid_system.interval_max_ms*.2f) {
-//        populate_system();
-//    }
-//    if (now_ms - _odid_operator_id.last_populate_ms >= _odid_operator_id.interval_max_ms*.2f) {
-//        populate_operator_id();
-//    }
-
-
 
     // check timers and send the data if new or expired
     for (uint8_t chan = 0; chan < MAVLINK_COMM_NUM_BUFFERS; chan++) {
@@ -197,41 +171,42 @@ void AP_OpenDroneID::update(void)
     _odid_self_id.has_changed = false;
     _odid_system.has_changed = false;
     _odid_operator_id.has_changed = false;
+
+    if (_eeprom_save_needed) {
+        _eeprom_save_needed = false;
+        eeprom_save_info();
+    }
+}
+
+// ---------------------------------------------------------
+// ---------------------------------------------------------
+
+void AP_OpenDroneID::init_basic_id()
+{
+    mavlink_open_drone_id_basic_id_t packet = {};
+
+    packet.id_type = MAV_ODID_ID_TYPE_NONE;
+    packet.ua_type = MAV_ODID_UA_TYPE_NONE;
+
+    populate_basic_id(packet);
 }
 
 void AP_OpenDroneID::populate_basic_id(const mavlink_message_t &msg)
 {
-    mavlink_open_drone_id_set_basic_id_t packet {};
-    mavlink_msg_open_drone_id_set_basic_id_decode(&msg, &packet);
-
-    memcpy(&_odid_basic_id.info, &packet, sizeof(_odid_basic_id.info));
-
-    _odid_basic_id.has_changed = true;
-    _odid_basic_id.last_populate_ms = AP_HAL::millis();
+    mavlink_open_drone_id_basic_id_t packet {};
+    mavlink_msg_open_drone_id_basic_id_decode(&msg, &packet);
+    populate_basic_id(packet);
 }
-void AP_OpenDroneID::populate_basic_id()
+
+void AP_OpenDroneID::populate_basic_id(const mavlink_open_drone_id_basic_id_t &packet)
 {
-//    <field type="uint8_t" name="id_type" enum="MAV_ODID_ID_TYPE">Indicates the format for the uas_id field of this message.</field>
-//    <field type="uint8_t" name="ua_type" enum="MAV_ODID_UA_TYPE">Indicates the type of UA (Unmanned Aircraft).</field>
-//    <field type="uint8_t[20]" name="uas_id">UAS (Unmanned Aircraft System) ID following the format specified by id_type. Shall be filled with nulls in the unused portion of the field.</field>
-//
-//    MAV_ODID_ID_TYPE_NONE
-//    MAV_ODID_ID_TYPE_SERIAL_NUMBER // Manufacturer Serial Number (ANSI/CTA-2063 format)
-//    MAV_ODID_ID_TYPE_CAA_REGISTRATION_ID //CAA (Civil Aviation Authority) registered ID. Format: [ICAO Country Code].[CAA Assigned ID]
-//    MAV_ODID_ID_TYPE_UTM_ASSIGNED_UUID
-
-
-    _odid_basic_id.info.id_type = MAV_ODID_ID_TYPE_NONE;
-    _odid_basic_id.info.ua_type = MAV_ODID_UA_TYPE_NONE;
-
-    const char* uas_id = "ArduPilot Test";
-
-    memset(&_odid_basic_id.info.uas_id, 0, sizeof(_odid_basic_id.info.uas_id));
-    memcpy(_odid_basic_id.info.uas_id, uas_id, sizeof(*uas_id));
-
-    _odid_basic_id.has_changed = true;
-    _odid_basic_id.last_populate_ms = AP_HAL::millis();
+    if (memcmp(&packet, &_odid_basic_id.info, sizeof(_odid_basic_id.info)) != 0) {
+        memcpy(&_odid_basic_id.info, &packet, sizeof(_odid_basic_id.info));
+        _odid_basic_id.has_changed = true;
+        _odid_basic_id.last_populate_ms = AP_HAL::millis();
+    }
 }
+
 void AP_OpenDroneID::send_basic_id(const mavlink_channel_t chan)
 {
     if (!HAVE_PAYLOAD_SPACE(chan, OPEN_DRONE_ID_BASIC_ID)) {
@@ -241,11 +216,9 @@ void AP_OpenDroneID::send_basic_id(const mavlink_channel_t chan)
     _odid_basic_id.last_send_ms[chan] = AP_HAL::millis();
 }
 
+// ---------------------------------------------------------
+// ---------------------------------------------------------
 
-void AP_OpenDroneID::populate_location(const mavlink_message_t &msg)
-{
-
-}
 void AP_OpenDroneID::populate_location()
 {
     AP_AHRS &ahrs = AP::ahrs();
@@ -332,6 +305,21 @@ void AP_OpenDroneID::populate_location()
     _odid_location.info.timestamp = gps_is_healthy ? ((float) (gps.time_week_ms() % (60*60*1000))) * 0.001f : 0;
 }
 
+void AP_OpenDroneID::populate_location(const mavlink_message_t &msg)
+{
+    mavlink_open_drone_id_location_t packet {};
+    mavlink_msg_open_drone_id_location_decode(&msg, &packet);
+    populate_location(packet);
+}
+
+void AP_OpenDroneID::populate_location(const mavlink_open_drone_id_location_t &packet)
+{
+    if (memcmp(&packet, &_odid_location.info, sizeof(_odid_location.info)) != 0) {
+        memcpy(&_odid_location.info, &packet, sizeof(_odid_location.info));
+        _odid_location.has_changed = true;
+        _odid_location.last_populate_ms = AP_HAL::millis();
+    }
+}
 
 void AP_OpenDroneID::send_location(const mavlink_channel_t chan)
 {
@@ -342,18 +330,38 @@ void AP_OpenDroneID::send_location(const mavlink_channel_t chan)
     _odid_location.last_send_ms[chan] = AP_HAL::millis();
 }
 
+// ---------------------------------------------------------
+// ---------------------------------------------------------
 
+void AP_OpenDroneID::init_authentication()
+{
+    mavlink_open_drone_id_authentication_t packet = {};
+
+    packet.authentication_type = MAV_ODID_AUTH_TYPE_NONE;
+    packet.data_page = 0;
+    packet.page_count = 0;
+    packet.length = 0;
+    packet.timestamp = 0;
+
+    populate_authentication(packet);
+}
 
 void AP_OpenDroneID::populate_authentication(const mavlink_message_t &msg)
 {
-//    memcpy(&_odid_authentication.info, msg, sizeof(_odid_authentication.info));
-
-    _odid_authentication.last_populate_ms = AP_HAL::millis();
+    mavlink_open_drone_id_authentication_t packet {};
+    mavlink_msg_open_drone_id_authentication_decode(&msg, &packet);
+    populate_authentication(packet);
 }
-void AP_OpenDroneID::populate_authentication()
+
+void AP_OpenDroneID::populate_authentication(const mavlink_open_drone_id_authentication_t &packet)
 {
-
+    if (memcmp(&packet, &_odid_authentication.info, sizeof(_odid_authentication.info)) != 0) {
+        memcpy(&_odid_authentication.info, &packet, sizeof(_odid_authentication.info));
+        _odid_authentication.has_changed = true;
+        _odid_authentication.last_populate_ms = AP_HAL::millis();
+    }
 }
+
 void AP_OpenDroneID::send_authentication(const mavlink_channel_t chan)
 {
     if (!HAVE_PAYLOAD_SPACE(chan, OPEN_DRONE_ID_AUTHENTICATION)) {
@@ -363,14 +371,34 @@ void AP_OpenDroneID::send_authentication(const mavlink_channel_t chan)
     _odid_authentication.last_send_ms[chan] = AP_HAL::millis();
 }
 
+// ---------------------------------------------------------
+// ---------------------------------------------------------
+
+void AP_OpenDroneID::init_self_id()
+{
+    mavlink_open_drone_id_self_id_t packet = {};
+
+    packet.description_type = MAV_ODID_DESC_TYPE_TEXT;
+
+    populate_self_id(packet);
+}
 
 void AP_OpenDroneID::populate_self_id(const mavlink_message_t &msg)
 {
+    mavlink_open_drone_id_self_id_t packet {};
+    mavlink_msg_open_drone_id_self_id_decode(&msg, &packet);
+    populate_self_id(packet);
 }
-void AP_OpenDroneID::populate_self_id()
+
+void AP_OpenDroneID::populate_self_id(const mavlink_open_drone_id_self_id_t &packet)
 {
-    _odid_self_id.last_populate_ms = AP_HAL::millis();
+    if (memcmp(&packet, &_odid_self_id.info, sizeof(_odid_self_id.info)) != 0) {
+        memcpy(&_odid_self_id.info, &packet, sizeof(_odid_self_id.info));
+        _odid_self_id.has_changed = true;
+        _odid_self_id.last_populate_ms = AP_HAL::millis();
+    }
 }
+
 void AP_OpenDroneID::send_self_id(const mavlink_channel_t chan)
 {
     if (!HAVE_PAYLOAD_SPACE(chan, OPEN_DRONE_ID_SELF_ID)) {
@@ -380,11 +408,40 @@ void AP_OpenDroneID::send_self_id(const mavlink_channel_t chan)
     _odid_self_id.last_send_ms[chan] = AP_HAL::millis();
 }
 
+// ---------------------------------------------------------
+// ---------------------------------------------------------
 
-void AP_OpenDroneID::populate_system()
+void AP_OpenDroneID::init_system()
 {
-    _odid_system.last_populate_ms = AP_HAL::millis();
+    mavlink_open_drone_id_system_t packet = {};
+
+    packet.flags = MAV_ODID_LOCATION_SRC_LIVE_GNSS;
+    packet.operator_latitude = 0;
+    packet.operator_longitude = 0;
+    packet.area_count = 0;
+    packet.area_radius = 0;
+    packet.area_ceiling = 0;
+    packet.area_floor = 0;
+
+    populate_system(packet);
 }
+
+void AP_OpenDroneID::populate_system(const mavlink_message_t &msg)
+{
+    mavlink_open_drone_id_system_t packet {};
+    mavlink_msg_open_drone_id_system_decode(&msg, &packet);
+    populate_system(packet);
+}
+
+void AP_OpenDroneID::populate_system(const mavlink_open_drone_id_system_t &packet)
+{
+    if (memcmp(&packet, &_odid_system.info, sizeof(_odid_system.info)) != 0) {
+        memcpy(&_odid_system.info, &packet, sizeof(_odid_system.info));
+        _odid_system.has_changed = true;
+        _odid_system.last_populate_ms = AP_HAL::millis();
+    }
+}
+
 void AP_OpenDroneID::send_system(const mavlink_channel_t chan)
 {
     if (!HAVE_PAYLOAD_SPACE(chan, OPEN_DRONE_ID_SYSTEM)) {
@@ -394,11 +451,34 @@ void AP_OpenDroneID::send_system(const mavlink_channel_t chan)
     _odid_system.last_send_ms[chan] = AP_HAL::millis();
 }
 
+// ---------------------------------------------------------
+// ---------------------------------------------------------
 
-void AP_OpenDroneID::populate_operator_id()
+void AP_OpenDroneID::init_operator_id()
 {
-    _odid_operator_id.last_populate_ms = AP_HAL::millis();
+    mavlink_open_drone_id_operator_id_t packet = {};
+
+    packet.operator_id_type = MAV_ODID_OPERATOR_ID_TYPE_CAA;
+
+    populate_operator_id(packet);
 }
+
+void AP_OpenDroneID::populate_operator_id(const mavlink_message_t &msg)
+{
+    mavlink_open_drone_id_operator_id_t packet {};
+    mavlink_msg_open_drone_id_operator_id_decode(&msg, &packet);
+    populate_operator_id(packet);
+}
+
+void AP_OpenDroneID::populate_operator_id(const mavlink_open_drone_id_operator_id_t &packet)
+{
+    if (memcmp(&packet, &_odid_operator_id.info, sizeof(_odid_operator_id.info)) != 0) {
+        memcpy(&_odid_operator_id.info, &packet, sizeof(_odid_operator_id.info));
+        _odid_operator_id.has_changed = true;
+        _odid_operator_id.last_populate_ms = AP_HAL::millis();
+    }
+}
+
 void AP_OpenDroneID::send_operator_id(const mavlink_channel_t chan)
 {
     if (!HAVE_PAYLOAD_SPACE(chan, OPEN_DRONE_ID_OPERATOR_ID)) {
@@ -407,6 +487,9 @@ void AP_OpenDroneID::send_operator_id(const mavlink_channel_t chan)
     mavlink_msg_open_drone_id_operator_id_send_struct(chan, &_odid_operator_id.info);
     _odid_operator_id.last_send_ms[chan] = AP_HAL::millis();
 }
+
+// ---------------------------------------------------------
+// ---------------------------------------------------------
 
 MAV_RESULT AP_OpenDroneID::handle_message(const mavlink_channel_t chan, const mavlink_message_t &msg)
 {
@@ -417,6 +500,7 @@ MAV_RESULT AP_OpenDroneID::handle_message(const mavlink_channel_t chan, const ma
         break;
     case MAVLINK_MSG_ID_OPEN_DRONE_ID_SET_LOCATION:
         populate_location(msg);
+        _odid_location.set_externally = true;
         break;
     case MAVLINK_MSG_ID_OPEN_DRONE_ID_SET_AUTHENTICATION:
         populate_authentication(msg);
@@ -441,8 +525,74 @@ MAV_RESULT AP_OpenDroneID::handle_message(const mavlink_channel_t chan, const ma
         // status messages are unhandled
         return MAV_RESULT_FAILED;
     }
+
+    // upon a mavlink _SET_ command we want to store it to eeprom but not in this thread, do it in the next update tick
+    _eeprom_save_needed =
+            _odid_basic_id.has_changed ||
+            //_odid_loction.has_changed ||         // this does not have any strings that need to be saved
+            _odid_authentication.has_changed ||
+            _odid_self_id.has_changed ||
+            //_odid_system.has_changed ||          // this does not have any strings that need to be saved
+            _odid_operator_id.has_changed;
+
     return MAV_RESULT_ACCEPTED;
 }
+
+
+/*
+  save eeprom info. These are hidden params
+ */
+void AP_OpenDroneID::eeprom_save_info(void)
+{
+    // this is necessary to save and load strings while the normal Ardupilot param structure does not support strings
+    StorageAccess eeprom_storage(StorageManager::StorageODID);
+    struct eeprom_info_t eeprom;
+
+    eeprom.magic = eeprom_magic_value;
+    eeprom.version = 1;
+
+    memcpy(eeprom.data_v1.uas_id, &_odid_basic_id.info.uas_id, sizeof(_odid_basic_id.info));
+    memcpy(eeprom.data_v1.authentication_data, &_odid_authentication.info.authentication_data, sizeof(_odid_authentication.info.authentication_data));
+    memcpy(eeprom.data_v1.description, &_odid_self_id.info.description, sizeof(_odid_self_id.info.description));
+    memcpy(eeprom.data_v1.operator_id, &_odid_operator_id.info.operator_id, sizeof(_odid_operator_id.info.operator_id));
+
+    eeprom_storage.write_block(0, &eeprom, sizeof(eeprom));
+}
+
+/*
+  load eeprom info. These are hidden params. Return false on read failure
+ */
+bool AP_OpenDroneID::eeprom_load_info(void)
+{
+    // this is necessary to save and load strings while the normal Ardupilot param structure does not support strings
+    StorageAccess eeprom_storage(StorageManager::StorageODID);
+    struct eeprom_info_t eeprom;
+
+    if (!eeprom_storage.read_block(&eeprom, 0, sizeof(eeprom)) || eeprom.magic != eeprom_magic_value) {
+        return false;
+    }
+
+    if (eeprom.version != 1) {
+        // we only know how to parse v1
+        return false;
+    }
+
+    memcpy(&_odid_basic_id.info, eeprom.data_v1.uas_id, sizeof(_odid_basic_id.info));
+    _odid_basic_id.has_changed = true;
+
+    memcpy(&_odid_authentication.info, eeprom.data_v1.authentication_data, sizeof(_odid_authentication.info));
+    _odid_authentication.has_changed = true;
+
+    memcpy(&_odid_self_id.info, eeprom.data_v1.description, sizeof(_odid_self_id.info));
+    _odid_self_id.has_changed = true;
+
+    memcpy(&_odid_operator_id.info, eeprom.data_v1.operator_id, sizeof(_odid_operator_id.info));
+    _odid_operator_id.has_changed = true;
+
+    return true;
+}
+
+
 
 AP_OpenDroneID *AP::OpenDroneID()
 {

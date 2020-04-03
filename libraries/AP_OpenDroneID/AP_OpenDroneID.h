@@ -55,38 +55,61 @@ public:
 private:
     static AP_OpenDroneID *_singleton;
 
-    void init();
-    void deinit();
+    struct eeprom_info_t {
+        uint16_t magic;
+        uint8_t version;
+        struct data_v1_t {
+            uint8_t uas_id[MAVLINK_MSG_OPEN_DRONE_ID_BASIC_ID_FIELD_UAS_ID_LEN];
+            uint8_t authentication_data[MAVLINK_MSG_OPEN_DRONE_ID_AUTHENTICATION_FIELD_AUTHENTICATION_DATA_LEN];
+            uint8_t description[MAVLINK_MSG_OPEN_DRONE_ID_SELF_ID_FIELD_DESCRIPTION_LEN];
+            uint8_t operator_id[MAVLINK_MSG_OPEN_DRONE_ID_OPERATOR_ID_FIELD_OPERATOR_ID_LEN];
+        } data_v1;
+    };
+    const uint16_t eeprom_magic_value = 0x1342;
+    static_assert(sizeof(struct eeprom_info_t) <= 128, "Bad EEPROM_info size! Check StorageODID");
+    void eeprom_save_info();
+    bool eeprom_load_info();
 
     AP_Int8     _enabled;
     bool        _initialized;
+    bool        _eeprom_save_needed;
 
-    void send_basic_id(const mavlink_channel_t chan);
-    void send_location(const mavlink_channel_t chan);
-    void send_authentication(const mavlink_channel_t chan);
-    void send_self_id(const mavlink_channel_t chan);
-    void send_system(const mavlink_channel_t chan);
-    void send_operator_id(const mavlink_channel_t chan);
-    void send_message_pack(const mavlink_channel_t chan);
+    void init();
+    void deinit();
+
 
     // populate the data. Dynamic pckets are internally generated, static ones are done in init - unless overwritten by external mavlink msgs
-    void populate_basic_id();           // set in init
+    void init_basic_id();
     void populate_basic_id(const mavlink_message_t &msg);
+    void populate_basic_id(const mavlink_open_drone_id_basic_id_t &packet);
+    void send_basic_id(const mavlink_channel_t chan);
 
-    void populate_location();           // dynamic
     void populate_location(const mavlink_message_t &msg);
+    void populate_location(const mavlink_open_drone_id_location_t &packet);
+    void populate_location();           // dynamic
+    void send_location(const mavlink_channel_t chan);
 
-    void populate_authentication();     // set in init
+    void init_authentication();
     void populate_authentication(const mavlink_message_t &msg);
+    void populate_authentication(const mavlink_open_drone_id_authentication_t &packet);
+    void send_authentication(const mavlink_channel_t chan);
 
-    void populate_self_id();            // set in init
+    void init_self_id();
     void populate_self_id(const mavlink_message_t &msg);
+    void populate_self_id(const mavlink_open_drone_id_self_id_t &packet);
+    void send_self_id(const mavlink_channel_t chan);
 
-    void populate_system();             // set in init
+    void init_system();
     void populate_system(const mavlink_message_t &msg);
+    void populate_system(const mavlink_open_drone_id_system_t &packet);
+    void send_system(const mavlink_channel_t chan);
 
-    void populate_operator_id();        // set in init
+    void init_operator_id();
     void populate_operator_id(const mavlink_message_t &msg);
+    void populate_operator_id(const mavlink_open_drone_id_operator_id_t &packet);
+    void send_operator_id(const mavlink_channel_t chan);
+
+    void send_message_pack(const mavlink_channel_t chan);
 
     const static uint16_t interval_static_ms   = 3000;
     const static uint16_t interval_dynamic_ms  = 333;
