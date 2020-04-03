@@ -70,8 +70,9 @@ const StorageManager::StorageArea StorageManager::layout[STORAGE_NUM_AREAS] = {
     { StorageParam,    8192,  1280},
     { StorageRally,    9472,   300},
     { StorageFence,    9772,   256},
-    { StorageMission,  10028,  5204}, // leave 128 byte gap for expansion
+    { StorageMission,  10028,  5204},
     { StorageCANDNA,   15232,  1024},
+    { StorageODID,     16256,   128},
 #endif
 };
 
@@ -103,8 +104,9 @@ const StorageManager::StorageArea StorageManager::layout[STORAGE_NUM_AREAS] = {
     { StorageParam,    8192,  1280},
     { StorageRally,    9472,   300},
     { StorageFence,    9772,   256},
-    { StorageMission,  10028,  5204}, // leave 128 byte gap for expansion
+    { StorageMission,  10028,  5204},
     { StorageCANDNA,   15232,  1024},
+    { StorageODID,     16256,   128},
 #endif
 };
 #endif // STORAGE_NUM_AREAS == 1
