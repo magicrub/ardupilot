@@ -1,4 +1,6 @@
 #include "mathutilities.h"
+#include <float.h>
+#include <math.h>
 
 //! Number of days between Jan 6 1980 and Jan 1 2012
 #define JAN12012 11683
@@ -12,6 +14,11 @@ static const uint16_t month_day_leap[12] = {0, 31, 60, 91, 121, 152, 182, 213, 2
 //! Determine if a year is a leap year in the Gregorian calendar.
 int isLeapYear(uint16_t year);
 
+
+uint8_t is_zero(double value)
+{
+    return (fabsf(value) < FLT_EPSILON);
+}
 
 /*!
  * Add two angles together accounting for circular wrap

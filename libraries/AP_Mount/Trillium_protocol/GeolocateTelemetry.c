@@ -130,7 +130,7 @@ BOOL offsetImageLocation(const GeolocateTelemetry_t *geo, const double imagePosL
     float shift[NECEF];
 
     // Numerical problems at the poles
-    if(geo->llaTrig.cosLat == 0)
+    if (is_zero(geo->llaTrig.cosLat))
         return FALSE;
 
     // Vector from the gimbal to the image location in NED, notice that Altitue and Down have different signs

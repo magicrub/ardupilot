@@ -100,7 +100,7 @@ void ecefToLLAandTrig(const double ecef[NECEF], double lla[NLLA], llaTrig_t* tri
 {
     double psquared = ecef[ECEFX]*ecef[ECEFX] + ecef[ECEFY]*ecef[ECEFY];
 
-    if(psquared == 0.0)
+    if(is_zero(psquared))
     {
         // We are on the Earth rotation axis, we could be
         // in the center, or at one of the poles
@@ -109,7 +109,7 @@ void ecefToLLAandTrig(const double ecef[NECEF], double lla[NLLA], llaTrig_t* tri
         trig->cosLon = 1.0;
         trig->sinLon = 0.0;
 
-        if(ecef[ECEFZ] == 0.0)
+        if(is_zero(ecef[ECEFZ]))
         {
             lla[LAT] = 0.0;
             trig->cosLat = 1.0;
