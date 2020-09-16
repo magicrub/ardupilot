@@ -87,6 +87,11 @@
 #define AP_SERIALMANAGER_SAGETECH_BUFSIZE_RX    128
 #define AP_SERIALMANAGER_SAGETECH_BUFSIZE_TX    128
 
+// Trillium Gimbal
+#define AP_SERIALMANAGER_TRILLIUM_BAUD          115200
+#define AP_SERIALMANAGER_TRILLIUM_BUFSIZE_RX    128
+#define AP_SERIALMANAGER_TRILLIUM_BUFSIZE_TX    128
+
 // MegaSquirt EFI protocol
 #define AP_SERIALMANAGER_EFI_MS_BAUD           115
 #define AP_SERIALMANAGER_EFI_MS_BUFSIZE_RX     512
@@ -151,6 +156,7 @@ public:
         SerialProtocol_MSP = 32,
         SerialProtocol_DJI_FPV = 33,
         SerialProtocol_Sagetech = 34,
+        SerialProtocol_Trillium = 35,                // Trillium Gimbal
         SerialProtocol_NumProtocols                    // must be the last value
     };
 
