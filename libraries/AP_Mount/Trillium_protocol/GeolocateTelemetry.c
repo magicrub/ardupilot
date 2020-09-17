@@ -240,7 +240,7 @@ BOOL getTerrainIntersection(const GeolocateTelemetry_t *pGeo, float (*getElevati
         GroundHeight = getElevationHAE(PosLLA[LAT], PosLLA[LON]);
 
         // If we're still coarsely stepping
-        if (Step != StepFine)
+        if (!is_equal(Step, StepFine))
         {
             // Set the step size to the greater of 1% of current range or StepCoarse
             Step = MAX(StepCoarse, *pRange * 0.01f);
@@ -250,7 +250,7 @@ BOOL getTerrainIntersection(const GeolocateTelemetry_t *pGeo, float (*getElevati
         if (PosLLA[ALT] <= GroundHeight)
         {
             // Decrease the range by one step
-            if (Step != StepFine)
+            if (!is_equal(Step, StepFine))
             {
                 // Back up one step
                 *pRange -= Step;

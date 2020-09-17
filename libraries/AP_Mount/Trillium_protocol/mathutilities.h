@@ -9,6 +9,7 @@ extern "C" {
 #endif
 
 uint8_t is_zero(double value);
+uint8_t is_equal(double a, double b);
 
 //! 1D interpolation
 #define interpolate(ref, ind0, ind1, dep0, dep1) (((ref)-(ind0))*((dep1)-(dep0))/((ind1)-(ind0)) + (dep0))

@@ -19,6 +19,11 @@ uint8_t is_zero(double value)
 {
     return (fabsf(value) < FLT_EPSILON);
 }
+uint8_t is_equal(double a, double b)
+{
+    return (fabsf(a - b) < FLT_EPSILON);
+}
+
 
 /*!
  * Add two angles together accounting for circular wrap
