@@ -870,7 +870,7 @@ BOOL matrixInverse(const Matrix_t* A, Matrix_t* B)
     switch(A->numRows)
     {
     case 1:
-        if(A->data[0] != 0.0)
+        if(!is_zero(A->data[0]))
         {
             B->data[0] = 1.0/A->data[0];
             return TRUE;
@@ -908,7 +908,7 @@ BOOL matrixInverse2x2(const Matrix_t* A, Matrix_t* B)
     // Calculate the determinant
     double det = a*d - b*c;
 
-    if(det != 0.0)
+    if(!is_zero(det))
     {
         det = 1.0/det;
         set(B, 0, 0,  det*d);
@@ -950,7 +950,7 @@ BOOL matrixInverse3x3(const Matrix_t* A, Matrix_t* B)
     // Calculate the determinant
     double det = a11*a22*a33 + a21*a32*a13 + a31*a12*a23 - a11*a32*a23 - a31*a22*a13 - a21*a12*a33;
 
-    if(det != 0.0)
+    if(!is_zero(det))
     {
         det = 1.0/det;
 
@@ -1967,7 +1967,7 @@ BOOL matrixInversef(const Matrixf_t* A, Matrixf_t* B)
     switch(A->numRows)
     {
     case 1:
-        if(A->data[0] != 0.0f)
+        if(!is_zero(A->data[0]))
         {
             B->data[0] = 1.0f/A->data[0];
             return TRUE;
@@ -2005,7 +2005,7 @@ BOOL matrixInverse2x2f(const Matrixf_t* A, Matrixf_t* B)
     // Calculate the determinant
     float det = a*d - b*c;
 
-    if(det != 0.0f)
+    if(!is_zero(det))
     {
         det = 1.0f/det;
         set(B, 0, 0,  det*d);
@@ -2047,7 +2047,7 @@ BOOL matrixInverse3x3f(const Matrixf_t* A, Matrixf_t* B)
     // Calculate the determinant
     float det = a11*a22*a33 + a21*a32*a13 + a31*a12*a23 - a11*a32*a23 - a31*a22*a13 - a21*a12*a33;
 
-    if(det != 0.0f)
+    if(!is_zero(det))
     {
         det = 1.0f/det;
 
