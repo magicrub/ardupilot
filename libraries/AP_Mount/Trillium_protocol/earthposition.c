@@ -1,6 +1,7 @@
 #include "earthposition.h"
 #include "WGS84.h"
 #include "Constants.h"
+#include "mathutilities.h"
 #include <math.h>
 
 
