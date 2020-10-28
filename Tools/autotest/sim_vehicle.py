@@ -717,6 +717,28 @@ def start_mavproxy(opts, stuff):
     else:
         cmd.append("mavproxy.py")
 
+    if opts.mcast:
+        cmd.extend(["--master", "mcast:"])
+
+    for i in instances:
+        if not opts.no_extra_ports:
+            ports = [p + 10 * i for p in [14550, 14551]]
+            for port in ports:
+                if os.path.isfile("/ardupilot.vagrant"):
+                    # We're running inside of a vagrant guest; forward our
+                    # mavlink out to the containing host OS
+                    cmd.extend(["--out", "10.0.2.2:" + str(port)])
+                else:
+                    cmd.extend(["--out", "127.0.0.1:" + str(port)])
+
+        if not opts.mcast:
+            if opts.udp:
+                cmd.extend(["--master", ":" + str(5760 + 10 * i)])
+            else:
+                cmd.extend(["--master", "tcp:127.0.0.1:" + str(5760 + 10 * i)])
+        if stuff["sitl-port"] and not opts.no_rcin:
+            cmd.extend(["--sitl", "127.0.0.1:" + str(5501 + 10 * i)])
+
     if opts.tracker:
         cmd.extend(["--load-module", "tracker"])
         global tracker_uarta
