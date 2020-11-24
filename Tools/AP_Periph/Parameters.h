@@ -30,6 +30,8 @@ public:
         k_param_esc_number,
         k_param_battery,
         k_param_debug,
+        k_param_rcout_params,
+        k_param_servo_channels,
     };
 
     AP_Int16 format_version;

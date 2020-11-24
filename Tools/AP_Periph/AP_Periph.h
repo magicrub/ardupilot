@@ -13,6 +13,8 @@
 #include "../AP_Bootloader/app_comms.h"
 #include "hwing_esc.h"
 
+#include "SRV_Channel/SRV_Channel.h"
+
 #if defined(HAL_PERIPH_NEOPIXEL_COUNT) || defined(HAL_PERIPH_ENABLE_NCP5623_LED)
 #define AP_PERIPH_HAVE_LED
 #endif
@@ -124,7 +126,19 @@ public:
     HWESC_Telem hwesc_telem;
     void hwesc_telem_update();
 #endif
-    
+
+#ifdef HAL_PERIPH_ENABLE_RCOUT_TRANSLATOR
+
+    SRV_Channels servo_channels;
+    bool has_new_data_to_update = true;
+
+    void translate_rcout_init();
+    void translate_rcout_esc(int16_t *rc, uint8_t num_channels);
+    void translate_rcout_srv(const uint8_t actuator_id, const float command_value);
+    void translate_rcout_update();
+    void translate_rcout_handle_safety_state(uint8_t safety_state);
+#endif
+
     // setup the var_info table
     AP_Param param_loader{var_info};
 
