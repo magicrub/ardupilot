@@ -94,6 +94,21 @@ void AP_Periph_FW::translate_rcout_update()
     SRV_Channels::calc_pwm();
     SRV_Channels::output_ch_all();
     SRV_Channels::push();
+
+    static uint32_t last_ms = 0;
+    uint32_t now_ms = AP_HAL::native_millis();
+    if (now_ms - last_ms > 2000) {
+        last_ms = now_ms;
+
+        SRV_Channel* ch2 = SRV_Channels::get_channel_for(SRV_Channel::k_rcin2);
+        if (ch2 != nullptr) {
+            can_printf("pwm2 = %u", ch2->get_output_pwm());
+        }
+        SRV_Channel* ch3 = SRV_Channels::get_channel_for(SRV_Channel::k_rcin3);
+        if (ch3 != nullptr) {
+            can_printf("pwm3 = %u", ch3->get_output_pwm());
+        }
+    }
 }
 
 #endif // HAL_PERIPH_ENABLE_RCOUT_TRANSLATOR
