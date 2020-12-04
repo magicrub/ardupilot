@@ -89,6 +89,8 @@ PA11 CAN_RX CAN
 PA12 CAN_TX CAN
 
 
+#This is not yet supported by AP_Periph
+define HAL_SUPPORT_RCOUT_SERIAL 0
 
 # debugger support
 PA13 JTMS-SWDIO SWD
