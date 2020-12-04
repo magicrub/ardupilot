@@ -393,7 +393,7 @@ static void handle_allocation_response(CanardInstance* ins, CanardRxTransfer* tr
 
     if (transfer->source_node_id == CANARD_BROADCAST_NODE_ID)
     {
-        printf("Allocation request from another allocatee\n");
+        printf("Allocation request from another allocate\n");
         node_id_allocation_unique_id_offset = 0;
         return;
     }
