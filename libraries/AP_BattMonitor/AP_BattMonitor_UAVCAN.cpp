@@ -87,6 +87,11 @@ void AP_BattMonitor_UAVCAN::handle_battery_info(const BattInfoCb &cb)
     _interim_state.temperature = cb.msg->temperature;
     _interim_state.voltage = cb.msg->voltage;
     _interim_state.current_amps = cb.msg->current;
+    _soc = cb.msg->state_of_charge_pct;
+
+    if (_soc > 0 && _soc <= 100) {
+        _use_soc = true;
+    }
 
     uint32_t tnow = AP_HAL::micros();
     uint32_t dt = tnow - _interim_state.last_time_micros;
@@ -132,6 +137,15 @@ void AP_BattMonitor_UAVCAN::read()
     _state.consumed_wh = _interim_state.consumed_wh;
     _state.last_time_micros = _interim_state.last_time_micros;
     _state.healthy = _interim_state.healthy;
+}
+
+/// capacity_remaining_pct - returns the % battery capacity remaining (0 ~ 100)
+uint8_t AP_BattMonitor_UAVCAN::capacity_remaining_pct() const
+{
+    if (_use_soc) {
+        return _soc;
+    }
+    return AP_BattMonitor_Backend::capacity_remaining_pct();
 }
 
 #endif
