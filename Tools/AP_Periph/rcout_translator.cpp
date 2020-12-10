@@ -13,7 +13,8 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 #include <AP_HAL/AP_HAL.h>
-#ifdef HAL_PERIPH_ENABLE_RCOUT_TRANSLATOR
+#if 1
+//#ifdef HAL_PERIPH_ENABLE_RCOUT_TRANSLATOR
 #include <AP_Math/AP_Math.h>
 #include "AP_Periph.h"
 
@@ -35,9 +36,10 @@ void AP_Periph_FW::translate_rcout_init()
         servo_channels.set_default_function(i, SRV_Channel::Aux_servo_function_t(SRV_Channel::k_rcin1 + i));
     }
 
-    for (uint8_t i=0; i<16; i++) {
+    for (int16_t i=0; i<16; i++) {
         // SRV_Channel::k_rcin1 ... SRV_Channel::k_rcin16
-        SRV_Channels::set_angle(SRV_Channel::Aux_servo_function_t(SRV_Channel::k_rcin1 + i), 10000);
+        //SRV_Channels::set_angle(SRV_Channel::Aux_servo_function_t(SRV_Channel::k_rcin1 + i), 1000);
+        SRV_Channels::set_range(SRV_Channel::Aux_servo_function_t(SRV_Channel::k_rcin1 + i), 1000);
     }
     for (uint8_t i=0; i<12; i++) {
         // SRV_Channel::k_motor1 ... SRV_Channel::k_motor8, SRV_Channel::k_motor9 ... SRV_Channel::k_motor12
@@ -49,17 +51,17 @@ void AP_Periph_FW::translate_rcout_init()
 
 void AP_Periph_FW::translate_rcout_esc(int16_t *rc, uint8_t num_channels)
 {
-    if (rc == nullptr) {
-        return;
-    }
-
-    num_channels = MIN(num_channels, 12);
-
-    for (uint16_t i=0; i<num_channels; i++) {
-        SRV_Channels::set_output_scaled(SRV_Channels::get_motor_function(i), rc[i]);
-    }
-
-    has_new_data_to_update = true;
+//    if (rc == nullptr) {
+//        return;
+//    }
+//
+//    num_channels = MIN(num_channels, 12);
+//
+//    for (uint16_t i=0; i<num_channels; i++) {
+//        SRV_Channels::set_output_scaled(SRV_Channels::get_motor_function(i), rc[i]);
+//    }
+//
+//    has_new_data_to_update = true;
 }
 
 void AP_Periph_FW::translate_rcout_srv(uint8_t actuator_id, const float command_value)
@@ -71,6 +73,8 @@ void AP_Periph_FW::translate_rcout_srv(uint8_t actuator_id, const float command_
 
     const SRV_Channel::Aux_servo_function_t function = SRV_Channel::Aux_servo_function_t(SRV_Channel::k_rcin1 + actuator_id - 1);
     SRV_Channels::set_output_norm(function, command_value);
+    //SRV_Channels::set_output_pwm(function, 1000 + 500*command_value);
+
     has_new_data_to_update = true;
 }
 
@@ -91,24 +95,60 @@ void AP_Periph_FW::translate_rcout_update()
     }
     has_new_data_to_update = false;
 
-    SRV_Channels::calc_pwm();
-    SRV_Channels::output_ch_all();
-    SRV_Channels::push();
 
     static uint32_t last_ms = 0;
     uint32_t now_ms = AP_HAL::native_millis();
-    if (now_ms - last_ms > 2000) {
+    if (now_ms - last_ms > 5000) {
         last_ms = now_ms;
 
         SRV_Channel* ch2 = SRV_Channels::get_channel_for(SRV_Channel::k_rcin2);
-        if (ch2 != nullptr) {
-            can_printf("pwm2 = %u", ch2->get_output_pwm());
-        }
         SRV_Channel* ch3 = SRV_Channels::get_channel_for(SRV_Channel::k_rcin3);
-        if (ch3 != nullptr) {
-            can_printf("pwm3 = %u", ch3->get_output_pwm());
+
+        if (ch2 != nullptr && ch3 != nullptr) {
+
+            const uint16_t  Apwm2 =     ch2->get_output_pwm();
+            const float     Apwm22 =    ch2->get_output_norm();
+            const uint16_t  Apwm3 =     ch3->get_output_pwm();
+            const float     Apwm33 =    ch3->get_output_norm();
+
+            can_printf("A %u, %.2f, %u, %.2f", Apwm2, Apwm22, Apwm3, Apwm33);
+//
+//            SRV_Channels::calc_pwm();
+//            SRV_Channels::output_ch_all();
+//            SRV_Channels::push();
+//
+//            const uint16_t  Bpwm2 =     ch2->get_output_pwm();
+//            const float     Bpwm22 =    ch2->get_output_norm();
+//            const uint16_t  Bpwm3 =     ch3->get_output_pwm();
+//            const float     Bpwm33 =    ch3->get_output_norm();
+//            can_printf("B %u, %.2f, %u, %.2f", Bpwm2, Bpwm22, Bpwm3, Bpwm33);
+//
+//            ch3->set_output_pwm(Bpwm2);
+//            ch3->set_output_norm(Bpwm22);
+//
+//            const uint16_t  Cpwm2 =     ch2->get_output_pwm();
+//            const float     Cpwm22 =    ch2->get_output_norm();
+//            const uint16_t  Cpwm3 =     ch3->get_output_pwm();
+//            const float     Cpwm33 =    ch3->get_output_norm();
+//            can_printf("C %u, %.2f, %u, %.2f", Cpwm2, Cpwm22, Cpwm3, Cpwm33);
+//
+//            SRV_Channels::calc_pwm();
+//            SRV_Channels::output_ch_all();
+//            SRV_Channels::push();
+//
+//            const uint16_t  Dpwm2 =     ch2->get_output_pwm();
+//            const float     Dpwm22 =    ch2->get_output_norm();
+//            const uint16_t  Dpwm3 =     ch3->get_output_pwm();
+//            const float     Dpwm33 =    ch3->get_output_norm();
+//            can_printf("D %u, %.2f, %u, %.2f", Dpwm2, Dpwm22, Dpwm3, Dpwm33);
+
         }
     }
+
+    SRV_Channels::calc_pwm();
+    SRV_Channels::cork();
+    SRV_Channels::output_ch_all();
+    SRV_Channels::push();
 }
 
 #endif // HAL_PERIPH_ENABLE_RCOUT_TRANSLATOR
