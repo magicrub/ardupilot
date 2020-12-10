@@ -5,13 +5,24 @@ include ../PH4-mini/hwdef.dat
 
 undef COMPASS
 undef IOMCU_UART
-undef USART6
+#undef USART2
+#undef UART4
+#undef USART6
+#undef USART1
+#undef UART7
 undef ROMFS
 undef HAL_HAVE_SAFETY_SWITCH
 undef IMU
-undef HAL_CHIBIOS_ARCH_FMUV3
+undef HAL_CHIBIOS_ARCH_FMUV5
 undef BOOTLOADER_DEV_LIST
 
+undef PE10
+undef SAFETY_IN
+undef HAL_GPIO_PIN_SAFETY_IN
+
+define HAL_RAM_RESERVE_START 0
+#undef SERIAL_ORDER
+#SERIAL_ORDER
 
 # setup build for a peripheral firmware
 env AP_PERIPH 1
@@ -22,7 +33,7 @@ define HAL_BUILD_AP_PERIPH
 
 define HAL_PERIPH_ENABLE_GPS
 #define HAL_PERIPH_ENABLE_MAG
-#define HAL_PERIPH_ENABLE_BARO
+define HAL_PERIPH_ENABLE_BARO
 
 # use the app descriptor needed by MissionPlanner for CAN upload
 env APP_DESCRIPTOR MissionPlanner
@@ -48,7 +59,7 @@ define HAL_BARO_ALLOW_INIT_NO_BARO
 
 define HAL_CAN_DEFAULT_NODE_ID 0
 
-define CAN_APP_NODE_NAME "org.ardupilot.CubeOrange-periph"
+define CAN_APP_NODE_NAME "org.ardupilot.WaitWaitWait"
 
 # reserve 256 bytes for comms between app and bootloader
 #RAM_RESERVE_START 256
@@ -56,7 +67,9 @@ define CAN_APP_NODE_NAME "org.ardupilot.CubeOrange-periph"
 env DISABLE_SCRIPTING 1
 
 # use blue LED
-define HAL_GPIO_PIN_LED HAL_GPIO_PIN_FMU_LED_AMBER
+#define HAL_GPIO_PIN_LED HAL_GPIO_PIN_FMU_LED_AMBER
+define HAL_GPIO_PIN_LED HAL_GPIO_PIN_LED_BLUE
+
 
 undef HAL_OS_FATFS_IO
 
