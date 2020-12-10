@@ -639,6 +639,7 @@ is bob we will attempt to checkout bob-AVR'''
                 "ZubaxGNSS",
                 "CubeOrange-periph",
                 "CubeBlack-periph",
+                "PH4-mini-peripoh",
                 "HitecMosaic",
                 ]
 
