@@ -35,6 +35,8 @@ public:
     void init();
     void update();
 
+    void check_for_mavlink_reboot_msg();
+
     Parameters g;
 
     void can_start();

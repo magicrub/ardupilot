@@ -282,6 +282,7 @@ void AP_Periph_FW::update()
         SRV_Channels::enable_aux_servos();
 #endif
 
+        check_for_mavlink_reboot_msg();
     }
 
     static uint32_t last_error_ms;
@@ -316,6 +317,71 @@ void AP_Periph_FW::update()
 #ifdef HAL_PERIPH_ENABLE_ADSB
     adsb_update();
 #endif
+}
+
+// check for uploader.py reboot command
+void AP_Periph_FW::check_for_mavlink_reboot_msg()
+{
+    static uint32_t reboot_pending_start_ms = 0;
+    if (reboot_pending_start_ms && (AP_HAL::native_millis() - reboot_pending_start_ms > 500)) {
+#if CONFIG_HAL_BOARD == HAL_BOARD_CHIBIOS
+        NVIC_SystemReset();
+#endif
+    }
+
+    const uint8_t MAVLINK_REBOOT_ID1[] = {0xfe, 0x21, 0x72, 0xff, 0x00, 0x4c, 0x00, 0x00, 0x40, 0x40, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xf6, 0x00, 0x01, 0x00, 0x00, 0x53, 0x6b};
+    const uint8_t MAVLINK_REBOOT_ID0[] = {0xfe, 0x21, 0x45, 0xff, 0x00, 0x4c, 0x00, 0x00, 0x40, 0x40, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xf6, 0x00, 0x00, 0x00, 0x00, 0xcc, 0x37};
+
+    AP_HAL::UARTDriver* uart_list[] = { hal.console, hal.uartA, hal.uartB, hal.uartC, hal.uartD, hal.uartE, hal.uartF, hal.uartG, hal.uartH, hal.uartI };
+
+    for (uint8_t i=0; i< ARRAY_SIZE(uart_list); i++) {
+
+        auto *uart = uart_list[i];
+        if (uart == nullptr || !uart->is_initialized()) {
+            continue;
+        }
+
+        int16_t available = MIN(uart->available(), 1000);
+        while (available--) {
+            static uint8_t buf[sizeof(MAVLINK_REBOOT_ID1)];
+            static uint16_t index = 0;
+
+            const int16_t byte = uart->read();
+            if (byte < 0 || byte > 0xFF) {
+                break;
+            }
+            if (index >= sizeof(buf)) {
+                index = 0;
+            }
+            buf[index] = byte;
+
+            static uint8_t tracking_str = 0; // 0 = both, 1 or 2 mean the two MAVLINK_REBOOT_IDx
+            bool match = false;
+
+            if ((tracking_str == 0 || tracking_str == 1) && (memcmp(buf, MAVLINK_REBOOT_ID1, index+1) == 0)) {
+                tracking_str = 1;
+                match = true;
+            }
+            if ((tracking_str == 0 || tracking_str == 2) && (memcmp(buf, MAVLINK_REBOOT_ID0, index+1) == 0)) {
+                tracking_str = 2;
+                match = true;
+            }
+
+            if (!match) {
+                // don't have a perfect match on either string, start over
+                index = 0;
+                tracking_str = 0;
+                continue;
+            }
+
+            index++;
+            if (index == sizeof(buf)) {
+                // received reboot msg
+                can_printf("Received MAVLink reboot command");
+                reboot_pending_start_ms = AP_HAL::native_millis();
+            }
+        }
+    }
 }
 
 AP_HAL_MAIN();
