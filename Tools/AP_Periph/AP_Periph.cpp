@@ -256,6 +256,7 @@ void AP_Periph_FW::update()
 #ifdef HAL_GPIO_PIN_LED
         palToggleLine(HAL_GPIO_PIN_LED);
 #endif
+
 #if 0
 #ifdef HAL_PERIPH_ENABLE_GPS
         hal.uartA->printf("GPS status: %u\n", (unsigned)gps.status());
@@ -271,10 +272,16 @@ void AP_Periph_FW::update()
         hal.uartA->printf("RNG %u %ucm\n", rangefinder.num_sensors(), rangefinder.distance_cm_orient(ROTATION_NONE));
 #endif
         hal.scheduler->delay(1);
-#endif
+#endif // if 0 (hal.uartA debug)
+
 #ifdef HAL_PERIPH_NEOPIXEL_COUNT
         hal.rcout->set_serial_led_num_LEDs(HAL_PERIPH_NEOPIXEL_CHAN, HAL_PERIPH_NEOPIXEL_COUNT, AP_HAL::RCOutput::MODE_NEOPIXEL);
 #endif
+
+#ifdef HAL_PERIPH_ENABLE_RCOUT_TRANSLATOR
+        SRV_Channels::enable_aux_servos();
+#endif
+
     }
 
     static uint32_t last_error_ms;
@@ -292,7 +299,7 @@ void AP_Periph_FW::update()
         show_stack_free();
     }
 #endif
-    
+
 #ifdef HAL_PERIPH_ENABLE_BATTERY
     if (now - battery.last_read_ms >= 100) {
         // update battery at 10Hz

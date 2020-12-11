@@ -610,12 +610,18 @@ static void handle_act_command(CanardInstance* ins, CanardRxTransfer* transfer)
     if (uavcan_equipment_actuator_ArrayCommand_decode(transfer, transfer->payload_len, &cmd, &arraybuf_ptr) < 0) {
         return;
     }
+
+
+//    for (uint8_t i=0; i < 4; i++) {
     for (uint8_t i=0; i < cmd.commands.len; i++) {
-        if (cmd.commands.data[i].command_type != UAVCAN_EQUIPMENT_ACTUATOR_COMMAND_COMMAND_TYPE_UNITLESS) {
-            // this is the only type we support
-            continue;
-        }
-        periph.translate_rcout_srv(cmd.commands.data[i].actuator_id, cmd.commands.data[i].command_value);
+//        if (cmd.commands.data[i].command_type != UAVCAN_EQUIPMENT_ACTUATOR_COMMAND_COMMAND_TYPE_UNITLESS) {
+//            // this is the only type we support
+//            continue;
+//        }
+//        periph.translate_rcout_srv(i+1, cmd.commands.data[i].command_value);
+//        periph.translate_rcout_srv(cmd.commands.data[i].actuator_id, cmd.commands.data[i].command_value);
+
+        //can_printf("%d, %d, %d, %.2f", i, cmd.commands.len, cmd.commands.data[i].actuator_id, cmd.commands.data[i].command_value);
     }
 }
 #endif // HAL_PERIPH_ENABLE_RCOUT_TRANSLATOR
@@ -1017,10 +1023,6 @@ static void process1HzTasks(uint64_t timestamp_usec)
         // user has a chance to load a fixed firmware
         set_fast_reboot(RTC_BOOT_FWOK);
     }
-#endif
-
-#ifdef HAL_PERIPH_ENABLE_RCOUT_TRANSLATOR
-    SRV_Channels::enable_aux_servos();
 #endif
 }
 
