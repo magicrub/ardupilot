@@ -51,5 +51,4 @@ private:
     AP_UAVCAN* _ap_uavcan;
     uint8_t _node_id;
     uint8_t _soc;
-    bool _use_soc;
 };
