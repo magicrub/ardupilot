@@ -1,0 +1,41 @@
+# hw definition file for processing by chibios_hwdef.py
+# for F4 bootloader
+
+include ../kha1-periph/hwdef_common.dat
+
+#################################
+# Memory and Storage
+# the location where the bootloader will put the firmware
+# we use first 32k
+FLASH_RESERVE_START_KB 0
+FLASH_BOOTLOADER_LOAD_KB 32
+
+define HAL_USE_EMPTY_IO TRUE
+
+#################################
+# Multi-purpose pins
+
+undef SPI1
+undef I2C1
+
+define HAL_GPIO_PIN_LED_BOOTLOADER HAL_GPIO_PIN_LED1_RED
+
+
+#################################
+# param storage (disabled)
+define HAL_USE_EMPTY_STORAGE 1
+undef STORAGE_FLASH_PAGE
+
+
+#################################
+#Communications and debug
+undef SERIAL_ORDER
+undef HAL_USE_UART
+SERIAL_ORDER
+define HAL_USE_UART FALSE
+
+define HAL_CAN_DEFAULT_NODE_ID 0
+define CAN_APP_NODE_NAME "org.ardupilot.kha1-periph"
+
+#################################
+
