@@ -1,0 +1,15 @@
+include ../f303-periph/hwdef-bl.dat
+
+undef STDOUT_SERIAL
+undef STDOUT_BAUDRATE
+undef PA2 USART2_TX USART2 SPEED_HIGH NODMA
+undef PA3 USART2_RX USART2 SPEED_HIGH NODMA
+undef STM32_SERIAL_USE_USART2
+define STM32_SERIAL_USE_USART2 FALSE
+
+
+
+# use DNA
+define HAL_CAN_DEFAULT_NODE_ID 0
+
+define CAN_APP_NODE_NAME "org.ardupilot.f303_kraus"
