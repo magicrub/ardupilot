@@ -43,6 +43,7 @@ public:
     friend class AP_ADSB_Backend;
     friend class AP_ADSB_uAvionix_MAVLink;
     friend class AP_ADSB_Sagetech;
+    friend class AP_ADSB_GDL90;
 
     // constructor
     AP_ADSB();
