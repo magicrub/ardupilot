@@ -1243,6 +1243,34 @@ const AP_Param::GroupInfo ParametersG2::var_info[] = {
     AP_SUBGROUPINFO(efi, "EFI", 22, ParametersG2, AP_EFI),
 #endif
 
+    // @Param: AIRBRK_SLEWRATE
+    // @DisplayName: Airbrake slew rate
+    // @Description: maximum percentage change in airbrake output per second. A setting of 25 means to not change the airbrake by more than 25% of the full airbrake range in one second. A value of 0 means no rate limiting.
+    // @Units: %/s
+    // @Range: 0 100
+    // @Increment: 1
+    // @User: Advanced
+    AP_GROUPINFO("AIRBRK_SLEWRATE", 24, ParametersG2, airbrake_slewrate, 0),
+
+    // @Param: FLAP_TRIM
+    // @DisplayName: Trim flap
+    // @Description: Auto flap to apply when above FLAP1_SPEED and FLAP2_SPEED
+    // @Units: %
+    // @Range: -100 100
+    // @Increment: 1
+    // @User: Advanced
+    AP_GROUPINFO("FLAP_TRIM", 25, ParametersG2, flap_trim_percent, 0),
+
+
+    // @Param: FLAP_AIL_MIX_MAX
+    // @DisplayName: Flap Aileron Mix Max
+    // @Description: Maximum contribution from flaps into flaperon output to preserve headroom for aileron control. Value is internally limited to 90% to prevent the flap from saturating the aileron.
+    // @Units: %
+    // @Range: 0 90
+    // @Increment: 1
+    // @User: Advanced
+    AP_GROUPINFO("FLAP_AIL_MIX_MAX", 40, ParametersG2, flap_max_allowed_contribution_to_flaperon_pct, 80),
+
     AP_GROUPEND
 };
 

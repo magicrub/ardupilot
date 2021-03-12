@@ -133,6 +133,8 @@ public:
     friend class RC_Channel_Plane;
     friend class RC_Channels_Plane;
 
+    friend class Slew_Object;
+
     friend class Mode;
     friend class ModeCircle;
     friend class ModeStabilize;
@@ -184,6 +186,8 @@ private:
     RC_Channel *channel_pitch;
     RC_Channel *channel_throttle;
     RC_Channel *channel_rudder;
+    RC_Channel *channel_flap;
+    RC_Channel *channel_airbrake;
 
     AP_Logger logger;
 
@@ -936,6 +940,7 @@ private:
     void stabilize();
     void set_servos_idle(void);
     void set_servos();
+    void set_servos_throttle_while_disarmed();
     void set_servos_manual_passthrough(void);
     void set_servos_controlled(void);
     void set_servos_old_elevons(void);
@@ -943,6 +948,7 @@ private:
     void change_landing_gear(AP_LandingGear::LandingGearCommand cmd);
     void set_landing_gear(void);
     void dspoiler_update(void);
+    void airbrake_update(void);
     void servo_output_mixers(void);
     void servos_output(void);
     void servos_auto_trim(void);
@@ -975,7 +981,7 @@ private:
     void update_throttle_hover();
     void channel_function_mixer(SRV_Channel::Aux_servo_function_t func1_in, SRV_Channel::Aux_servo_function_t func2_in,
                                 SRV_Channel::Aux_servo_function_t func1_out, SRV_Channel::Aux_servo_function_t func2_out);
-    void flaperon_update(int8_t flap_percent);
+    void flaperon_update();
     bool start_command(const AP_Mission::Mission_Command& cmd);
     bool verify_command(const AP_Mission::Mission_Command& cmd);
     void do_takeoff(const AP_Mission::Mission_Command& cmd);
@@ -1033,6 +1039,42 @@ private:
         Failsafe_Action_QLand     = 4,
         Failsafe_Action_Parachute = 5
     };
+
+    void crow_update(void);
+
+    struct Slew_Object {
+    public:
+        float target;
+        float slewrate;
+
+        float get_target_slewed() const { return _target_slewed; }
+        bool is_slewing() const { return !is_equal(target, _target_slewed); }
+
+        void update_slew(const float g_Dt) {
+            if (slewrate <= 0) {
+                _target_slewed = target;
+                return;
+            }
+            const float max_change = g_Dt * slewrate;
+
+            if ((target - _target_slewed) > max_change) {
+                _target_slewed += max_change;
+            } else if ((target - _target_slewed) < -max_change) {
+                _target_slewed -= max_change;
+            } else {
+                _target_slewed = target;
+            }
+        };
+
+    private:
+        float _target_slewed;
+    };
+
+    Slew_Object control_airbrake_pct;
+    Slew_Object control_flap_pct;
+    Slew_Object control_flap_auto_pct;
+    Slew_Object control_crow_norm_inner;
+    Slew_Object control_crow_norm_outer;
 
     // list of priorities, highest priority first
     static constexpr int8_t _failsafe_priorities[] = {

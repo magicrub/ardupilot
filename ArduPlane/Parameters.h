@@ -570,6 +570,11 @@ public:
     // EFI Engine Monitor
     AP_EFI efi;
 #endif
+    AP_Int16 airbrake_slewrate;
+
+    AP_Int8 flap_trim_percent;
+    AP_Int8 flap_max_allowed_contribution_to_flaperon_pct;
+
 };
 
 extern const AP_Param::Info var_info[];

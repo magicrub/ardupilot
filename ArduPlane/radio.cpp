@@ -40,6 +40,10 @@ void Plane::set_control_channels(void)
         SRV_Channels::set_angle(SRV_Channel::k_throttleRight, 100);
     }
 
+    // update flap and airbrake channel assignment
+    channel_flap     = rc().find_channel_for_option(RC_Channel::AUX_FUNC::FLAP);
+    channel_airbrake = rc().find_channel_for_option(RC_Channel::AUX_FUNC::AIRBRAKE);
+
     if (!arming.is_armed() && arming.arming_required() == AP_Arming::Required::YES_MIN_PWM) {
         SRV_Channels::set_safety_limit(SRV_Channel::k_throttle, have_reverse_thrust()?SRV_Channel::Limit::TRIM:SRV_Channel::Limit::MIN);
     }
@@ -353,8 +357,7 @@ bool Plane::trim_radio()
         SRV_Channels::set_trim_to_servo_out_for(SRV_Channel::k_dspoilerRight2);
     }
 
-    if (SRV_Channels::get_output_scaled(SRV_Channel::k_flap_auto) == 0 &&
-        SRV_Channels::get_output_scaled(SRV_Channel::k_flap) == 0) {
+    if (is_zero(control_flap_auto_pct.target) && is_zero(control_flap_pct.target)) {
         // trim flaperons if no flap input
         SRV_Channels::set_trim_to_servo_out_for(SRV_Channel::k_flaperon_left);
         SRV_Channels::set_trim_to_servo_out_for(SRV_Channel::k_flaperon_right);
