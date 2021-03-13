@@ -505,6 +505,9 @@ public:
     // internal combustion engine control
     AP_ICEngine ice_control;
 
+    // feed-forward gain for pitch when negative thrust is applied
+    AP_Float kff_airbrake_to_pitch;
+
     // RC input channels
     RC_Channels_Plane rc_channels;
     

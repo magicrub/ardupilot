@@ -70,7 +70,7 @@ const AP_Param::Info Plane::var_info[] = {
 
     // @Param: KFF_THR2PTCH
     // @DisplayName: Throttle to Pitch Mix
-    // @Description: Pitch up to add in proportion to throttle. 100% throttle will add this number of degrees to the pitch target.
+    // @Description: Pitch up to add in proportion to throttle. 100% throttle will add this number of degrees to the pitch target. This only applies to positive throttle demand. See KFF_AIRBRK2PTCH for negative thrust-to-pitch.
     // @Range: 0 5
     // @Increment: 0.01
     // @User: Advanced
@@ -1251,6 +1251,14 @@ const AP_Param::GroupInfo ParametersG2::var_info[] = {
     // @Path: ../libraries/AC_PID/AC_PID.cpp
     AP_SUBGROUPINFO(guidedHeading, "GUIDED_", 28, ParametersG2, AC_PID),
 #endif // OFFBOARD_GUIDED == ENABLED
+
+    // @Param: KFF_AIRBRK2PTCH
+    // @DisplayName: Airbrake to Pitch Mix
+    // @Description: Pitch up to add in proportion to negative throttle, used in systems with reverse thrust and/or an airbrake. -100% throttle will add this number of degrees to the pitch target. This only applies while throttle demand is negative. See KFF_THR2PTCH for positive thrust-to-pitch.
+    // @Range: -20 20
+    // @Increment: 0.01
+    // @User: Advanced
+     AP_GROUPINFO("KFF_AIRBRK2PTCH", 29, ParametersG2, kff_airbrake_to_pitch, 0),
 
     AP_GROUPEND
 };
