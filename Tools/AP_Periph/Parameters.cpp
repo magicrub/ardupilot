@@ -154,7 +154,7 @@ const AP_Param::Info AP_Periph_FW::var_info[] = {
 #ifdef HAL_PERIPH_ENABLE_AP_ESC
     // @Group: ESC_
     // @Path: ../libraries/AP_ESC/AP_ESC.cpp
-    //GOBJECT(esc, "ESC_", AP_ESC),
+    GOBJECT(esc, "ESC_", AP_ESC),
 #endif
 
 #ifdef HAL_PERIPH_ENABLE_NOTIFY
