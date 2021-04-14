@@ -172,7 +172,11 @@ void AP_Periph_FW::init()
         msp_init(hal.serial(g.msp_port));
     }
 #endif
-    
+
+#ifdef HAL_PERIPH_ENABLE_AP_ESC
+    esc.init();
+#endif
+
 #ifdef HAL_PERIPH_ENABLE_NOTIFY
     notify.init();
 #endif
@@ -340,6 +344,14 @@ void AP_Periph_FW::update()
         // update notify at 50Hz
         notify_last_update_ms = now;
         notify.update();
+    }
+#endif
+
+#ifdef HAL_PERIPH_ENABLE_AP_ESC
+    if (now - esc_last_update_ms >= 100) {
+        // update at 10Hz
+        esc_last_update_ms = now;
+        esc.update();
     }
 #endif
 

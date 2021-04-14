@@ -12,6 +12,7 @@
 #include <AP_RangeFinder/AP_RangeFinder.h>
 #include <AP_MSP/AP_MSP.h>
 #include <AP_MSP/msp.h>
+#include <AP_ESC/AP_ESC.h>
 #include "../AP_Bootloader/app_comms.h"
 #include "hwing_esc.h"
 
@@ -167,6 +168,11 @@ public:
 #ifdef HAL_PERIPH_ENABLE_NOTIFY
     // notification object for LEDs, buzzers etc
     AP_Notify notify;
+#endif
+
+#ifdef HAL_PERIPH_ENABLE_AP_ESC
+    AP_ESC esc;
+    uint32_t esc_last_update_ms;
 #endif
 
     // setup the var_info table

@@ -99,11 +99,6 @@ void AP_Periph_FW::rcout_srv(uint8_t actuator_id, const float command_value)
 
 void AP_Periph_FW::rcout_handle_safety_state(uint8_t safety_state)
 {
-    if (safety_state == 255) {
-        hal.rcout->force_safety_off();
-    } else {
-        hal.rcout->force_safety_on();
-    }
     rcout_has_new_data_to_update = true;
 }
 

@@ -151,6 +151,12 @@ const AP_Param::Info AP_Periph_FW::var_info[] = {
     GSCALAR(msp_port, "MSP_PORT", AP_PERIPH_MSP_PORT_DEFAULT),
 #endif
     
+#ifdef HAL_PERIPH_ENABLE_AP_ESC
+    // @Group: ESC_
+    // @Path: ../libraries/AP_ESC/AP_ESC.cpp
+    //GOBJECT(esc, "ESC_", AP_ESC),
+#endif
+
 #ifdef HAL_PERIPH_ENABLE_NOTIFY
     // @Group: NTF_
     // @Path: ../libraries/AP_Notify/AP_Notify.cpp

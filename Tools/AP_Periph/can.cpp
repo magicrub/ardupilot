@@ -506,7 +506,7 @@ static void can_buzzer_update(void)
 }
 #endif // (HAL_PERIPH_ENABLE_BUZZER_WITHOUT_NOTIFY) || (HAL_PERIPH_ENABLE_NOTIFY)
 
-#if defined(HAL_GPIO_PIN_SAFE_LED) || defined(HAL_PERIPH_ENABLE_RC_OUT)
+#if defined(HAL_GPIO_PIN_SAFE_LED) || defined(HAL_PERIPH_ENABLE_RC_OUT) || defined(HAL_PERIPH_ENABLE_AP_ESC)
 static uint8_t safety_state;
 
 /*
@@ -519,6 +519,13 @@ static void handle_safety_state(CanardInstance* ins, CanardRxTransfer* transfer)
         return;
     }
     safety_state = req.status;
+
+    if (safety_state == 255) {
+        hal.rcout->force_safety_off();
+    } else {
+        hal.rcout->force_safety_on();
+    }
+
 #ifdef HAL_PERIPH_ENABLE_RC_OUT
     periph.rcout_handle_safety_state(safety_state);
 #endif
@@ -668,7 +675,7 @@ static void handle_lightscommand(CanardInstance* ins, CanardRxTransfer* transfer
 }
 #endif // AP_PERIPH_HAVE_LED_WITHOUT_NOTIFY
 
-#ifdef HAL_PERIPH_ENABLE_RC_OUT
+#if defined(HAL_PERIPH_ENABLE_RC_OUT) || defined(HAL_PERIPH_ENABLE_AP_ESC)
 static void handle_esc_rawcommand(CanardInstance* ins, CanardRxTransfer* transfer)
 {
     uavcan_equipment_esc_RawCommand cmd;
@@ -677,9 +684,18 @@ static void handle_esc_rawcommand(CanardInstance* ins, CanardRxTransfer* transfe
     if (uavcan_equipment_esc_RawCommand_decode(transfer, transfer->payload_len, &cmd, &arraybuf_ptr) < 0) {
         return;
     }
-    periph.rcout_esc(cmd.cmd.data, cmd.cmd.len);
-}
 
+#ifdef HAL_PERIPH_ENABLE_AP_ESC
+    periph.esc.handle_can_rx(transfer->source_node_id, cmd.cmd.data, cmd.cmd.len);
+#endif
+
+#ifdef HAL_PERIPH_ENABLE_RC_OUT
+    periph.rcout_esc(cmd.cmd.data, cmd.cmd.len);
+#endif
+}
+#endif // #if defined(HAL_PERIPH_ENABLE_RC_OUT) || defined(HAL_PERIPH_ENABLE_AP_ESC)
+
+#ifdef HAL_PERIPH_ENABLE_RC_OUT
 static void handle_act_command(CanardInstance* ins, CanardRxTransfer* transfer)
 {
     // manual decoding due to TAO bug in libcanard generated code
@@ -849,7 +865,7 @@ static void onTransferReceived(CanardInstance* ins,
         break;
 #endif
 
-#if defined(HAL_GPIO_PIN_SAFE_LED) || defined(HAL_PERIPH_ENABLE_RC_OUT)
+#if defined(HAL_GPIO_PIN_SAFE_LED) || defined(HAL_PERIPH_ENABLE_RC_OUT) || defined(HAL_PERIPH_ENABLE_AP_ESC)
     case ARDUPILOT_INDICATION_SAFETYSTATE_ID:
         handle_safety_state(ins, transfer);
         break;
@@ -871,11 +887,13 @@ static void onTransferReceived(CanardInstance* ins,
         break;
 #endif
 
-#ifdef HAL_PERIPH_ENABLE_RC_OUT
+#if defined(HAL_PERIPH_ENABLE_RC_OUT) || defined(HAL_PERIPH_ENABLE_AP_ESC)
     case UAVCAN_EQUIPMENT_ESC_RAWCOMMAND_ID:
         handle_esc_rawcommand(ins, transfer);
         break;
+#endif
 
+#ifdef HAL_PERIPH_ENABLE_RC_OUT
     case UAVCAN_EQUIPMENT_ACTUATOR_ARRAYCOMMAND_ID:
         handle_act_command(ins, transfer);
         break;
@@ -934,7 +952,7 @@ static bool shouldAcceptTransfer(const CanardInstance* ins,
         *out_data_type_signature = UAVCAN_EQUIPMENT_INDICATION_BEEPCOMMAND_SIGNATURE;
         return true;
 #endif
-#if defined(HAL_GPIO_PIN_SAFE_LED) || defined(HAL_PERIPH_ENABLE_RC_OUT)
+#if defined(HAL_GPIO_PIN_SAFE_LED) || defined(HAL_PERIPH_ENABLE_RC_OUT) || defined(HAL_PERIPH_ENABLE_AP_ESC)
     case ARDUPILOT_INDICATION_SAFETYSTATE_ID:
         *out_data_type_signature = ARDUPILOT_INDICATION_SAFETYSTATE_SIGNATURE;
         return true;
@@ -952,11 +970,13 @@ static bool shouldAcceptTransfer(const CanardInstance* ins,
         *out_data_type_signature = UAVCAN_EQUIPMENT_GNSS_RTCMSTREAM_SIGNATURE;
         return true;
 #endif
-#ifdef HAL_PERIPH_ENABLE_RC_OUT
+#if defined(HAL_PERIPH_ENABLE_RC_OUT) || defined(HAL_PERIPH_ENABLE_AP_ESC)
     case UAVCAN_EQUIPMENT_ESC_RAWCOMMAND_ID:
         *out_data_type_signature = UAVCAN_EQUIPMENT_ESC_RAWCOMMAND_SIGNATURE;
         return true;
-    
+#endif
+
+#ifdef HAL_PERIPH_ENABLE_RC_OUT
     case UAVCAN_EQUIPMENT_ACTUATOR_ARRAYCOMMAND_ID:
         *out_data_type_signature = UAVCAN_EQUIPMENT_ACTUATOR_ARRAYCOMMAND_SIGNATURE;
         return true;
@@ -1386,6 +1406,10 @@ void AP_Periph_FW::can_update()
 #ifdef HAL_PERIPH_ENABLE_RC_OUT
     rcout_update();
 #endif
+#ifdef HAL_PERIPH_ENABLE_AP_ESC
+    periph.esc.update_fast();
+#endif
+
     processTx();
     processRx();
 }

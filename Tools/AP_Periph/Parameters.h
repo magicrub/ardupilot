@@ -38,6 +38,7 @@ public:
         k_param_msp_port,
         k_param_notify,
         k_param_esc_pwm_type,
+        k_param_esc,
     };
 
     AP_Int16 format_version;

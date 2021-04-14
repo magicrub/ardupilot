@@ -102,6 +102,7 @@ COMMON_VEHICLE_DEPENDENT_LIBRARIES = [
     'AP_RCTelemetry',
     'AP_Generator',
     'AP_MSP',
+    'AP_ESC',
     'AP_OLC',
     'AP_WheelEncoder',
     'AP_ExternalAHRS',
