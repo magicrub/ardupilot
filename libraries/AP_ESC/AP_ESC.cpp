@@ -23,6 +23,7 @@
 #if HAL_AP_ESC_ENABLED
 
 extern const AP_HAL::HAL& hal;
+AP_ESC *AP_ESC::singleton;
 
 #ifndef HAL_AP_ESC_TYPE_DEFAULT
     #define HAL_AP_ESC_TYPE_DEFAULT 0

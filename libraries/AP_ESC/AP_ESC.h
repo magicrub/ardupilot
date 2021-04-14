@@ -35,7 +35,10 @@ class AP_ESC
 {
 public:
     //constructor
-    AP_ESC() {}
+    AP_ESC() {
+        singleton = this;
+        AP_Param::setup_object_defaults(this, var_info);
+    }
 
     /* Do not allow copies */
     AP_ESC(const AP_ESC &other) = delete;
@@ -80,7 +83,7 @@ private:
 };
 
 namespace AP {
-    AP_ESC *ESC();
+    AP_ESC *esc();
 };
 
  #endif // HAL_AP_ESC_ENABLED
