@@ -501,7 +501,7 @@ static void can_buzzer_update(void)
 }
 #endif // (HAL_PERIPH_ENABLE_BUZZER_WITHOUT_NOTIFY) || (HAL_PERIPH_ENABLE_NOTIFY)
 
-#if defined(HAL_GPIO_PIN_SAFE_LED) || defined(HAL_PERIPH_ENABLE_RC_OUT)
+#if defined(HAL_GPIO_PIN_SAFE_LED) || defined(HAL_PERIPH_ENABLE_RC_OUT) || defined(HAL_PERIPH_ENABLE_KDECAN)
 static uint8_t safety_state;
 
 /*
@@ -514,6 +514,11 @@ static void handle_safety_state(CanardInstance* ins, CanardRxTransfer* transfer)
         return;
     }
     safety_state = req.status;
+    if (safety_state == 255) {
+        hal.rcout->force_safety_off();
+    } else {
+        hal.rcout->force_safety_on();
+    }
 #ifdef HAL_PERIPH_ENABLE_RC_OUT
     periph.rcout_handle_safety_state(safety_state);
 #endif
@@ -663,7 +668,7 @@ static void handle_lightscommand(CanardInstance* ins, CanardRxTransfer* transfer
 }
 #endif // AP_PERIPH_HAVE_LED_WITHOUT_NOTIFY
 
-#ifdef HAL_PERIPH_ENABLE_RC_OUT
+#if defined(HAL_PERIPH_ENABLE_RC_OUT) || defined(HAL_PERIPH_ENABLE_KDECAN)
 static void handle_esc_rawcommand(CanardInstance* ins, CanardRxTransfer* transfer)
 {
     uavcan_equipment_esc_RawCommand cmd;
@@ -672,9 +677,16 @@ static void handle_esc_rawcommand(CanardInstance* ins, CanardRxTransfer* transfe
     if (uavcan_equipment_esc_RawCommand_decode(transfer, transfer->payload_len, &cmd, &arraybuf_ptr) < 0) {
         return;
     }
+#if defined(HAL_PERIPH_ENABLE_RC_OUT)
     periph.rcout_esc(cmd.cmd.data, cmd.cmd.len);
+#endif
+#if defined(HAL_PERIPH_ENABLE_KDECAN)
+    periph.kdecan_handle_esc_rawcommand(cmd.cmd.data, cmd.cmd.len);
+#endif
 }
+#endif // defined(HAL_PERIPH_ENABLE_RC_OUT) || defined(HAL_PERIPH_ENABLE_KDECAN)
 
+#ifdef HAL_PERIPH_ENABLE_RC_OUT
 static void handle_act_command(CanardInstance* ins, CanardRxTransfer* transfer)
 {
     // manual decoding due to TAO bug in libcanard generated code
@@ -844,7 +856,7 @@ static void onTransferReceived(CanardInstance* ins,
         break;
 #endif
 
-#if defined(HAL_GPIO_PIN_SAFE_LED) || defined(HAL_PERIPH_ENABLE_RC_OUT)
+#if defined(HAL_GPIO_PIN_SAFE_LED) || defined(HAL_PERIPH_ENABLE_RC_OUT) || defined(HAL_PERIPH_ENABLE_KDECAN)
     case ARDUPILOT_INDICATION_SAFETYSTATE_ID:
         handle_safety_state(ins, transfer);
         break;
@@ -866,11 +878,13 @@ static void onTransferReceived(CanardInstance* ins,
         break;
 #endif
 
-#ifdef HAL_PERIPH_ENABLE_RC_OUT
+#if defined(HAL_PERIPH_ENABLE_RC_OUT) || defined(HAL_PERIPH_ENABLE_KDECAN)
     case UAVCAN_EQUIPMENT_ESC_RAWCOMMAND_ID:
         handle_esc_rawcommand(ins, transfer);
         break;
+#endif
 
+#if defined(HAL_PERIPH_ENABLE_RC_OUT)
     case UAVCAN_EQUIPMENT_ACTUATOR_ARRAYCOMMAND_ID:
         handle_act_command(ins, transfer);
         break;
@@ -929,7 +943,7 @@ static bool shouldAcceptTransfer(const CanardInstance* ins,
         *out_data_type_signature = UAVCAN_EQUIPMENT_INDICATION_BEEPCOMMAND_SIGNATURE;
         return true;
 #endif
-#if defined(HAL_GPIO_PIN_SAFE_LED) || defined(HAL_PERIPH_ENABLE_RC_OUT)
+#if defined(HAL_GPIO_PIN_SAFE_LED) || defined(HAL_PERIPH_ENABLE_RC_OUT) || defined(HAL_PERIPH_ENABLE_KDECAN)
     case ARDUPILOT_INDICATION_SAFETYSTATE_ID:
         *out_data_type_signature = ARDUPILOT_INDICATION_SAFETYSTATE_SIGNATURE;
         return true;
@@ -947,11 +961,12 @@ static bool shouldAcceptTransfer(const CanardInstance* ins,
         *out_data_type_signature = UAVCAN_EQUIPMENT_GNSS_RTCMSTREAM_SIGNATURE;
         return true;
 #endif
-#ifdef HAL_PERIPH_ENABLE_RC_OUT
+#if defined(HAL_PERIPH_ENABLE_RC_OUT) || defined(HAL_PERIPH_ENABLE_KDECAN)
     case UAVCAN_EQUIPMENT_ESC_RAWCOMMAND_ID:
         *out_data_type_signature = UAVCAN_EQUIPMENT_ESC_RAWCOMMAND_SIGNATURE;
         return true;
-    
+#endif
+#if defined(HAL_PERIPH_ENABLE_RC_OUT)   
     case UAVCAN_EQUIPMENT_ACTUATOR_ARRAYCOMMAND_ID:
         *out_data_type_signature = UAVCAN_EQUIPMENT_ACTUATOR_ARRAYCOMMAND_SIGNATURE;
         return true;
@@ -1439,12 +1454,56 @@ void AP_Periph_FW::can_update()
 #ifdef HAL_PERIPH_ENABLE_MSP
     msp_sensor_update();
 #endif
+#ifdef HAL_PERIPH_ENABLE_KDECAN
+    can_kdecan_update();
+#endif
+
 #ifdef HAL_PERIPH_ENABLE_RC_OUT
     rcout_update();
 #endif
     processTx();
     processRx();
 }
+
+#ifdef HAL_PERIPH_ENABLE_KDECAN
+void AP_Periph_FW::can_kdecan_update()
+{
+    if (kdecan.lib == nullptr) {
+        return;
+    }
+
+    // check if enum needs to run/stop
+    if (kdecan.enum_state != (bool)kdecan.enum_mode) {
+        kdecan.enum_state = (bool)kdecan.enum_mode;
+        kdecan.lib->run_enumeration(kdecan.enum_state);
+    }
+    // check and transmit new telemetry message is available
+    for (uint8_t i = 0; i < kdecan.num_channels; i++) {
+        AP_KDECAN::telemetry_info_t telem_data = kdecan.lib->read_telemetry(i);
+        if (!telem_data.new_data) {
+            continue;
+        }
+        uavcan_equipment_esc_Status esc_telem {};
+        esc_telem.esc_index = i + kdecan.num_channels;
+        esc_telem.current = telem_data.current;
+        esc_telem.voltage = telem_data.voltage;
+        esc_telem.rpm = telem_data.rpm  * 60UL * 2 / kdecan.lib->get_num_poles();
+        //can_send_esc_telem(esc_telem);
+
+        uint8_t buffer[UAVCAN_EQUIPMENT_ESC_STATUS_MAX_SIZE];
+        uint32_t len = uavcan_equipment_esc_Status_encode(&esc_telem, buffer);
+
+        canardBroadcast(&canard,
+                        UAVCAN_EQUIPMENT_ESC_STATUS_SIGNATURE,
+                        UAVCAN_EQUIPMENT_ESC_STATUS_ID,
+                        &transfer_id,
+                        CANARD_TRANSFER_PRIORITY_LOW,
+                        buffer,
+                        len);
+
+    }
+}
+#endif // HAL_PERIPH_ENABLE_KDECAN
 
 /*
   update CAN magnetometer
