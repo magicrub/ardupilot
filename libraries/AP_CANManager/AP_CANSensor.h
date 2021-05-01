@@ -42,6 +42,10 @@ public:
 private:
     void loop();
 
+#ifdef HAL_BUILD_AP_PERIPH
+  void register_driver_ap_periph(const AP_CANManager::Driver_Type dtype);
+#endif
+
     const char *const _driver_name;
     const uint16_t _stack_size;
     bool _initialized;
