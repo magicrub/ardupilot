@@ -16,11 +16,6 @@
 #ifdef HAL_PERIPH_ENABLE_RC_OUT
 #include "AP_Periph.h"
 
-// magic value from UAVCAN driver packet
-// dsdl/uavcan/equipment/esc/1030.RawCommand.uavcan
-// Raw ESC command normalized into [-8192, 8191]
-#define UAVCAN_ESC_MAX_VALUE    8191
-
 #define SERVO_OUT_RCIN_MAX      16  // SRV_Channel::k_rcin1 ... SRV_Channel::k_rcin16
 #define SERVO_OUT_MOTOR_MAX     12  // SRV_Channel::k_motor1 ... SRV_Channel::k_motor8, SRV_Channel::k_motor9 ... SRV_Channel::k_motor12
 
@@ -102,11 +97,6 @@ void AP_Periph_FW::rcout_srv(uint8_t actuator_id, const float command_value)
 
 void AP_Periph_FW::rcout_handle_safety_state(uint8_t safety_state)
 {
-    if (safety_state == 255) {
-        hal.rcout->force_safety_off();
-    } else {
-        hal.rcout->force_safety_on();
-    }
     rcout_has_new_data_to_update = true;
 }
 
