@@ -16,12 +16,19 @@
 #include "../AP_Bootloader/app_comms.h"
 #include "hwing_esc.h"
 #include <AP_CANManager/AP_CANManager.h>
+#include <AP_KDECAN/AP_KDECAN.h>
 
 #if CONFIG_HAL_BOARD == HAL_BOARD_CHIBIOS
 #include <AP_HAL_ChibiOS/CANIface.h>
 #elif CONFIG_HAL_BOARD == HAL_BOARD_SITL
 #include <AP_HAL_SITL/CANSocketIface.h>
 #endif
+
+// magic value from UAVCAN driver packet
+// dsdl/uavcan/equipment/esc/1030.RawCommand.uavcan
+// Raw ESC command normalized into [-8192, 8191]
+#define UAVCAN_ESC_MAX_VALUE    8191
+
 
 #if defined(HAL_PERIPH_NEOPIXEL_COUNT_WITHOUT_NOTIFY) || defined(HAL_PERIPH_ENABLE_NCP5623_LED_WITHOUT_NOTIFY) || defined(HAL_PERIPH_ENABLE_NCP5623_BGR_LED_WITHOUT_NOTIFY) || defined(HAL_PERIPH_ENABLE_TOSHIBA_LED_WITHOUT_NOTIFY)
 #define AP_PERIPH_HAVE_LED_WITHOUT_NOTIFY
@@ -194,6 +201,20 @@ public:
     void rcout_srv(const uint8_t actuator_id, const float command_value);
     void rcout_update();
     void rcout_handle_safety_state(uint8_t safety_state);
+#endif
+
+#ifdef HAL_PERIPH_ENABLE_KDECAN
+    struct AP_PERHPH_KDECAN {
+        AP_Int8 enum_mode;
+        bool enum_state;
+        uint8_t num_channels;
+        uint8_t chan_index_first = 0;
+        uint8_t chan_index_last = 4;
+        AP_KDECAN* lib;
+    } kdecan;
+    void kdecan_init();
+    void kdecan_handle_esc_rawcommand(int16_t *rc, uint8_t num_channels);
+    void can_kdecan_update();
 #endif
 
 

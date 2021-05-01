@@ -23,6 +23,7 @@ def build(bld):
         'AP_BoardConfig',
         'AP_BattMonitor',
         'AP_CANManager',
+        'AP_KDECAN',
         'AP_Param',
         'StorageManager',
         'AP_FlashStorage',
