@@ -64,11 +64,15 @@ AP_KDECAN::AP_KDECAN()
 
 AP_KDECAN *AP_KDECAN::get_kdecan(uint8_t driver_index)
 {
+#ifndef HAL_BUILD_AP_PERIPH
     if (driver_index >= AP::can().get_num_drivers() ||
         AP::can().get_driver_type(driver_index) != AP_CANManager::Driver_Type_KDECAN) {
         return nullptr;
     }
     return static_cast<AP_KDECAN*>(AP::can().get_driver(driver_index));
+#else
+    return nullptr;
+#endif
 }
 
 bool AP_KDECAN::add_interface(AP_HAL::CANIface* can_iface) {
@@ -191,7 +195,12 @@ void AP_KDECAN::loop()
     uint64_t enumeration_start = 0;
     uint8_t enumeration_esc_num = 0;
 
+#ifdef HAL_BUILD_AP_PERIPH
+    const uint32_t LOOP_INTERVAL_US = SET_PWM_MIN_INTERVAL_US;
+#else
     const uint32_t LOOP_INTERVAL_US = MIN(AP::scheduler().get_loop_period_us(), SET_PWM_MIN_INTERVAL_US);
+#endif
+
     uint64_t pwm_last_sent = 0;
     uint8_t sending_esc_num = 0;
 
@@ -571,6 +580,29 @@ void AP_KDECAN::loop()
     }
 }
 
+bool AP_KDECAN::lock_rcout()
+{
+    if (_rc_out_sem.take(1)) {
+        return true;
+    }
+    return false;
+}
+
+void AP_KDECAN::release_rcout()
+{
+    _rc_out_sem.give();
+}
+
+// Only call set output if you have successfully acquired the semaphore
+void AP_KDECAN::set_output(uint8_t chan, float norm_output)
+{
+    if ((chan >= KDECAN_MAX_NUM_ESCS) || (_esc_present_bitmask & (1 << chan)) == 0) {
+        return;
+    }
+    _scaled_output[chan] = uint16_t((norm_output + 1.0f) / 2.0f * 2000.0f);
+    _new_output.store(true, std::memory_order_release);
+}
+
 void AP_KDECAN::update()
 {
     if (_rc_out_sem.take(1)) {
@@ -587,6 +619,10 @@ void AP_KDECAN::update()
     } else {
         debug_can(AP_CANManager::LOG_DEBUG, "failed to get PWM semaphore on write");
     }
+}
+
+uint8_t AP_KDECAN::get_num_poles() {
+    return _num_poles > 0 ? _num_poles : DEFAULT_NUM_POLES;
 }
 
 bool AP_KDECAN::pre_arm_check(char* reason, uint8_t reason_len)

@@ -60,6 +60,18 @@ public:
     // start_stop: true to start, false to stop
     bool run_enumeration(bool start_stop);
 
+// Lock rcout buffer for setup
+    bool lock_rcout();
+
+    // release rcout buffer for sending
+    void release_rcout();
+
+    // set output values
+    void set_output(uint8_t chan, float norm_output);
+
+    // get number of poles
+    uint8_t get_num_poles();
+
 private:
     void loop();
 
