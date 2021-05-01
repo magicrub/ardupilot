@@ -142,6 +142,10 @@ void AP_Periph_FW::init()
     hal.rcout->set_serial_led_num_LEDs(HAL_PERIPH_NEOPIXEL_CHAN_WITHOUT_NOTIFY, AP_HAL::RCOutput::MODE_NEOPIXEL);
 #endif
 
+#ifdef HAL_PERIPH_ENABLE_KDECAN
+    kdecan_init();
+#endif
+
 #ifdef HAL_PERIPH_ENABLE_RC_OUT
     rcout_init();
 #endif
@@ -413,6 +417,60 @@ void AP_Periph_FW::check_for_serial_reboot_cmd(const int8_t serial_index)
     }
 }
 #endif // HAL_PERIPH_LISTEN_FOR_SERIAL_UART_REBOOT_CMD_PORT
+
+#ifdef HAL_PERIPH_ENABLE_KDECAN
+void AP_Periph_FW::kdecan_init()
+{
+    if (kdecan.lib != nullptr) {
+        // alreday initialized
+        return;
+    }
+
+    for (uint8_t i=0; i<HAL_NUM_CAN_IFACES; i++) {
+        if (can_protocol(i) != AP_CANManager::Driver_Type_KDECAN) {
+            continue;
+        }
+
+        // this is done in can_start()
+        //can_iface_periph[i].init(can_baudrate(i), AP_HAL::CANIface::NormalMode);
+
+        kdecan.lib = new AP_KDECAN();
+
+        if (kdecan.lib == nullptr) {
+            printf("Failed to allocate KDECAN");
+            return;
+        }
+
+        if (kdecan.chan_index_last < kdecan.chan_index_first) {
+            printf("KDECAN init failure: invalid firts/last channel indexes");
+            return;
+        }
+        kdecan.num_channels = MIN(kdecan.chan_index_last - kdecan.chan_index_first, KDECAN_MAX_NUM_ESCS);
+
+        AP_Param::load_object_from_eeprom((AP_KDECAN*)kdecan.lib, AP_KDECAN::var_info);
+        kdecan.lib->add_interface(can_iface_periph[i]);
+        kdecan.lib->init(0, false);
+        return;
+    }
+}
+
+void AP_Periph_FW::kdecan_handle_esc_rawcommand(int16_t *rc, uint8_t num_channels)
+{
+    if (rc == nullptr ||
+        kdecan.lib == nullptr ||
+        num_channels == 0 ||
+        kdecan.num_channels == 0) {
+        return;
+    }
+
+    kdecan.lib->lock_rcout();
+    for (uint8_t i = 0; i < MIN(num_channels,  kdecan.num_channels); i++) {
+        const float norm_output = 2.0f*constrain_float(rc[i]/UAVCAN_ESC_MAX_VALUE, 0.0f, 1.0f) - 1.0f;
+        kdecan.lib->set_output(i + kdecan.chan_index_first, norm_output);
+    }
+    kdecan.lib->release_rcout();
+}
+#endif // HAL_PERIPH_ENABLE_KDECAN
 
 // prepare for a safe reboot where PWMs and params are gracefully disabled
 // This is copied from AP_Vehicle::reboot(bool hold_in_bootloader) minus the actual reboot

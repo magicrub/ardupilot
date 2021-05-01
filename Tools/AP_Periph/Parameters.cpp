@@ -306,6 +306,12 @@ const AP_Param::Info AP_Periph_FW::var_info[] = {
     GOBJECT(notify, "NTF_",  AP_Notify),
 #endif
 
+#ifdef HAL_PERIPH_ENABLE_KDECAN
+    // @Group: KDE_
+    // @Path: ../AP_KDECAN/AP_KDECAN.cpp
+    GOBJECT(kdecan, "KDE_", AP_KDECAN),
+#endif
+
     AP_VAREND
 };
 
