@@ -5066,7 +5066,7 @@ bool GCS_MAVLINK::try_send_message(const enum ap_message id)
             blheli->send_esc_telemetry_mavlink(uint8_t(chan));
         }
 #endif
-#if HAL_MAX_CAN_PROTOCOL_DRIVERS
+#if HAL_ENABLE_LIBUAVCAN_DRIVERS
         uint8_t num_drivers = AP::can().get_num_drivers();
 
         for (uint8_t i = 0; i < num_drivers; i++) {
