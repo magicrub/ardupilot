@@ -95,11 +95,6 @@ static uint8_t transfer_id;
 #define CAN_PROBE_CONTINUOUS 0
 #endif
 
-#if CONFIG_HAL_BOARD == HAL_BOARD_CHIBIOS
-static ChibiOS::CANIface can_iface[HAL_NUM_CAN_IFACES];
-#elif CONFIG_HAL_BOARD == HAL_BOARD_SITL
-static HALSITL::CANIface can_iface[HAL_NUM_CAN_IFACES];
-#endif
 /*
  * Variables used for dynamic node ID allocation.
  * RTFM at http://uavcan.org/Specification/6._Application_level_functions/#dynamic-node-id-allocation
@@ -980,7 +975,10 @@ static void processTx(void)
         bool sent_ok = false;
         const uint64_t deadline = AP_HAL::native_micros64() + 1000000;
         for (uint8_t i=0; i<HAL_NUM_CAN_IFACES; i++) {
-            sent_ok |= (can_iface[i].send(txmsg, deadline, 0) > 0);
+            if (periph.can_protocol(i) != AP_CANManager::Driver_Type_UAVCAN) {
+                continue;
+            }
+            sent_ok |= (AP::periph().can_iface_periph[i]->send(txmsg, deadline, 0) > 0);
         }
         if (sent_ok) {
             canardPopTxQueue(&canard);
@@ -1004,9 +1002,13 @@ static void processRx(void)
     while (true) {
         bool got_pkt = false;
         for (uint8_t i=0; i<HAL_NUM_CAN_IFACES; i++) {
+            if (periph.can_protocol(i) != AP_CANManager::Driver_Type_UAVCAN) {
+                continue;
+            }
+
             bool read_select = true;
             bool write_select = false;
-            can_iface[i].select(read_select, write_select, nullptr, 0);
+            AP::periph().can_iface_periph[i]->select(read_select, write_select, nullptr, 0);
             if (!read_select) {
                 continue;
             }
@@ -1015,7 +1017,7 @@ static void processRx(void)
             //palToggleLine(HAL_GPIO_PIN_LED);
             uint64_t timestamp;
             AP_HAL::CANIface::CanIOFlags flags;
-            can_iface[i].receive(rxmsg, timestamp, flags);
+            AP::periph().can_iface_periph[i]->receive(rxmsg, timestamp, flags);
             memcpy(rx_frame.data, rxmsg.data, 8);
             rx_frame.data_len = rxmsg.dlc;
             rx_frame.id = rxmsg.id;
@@ -1239,6 +1241,35 @@ static void can_wait_node_id(void)
     printf("Dynamic node ID allocation complete [%d]\n", canardGetLocalNodeID(&canard));
 }
 
+uint32_t AP_Periph_FW::can_baudrate(const uint8_t index) const
+{
+#if HAL_NUM_CAN_IFACES >= 2
+    switch (index) {
+        case 0: return g.can_baudrate1;
+        case 1: return g.can_baudrate2;
+    #if HAL_NUM_CAN_IFACES >= 3
+        case 2: return g.can_baudrate3;
+    #endif
+    }
+#endif
+    return 1000000L;
+}
+
+AP_CANManager::Driver_Type AP_Periph_FW::can_protocol(const uint8_t index) const
+{
+#if HAL_NUM_CAN_IFACES >= 2
+    switch (index) {
+        default:
+        case 0: return (AP_CANManager::Driver_Type)g.can_protocol1.get();
+        case 1: return (AP_CANManager::Driver_Type)g.can_protocol2.get();
+    #if HAL_NUM_CAN_IFACES >= 3
+        case 2: return (AP_CANManager::Driver_Type)g.can_protocol3.get();
+    #endif
+    }
+#endif
+    return AP_CANManager::Driver_Type_UAVCAN;
+}
+
 void AP_Periph_FW::can_start()
 {
     node_status.health = UAVCAN_PROTOCOL_NODESTATUS_HEALTH_OK;
@@ -1253,8 +1284,26 @@ void AP_Periph_FW::can_start()
     periph.g.flash_bootloader.set_and_save_ifchanged(0);
 #endif
 
-    for (int8_t i=0; i<HAL_NUM_CAN_IFACES; i++) {
-        can_iface[i].init(1000000, AP_HAL::CANIface::NormalMode);
+
+#if HAL_NUM_CAN_IFACES >= 2
+    // sanity check: we need at least 1 interface to be UAVCAN
+    bool has_uavcan = false;
+    for (uint8_t i=0; i<HAL_NUM_CAN_IFACES; i++) {
+        has_uavcan |= (can_protocol(i) == AP_CANManager::Driver_Type_UAVCAN);
+    }
+    if (!has_uavcan) {
+        periph.g.can_protocol1.set_and_save((int8_t)AP_CANManager::Driver_Type_UAVCAN);
+        periph.g.can_baudrate1.set_and_save(1000000);
+    }
+#endif
+
+    for (uint8_t i=0; i<HAL_NUM_CAN_IFACES; i++) {
+#if CONFIG_HAL_BOARD == HAL_BOARD_CHIBIOS
+        periph.can_iface_periph[i] = new ChibiOS::CANIface();
+#elif CONFIG_HAL_BOARD == HAL_BOARD_SITL
+        periph.can_iface_periph[i] = new HALSITL::CANIface();
+#endif
+        periph.can_iface_periph[i]->init(can_baudrate(i), AP_HAL::CANIface::NormalMode);
     }
 
     canardInit(&canard, (uint8_t *)canard_memory_pool, sizeof(canard_memory_pool),
