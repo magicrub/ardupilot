@@ -14,6 +14,12 @@
 #include <AP_MSP/msp.h>
 #include "../AP_Bootloader/app_comms.h"
 #include "hwing_esc.h"
+#include <AP_CANManager/AP_CANManager.h>
+#if CONFIG_HAL_BOARD == HAL_BOARD_CHIBIOS
+#include <AP_HAL_ChibiOS/CANIface.h>
+#elif CONFIG_HAL_BOARD == HAL_BOARD_SITL
+#include <AP_HAL_SITL/CANSocketIface.h>
+#endif
 
 #if defined(HAL_PERIPH_NEOPIXEL_COUNT_WITHOUT_NOTIFY) || defined(HAL_PERIPH_ENABLE_NCP5623_LED_WITHOUT_NOTIFY) || defined(HAL_PERIPH_ENABLE_NCP5623_BGR_LED_WITHOUT_NOTIFY) || defined(HAL_PERIPH_ENABLE_TOSHIBA_LED_WITHOUT_NOTIFY)
 #define AP_PERIPH_HAVE_LED_WITHOUT_NOTIFY
@@ -48,11 +54,29 @@ extern const struct app_descriptor app_descriptor;
 
 class AP_Periph_FW {
 public:
+
+    AP_Periph_FW();
+
+    /* Do not allow copies */
+    AP_Periph_FW(const AP_Periph_FW &other) = delete;
+    AP_Periph_FW &operator=(const AP_Periph_FW&) = delete;
+
+    static AP_Periph_FW* get_singleton()
+    {
+        if (_singleton == nullptr) {
+            AP_HAL::panic("AP_Periph_FW used before allocation.");
+        }
+        return _singleton;
+    }
+
     void init();
     void update();
 
     Parameters g;
 
+    uint32_t can_baudrate(const uint8_t index) const;
+    AP_CANManager::Driver_Type can_protocol(const uint8_t index) const;
+    
     void can_start();
     void can_update();
     void can_mag_update();
@@ -68,6 +92,13 @@ public:
 #ifdef HAL_PERIPH_LISTEN_FOR_SERIAL_UART_REBOOT_CMD_PORT
     void check_for_serial_reboot_cmd(const int8_t serial_index);
 #endif
+
+#if CONFIG_HAL_BOARD == HAL_BOARD_CHIBIOS
+ChibiOS::CANIface* can_iface_periph[HAL_NUM_CAN_IFACES];
+#elif CONFIG_HAL_BOARD == HAL_BOARD_SITL
+HALSITL::CANIface* can_iface_periph[HAL_NUM_CAN_IFACES];
+#endif
+
 
     AP_SerialManager serial_manager;
 
@@ -179,9 +210,16 @@ public:
     uint32_t last_baro_update_ms;
     uint32_t last_airspeed_update_ms;
 
+    static AP_Periph_FW *_singleton;
+
     // show stack as DEBUG msgs
     void show_stack_free();
 };
+
+namespace AP
+{
+AP_Periph_FW& periph();
+}
 
 extern AP_Periph_FW periph;
 
