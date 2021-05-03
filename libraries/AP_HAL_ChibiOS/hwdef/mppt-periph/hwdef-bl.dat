@@ -1,2 +1,6 @@
 
 include ../CubeOrange-periph/hwdef-bl.dat
+
+# replace CubeOrange-periph's ID with CubeOrange for easy loading
+APJ_BOARD_ID 140
+

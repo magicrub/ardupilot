@@ -1,5 +1,8 @@
 include ../CubeOrange-periph/hwdef.dat
 
+# replace CubeOrange-periph's ID with CubeOrange for easy loading
+APJ_BOARD_ID 140
+
 undef HAL_PERIPH_ENABLE_GPS
 undef HAL_PERIPH_ENABLE_MAG
 undef HAL_PERIPH_ENABLE_BARO
