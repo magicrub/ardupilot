@@ -34,7 +34,11 @@
 // there are 12 motor functions in SRV_Channel but CAN driver can't keep up
 #define KDECAN_MAX_NUM_ESCS 8
 
+#if HAL_WITH_ESC_TELEM
 class AP_KDECAN : public AP_CANDriver, public AP_ESC_Telem_Backend {
+#else
+class AP_KDECAN : public AP_CANDriver {
+#endif
 public:
     AP_KDECAN();
     
@@ -59,6 +63,30 @@ public:
     // caller checks that vehicle isn't armed
     // start_stop: true to start, false to stop
     bool run_enumeration(bool start_stop);
+
+// Lock rcout buffer for setup
+    bool lock_rcout();
+
+    // release rcout buffer for sending
+    void release_rcout();
+
+    // set output values
+    void set_output(uint8_t chan, float norm_output);
+
+    // get number of poles
+    uint8_t get_num_poles() const;
+
+    struct telemetry_info_t {
+        uint64_t time;
+        uint16_t voltage;
+        uint16_t current;
+        uint16_t rpm;
+        uint8_t temp;
+        bool new_data;
+    };
+
+    // read telemetry values
+    struct telemetry_info_t read_telemetry(uint8_t chan);
 
 private:
     void loop();
@@ -88,6 +116,11 @@ private:
     HAL_Semaphore _rc_out_sem;
     std::atomic<bool> _new_output;
     uint16_t _scaled_output[KDECAN_MAX_NUM_ESCS];
+
+    // telemetry input
+    HAL_Semaphore _telem_sem;
+    telemetry_info_t _telemetry[KDECAN_MAX_NUM_ESCS];
+
 
     union frame_id_t {
         struct PACKED {
