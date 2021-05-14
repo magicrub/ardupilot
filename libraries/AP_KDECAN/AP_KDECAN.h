@@ -60,6 +60,30 @@ public:
     // start_stop: true to start, false to stop
     bool run_enumeration(bool start_stop);
 
+// Lock rcout buffer for setup
+    bool lock_rcout();
+
+    // release rcout buffer for sending
+    void release_rcout();
+
+    // set output values
+    void set_output(uint8_t chan, float norm_output);
+
+    // get number of poles
+    uint8_t get_num_poles();
+
+    struct telemetry_info_t {
+        uint64_t time;
+        uint16_t voltage;
+        uint16_t current;
+        uint16_t rpm;
+        uint8_t temp;
+        bool new_data;
+    };
+
+    // read telemetry values
+    struct telemetry_info_t read_telemetry(uint8_t chan);
+
 private:
     void loop();
 
@@ -88,6 +112,11 @@ private:
     HAL_Semaphore _rc_out_sem;
     std::atomic<bool> _new_output;
     uint16_t _scaled_output[KDECAN_MAX_NUM_ESCS];
+
+    // telemetry input
+    HAL_Semaphore _telem_sem;
+    telemetry_info_t _telemetry[KDECAN_MAX_NUM_ESCS];
+
 
     union frame_id_t {
         struct PACKED {
