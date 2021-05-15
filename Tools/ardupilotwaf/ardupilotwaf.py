@@ -90,6 +90,7 @@ COMMON_VEHICLE_DEPENDENT_LIBRARIES = [
     'AP_RobotisServo',
     'AP_ToshibaCAN',
     'AP_NMEA_Output',
+    'AP_CursorOnTarget',
     'AP_Filesystem',
     'AP_ADSB',
     'AC_PID',
