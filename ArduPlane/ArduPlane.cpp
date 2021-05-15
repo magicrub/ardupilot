@@ -109,6 +109,9 @@ const AP_Scheduler::Task Plane::scheduler_tasks[] = {
 #if GRIPPER_ENABLED == ENABLED
     SCHED_TASK_CLASS(AP_Gripper, &plane.g2.gripper, update, 10, 75),
 #endif
+#if CURSORONTARGET_ENABLED == ENABLED
+    SCHED_TASK_CLASS(AP_CursorOnTarget, &plane.g2.cursorOnTarget, update, 10, 100),
+#endif
 #if LANDING_GEAR_ENABLED == ENABLED
     SCHED_TASK(landing_gear_update, 5, 50),
 #endif

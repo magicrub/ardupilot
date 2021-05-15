@@ -536,6 +536,10 @@ public:
     AP_Gripper gripper;
 #endif
 
+#if CURSORONTARGET_ENABLED == ENABLED
+    AP_CursorOnTarget cursorOnTarget;
+#endif
+
     AP_Int32 flight_options;
 
 #ifdef ENABLE_SCRIPTING

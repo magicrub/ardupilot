@@ -1238,6 +1238,12 @@ const AP_Param::GroupInfo ParametersG2::var_info[] = {
     AP_SUBGROUPINFO(guidedHeading, "GUIDED_", 28, ParametersG2, AC_PID),
 #endif // OFFBOARD_GUIDED == ENABLED
 
+#if CURSORONTARGET_ENABLED == ENABLED
+    // @Group: COT_
+    // @Path: ../libraries/AP_CursorOnTarget/AP_CursorOnTarget.cpp
+    AP_SUBGROUPINFO(cursorOnTarget, "COT_", 40, ParametersG2, AP_CursorOnTarget),
+#endif
+
     AP_GROUPEND
 };
 
