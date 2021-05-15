@@ -23,6 +23,10 @@
 #include <AP_Param/AP_Param.h>
 #include <AP_SerialManager/AP_SerialManager.h>
 
+#ifndef AP_CURSORONTARGET_ENABLED
+#define AP_CURSORONTARGET_ENABLED !HAL_MINIMIZE_FEATURES
+#endif
+
 #ifndef AP_CURSORONTARGET_UARTS_MAX
 #define AP_CURSORONTARGET_UARTS_MAX 1
 #endif
@@ -70,3 +74,4 @@ private:
 namespace AP {
     AP_CursorOnTarget *CursorOnTarget();
 };
+

@@ -20,6 +20,11 @@
 
 #include "AP_CursorOnTarget.h"
 
+#if AP_CURSORONTARGET_ENABLED
+
+// treat a uart[0+i] as "chan 100+i". This allows us to use chan 0-8ish for MAVLINK_CHAN tunnel
+#define AP_CURSORONTARGET_UARTS_BASE_CHAN 100
+
 #include <AP_Math/definitions.h>
 #include <AP_SerialManager/AP_SerialManager.h>
 
@@ -111,9 +116,12 @@ void AP_CursorOnTarget::parse_byte(const uint8_t chan, const uint8_t data)
     }
 }
 
+#endif // AP_CURSORONTARGET_ENABLED
+
 namespace AP {
 AP_CursorOnTarget *CursorOnTarget()
 {
     return AP_CursorOnTarget::get_singleton();
 }
 };
+
