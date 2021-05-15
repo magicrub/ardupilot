@@ -47,6 +47,7 @@
 #include <AP_Winch/AP_Winch.h>
 #include <AP_OSD/AP_OSD.h>
 #include <AP_RCTelemetry/AP_CRSF_Telem.h>
+#include "AP_CursorOnTarget/AP_CursorOnTarget.h"
 
 #include <stdio.h>
 
@@ -2270,6 +2271,37 @@ void GCS_MAVLINK::handle_set_mode(const mavlink_message_t &msg)
 }
 
 /*
+  handle a TUNNEL MAVLink message
+ */
+void GCS_MAVLINK::handle_tunnel(const mavlink_message_t &msg)
+{
+    mavlink_tunnel_t packet;
+    mavlink_msg_tunnel_decode(&msg, &packet);
+
+    if (packet.target_sysid != 0 && packet.target_sysid != mavlink_system.sysid) {
+        // it's not brodcast and it's not for us, ignore it. 
+        return;
+    }
+
+    switch (packet.protocol) {
+    case TUNNEL_PROTOCOL::CURSOR_ON_TARGET: {
+#if AP_CURSORONTARGET_ENABLED
+        AP_CursorOnTarget *cot = AP::CursorOnTarget();
+        if (cot != nullptr) {
+            cot->parse_bytes(chan, packet.payload, packet.length);
+        }
+#endif
+        }
+        break;
+
+    case TUNNEL_PROTOCOL::UNKNOWN:
+    default:
+        // unhandled
+        break;
+    }
+}
+
+/*
   code common to both SET_MODE mavlink message and command long set_mode msg
 */
 MAV_RESULT GCS_MAVLINK::_set_mode_common(const MAV_MODE _base_mode, const uint32_t _custom_mode)
@@ -3430,6 +3462,10 @@ void GCS_MAVLINK::handle_common_message(const mavlink_message_t &msg)
 
     case MAVLINK_MSG_ID_AUTOPILOT_VERSION_REQUEST:
         handle_send_autopilot_version(msg);
+        break;
+
+    case MAVLINK_MSG_ID_TUNNEL:
+        handle_tunnel(msg);
         break;
 
     case MAVLINK_MSG_ID_MISSION_WRITE_PARTIAL_LIST:
