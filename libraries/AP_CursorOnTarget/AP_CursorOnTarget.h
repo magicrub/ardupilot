@@ -69,28 +69,50 @@ private:
     void        y_printstring(const char *str);
     void        y_printtoken(yxml_t *x, const char *str);
     void        handle_parsed_xml(yxml_t *x, yxml_ret_t r);
-    char        _xml_stack[AP_CURSORONTARGET_XML_STACK_SIZE];
-	yxml_t      _xml_document[1];
 
-     enum class XML_state {
-        Unknown = 0,
-        Event,
-        Event_Version,
-        Event_UID,
-        Event_Type,
-        Event_Time,
-        Event_Start,
-        Event_Stale,
-        Event_HOW,
-        Event_Track,
-        Event_Track_Course,
-        Event_Point,
-        Event_Point_Lat,
-        Event_Point_Lon,
-        Event_Point_HAE,
-        Event_Point_CE,
-        Event_Point_LE
-    } _xml_state;
+    struct CoTXML {
+        public:
+        void init() {
+            yxml_init(document, stack, sizeof(stack));
+        }
+	    yxml_t document[1];
+
+        enum class State {
+            Unknown = 0,
+            Unknown_Elem,
+            Unknown_Attr,
+            Event,
+            Event_Version = 4,
+            Event_UID,
+            Event_Type,
+            Event_Time,
+            Event_Start,
+            Event_Stale = 9,
+            Event_HOW = 10,
+            Event_Detail,
+            Event_Detail_Track,
+            Event_Detail_Track_Course,
+            Event_Detail_Track_Speed,
+            Event_Point,
+            Event_Point_Lat,
+            Event_Point_Lon,
+            Event_Point_HAE,
+            Event_Point_CE,
+            Event_Point_LE
+        } state_data;
+
+        bool is_unknown(const State state) {
+            return (state == CoTXML::State::Unknown ||
+                    state == CoTXML::State::Unknown_Elem ||
+                    state != CoTXML::State::Unknown_Attr);
+        }
+
+        ObjectBuffer<State> elements{10};
+        //ByteBuffer *elements;
+
+    private:
+            char stack[AP_CURSORONTARGET_XML_STACK_SIZE];
+    } _xml;
 
     bool        _initialized;
     uint8_t     _num_uarts;

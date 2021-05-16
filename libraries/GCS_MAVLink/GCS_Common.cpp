@@ -2271,34 +2271,23 @@ void GCS_MAVLINK::handle_set_mode(const mavlink_message_t &msg)
 }
 
 /*
-  handle a TUNNEL MAVLink message
+  handle a cursor_on_target MAVLink message
  */
-void GCS_MAVLINK::handle_tunnel(const mavlink_message_t &msg)
+void GCS_MAVLINK::handle_cursor_on_target(const mavlink_message_t &msg)
 {
-    mavlink_tunnel_t packet;
-    mavlink_msg_tunnel_decode(&msg, &packet);
+#if AP_CURSORONTARGET_ENABLED
+    mavlink_cursor_on_target_t packet;
+    mavlink_msg_cursor_on_target_decode(&msg, &packet);
 
     if (packet.target_sysid != 0 && packet.target_sysid != mavlink_system.sysid) {
         // it's not brodcast and it's not for us, ignore it. 
         return;
     }
-
-    switch (packet.protocol) {
-    case TUNNEL_PROTOCOL::CURSOR_ON_TARGET: {
-#if AP_CURSORONTARGET_ENABLED
-        AP_CursorOnTarget *cot = AP::CursorOnTarget();
-        if (cot != nullptr) {
-            cot->parse_string(chan, (char*)packet.payload, packet.length);
-        }
-#endif
-        }
-        break;
-
-    case TUNNEL_PROTOCOL::UNKNOWN:
-    default:
-        // unhandled
-        break;
+    AP_CursorOnTarget *cot = AP::CursorOnTarget();
+    if (cot != nullptr) {
+        cot->parse_string(chan, (char*)packet.payload, packet.length);
     }
+#endif
 }
 
 /*
@@ -3464,8 +3453,8 @@ void GCS_MAVLINK::handle_common_message(const mavlink_message_t &msg)
         handle_send_autopilot_version(msg);
         break;
 
-    case MAVLINK_MSG_ID_TUNNEL:
-        handle_tunnel(msg);
+    case MAVLINK_MSG_ID_CURSOR_ON_TARGET:
+        handle_cursor_on_target(msg);
         break;
 
     case MAVLINK_MSG_ID_MISSION_WRITE_PARTIAL_LIST:
