@@ -76,6 +76,10 @@ AP_CursorOnTarget::AP_CursorOnTarget()
 // Lazy init
 void AP_CursorOnTarget::init()
 {
+    if (_initialized) {
+        return;
+    };
+
     for (uint8_t i = 0; i < ARRAY_SIZE(_uart); i++) {
         _uart[i] = AP::serialmanager().find_serial(AP_SerialManager::SerialProtocol_CursorOnTarget, i);
         if (_uart[i] == nullptr) {
@@ -84,6 +88,7 @@ void AP_CursorOnTarget::init()
         _num_uarts++;
     }
     yxml_init(_xml_document, _xml_stack, sizeof(_xml_stack));
+    _initialized = true;
 }
 
 void AP_CursorOnTarget::update()
@@ -93,7 +98,7 @@ void AP_CursorOnTarget::update()
     }
     if (!_initialized) {
         init();
-        _initialized = true;
+        return;
     }
 
     const uint32_t now_ms = AP_HAL::millis();
@@ -104,7 +109,7 @@ void AP_CursorOnTarget::update()
     // }
     // _last_run_ms = now_ms;
 
-    if ((now_ms - _last_run_ms) < 5000) {
+    if ((now_ms - _last_run_ms) < 100) {
         return;
     }
 
@@ -116,68 +121,19 @@ static bool run_once = false;
         hal.console->printf("PARSING XML\n");
         hal.console->printf("***********\n");
 
-
-// const char* test_str[0] = "<?xml version=\"1.0\" encoding=\"utf-8\" standalone=\"yes\"?>"
-// const char* test_str[0] = <event
-// const char* test_str[0] =   version=\"2.0\"
-// const char* test_str[0] =   uid=\"K1000\"
-// const char* test_str[0] =   type=\"a-f-A-M-F-Q\"
-// const char* test_str[0] =   time=\"2021-05-15T21:02:43.6593362Z\"
-// const char* test_str[0] =   start=\"2021-05-15T21:02:38.6593362Z\"
-// const char* test_str[0] =   stale=\"2021-05-15T21:02:48.6593362Z\"
-// const char* test_str[0] =   how=\"m-g\">
-// const char* test_str[0] =   <detail>
-// const char* test_str[0] =     <track
-// const char* test_str[0] =       course=\"0.00\"
-// const char* test_str[0] =       speed=\"0.00\" />
-// const char* test_str[0] =   </detail>
-// const char* test_str[0] =   <point
-// const char* test_str[0] =     lat=\"0.0000000\"
-// const char* test_str[0] =     lng=\"0.0000000\"
-// const char* test_str[0] =     hae=\" 0.00\"
-// const char* test_str[0] =     ce=\"1.0\"
-// const char* test_str[0] =     le=\"1.0\" />
-// const char* test_str[0] = </event>"";
-
-//     const char* line[13] = {
-// "<?xml version='1.0' encoding='UTF-8' standalone='yes'?>",
-// "<event version=\"2.0\"",
-// "uid=\"K1000ULE_Direct\"",
-// "type=\"a-f-A-M-F-Q\"",
-// "time=\"2021-03-16T23:41:24.1855285Z\"",
-// "start=\"2021-03-16T23:41:19.1855285Z\"",
-// "stale=\"2021-03-16T23:41:29.1855285Z\"",
-// "how=\"m-g\">",
-// "<detail>",
-// "<track course=\"0.00\" speed=\"0.00\" />",
-// "</detail>",
-// "<point lat=\"-35.3632611\" lon=\"149.1652302\" hae=\"584.84\" ce=\"1.0\" le=\"1.0\"",
-// "</event>",
-//         };
-
-        // const char* line1 = "<?xml version='1.0' encoding='UTF-8' standalone='yes'?>\n";
-        // const char* line2 = "<event version=\"2.0\"\n";
-        // const char* line3 = "uid=\"K1000ULE_Direct\"\n";
-        // const char* line4 = "type=\"a-f-A-M-F-Q\"\n";
-        // const char* line5 = "time=\"2021-03-16T23:41:24.1855285Z\"\n";
-        // const char* line6 = "start=\"2021-03-16T23:41:19.1855285Z\"\n";
-        // const char* line7 = "stale=\"2021-03-16T23:41:29.1855285Z\"\n";
-        // const char* line8 = "how=\"m-g\">\n";
-        // const char* line9 = "<detail>\n";
-        // const char* line10 = "<track course=\"0.00\" speed=\"0.00\" />\n";
-        // const char* line11 = "</detail>\n";
-        // const char* line12 = "<point lat=\"-35.3632611\" lon=\"149.1652302\" hae=\"584.84\" ce=\"1.0\" le=\"1.0\"\n";
-        // const char* line13 = "</event>\n";
-
-
-const char* line1 = "<a>ZOMFG! Element	content!";
-const char* line2 = "";
-const char* line3 = "<entities>&amp;&lt;&gt;&apos;&quot;</entities>";
-const char* line4 = "<refs>&#x20;&#33;&#x0020;&#0033;&#xe9;&#x2603;&#x1F431;</refs>";
-const char* line5 = "<![CDATA[CDATA!]]>";
-const char* line6 = "<![CDATA[[[CD<a/> <!-- no comment -->&amp;<?NotaPI?>&notaref;";
-const char* line7 = "]x]]y]]]z]]]]>";
-const char* line8 = "</a>";
+        const char* line1 = "<?xml version='1.0' encoding='UTF-8' standalone='yes'?>\n";
+        const char* line2 = "<event version=\"2.0\"\n";
+        const char* line3 = "uid=\"K1000ULE_Direct\"\n";
+        const char* line4 = "type=\"a-f-A-M-F-Q\"\n";
+        const char* line5 = "time=\"2021-03-16T23:41:24.1855285Z\"\n";
+        const char* line6 = "start=\"2021-03-16T23:41:19.1855285Z\"\n";
+        const char* line7 = "stale=\"2021-03-16T23:41:29.1855285Z\"\n";
+        const char* line8 = "how=\"m-g\">\n";
+        const char* line9 = "<detail>\n";
+        const char* line10 = "<track course=\"0.00\" speed=\"0.00\" />\n";
+        const char* line11 = "</detail>\n";
+        const char* line12 = "<point lat=\"-35.3632611\" lon=\"149.1652302\" hae=\"584.84\" ce=\"1.0\" le=\"1.0\"/>\n";
+        const char* line13 = "</event>\n";
 
         parse_bytes(0, line1,strlen(line1));
         parse_bytes(0, line2,strlen(line2));
@@ -187,15 +143,11 @@ const char* line8 = "</a>";
         parse_bytes(0, line6,strlen(line6));
         parse_bytes(0, line7,strlen(line7));
         parse_bytes(0, line8,strlen(line8));
-        // parse_bytes(0, line9,strlen(line9));
-        // parse_bytes(0, line10,strlen(line10));
-        // parse_bytes(0, line11,strlen(line11));
-        // parse_bytes(0, line12,strlen(line12));
-        // parse_bytes(0, line13,strlen(line13));
-
-
-        // const char* line1 = "<:A_S0mewhat-Longer.Name></:A_S0mewhat-Longer.Name>";
-        // parse_bytes(0, line1,strlen(line1));
+        parse_bytes(0, line9,strlen(line9));
+        parse_bytes(0, line10,strlen(line10));
+        parse_bytes(0, line11,strlen(line11));
+        parse_bytes(0, line12,strlen(line12));
+        parse_bytes(0, line13,strlen(line13));
 
         y_printtoken(_xml_document, yxml_eof(_xml_document) < 0 ? "error\n" : "ok\n");
 
