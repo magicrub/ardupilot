@@ -2288,7 +2288,7 @@ void GCS_MAVLINK::handle_tunnel(const mavlink_message_t &msg)
 #if AP_CURSORONTARGET_ENABLED
         AP_CursorOnTarget *cot = AP::CursorOnTarget();
         if (cot != nullptr) {
-            cot->parse_bytes(chan, (char*)packet.payload, packet.length);
+            cot->parse_string(chan, (char*)packet.payload, packet.length);
         }
 #endif
         }
