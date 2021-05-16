@@ -31,7 +31,7 @@
 #define AP_CURSORONTARGET_UARTS_MAX 1
 #endif
 
-#define AP_CURSORONTARGET_XML_STACK_SIZE (4*1024)
+#define AP_CURSORONTARGET_XML_STACK_SIZE (1024)
 
 #if AP_CURSORONTARGET_ENABLED
 #include "yxml.h"
@@ -54,8 +54,7 @@ public:
     // indicate whether this module is enabled or not
     bool enabled() const { return _enabled; }
 
-    void parse_bytes(const uint8_t chan, const char* data, uint32_t len);
-    void parse_byte(const uint8_t chan, const char data);
+    void parse_string(const uint8_t chan, const char* data, uint32_t len);
 
     static const struct AP_Param::GroupInfo        var_info[];
 
@@ -72,8 +71,26 @@ private:
     void        handle_parsed_xml(yxml_t *x, yxml_ret_t r);
     char        _xml_stack[AP_CURSORONTARGET_XML_STACK_SIZE];
 	yxml_t      _xml_document[1];
-	int32_t     _xml_indata;
 
+     enum class XML_state {
+        Unknown = 0,
+        Event,
+        Event_Version,
+        Event_UID,
+        Event_Type,
+        Event_Time,
+        Event_Start,
+        Event_Stale,
+        Event_HOW,
+        Event_Track,
+        Event_Track_Course,
+        Event_Point,
+        Event_Point_Lat,
+        Event_Point_Lon,
+        Event_Point_HAE,
+        Event_Point_CE,
+        Event_Point_LE
+    } _xml_state;
 
     bool        _initialized;
     uint8_t     _num_uarts;
