@@ -25,28 +25,9 @@
 #include <stdlib.h>
 #include <string.h>
 #include <inttypes.h>
+#include <AP_Common/Location.h>
 
-
-#define AP_COT_XML_BITMASK_VERSION          (1 << 0)
-#define AP_COT_XML_BITMASK_UID              (1 << 1)
-#define AP_COT_XML_BITMASK_TYPE             (1 << 2)
-#define AP_COT_XML_BITMASK_TIME             (1 << 3)
-#define AP_COT_XML_BITMASK_START            (1 << 4)
-#define AP_COT_XML_BITMASK_STALE            (1 << 5)
-#define AP_COT_XML_BITMASK_HOW              (1 << 6)
-#define AP_COT_XML_BITMASK_TRACK__          (1 << 7)
-#define AP_COT_XML_BITMASK_POINT__          (1 << 8)
-
-
-
-#define AP_COT_XML_BITMASK_TRACK_COURSE     (1 << 0)
-
-#define AP_COT_XML_BITMASK_POINT_LAT        (1 << 0)
-#define AP_COT_XML_BITMASK_POINT_LON        (1 << 1)
-#define AP_COT_XML_BITMASK_POINT_HAE        (1 << 2)
-#define AP_COT_XML_BITMASK_POINT_CE         (1 << 3)
-#define AP_COT_XML_BITMASK_POINT_LE         (1 << 4)
-
+#define AP_CURSORONTARGET_DEBUG 0
 
 // treat a uart[0+i] as "chan 100+i". This allows us to use chan 0-8ish for MAVLINK_CHAN tunnel
 #define AP_CURSORONTARGET_UARTS_BASE_CHAN 100
@@ -123,13 +104,35 @@ void AP_CursorOnTarget::update()
         return;
     }
 
-    const uint32_t now_ms = AP_HAL::millis();
+    //const uint32_t now_ms = AP_HAL::millis();
 
-    // only send at 10Hz
-    if (_last_run_ms && (now_ms - _last_run_ms) < 5000) {
-        return;
+    // -----------------------------
+    // read any available data on serial port
+    // -----------------------------
+    for (uint8_t i = 0; i < AP_CURSORONTARGET_UARTS_MAX; i++) {
+        if (_uart[i] == nullptr) {
+            continue;
+        }
+        uint32_t nbytes = MIN(_uart[i]->available(), 1000UL);
+        bool check_eof = (nbytes > 0);
+        while (nbytes-- > 0) {
+            const int16_t data = (uint8_t)_uart[i]->read();
+            if (data < 0) {
+                break;
+            }
+            if (data == 0 && yxml_eof(_xml.document) == YXML_OK) {
+                // check for EOF inside the array in case there's two strings in this stream
+                _xml.init();
+            }
+
+            const yxml_ret_t r = yxml_parse(_xml.document, data);
+            handle_parsed_xml(_xml.document, r);
+        } // while nbytes
+
+        if (check_eof && (yxml_eof(_xml.document) == YXML_OK)) {
+            _xml.init();
+        }
     }
-    _last_run_ms = now_ms;
 
 
     static bool run_once = false;
@@ -154,7 +157,7 @@ void AP_CursorOnTarget::update()
             "stale=\"2021-03-16T23:41:29.1855285Z\"\n",
             "how=\"m-g\">\n",
             "<detail>\n",
-                "<track course=\"0.00\" speed=\"0.00\" />\n",
+                "<track course=\"1.23\" speed=\"4.56\" />\n",
             "</detail>\n",
             "<point lat=\"-35.3632611\" lon=\"149.1652302\" hae=\"584.84\" ce=\"1.0\" le=\"1.0\"/>\n",
         "</event>\n"
@@ -191,166 +194,195 @@ void AP_CursorOnTarget::parse_string(const uint8_t chan, const char* data, uint3
     }
 }
 
+void AP_CursorOnTarget::handle_attribute(const CoTXML::State state, char* buf)
+{
+    //int32_t data_int32;
+    float   data_float;
+    Location loc;
+
+    switch (state) {
+    case CoTXML::State::Event_Version:
+        //hal.console->printf("(%2u,%2u) Elem START: %s\n", (unsigned)element_current, (unsigned)element_new, x->elem);
+        data_float = strtof(buf, NULL);
+        hal.console->printf("\n** VERSION: %.1f\n", data_float);
+        break;
+    case CoTXML::State::Event_UID:
+
+    case CoTXML::State::Event_Type:
+    case CoTXML::State::Event_Time:
+    case CoTXML::State::Event_Start:
+    case CoTXML::State::Event_Stale:
+    case CoTXML::State::Event_HOW:
+    case CoTXML::State::Event_Detail_Track_Course:
+    case CoTXML::State::Event_Detail_Track_Speed:            
+        break;
+    case CoTXML::State::Event_Point_Lat:
+        data_float = strtof(buf, NULL);
+        loc.lat = data_float * 1e7f;
+        hal.console->printf("\n** LATITUDE: %3.7f, %d\n", data_float, loc.lat);
+        break;
+    case CoTXML::State::Event_Point_Lon:
+        data_float = strtof(buf, NULL);
+        loc.lng = data_float * 1e7f;
+        hal.console->printf("\n** LONGITUDE: %3.7f, %d\n", data_float, loc.lng);
+        break;
+    case CoTXML::State::Event_Point_HAE:
+        data_float = strtof(buf, NULL);
+        loc.alt = data_float * 1e2f;
+        hal.console->printf("\n** ALTITUDE: %fm, %dcm\n", data_float, loc.alt);
+        break;
+    case CoTXML::State::Event_Point_CE:
+    case CoTXML::State::Event_Point_LE:
+        break;
+
+    default:
+        break;
+
+    } // switch state
+}
+
 void AP_CursorOnTarget::handle_parsed_xml(yxml_t *x, yxml_ret_t r)
 {
-    const uint32_t elements_count = _xml.elements.available();
-    CoTXML::State current_element;
-    CoTXML::State new_element;
-
-    if (!_xml.elements.peek(current_element)) {
-        current_element = CoTXML::State::Unknown;
-    }
+    //const uint16_t      element_current_count = _xml.elements_index;
+    const CoTXML::State element_current = (_xml.elements_len > 0) ? _xml.elements[_xml.elements_len-1] : CoTXML::State::Unknown_Elem;
+    CoTXML::State       element_new = CoTXML::State::Unknown_Elem;
 
 	switch(r) {
- 	case YXML_CONTENT:
-        // this is usually just whitespace. Ignore unless we find a purpose
-        return;
+	case YXML_PICONTENT:
+	case YXML_CONTENT:
+    case YXML_PISTART:
+    case YXML_PIEND:
 	case YXML_OK:
+        // not handled
+        return;
+
     default:
+        // error condition. reset everything to generic unknown
+        memset(_xml.elements, (uint8_t)CoTXML::State::Unknown, sizeof(_xml.elements));
+        _xml.elements_len = 0;
+        _xml.state_data = CoTXML::State::Unknown;
+        hal.console->printf("\n* * * * * * * Unhandled YXML state %d * * * * * * *\n", r);
         return;
 
  	case YXML_ELEMSTART:
-        if (elements_count == 0) {
+        if (_xml.elements_len == 0) {
+            hal.console->printf("\n*** XML DOCUMENT STARTING *** %s\n\n", x->elem);
             if (strcmp(x->elem, "event") == 0) {
                 // this is the first thing we'll see at the start of a CoT msg.
-                _xml.elements.push(CoTXML::State::Event);
+                element_new = CoTXML::State::Event;
             }
-        } else if (current_element == CoTXML::State::Event) {
+
+        } else if (element_current == CoTXML::State::Event) {
             if (strcmp(x->elem, "detail") == 0) {
-                _xml.elements.push(CoTXML::State::Event_Detail);
+                element_new = CoTXML::State::Event_Detail;
             } else if (strcmp(x->elem, "point") == 0) {
-                _xml.elements.push(CoTXML::State::Event_Point);
+                element_new = CoTXML::State::Event_Point;
             }
 
-        } else if (current_element == CoTXML::State::Event_Detail) {
+        } else if (element_current == CoTXML::State::Event_Detail) {
             if (strcmp(x->elem, "track") == 0) {
-                _xml.elements.push(CoTXML::State::Event_Detail_Track);
+                element_new = CoTXML::State::Event_Detail_Track;
             }
         }
 
-        if (elements_count == _xml.elements.available()) {
-            // not handled yet, lets push in a placeholder
-            _xml.elements.push(CoTXML::State::Unknown_Elem);
-            hal.console->printf("ELEM START DID NOT GET PARSED\n");
+        if (element_new == CoTXML::State::Unknown_Elem) {
+            hal.console->printf("******* ELEM Unhandled: ");
+        }
+        if (_xml.elements_len < AP_CURSORONTARGET_ELEMENT_DEPTH_MAX) {
+            _xml.elements[_xml.elements_len] = element_new;
+            _xml.elements_len++;
+        } else {
+            hal.console->printf("******* ELEM OVERFLOW: ");
         }
 
-        if (elements_count == 0) {
-            hal.console->printf("\n*** XML DOCUMENT STARTING ***\n");
-        }
-        if (_xml.elements.peek(new_element)) {
-           hal.console->printf("%2u Elem START -> %2u\n", (unsigned)current_element, (unsigned)new_element);
-        } else {
-           hal.console->printf("%2u Elem START -> ERROR\n", (unsigned)current_element);
-        }
+#if AP_CURSORONTARGET_DEBUG
+        hal.console->printf("(%2u,%2u) Elem START: %s\n", (unsigned)element_current, (unsigned)element_new, x->elem);
+#endif
         break;
 
  	case YXML_ELEMEND:
-        _xml.elements.pop();
-
-        if (_xml.elements.peek(new_element)) {
-            hal.console->printf("%2u Elem END -> %2u\n", (unsigned)current_element, (unsigned)new_element);
-        } else if (_xml.elements.available() == 0) {
-            hal.console->printf("\n*** XML DOCUMENT END ***\n");
+        if (_xml.elements_len > 0) {
+            _xml.elements_len--;
+            element_new = (_xml.elements_len > 0) ? _xml.elements[_xml.elements_len-1] : CoTXML::State::Unknown_Elem;
+#if AP_CURSORONTARGET_DEBUG
+            hal.console->printf("(%2u,%2u) Elem END\n", (unsigned)element_current, (unsigned)element_new);
+#endif
         } else {
-            hal.console->printf("%2u Elem END -> ERROR\n", (unsigned)current_element);
+#if AP_CURSORONTARGET_DEBUG
+            hal.console->printf("******* ELEM UnderFLOW %u\n", (unsigned)element_current);
+#endif
+            hal.console->printf("\n*** XML DOCUMENT END ***\n");
         }
         break;
 
     case YXML_ATTRSTART:
-        switch (current_element) {
-        case CoTXML::State::Event:
-        case CoTXML::State::Event_Version:
-        case CoTXML::State::Event_UID:
-        case CoTXML::State::Event_Type:
-        case CoTXML::State::Event_Time:
-        case CoTXML::State::Event_Start:
-        case CoTXML::State::Event_Stale:
-        case CoTXML::State::Event_HOW:
+        _xml.data_buf_index = 0;
+        _xml.state_data = CoTXML::State::Unknown_Attr; // this should get overritten if we successfully parse somethign we understand
+        if (element_current == CoTXML::State::Event) {
             if (strcmp(x->attr, "version") == 0) {
-                _xml.elements.push(CoTXML::State::Event_Version);
+                _xml.state_data = CoTXML::State::Event_Version;
             } else if (strcmp(x->attr, "uid") == 0) {
-                _xml.elements.push(CoTXML::State::Event_UID);
+               _xml.state_data = CoTXML::State::Event_UID;
             } else if (strcmp(x->attr, "type") == 0) {
-                _xml.elements.push(CoTXML::State::Event_Type);
+                _xml.state_data = CoTXML::State::Event_Type;
             } else if (strcmp(x->attr, "time") == 0) {
-                _xml.elements.push(CoTXML::State::Event_Time);
+                _xml.state_data = CoTXML::State::Event_Time;
             } else if (strcmp(x->attr, "start") == 0) {
-                _xml.elements.push(CoTXML::State::Event_Start);
+                _xml.state_data = CoTXML::State::Event_Start;
             } else if (strcmp(x->attr, "stale") == 0) {
-                _xml.elements.push(CoTXML::State::Event_Stale);
+                _xml.state_data = CoTXML::State::Event_Stale;
             } else if (strcmp(x->attr, "how") == 0) {
-                _xml.elements.push(CoTXML::State::Event_HOW);
+                _xml.state_data = CoTXML::State::Event_HOW;
             }
-            break;
 
-        case CoTXML::State::Event_Detail_Track:
-        case CoTXML::State::Event_Detail_Track_Course:
-        case CoTXML::State::Event_Detail_Track_Speed:
+        } else if (element_current == CoTXML::State::Event_Detail_Track) {
             if (strcmp(x->attr, "course") == 0) {
-                _xml.elements.push(CoTXML::State::Event_Detail_Track_Course);
+                _xml.state_data = CoTXML::State::Event_Detail_Track_Course;
             } else if (strcmp(x->attr, "speed") == 0) {
-                _xml.elements.push(CoTXML::State::Event_Detail_Track_Speed);
+                _xml.state_data = CoTXML::State::Event_Detail_Track_Speed;
             }
-            break;
 
-        case CoTXML::State::Event_Point:
-        case CoTXML::State::Event_Point_Lat:
-        case CoTXML::State::Event_Point_Lon:
-        case CoTXML::State::Event_Point_HAE:
-        case CoTXML::State::Event_Point_CE:
-        case CoTXML::State::Event_Point_LE:
+        } else if (element_current == CoTXML::State::Event_Point) {
             if (strcmp(x->attr, "lat") == 0) {
-                _xml.elements.push(CoTXML::State::Event_Point_Lat);
+                _xml.state_data = CoTXML::State::Event_Point_Lat;
             } else if (strcmp(x->attr, "lon") == 0) {
-                _xml.elements.push(CoTXML::State::Event_Point_Lon);
+                _xml.state_data = CoTXML::State::Event_Point_Lon;
             } else if (strcmp(x->attr, "hae") == 0) {
-                _xml.elements.push(CoTXML::State::Event_Point_HAE);
+                _xml.state_data = CoTXML::State::Event_Point_HAE;
             } else if (strcmp(x->attr, "ce") == 0) {
-                _xml.elements.push(CoTXML::State::Event_Point_CE);
+                _xml.state_data = CoTXML::State::Event_Point_CE;
             } else if (strcmp(x->attr, "le") == 0) {
-                _xml.elements.push(CoTXML::State::Event_Point_LE);
+                _xml.state_data = CoTXML::State::Event_Point_LE;
             }
-            break;
-
-        default:
-            break;
-        } // switch current_element
-
-        if (elements_count == _xml.elements.available()) {
-            // not handled yet, lets push in a placeholder
-            _xml.elements.push(CoTXML::State::Unknown_Attr);
-            hal.console->printf("ATTR START DID NOT GET PARSED\n");
         }
-
-        if (_xml.elements.peek(new_element)) {
-            hal.console->printf("%2u Attr START -> %2u %s, ", (unsigned)current_element, (unsigned)new_element, x->attr);
-        } else {
-            hal.console->printf("%2u Attr START -> ERROR\n", (unsigned)current_element);
-        }
-
+#if AP_CURSORONTARGET_DEBUG
+        hal.console->printf("(%2u,%2u) AttrSTART: %s, ", (unsigned)element_current, (unsigned)_xml.state_data, x->attr);
+#endif
         break;
 
     case YXML_ATTRVAL:
-        if (_xml.is_unknown(current_element))
-        {
-            hal.console->printf("%s", x->data);
-        }
+#if AP_CURSORONTARGET_DEBUG
+        hal.console->printf("%s", x->data);
+#endif
 
+        if (_xml.data_buf_index < sizeof(_xml.data_buf)-1) {
+            // leave room for null termination
+            _xml.data_buf[_xml.data_buf_index++] = *x->data;
+        }
         break;
 
     case YXML_ATTREND:
-        // if (_xml.is_unknown(current_element)) {
-        //     hal.console->printf ("\n");
-        // }
-        hal.console->printf ("\n");
-
-        _xml.elements.pop();
-
-        if (_xml.elements.peek(new_element)) {
-            hal.console->printf("%2u Attr END -> %2u %s\n", (unsigned)current_element, (unsigned)new_element, x->attr);
-        } else {
-            hal.console->printf("%2u Attr END -> ERROR %s\n", (unsigned)current_element, x->attr);
+        if (_xml.data_buf_index < sizeof(_xml.data_buf)) {
+            // null terminate so we can do string processing
+            _xml.data_buf[_xml.data_buf_index++] = 0;
         }
+
+        handle_attribute(_xml.state_data, _xml.data_buf);
+
+        // TODO: use _xml.state_data to identify variable and populate via _xml.data_buf
+#if AP_CURSORONTARGET_DEBUG
+        hal.console->printf(", (%2u) AttrEND:%s=%s (len=%u)\n", (unsigned)_xml.state_data, x->attr, _xml.data_buf, _xml.data_buf_index);
+#endif
         break;
     }
 

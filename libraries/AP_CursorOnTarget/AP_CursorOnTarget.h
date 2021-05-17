@@ -32,6 +32,7 @@
 #endif
 
 #define AP_CURSORONTARGET_XML_STACK_SIZE (1024)
+#define AP_CURSORONTARGET_ELEMENT_DEPTH_MAX (10)
 
 #if AP_CURSORONTARGET_ENABLED
 #include "yxml.h"
@@ -81,38 +82,47 @@ private:
             Unknown = 0,
             Unknown_Elem,
             Unknown_Attr,
-            Event,
+            Event = 3,
             Event_Version = 4,
             Event_UID,
             Event_Type,
             Event_Time,
             Event_Start,
-            Event_Stale = 9,
-            Event_HOW = 10,
-            Event_Detail,
-            Event_Detail_Track,
+            Event_Stale,
+            Event_HOW,
+            Event_Detail = 11,
+            Event_Detail_Track = 12,
             Event_Detail_Track_Course,
             Event_Detail_Track_Speed,
-            Event_Point,
+            Event_Point = 15,
             Event_Point_Lat,
             Event_Point_Lon,
             Event_Point_HAE,
             Event_Point_CE,
             Event_Point_LE
-        } state_data;
+        };
 
-        bool is_unknown(const State state) {
-            return (state == CoTXML::State::Unknown ||
-                    state == CoTXML::State::Unknown_Elem ||
+        State state_data;
+
+        bool is_known(const State state) {
+            return (state != CoTXML::State::Unknown &&
+                    state != CoTXML::State::Unknown_Elem &&
                     state != CoTXML::State::Unknown_Attr);
         }
 
-        ObjectBuffer<State> elements{10};
-        //ByteBuffer *elements;
+
+        State elements[AP_CURSORONTARGET_ELEMENT_DEPTH_MAX];
+        uint16_t elements_len;
+
+        char data_buf[100];
+        uint16_t data_buf_index;
+        
 
     private:
-            char stack[AP_CURSORONTARGET_XML_STACK_SIZE];
+        char stack[AP_CURSORONTARGET_XML_STACK_SIZE];
     } _xml;
+
+    void        handle_attribute(const CoTXML::State state, char* buf);
 
     bool        _initialized;
     uint8_t     _num_uarts;
