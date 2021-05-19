@@ -38,21 +38,21 @@ public:
         k_param_msp_port,
         k_param_notify,
         k_param_esc_pwm_type,
+        k_param_can_baudrate0,
         k_param_can_baudrate2,
-        k_param_can_baudrate3,
+        k_param_can_protocol0,
         k_param_can_protocol1,
         k_param_can_protocol2,
-        k_param_can_protocol3,
     };
 
     AP_Int16 format_version;
     AP_Int16 can_node;
-    AP_Int32 can_baudrate1;
-    AP_Int32 can_baudrate2;
-    AP_Int32 can_baudrate3;
-    AP_Int8 can_protocol1;
-    AP_Int8 can_protocol2;
-    AP_Int8 can_protocol3;
+
+#if HAL_NUM_CAN_IFACES >= 2
+    AP_Int32 can_baudrate[HAL_NUM_CAN_IFACES];
+    AP_Int8 can_protocol[HAL_NUM_CAN_IFACES];
+#endif
+
 #ifdef HAL_PERIPH_ENABLE_BUZZER_WITHOUT_NOTIFY
     AP_Int8 buzz_volume;
 #endif
