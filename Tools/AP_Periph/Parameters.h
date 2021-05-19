@@ -15,7 +15,7 @@ public:
         k_param_gps,
         k_param_compass,
         k_param_can_node,
-        k_param_can_baudrate1,
+        k_param_can_baudrate0,
         k_param_baro,
         k_param_buzz_volume,
         k_param_led_brightness,
@@ -38,7 +38,7 @@ public:
         k_param_msp_port,
         k_param_notify,
         k_param_esc_pwm_type,
-        k_param_can_baudrate0,
+        k_param_can_baudrate1,
         k_param_can_baudrate2,
         k_param_can_protocol0,
         k_param_can_protocol1,
@@ -47,10 +47,10 @@ public:
 
     AP_Int16 format_version;
     AP_Int16 can_node;
-
-#if HAL_NUM_CAN_IFACES >= 2
+    
     AP_Int32 can_baudrate[HAL_NUM_CAN_IFACES];
-    AP_Int8 can_protocol[HAL_NUM_CAN_IFACES];
+#if HAL_NUM_CAN_IFACES >= 2
+    AP_Enum<AP_CANManager::Driver_Type> can_protocol[HAL_NUM_CAN_IFACES];
 #endif
 
 #ifdef HAL_PERIPH_ENABLE_BUZZER_WITHOUT_NOTIFY

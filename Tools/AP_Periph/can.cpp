@@ -1243,18 +1243,22 @@ static void can_wait_node_id(void)
 
 uint32_t AP_Periph_FW::can_baudrate(const uint8_t index) const
 {
-#if HAL_NUM_CAN_IFACES >= 2
-    return g.can_baudrate[index];
-#endif
+    if (index < HAL_NUM_CAN_IFACES) {
+        return g.can_baudrate[index];
+    }
     return 1000000L;
 }
 
 AP_CANManager::Driver_Type AP_Periph_FW::can_protocol(const uint8_t index) const
 {
-#if HAL_NUM_CAN_IFACES >= 2
-    return (AP_CANManager::Driver_Type)g.can_protocol[index].get();
-#endif
+#if HAL_NUM_CAN_IFACES <= 1
     return AP_CANManager::Driver_Type_UAVCAN;
+#else
+    if (index < HAL_NUM_CAN_IFACES) {
+       return g.can_protocol[index];
+    }
+   return AP_CANManager::Driver_Type_UAVCAN;
+#endif
 }
 
 void AP_Periph_FW::can_start()
@@ -1279,7 +1283,7 @@ void AP_Periph_FW::can_start()
         has_uavcan |= (can_protocol(i) == AP_CANManager::Driver_Type_UAVCAN);
     }
     if (!has_uavcan) {
-        periph.g.can_protocol[0].set_and_save((int8_t)AP_CANManager::Driver_Type_UAVCAN);
+        periph.g.can_protocol[0].set_and_save(AP_CANManager::Driver_Type_UAVCAN);
         periph.g.can_baudrate[0].set_and_save(1000000);
     }
 #endif

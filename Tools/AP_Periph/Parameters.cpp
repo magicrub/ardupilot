@@ -56,22 +56,22 @@ const AP_Param::Info AP_Periph_FW::var_info[] = {
     // @RebootRequired: True
     GSCALAR(can_node,         "CAN_NODE", HAL_CAN_DEFAULT_NODE_ID),
 
-#if HAL_NUM_CAN_IFACES >= 2
-    // @Param: CAN1_BAUDRATE
+    // @Param: CAN_BAUDRATE
     // @DisplayName: Bitrate of CAN interface
     // @Description: Bit rate can be set up to from 10000 to 1000000
     // @Range: 10000 1000000
     // @User: Advanced
     // @RebootRequired: True
-    GARRAY(can_baudrate,     0, "CAN1_BAUDRATE", 1000000),
+    GARRAY(can_baudrate,     0, "CAN_BAUDRATE", 1000000),
 
-    // @Param: CAN1_PROTOCOL
+#if HAL_NUM_CAN_IFACES >= 2
+    // @Param: CAN_PROTOCOL
     // @DisplayName: Enable use of specific protocol to be used on this port
     // @Description: Enabling this option starts selected protocol that will use this virtual driver. At least one CAN port must be UAVCAN or else CAN1 gets set to UAVCAN
     // @Values: 0:Disabled,1:UAVCAN,3:ToshibaCAN,4:PiccoloCAN,5:CANTester,6:EFI_NWPMU,7:USD1,8:KDECAN,9:PacketDigital
     // @User: Advanced
     // @RebootRequired: True
-    GARRAY(can_protocol,     0, "CAN1_PROTOCOL", AP_CANManager::Driver_Type_UAVCAN),
+    GARRAY(can_protocol,     0, "CAN_PROTOCOL", AP_CANManager::Driver_Type_UAVCAN),
     
     // @Param: CAN2_BAUDRATE
     // @DisplayName: Bitrate of CAN2 interface
@@ -97,7 +97,7 @@ const AP_Param::Info AP_Periph_FW::var_info[] = {
     // @Range: 10000 1000000
     // @User: Advanced
     // @RebootRequired: True
-    GSCALAR(can_baudrate,    2, "CAN3_BAUDRATE", 1000000),
+    GARRAY(can_baudrate,    2, "CAN3_BAUDRATE", 1000000),
 
     // @Param: CAN3_PROTOCOL
     // @DisplayName: Enable use of specific protocol to be used on this port
@@ -105,7 +105,7 @@ const AP_Param::Info AP_Periph_FW::var_info[] = {
     // @Values: 0:Disabled,1:UAVCAN,3:ToshibaCAN,4:PiccoloCAN,5:CANTester,6:EFI_NWPMU,7:USD1,8:KDECAN,9:PacketDigital
     // @User: Advanced
     // @RebootRequired: True
-    GSCALAR(can_protocol,    2, "CAN3_PROTOCOL", AP_CANManager::Driver_Type_UAVCAN),
+    GARRAY(can_protocol,    2, "CAN3_PROTOCOL", AP_CANManager::Driver_Type_UAVCAN),
 #endif
 
 #if !defined(HAL_NO_FLASH_SUPPORT) && !defined(HAL_NO_ROMFS_SUPPORT)
