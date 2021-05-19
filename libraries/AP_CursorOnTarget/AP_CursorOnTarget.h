@@ -20,12 +20,18 @@
 
 #pragma once
 
-#include <AP_Param/AP_Param.h>
-#include <AP_SerialManager/AP_SerialManager.h>
+#include <AP_HAL/AP_HAL.h>
 
 #ifndef AP_CURSORONTARGET_ENABLED
 #define AP_CURSORONTARGET_ENABLED !HAL_MINIMIZE_FEATURES
 #endif
+
+#include <AP_Param/AP_Param.h>
+#include <AP_SerialManager/AP_SerialManager.h>
+#include <GCS_MAVLink/GCS.h>
+#include <AP_ADSB/AP_ADSB.h>
+
+
 
 #ifndef AP_CURSORONTARGET_UARTS_MAX
 #define AP_CURSORONTARGET_UARTS_MAX 1
@@ -62,6 +68,10 @@ public:
 private:
     static AP_CursorOnTarget* _singleton;
     
+        enum class Options : int32_t {
+        SEND_TO_ADSB = (1<<0),
+    };
+
     // lazy init
     void init();
 
@@ -70,11 +80,33 @@ private:
     void        y_printstring(const char *str);
     void        y_printtoken(yxml_t *x, const char *str);
     void        handle_parsed_xml(yxml_t *x, yxml_ret_t r);
+    void        update_adsb();
 
     struct CoTXML {
         public:
+        
+        struct Cache {
+            float version;
+            float track_course;
+            float track_speed;
+            char uid[30];
+            char type[20];
+            struct Location loc;
+
+            void reset() {
+                version = 0;
+                track_course = 0;
+                track_speed = 0;
+                memset(&uid, 0, sizeof(uid));
+                memset(&type, 0, sizeof(type));
+                loc = Location();
+            }
+
+        } cache;
+
         void init() {
             yxml_init(document, stack, sizeof(stack));
+            cache.reset();
         }
 	    yxml_t document[1];
 
@@ -103,14 +135,6 @@ private:
         };
 
         State state_data;
-
-        bool is_known(const State state) {
-            return (state != CoTXML::State::Unknown &&
-                    state != CoTXML::State::Unknown_Elem &&
-                    state != CoTXML::State::Unknown_Attr);
-        }
-
-
         State elements[AP_CURSORONTARGET_ELEMENT_DEPTH_MAX];
         uint16_t elements_len;
 
@@ -122,7 +146,9 @@ private:
         char stack[AP_CURSORONTARGET_XML_STACK_SIZE];
     } _xml;
 
+
     void        handle_attribute(const CoTXML::State state, char* buf);
+    void        handle_end_of_document();
 
     bool        _initialized;
     uint8_t     _num_uarts;
@@ -132,6 +158,7 @@ private:
     // parameters
     AP_Int8     _enabled;
     AP_Float    _send_rate;
+    AP_Int32    _options;
 
 };
 
