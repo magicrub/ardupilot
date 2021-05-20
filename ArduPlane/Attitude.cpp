@@ -134,9 +134,9 @@ void Plane::stabilize_pitch(float speed_scaler)
     if (!quadplane.in_transition() && !control_mode->is_vtol_mode() && channel_throttle->in_trim_dz() && !control_mode->does_auto_throttle() && flare_mode == FlareMode::ENABLED_PITCH_TARGET) {
        demanded_pitch = landing.get_pitch_cd();
     } else {
-        const int32_t throttle = SRV_Channels::get_output_scaled(SRV_Channel::k_throttle);
-        const float throttle_pitch_mix_gain = (throttle < 0 && allow_reverse_thrust()) ? g2.kff_airbrake_to_pitch : g.kff_throttle_to_pitch;
-        demanded_pitch = nav_pitch_cd + g.pitch_trim_cd + (throttle * throttle_pitch_mix_gain);
+        const int16_t throttle = constrain_int16(SRV_Channels::get_output_scaled(SRV_Channel::k_throttle), 0, 100);
+        const int16_t airbrake = SRV_Channels::get_output_scaled(SRV_Channel::k_airbrake);
+        demanded_pitch = nav_pitch_cd + g.pitch_trim_cd + (throttle * g.kff_throttle_to_pitch + airbrake * g2.kff_airbrake_to_pitch);
     }
 
     bool disable_integrator = false;
