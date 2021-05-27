@@ -1477,7 +1477,7 @@ void AP_Periph_FW::can_kdecan_update()
             continue;
         }
         uavcan_equipment_esc_Status esc_telem {};
-        esc_telem.esc_index = i + kdecan.num_channels;
+        esc_telem.esc_index = i;
         esc_telem.current = telem_data.current;
         esc_telem.voltage = telem_data.voltage;
         esc_telem.rpm = telem_data.rpm  * 60UL * 2 / kdecan.lib->get_num_poles();

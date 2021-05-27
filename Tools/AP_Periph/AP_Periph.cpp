@@ -441,11 +441,7 @@ void AP_Periph_FW::kdecan_init()
             return;
         }
 
-        if (kdecan.chan_index_last < kdecan.chan_index_first) {
-            printf("KDECAN init failure: invalid firts/last channel indexes");
-            return;
-        }
-        kdecan.num_channels = MIN(kdecan.chan_index_last - kdecan.chan_index_first, KDECAN_MAX_NUM_ESCS);
+        kdecan.num_channels = MIN(HAL_PWM_COUNT, KDECAN_MAX_NUM_ESCS);
 
         AP_Param::load_object_from_eeprom((AP_KDECAN*)kdecan.lib, AP_KDECAN::var_info);
         kdecan.lib->add_interface(can_iface_periph[i]);
@@ -462,11 +458,14 @@ void AP_Periph_FW::kdecan_handle_esc_rawcommand(int16_t *rc, uint8_t num_channel
         kdecan.num_channels == 0) {
         return;
     }
+    const uint8_t count = MIN(num_channels,  kdecan.num_channels);
 
     kdecan.lib->lock_rcout();
-    for (uint8_t i = 0; i < MIN(num_channels,  kdecan.num_channels); i++) {
-        const float norm_output = 2.0f*constrain_float(rc[i]/UAVCAN_ESC_MAX_VALUE, 0.0f, 1.0f) - 1.0f;
-        kdecan.lib->set_output(i + kdecan.chan_index_first, norm_output);
+    for (uint8_t i = 0; i < count; i++) {
+        const uint16_t pwm_min = SRV_Channels::srv_channel(i)->get_output_min();
+        const uint16_t pwm_max = SRV_Channels::srv_channel(i)->get_output_max();
+        const uint16_t pwm = linear_interpolate(pwm_min, pwm_max, MAX(0,rc[i]), 0, UAVCAN_ESC_MAX_VALUE);
+        kdecan.lib->set_output_pwm(i, pwm);
     }
     kdecan.lib->release_rcout();
 }
