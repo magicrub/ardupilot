@@ -69,7 +69,7 @@ public:
     void release_rcout();
 
     // set output values
-    void set_output(uint8_t chan, float norm_output);
+    void set_output_pwm(const uint8_t chan, uint16_t pwm);
 
     // get number of poles
     uint8_t get_num_poles();

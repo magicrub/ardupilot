@@ -592,12 +592,19 @@ void AP_KDECAN::release_rcout()
 }
 
 // Only call set output if you have successfully acquired the semaphore
-void AP_KDECAN::set_output(uint8_t chan, float norm_output)
+void AP_KDECAN::set_output_pwm(const uint8_t chan, uint16_t pwm)
 {
-    if ((chan >= KDECAN_MAX_NUM_ESCS) || (_esc_present_bitmask & (1 << chan)) == 0) {
+    if (chan >= KDECAN_MAX_NUM_ESCS) {
+        // array bounds check
         return;
     }
-    _scaled_output[chan] = uint16_t((norm_output + 1.0f) / 2.0f * 2000.0f);
+
+    if ((_esc_present_bitmask & (1 << chan)) == 0) {
+        _scaled_output[chan] = 0;
+    } else {
+        _scaled_output[chan] = pwm;
+    }
+    
     _new_output.store(true, std::memory_order_release);
 }
 
