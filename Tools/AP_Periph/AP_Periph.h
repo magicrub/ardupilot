@@ -208,8 +208,6 @@ HALSITL::CANIface* can_iface_periph[HAL_NUM_CAN_IFACES];
         AP_Int8 enum_mode;
         bool enum_state;
         uint8_t num_channels;
-        uint8_t chan_index_first = 0;
-        uint8_t chan_index_last = 4;
         AP_KDECAN* lib;
     } kdecan;
     void kdecan_init();
