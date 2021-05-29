@@ -173,6 +173,8 @@ void AP_Periph_FW::init()
     }
 #endif
     
+    tempSensor.init(0);
+
 #ifdef HAL_PERIPH_ENABLE_NOTIFY
     notify.init();
 #endif
@@ -308,6 +310,8 @@ void AP_Periph_FW::update()
 #ifdef HAL_PERIPH_ENABLE_RC_OUT
         rcout_init_1Hz();
 #endif
+
+        tempSensor_update();
     }
 
     static uint32_t last_error_ms;
