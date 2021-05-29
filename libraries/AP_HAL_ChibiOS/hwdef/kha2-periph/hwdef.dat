@@ -9,7 +9,7 @@ FLASH_RESERVE_START_KB 128
 #################################
 # Multi-purpose pins like SPI, I2C, GPIO, PWMs, LEDs, ADC
 # LED(s)
-define HAL_GPIO_PIN_LED HAL_GPIO_PIN_LED1_RED
+#define HAL_GPIO_PIN_LED HAL_GPIO_PIN_LED1_RED
 
 
 #################################
@@ -35,6 +35,8 @@ define HAL_PERIPH_ENABLE_AIRSPEED
 define HAL_PERIPH_ENABLE_RANGEFINDER
 define HAL_PERIPH_ENABLE_RC_OUT
 #define HAL_PERIPH_ENABLE_NOTIFY
+#define HAL_PERIPH_ENABLE_KDECAN
+define HAL_PERIPH_ENABLE_BATTERY_MPPT_PACKETDIGITAL
 
 # listen for reboot command from uploader.py script
 # undefine to disable. Use -1 to allow on all ports, otherwise serial number index defined in SERIAL_ORDER starting at 0

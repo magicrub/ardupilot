@@ -13,10 +13,9 @@ define HAL_USE_EMPTY_STORAGE 1
 #################################
 # Multi-purpose pins
 
-undef SPI1
 undef I2C1
 
-define HAL_GPIO_PIN_LED_BOOTLOADER HAL_GPIO_PIN_LED1_RED
+#define HAL_GPIO_PIN_LED_BOOTLOADER HAL_GPIO_PIN_LED1_RED
 
 #################################
 #Communications and debug

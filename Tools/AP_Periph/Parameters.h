@@ -43,6 +43,7 @@ public:
         k_param_can_protocol0,
         k_param_can_protocol1,
         k_param_can_protocol2,
+        k_param_kdecan,
     };
 
     AP_Int16 format_version;
