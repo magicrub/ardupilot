@@ -1093,6 +1093,7 @@ void GCS_MAVLINK_Plane::handleMessage(const mavlink_message_t &msg)
 
         // a manual control message is considered to be a 'heartbeat' from the ground station for failsafe purposes
         plane.failsafe.last_heartbeat_ms = tnow;
+        plane.failsafe.last_valid_rc_ms  = tnow;
         break;
     }
     
@@ -1361,7 +1362,9 @@ void GCS_MAVLINK_Plane::handleMessage(const mavlink_message_t &msg)
 // a RC override message is considered to be a 'heartbeat' from the ground station for failsafe purposes
 void GCS_MAVLINK_Plane::handle_rc_channels_override(const mavlink_message_t &msg)
 {
-    plane.failsafe.last_heartbeat_ms = AP_HAL::millis();
+    const uint32_t now_ms = AP_HAL::millis();
+    plane.failsafe.last_heartbeat_ms = now_ms;
+    plane.failsafe.last_valid_rc_ms  = now_ms;
     GCS_MAVLINK::handle_rc_channels_override(msg);
 }
 
