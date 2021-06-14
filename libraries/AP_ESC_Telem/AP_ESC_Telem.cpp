@@ -193,6 +193,7 @@ bool AP_ESC_Telem::get_usage_seconds(uint8_t esc_index, uint32_t& usage_s) const
 // send ESC telemetry messages over MAVLink
 void AP_ESC_Telem::send_esc_telemetry_mavlink(uint8_t mav_chan)
 {
+#ifndef HAL_NO_GCS
     static_assert(ESC_TELEM_MAX_ESCS <= 12, "AP_ESC_Telem::send_esc_telemetry_mavlink() only supports up-to 12 motors");
 
     if (!_have_data) {
@@ -257,6 +258,7 @@ void AP_ESC_Telem::send_esc_telemetry_mavlink(uint8_t mav_chan)
                 break;
         }
     }
+#endif // HAL_NO_GCS
 }
 
 // record an update to the telemetry data together with timestamp
