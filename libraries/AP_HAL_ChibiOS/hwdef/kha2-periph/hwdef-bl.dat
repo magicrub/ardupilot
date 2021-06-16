@@ -1,0 +1,27 @@
+# hw definition file for processing by chibios_hwdef.py
+# for H743 bootloader
+
+include ../kha2-periph/hwdef_common.dat
+
+#################################
+# Memory and Storage
+FLASH_RESERVE_START_KB 0
+
+define HAL_USE_EMPTY_IO TRUE
+define HAL_USE_EMPTY_STORAGE 1
+
+#################################
+# Multi-purpose pins
+
+undef I2C1
+
+#define HAL_GPIO_PIN_LED_BOOTLOADER HAL_GPIO_PIN_LED1_RED
+
+#################################
+#Communications and debug
+
+define HAL_CAN_DEFAULT_NODE_ID 0
+define CAN_APP_NODE_NAME "org.ardupilot.kha2-periph"
+
+#################################
+
