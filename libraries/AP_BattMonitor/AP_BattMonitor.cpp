@@ -459,12 +459,13 @@ const AP_BattMonitor::cells & AP_BattMonitor::get_cell_voltages(const uint8_t in
 // returns true if there is a temperature reading
 bool AP_BattMonitor::get_temperature(float &temperature, const uint8_t instance) const
 {
-    if (instance >= AP_BATT_MONITOR_MAX_INSTANCES) {
+    if (instance >= AP_BATT_MONITOR_MAX_INSTANCES || drivers[instance] == nullptr) {
         return false;
-    } else {
-        temperature = state[instance].temperature;
-        return (AP_HAL::millis() - state[instance].temperature_time) <= AP_BATT_MONITOR_TIMEOUT;
-    }
+    } 
+    
+    temperature = state[instance].temperature;
+
+    return drivers[instance]->has_temperature();
 }
 
 // return true if cycle count can be provided and fills in cycles argument
@@ -536,6 +537,31 @@ bool AP_BattMonitor::reset_remaining(uint16_t battery_mask, float percentage)
         AP_Notify::flags.failsafe_battery = false;
     }
     return ret;
+}
+
+// Returns the mavlink charge state. The following mavlink charge states are not used
+// MAV_BATTERY_CHARGE_STATE_EMERGENCY , MAV_BATTERY_CHARGE_STATE_FAILED
+// MAV_BATTERY_CHARGE_STATE_UNHEALTHY, MAV_BATTERY_CHARGE_STATE_CHARGING
+MAV_BATTERY_CHARGE_STATE AP_BattMonitor::get_mavlink_charge_state(const uint8_t instance) const 
+{
+    if (instance >= _num_instances) {
+        return MAV_BATTERY_CHARGE_STATE_UNDEFINED;
+    }
+
+    switch (state[instance].failsafe) {
+
+    case AP_BattMonitor::BatteryFailsafe_None:
+        return MAV_BATTERY_CHARGE_STATE_OK;
+
+    case AP_BattMonitor::BatteryFailsafe_Low:
+        return MAV_BATTERY_CHARGE_STATE_LOW;
+
+    case AP_BattMonitor::BatteryFailsafe_Critical:
+        return MAV_BATTERY_CHARGE_STATE_CRITICAL;
+    }
+
+    // Should not reach this
+    return MAV_BATTERY_CHARGE_STATE_UNDEFINED;
 }
 
 namespace AP {

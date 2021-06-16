@@ -24,6 +24,11 @@ public:
     /// Read the battery voltage and current.  Should be called at 10hz
     void read() override;
 
+    /// capacity_remaining_pct - returns the % battery capacity remaining (0 ~ 100)
+    uint8_t capacity_remaining_pct() const override;
+
+    bool has_temperature() const override { return _has_temperature; }
+
     bool has_current() const override {
         return true;
     }
@@ -47,4 +52,6 @@ private:
 
     AP_UAVCAN* _ap_uavcan;
     uint8_t _node_id;
+    uint8_t _soc;
+    bool _has_temperature;
 };
