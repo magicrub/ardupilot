@@ -154,7 +154,7 @@ bool Plane::stall_detection_algorithm(bool allow_changing_state)
 
 
     // we're pitching faster than a controlled pitch is allowed to be
-    const uint32_t pitch_error_cd = labs(labs(nav_pitch_cd) - labs(ahrs.pitch_sensor));
+    const uint32_t pitch_error_cd = labs(nav_pitch_cd - ahrs.pitch_sensor);
     is_stalled |= stall_detection_single_check(STALL_DETECT_BAD_PITCH_10DEG, pitch_error_cd > 1000);
     is_stalled |= stall_detection_single_check(STALL_DETECT_BAD_PITCH_20DEG, pitch_error_cd > 2000);
     is_stalled |= stall_detection_single_check(STALL_DETECT_BAD_PITCH_30DEG, pitch_error_cd > 3000);
