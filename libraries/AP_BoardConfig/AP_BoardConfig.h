@@ -179,10 +179,11 @@ public:
     void set_imu_temp(float current_temp_c);
 #endif
 
+    AP_Int16 vehicleSerialNumber;
+
 private:
     static AP_BoardConfig *_singleton;
     
-    AP_Int16 vehicleSerialNumber;
     AP_Int8 pwm_count;
 
     struct {

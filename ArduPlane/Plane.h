@@ -614,6 +614,7 @@ private:
 
         // algorithm output bitmask for each trigger if all options enabled
         uint32_t algorithm_output_if_everything_enabled;
+        uint32_t algorithm_output_if_everything_enabled_prev;
 
         // notify GCS timer so we dont's spam
         uint32_t stall_stall_detect_notify_gcs_last_ms;

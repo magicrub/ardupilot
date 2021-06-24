@@ -92,6 +92,18 @@ void Plane::stall_detection_log()
        (double)stall_state.confidence,
        (uint32_t)(stall_state.inhibit_ms != 0) ? AP_HAL::millis() - stall_state.inhibit_ms : 0,
        (uint8_t)stall_state.is_recovering());
+
+
+        if (stall_state.algorithm_output_if_everything_enabled != stall_state.algorithm_output_if_everything_enabled_prev) {
+
+            AP_BoardConfig *boardconfig = AP_BoardConfig::get_singleton();
+            if (boardconfig->vehicleSerialNumber == 13) {
+                gcs().send_text(MAV_SEVERITY_WARNING, "STALL All flags changed: 0x%04X -> 0x%04X", (int)stall_state.algorithm_output_if_everything_enabled_prev, (int)stall_state.algorithm_output_if_everything_enabled);
+            }
+
+            stall_state.algorithm_output_if_everything_enabled_prev = stall_state.algorithm_output_if_everything_enabled;
+        }
+
 }
 
 // return true if we think we're stalling
