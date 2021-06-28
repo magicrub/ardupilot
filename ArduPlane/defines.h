@@ -143,21 +143,20 @@ enum {
 
 enum {
     STALL_DETECT_NEVER                          = 0,
-    STALL_DETECT_BAD_DESCENT                    = (1<<0),
-    STALL_DETECT_SINKRATE_2X_MAX                = (1<<1),
-    STALL_DETECT_SINKRATE_4X_MAX                = (1<<2),
-    STALL_DETECT_BAD_ROLL_20DEG                 = (1<<3),
-    STALL_DETECT_BAD_ROLL_30DEG                 = (1<<4),
-    STALL_DETECT_BAD_ROLL_45DEG                 = (1<<5),
-    STALL_DETECT_BAD_PITCH_10DEG                = (1<<6),
-    STALL_DETECT_BAD_PITCH_20DEG                = (1<<7),
-    STALL_DETECT_BAD_PITCH_30DEG                = (1<<8),
-    STALL_DETECT_BAD_PITCH_40DEG                = (1<<9),
-    STALL_DETECT_BAD_ALT_10m                    = (1<<10),
-    STALL_DETECT_BAD_ALT_20m                    = (1<<11),
-    STALL_DETECT_BAD_ALT_40m                    = (1<<12),
-    STALL_DETECT_BAD_ALT_60m                    = (1<<13),
-
+    STALL_DETECT_BAD_DESCENT                    = (1<<0),   // 0x0001
+    STALL_DETECT_SINKRATE_2X_MAX                = (1<<1),   // 0x0002
+    STALL_DETECT_SINKRATE_4X_MAX                = (1<<2),   // 0x0004
+    STALL_DETECT_BAD_ROLL_20DEG                 = (1<<3),   // 0x0008
+    STALL_DETECT_BAD_ROLL_30DEG                 = (1<<4),   // 0x0010
+    STALL_DETECT_BAD_ROLL_45DEG                 = (1<<5),   // 0x0020
+    STALL_DETECT_BAD_PITCH_10DEG                = (1<<6),   // 0x0040
+    STALL_DETECT_BAD_PITCH_20DEG                = (1<<7),   // 0x0080
+    STALL_DETECT_BAD_PITCH_30DEG                = (1<<8),   // 0x0100
+    STALL_DETECT_BAD_PITCH_40DEG                = (1<<9),   // 0x0200
+    STALL_DETECT_BAD_ALT_10m                    = (1<<10),  // 0x0400
+    STALL_DETECT_BAD_ALT_20m                    = (1<<11),  // 0x0800
+    STALL_DETECT_BAD_ALT_40m                    = (1<<12),  // 0x1000
+    STALL_DETECT_BAD_ALT_60m                    = (1<<13),  // 0x2000
 };
 
 enum FlightOptions {
