@@ -755,7 +755,7 @@ void AP_Baro::update(void)
     if (fabsf(_alt_offset - _alt_offset_active) > 0.01f) {
         // If there's more than 1cm difference then slowly slew to it via LPF.
         // The EKF does not like step inputs so this keeps it happy.
-        _alt_offset_active = (0.95f*_alt_offset_active) + (0.05f*_alt_offset);
+        _alt_offset_active = (0.99f*_alt_offset_active) + (0.01f*_alt_offset);
     } else {
         _alt_offset_active = _alt_offset;
     }
