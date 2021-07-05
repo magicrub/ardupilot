@@ -195,6 +195,7 @@ private:
     AP_Int8  _land_pitch_max;
     AP_Float _maxSinkRate_approach;
     AP_Int32 _options;
+    AP_Float _timeConst_STE;
 
     enum {
         OPTION_GLIDER_ONLY=(1<<0),

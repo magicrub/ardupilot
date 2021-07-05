@@ -262,6 +262,13 @@ const AP_Param::GroupInfo AP_TECS::var_info[] = {
     // @Range -5.0 0.0
     // @User: Advanced
     AP_GROUPINFO("PTCH_FF_K", 30, AP_TECS, _pitch_ff_k, 0.0),
+
+    // @Param: TCONST_STE
+    // @DisplayName: Time constant for total energy control loop.
+    // @Description: This parameter allows a different (probably larger) time constant for total energy control from energy balance control. This allows fast control of e.g. airspeed but slower control of altitude if spdweight=2. Set to 0.0 to use TECS_TIME_CONST for both loops.
+    // @Range 3.0 10.0
+    // @User: Advanced
+    AP_GROUPINFO("TCONST_STE", 31, AP_TECS, _timeConst_STE, 0.0),
     
     AP_GROUPEND
 };
@@ -629,7 +636,15 @@ void AP_TECS::_update_throttle_with_airspeed(void)
     {
         // Calculate gain scaler from specific energy error to throttle
         // (_STEdot_max - _STEdot_min) / (_THRmaxf - _THRminf) is the derivative of STEdot wrt throttle measured across the max allowed throttle range.
-        float K_STE2Thr = 1 / (timeConstant() * (_STEdot_max - _STEdot_min) / (_THRmaxf - _THRminf));
+
+        // Handle specified STE time constant (not applied if zero or if landing)
+        float time_const_ste = timeConstant();
+
+        if (_timeConst_STE > 0.0 && !_flags.is_doing_auto_land) {
+            time_const_ste = _timeConst_STE;
+        }
+
+        float K_STE2Thr = 1 / (time_const_ste * (_STEdot_max - _STEdot_min) / (_THRmaxf - _THRminf));
 
         // Calculate feed-forward throttle
         float ff_throttle = 0;
