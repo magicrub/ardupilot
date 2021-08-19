@@ -26,6 +26,12 @@ define HAL_PERIPH_ENABLE_BARO
 define HAL_PERIPH_ENABLE_RC_OUT
 define HAL_PERIPH_ENABLE_NOTIFY
 
+# ADS-B Out via Ping200X
+define HAL_PERIPH_ENABLE_ADSB_OUT
+define HAL_ADSB_UAVIONIX_MAVLINK_ENABLED 0
+define HAL_ADSB_SAGETECH_ENABLED 0
+define HAL_ADSB_UCP_ENABLED 1
+
 define HAL_INS_ENABLED 1
 
 # use the app descriptor needed by MissionPlanner for CAN upload
