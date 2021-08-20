@@ -75,9 +75,10 @@ public:
 
     // enum for adsb optional features
     enum class AdsbOption {
-        Ping200X_Send_GPS               = (1<<0),
-        Squawk_7400_FS_RC               = (1<<1),
-        Squawk_7400_FS_GCS              = (1<<2),
+        Ping200X_Send_GPS                   = (1<<0),
+        Squawk_7400_FS_RC                   = (1<<1),
+        Squawk_7400_FS_GCS                  = (1<<2),
+        Use_Autopilot_GPS_as_External_Baro  = (1<<3),
     };
 
     // for holding parameters

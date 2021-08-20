@@ -76,14 +76,16 @@ private:
             GDL90_OWNSHIP_REPORT ownship_report;
             GDL90_OWNSHIP_GEO_ALTITUDE ownship_geometric_altitude;
             GDL90_SENSOR_BARO_MESSAGE sensor_message;
-            GDL90_TRANSPONDER_STATUS_MSG transponder_status;
 #endif
+            GDL90_TRANSPONDER_STATUS_MSG transponder_status;
         } decoded;
     } rx;
 
     struct {
         uint32_t last_packet_GPS_ms;
         uint32_t last_packet_Transponder_Control_ms;
+        uint32_t last_packet_Transponder_Config_ms;
+        uint32_t last_packet_Transponder_Status_ms;
     } run_state;
 
 };

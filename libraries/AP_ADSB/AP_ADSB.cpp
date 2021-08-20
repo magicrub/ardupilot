@@ -159,7 +159,7 @@ const AP_Param::GroupInfo AP_ADSB::var_info[] = {
 
     // @Param: OPTIONS
     // @DisplayName: ADS-B Options
-    // @Bitmask: 0:Ping200X Send GPS,1:Squawk 7400 on RC failsafe,2:Squawk 7400 on GCS failsafe
+    // @Bitmask: 0:Ping200X Send GPS,1:Squawk 7400 on RC failsafe,2:Squawk 7400 on GCS failsafe,3:Use autopilot GPS altitude if External Baro is enabled in HW vendor config
     // @User: Advanced
     AP_GROUPINFO("OPTIONS",  15, AP_ADSB, _options, 0),
 
