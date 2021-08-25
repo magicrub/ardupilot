@@ -30,6 +30,7 @@ public:
         BattMonitor_TYPE_Math_1_Plus_2              = 15,
         BattMonitor_TYPE_Math_1_Minus_2             = 16,
         BattMonitor_TYPE_Math_2_Minus_1             = 17,
+        BattMonitor_TYPE_UAVCAN_MPPT_PacketDigital  = 21,
     };
 
     // low voltage sources (used for BATT_LOW_TYPE parameter)
@@ -38,7 +39,8 @@ public:
         BattMonitor_LowVoltageSource_SagCompensated = 1
     };
     enum class Options : uint8_t {
-        Ignore_UAVCAN_SoC = (1U<<0),
+        Ignore_UAVCAN_SoC               = (1U<<0),
+        UAVCAN_MPPT_Use_Input_Value     = (1U<<1),
     };
 
     BattMonitor_Type type(void) const { return (enum BattMonitor_Type)_type.get(); }
@@ -65,4 +67,5 @@ public:
     AP_Float _arming_minimum_voltage;   /// voltage level required to arm
     AP_Int8  _i2c_bus;                  /// I2C bus number
     AP_Int32 _options;                  /// Options
+    AP_Int8  _behavior;                 /// 
 };

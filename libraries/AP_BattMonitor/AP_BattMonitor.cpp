@@ -150,6 +150,11 @@ AP_BattMonitor::init()
                 drivers[instance] = new AP_BattMonitor_UAVCAN(*this, state[instance], AP_BattMonitor_UAVCAN::UAVCAN_BATTERY_INFO, _params[instance]);
 #endif
                 break;
+            case AP_BattMonitor_Params::BattMonitor_TYPE_UAVCAN_MPPT_PacketDigital:
+#if HAL_WITH_UAVCAN
+                drivers[instance] = new AP_BattMonitor_UAVCAN(*this, state[instance], AP_BattMonitor_UAVCAN::UAVCAN_MPPT_PACKETDIGITAL, _params[instance]);
+#endif
+                break;
             case AP_BattMonitor_Params::BattMonitor_TYPE_BLHeliESC:
 #ifdef HAVE_AP_BLHELI_SUPPORT
                 drivers[instance] = new AP_BattMonitor_BLHeliESC(*this, state[instance], _params[instance]);

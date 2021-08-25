@@ -176,6 +176,13 @@ const AP_Param::GroupInfo AP_BattMonitor_Params::var_info[] = {
     // @User: Advanced
     AP_GROUPINFO("OPTIONS", 21, AP_BattMonitor_Params, _options, 0),
 
+    // @Param: BEHAVIOR
+    // @DisplayName: Battery monitor behavior
+    // @Description: This sets options to change the behaviour of the battery monitor
+    // @User: Advanced
+    AP_GROUPINFO("BEHAVIOR", 22, AP_BattMonitor_Params, _behavior, 0),
+
+
     AP_GROUPEND
 
 };

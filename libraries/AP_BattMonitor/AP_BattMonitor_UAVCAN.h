@@ -8,12 +8,15 @@
 #define AP_BATTMONITOR_UAVCAN_TIMEOUT_MICROS         5000000 // sensor becomes unhealthy if no successful readings for 5 seconds
 
 class BattInfoCb;
+class MpptStreamCb;
+#include <mppt/OutputEnable.hpp>
 
 class AP_BattMonitor_UAVCAN : public AP_BattMonitor_Backend
 {
 public:
     enum BattMonitor_UAVCAN_Type {
-        UAVCAN_BATTERY_INFO = 0
+        UAVCAN_BATTERY_INFO         = 0,
+        UAVCAN_MPPT_PACKETDIGITAL   = 1,
     };
 
     /// Constructor
@@ -36,14 +39,21 @@ public:
     static void subscribe_msgs(AP_UAVCAN* ap_uavcan);
     static AP_BattMonitor_UAVCAN* get_uavcan_backend(AP_UAVCAN* ap_uavcan, uint8_t node_id, uint8_t battery_id);
     static void handle_battery_info_trampoline(AP_UAVCAN* ap_uavcan, uint8_t node_id, const BattInfoCb &cb);
+    static void handle_mppt_stream_trampoline(AP_UAVCAN* ap_uavcan, uint8_t node_id, const MpptStreamCb &cb);
 
 private:
     void handle_battery_info(const BattInfoCb &cb);
+    void handle_mppt_stream(const MpptStreamCb &cb);
+    void handle_mppt_enable_output_response(const uavcan::ServiceCallResult<mppt::OutputEnable>& response);
+
+    void update_interim_state(const float voltage, const float current, const float temperature, const bool temp_is_valid, const uint8_t soc);
 
     static bool match_battery_id(uint8_t instance, uint8_t battery_id) {
         // when serial number is negative, all batteries are accepted. Else, it must match
         return (AP::battery().get_serial_number(instance) < 0) || (AP::battery().get_serial_number(instance) == (int32_t)battery_id);
     }
+
+    void update_mppt();
 
     AP_BattMonitor::BattMonitor_State _interim_state;
     BattMonitor_UAVCAN_Type _type;
@@ -54,4 +64,10 @@ private:
     uint8_t _node_id;
     uint8_t _soc;
     bool _has_temperature;
+
+    int8_t _behavior_last = -1; // using -1 to trigger an init    bool _mppt_is_enabled;
+    uint8_t _mppt_fault_flags;
+    uint8_t _instance;
+    uavcan::Node<0> *_node;
+    uint32_t mppt_OutputEnable_bootup_delay;
 };
