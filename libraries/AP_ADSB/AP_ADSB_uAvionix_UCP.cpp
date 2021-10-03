@@ -32,6 +32,7 @@
 extern const AP_HAL::HAL &hal;
 
 #define AP_ADSB_UAVIONIX_HEALTH_TIMEOUT_MS                     (5000UL)
+#define AP_ADSB_UAVIONIX_HEARTBEAT_FLAGS_VERBOSE                1 
 
 #define AP_ADSB_UAVIONIX_GCS_LOST_COMMS_LONG_TIMEOUT_MINUTES    (15UL)
 #define AP_ADSB_UAVIONIX_GCS_LOST_COMMS_LONG_TIMEOUT_MS         (1000UL * 60UL * AP_ADSB_UAVIONIX_GCS_LOST_COMMS_LONG_TIMEOUT_MINUTES)
@@ -94,10 +95,23 @@ void AP_ADSB_uAvionix_UCP::update()
         send_GPS_Data();
     }
 
-    if (run_state.last_packet_Transponder_Status_ms == 0) {
+    update_health();
+}
+
+void AP_ADSB_uAvionix_UCP::update_health()
+{
+    const uint32_t now_ms = AP_HAL::millis();
+
+    if (rx.transponder_status_ms == 0 || rx.heartbeat_ms == 0) {
         // never seen a status packet. Let us linger in initializing for up to 10s before we declare it failed
         _frontend.out_state.status = (now_ms < 10000) ? UAVIONIX_ADSB_RF_HEALTH_INITIALIZING : UAVIONIX_ADSB_RF_HEALTH_FAIL_TX;
-    } else if (now_ms - run_state.last_packet_Transponder_Status_ms < AP_ADSB_UAVIONIX_HEALTH_TIMEOUT_MS) {
+
+    } else if (now_ms - rx.heartbeat_ms < AP_ADSB_UAVIONIX_HEALTH_TIMEOUT_MS) {
+        // heartbeat has the most info so that where available
+        _frontend.out_state.status = rx.decoded.heartbeat.status.two.functionFailureTransmitSystem ? UAVIONIX_ADSB_RF_HEALTH_FAIL_TX : UAVIONIX_ADSB_RF_HEALTH_OK;
+
+    } else if (now_ms - rx.transponder_status_ms < AP_ADSB_UAVIONIX_HEALTH_TIMEOUT_MS) {
+        // not sure why we don't have a heartbeat, but if we have a status that's almost as good
         _frontend.out_state.status = rx.decoded.transponder_status.fault ? UAVIONIX_ADSB_RF_HEALTH_FAIL_TX : UAVIONIX_ADSB_RF_HEALTH_OK;
     } else {
         _frontend.out_state.status = UAVIONIX_ADSB_RF_HEALTH_FAIL_TX;
@@ -108,15 +122,43 @@ void AP_ADSB_uAvionix_UCP::update()
 void AP_ADSB_uAvionix_UCP::handle_msg(const GDL90_RX_MESSAGE &msg)
 {
     switch(msg.messageId) {
-    case GDL90_ID_HEARTBEAT:
+    case GDL90_ID_HEARTBEAT: {
         // The Heartbeat message provides real-time indications of the status and operation of the
         // transponder. The message will be transmitted with a period of one second for the UCP
         // protocol.
+#if AP_ADSB_UAVIONIX_HEARTBEAT_FLAGS_VERBOSE
+        GDL90_HEARTBEAT_STATUS hb_status; // temporarily store old heartbeat.status to compare against
+        memcpy(&hb_status, &rx.decoded.heartbeat.status, sizeof(rx.decoded.heartbeat.status));
+#endif
+
         memcpy(&rx.decoded.heartbeat, msg.raw, sizeof(rx.decoded.heartbeat));
+
+#if AP_ADSB_UAVIONIX_HEARTBEAT_FLAGS_VERBOSE
+        if (memcmp(&rx.decoded.heartbeat.status, &hb_status, sizeof(rx.decoded.heartbeat.status)) != 0) {
+            if (rx.decoded.heartbeat.status.one.maintenanceRequired != hb_status.one.maintenanceRequired) {
+                GCS_SEND_TEXT(MAV_SEVERITY_NOTICE,"ADSB: Ping200X Maintenance Required");
+            }
+            if (rx.decoded.heartbeat.status.one.gpsPositionValid != hb_status.one.gpsPositionValid) {
+                GCS_SEND_TEXT(MAV_SEVERITY_NOTICE,"ADSB: Ping200X GPS Position Valid: %s", rx.decoded.heartbeat.status.one.gpsPositionValid ? "True" : "False");
+            }
+            if (rx.decoded.heartbeat.status.two.functionFailureGnssUnavailable != hb_status.two.functionFailureGnssUnavailable) {
+                GCS_SEND_TEXT(MAV_SEVERITY_NOTICE,"ADSB: Ping200X GNSS Available: %s", rx.decoded.heartbeat.status.two.functionFailureGnssUnavailable ? "False" : "True");
+            }
+            if (rx.decoded.heartbeat.status.two.functionFailureBroadcastMonitor != hb_status.two.functionFailureBroadcastMonitor) {
+                GCS_SEND_TEXT(MAV_SEVERITY_NOTICE,"ADSB: Ping200X Braodcast Monitor Error%s", rx.decoded.heartbeat.status.two.functionFailureBroadcastMonitor ? "" : " Cleared");
+            }
+            if (rx.decoded.heartbeat.status.two.functionFailureTransmitSystem != hb_status.two.functionFailureTransmitSystem) {
+                GCS_SEND_TEXT(MAV_SEVERITY_NOTICE,"ADSB: Ping200X TX Failure%s", rx.decoded.heartbeat.status.two.functionFailureTransmitSystem ? "" : " Cleared");
+            }
+        }
+#endif // AP_ADSB_UAVIONIX_HEARTBEAT_FLAGS_VERBOSE
+
         _frontend.out_state.ident_is_active = rx.decoded.heartbeat.status.one.ident;
         if (rx.decoded.heartbeat.status.one.ident) {
             // if we're identing, clear the pending send request
             _frontend.out_state.ident_pending = false;
+        }
+        rx.heartbeat_ms = AP_HAL::millis();
         }
         break;
 
@@ -134,7 +176,7 @@ void AP_ADSB_uAvionix_UCP::handle_msg(const GDL90_RX_MESSAGE &msg)
             memcpy(&primaryFwPartNumber, rx.decoded.identification.primaryFwPartNumber, str_len);
             primaryFwPartNumber[str_len] = 0;
             
-            GCS_SEND_TEXT(MAV_SEVERITY_DEBUG,"ADSB:Detected %s v%u.%u.%u SN:%u %s",
+            GCS_SEND_TEXT(MAV_SEVERITY_DEBUG,"ADSB: Detected %s v%u.%u.%u SN:%u %s",
                 get_hardware_name(rx.decoded.identification.primary.hwId),
                 (unsigned)rx.decoded.identification.primary.fwMajorVersion,
                 (unsigned)rx.decoded.identification.primary.fwMinorVersion,
@@ -171,7 +213,7 @@ void AP_ADSB_uAvionix_UCP::handle_msg(const GDL90_RX_MESSAGE &msg)
 
     case GDL90_ID_TRANSPONDER_STATUS:
         memcpy(&rx.decoded.transponder_status, msg.raw, sizeof(rx.decoded.transponder_status));
-        run_state.last_packet_Transponder_Status_ms = AP_HAL::millis();
+        rx.transponder_status_ms = AP_HAL::millis();
         break;
 
     case GDL90_ID_TRANSPONDER_CONTROL:

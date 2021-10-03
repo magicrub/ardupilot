@@ -56,6 +56,7 @@ private:
 
     void send_GPS_Data();
     void send_Transponder_Control();
+    void update_health();
     const char* get_hardware_name(const uint8_t hwId);
 
     bool hostTransmit(uint8_t *buffer, uint16_t length);
@@ -79,6 +80,8 @@ private:
             GDL90_SENSOR_BARO_MESSAGE sensor_message;
 #endif
         } decoded;
+        uint32_t heartbeat_ms;
+        uint32_t transponder_status_ms;
     } rx;
 
     struct {
