@@ -219,10 +219,13 @@ void AP_ADSB_uAvionix_UCP::send_Transponder_Control()
 
     msg.baroCrossChecked = ADSB_NIC_BARO_UNVERIFIED;
     msg.identActive = _frontend.out_state.ident_pending && !_frontend.out_state.ident_is_active; // set when pending via user but not already active
-    msg.modeAEnabled = true;
-    msg.modeCEnabled = true;
-    msg.modeSEnabled = true;
-    msg.es1090TxEnabled = (_frontend.out_state.cfg.rfSelect & UAVIONIX_ADSB_OUT_RF_SELECT_TX_ENABLED) != 0;
+
+    const bool tx_enabled = (_frontend.out_state.cfg.rfSelect & UAVIONIX_ADSB_OUT_RF_SELECT_TX_ENABLED) != 0;
+    msg.modeAEnabled = tx_enabled;
+    msg.modeCEnabled = tx_enabled;
+    msg.modeSEnabled = tx_enabled;
+    msg.es1090TxEnabled = tx_enabled;
+
     msg.externalBaroAltitude_mm = INT32_MAX;
 
     // if enabled via param ADSB_OPTIONS, use squawk 7400 while in any Loss-Comms related failsafe
