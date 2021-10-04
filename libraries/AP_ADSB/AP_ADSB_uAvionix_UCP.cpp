@@ -31,6 +31,7 @@
 
 extern const AP_HAL::HAL &hal;
 
+#define AP_ADSB_UAVIONIX_UCP_SET_CONFIG_RETIRES                 5 
 #define AP_ADSB_UAVIONIX_HEALTH_TIMEOUT_MS                     (5000UL)
 #define AP_ADSB_UAVIONIX_HEARTBEAT_FLAGS_VERBOSE                1 
 
@@ -96,6 +97,10 @@ void AP_ADSB_uAvionix_UCP::update()
     }
 
     update_health();
+
+#if AP_ADSB_UAVIONIX_UCP_SET_CONFIG
+    update_Transponder_Config();
+#endif
 }
 
 void AP_ADSB_uAvionix_UCP::update_health()
@@ -183,6 +188,10 @@ void AP_ADSB_uAvionix_UCP::handle_msg(const GDL90_RX_MESSAGE &msg)
                 (unsigned)rx.decoded.identification.primary.fwBuildVersion,
                 (unsigned)rx.decoded.identification.primary.serialNumber,
                 primaryFwPartNumber);
+
+#if AP_ADSB_UAVIONIX_UCP_SET_CONFIG
+            run_state.transponder_config_match_attempts = 0;
+#endif
         }
         break;
 
@@ -242,6 +251,149 @@ const char* AP_ADSB_uAvionix_UCP::get_hardware_name(const uint8_t hwId)
     } // switch hwId
     return "Unknown HW";
 }
+
+#if AP_ADSB_UAVIONIX_UCP_SET_CONFIG
+// get the transponder config amd compare it with what we want it to be and set it if it's different
+void AP_ADSB_uAvionix_UCP::update_Transponder_Config()
+{
+    if (run_state.transponder_config_match || (run_state.transponder_config_match_attempts >= AP_ADSB_UAVIONIX_UCP_SET_CONFIG_RETIRES)) {
+        // if already configured, or we've already tried multiple attempts
+        return;
+    }
+
+    const uint32_t now_ms = AP_HAL::millis();
+    if ((now_ms < 5000) || (now_ms - run_state.transponder_config_ms < 1000)) {
+        // wait a few seconds at boot and then only update once per second
+        return;
+    }
+    run_state.transponder_config_ms = now_ms;
+
+    if (run_state.transponder_config_match_attempts == 0) {
+        // autopilot has had a momoent to boot up and populate configs from vehicle params such as stall and max speeds
+        populate_Transponder_Config();
+        request_msg(GDL90_ID_TRANSPONDER_CONFIG);
+    }
+
+    if (run_state.transponder_config_match_attempts >= AP_ADSB_UAVIONIX_UCP_SET_CONFIG_RETIRES) {
+        // we've retried too many times, stop trying
+        GCS_SEND_TEXT(MAV_SEVERITY_DEBUG,"ADSB: Ping200X config timeout");
+
+    } else if (!compare_Transponder_Config()) {
+        // we've either never received a config so we blindly send in case we only have 1-way comms or it's wrong and we're trying to set it.
+        send_Transponder_Config();
+        
+    } else {
+        run_state.transponder_config_match = true;
+        GCS_SEND_TEXT(MAV_SEVERITY_DEBUG,"ADSB: Ping200X Ready");
+    }
+
+    run_state.transponder_config_match_attempts++;
+}
+
+bool AP_ADSB_uAvionix_UCP::compare_Transponder_Config()
+{
+    if (rx.decoded.transponder_config.messageId == 0) {
+        // we've never received a config to compare against, exit early
+        return false;
+    }
+
+    if (rx.decoded.transponder_config.version           != run_state.transponder_config.version ||
+        rx.decoded.transponder_config.icaoAddress[0]    != run_state.transponder_config.icaoAddress[0] ||
+        rx.decoded.transponder_config.icaoAddress[1]    != run_state.transponder_config.icaoAddress[1] ||
+        rx.decoded.transponder_config.icaoAddress[2]    != run_state.transponder_config.icaoAddress[2] ||
+        rx.decoded.transponder_config.maxSpeed          != run_state.transponder_config.maxSpeed ||
+        rx.decoded.transponder_config.baroAltSource     != run_state.transponder_config.baroAltSource ||
+        rx.decoded.transponder_config.SDA               != run_state.transponder_config.SDA ||
+        rx.decoded.transponder_config.SIL               != run_state.transponder_config.SIL ||
+        rx.decoded.transponder_config.lengthWidth       != run_state.transponder_config.lengthWidth ||
+        rx.decoded.transponder_config.es1090InCapable   != run_state.transponder_config.es1090InCapable ||
+        rx.decoded.transponder_config.uatInCapable      != run_state.transponder_config.uatInCapable ||
+        rx.decoded.transponder_config.longitudinalOffset!= run_state.transponder_config.longitudinalOffset ||
+        rx.decoded.transponder_config.lateralOffset     != run_state.transponder_config.lateralOffset ||
+        rx.decoded.transponder_config.stallSpeed_cmps   != run_state.transponder_config.stallSpeed_cmps ||
+        rx.decoded.transponder_config.emitterType       != run_state.transponder_config.emitterType ||
+        rx.decoded.transponder_config.baudRate          != run_state.transponder_config.baudRate ||
+        rx.decoded.transponder_config.modeAEnabled      != run_state.transponder_config.modeAEnabled ||
+        rx.decoded.transponder_config.modeCEnabled      != run_state.transponder_config.modeCEnabled ||
+        rx.decoded.transponder_config.modeSEnabled      != run_state.transponder_config.modeSEnabled ||
+        rx.decoded.transponder_config.es1090TxEnabled   != run_state.transponder_config.es1090TxEnabled ||
+        rx.decoded.transponder_config.defaultSquawk     != run_state.transponder_config.defaultSquawk ||
+        rx.decoded.transponder_config.baro100           != run_state.transponder_config.baro100)
+    {
+        return false;
+    }
+
+    if (memcmp(rx.decoded.transponder_config.registration, run_state.transponder_config.registration, sizeof(run_state.transponder_config.registration)) != 0) {
+        // Aircraft Registration string mismatch. Make sure to use memcmp and not strncmp for this since it might not be null terminated
+        return false;
+    }
+
+    return true;
+}
+
+void AP_ADSB_uAvionix_UCP::send_Transponder_Config()
+{
+    GDL90_TRANSPONDER_CONFIG_MSG_V4_V5 msg {};
+    memcpy(&msg, &run_state.transponder_config, sizeof(msg));
+    gdl90Transmit((GDL90_TX_MESSAGE&)msg, sizeof(msg));
+}
+
+void AP_ADSB_uAvionix_UCP::populate_Transponder_Config()
+{
+    memset(&run_state.transponder_config, 0 ,sizeof(run_state.transponder_config));
+
+    run_state.transponder_config.messageId = GDL90_ID_TRANSPONDER_CONFIG;
+    run_state.transponder_config.version = 5;
+
+    run_state.transponder_config.icaoAddress[0] = (_frontend.out_state.cfg.ICAO_id >> 16) & 0xFF;
+    run_state.transponder_config.icaoAddress[1] = (_frontend.out_state.cfg.ICAO_id >> 8) & 0xFF;
+    run_state.transponder_config.icaoAddress[2] = (_frontend.out_state.cfg.ICAO_id) & 0x0FF;
+
+    run_state.transponder_config.maxSpeed = _frontend.out_state.cfg.maxAircraftSpeed_knots > 0 ? _frontend.out_state.cfg.maxAircraftSpeed_knots : 40;
+    run_state.transponder_config.baroAltSource = GDL90_BARO_DATA_SOURCE_INTERNAL;
+    run_state.transponder_config.SDA = ADSB_SDA_UNKNOWN;
+    run_state.transponder_config.SIL = ADSB_SIL_UNKNOWN;
+    run_state.transponder_config.lengthWidth = (ADSB_AIRCRAFT_LENGTH_WIDTH)_frontend.out_state.cfg.lengthWidth.get();
+    run_state.transponder_config.es1090InCapable = (_frontend.out_state.cfg.rf_capable & ADSB_BITBASK_RF_CAPABILITIES_1090ES_IN) != 0 ? ADSB_1090ES_IN_CAPABLE : ADSB_NOT_1090ES_IN_CAPABLE;
+    run_state.transponder_config.uatInCapable = (_frontend.out_state.cfg.rf_capable & ADSB_BITBASK_RF_CAPABILITIES_UAT_IN) != 0 ? ADSB_UAT_IN_CAPABLE : ADSB_NOT_UAT_IN_CAPABLE;
+    run_state.transponder_config.testMode =  0;
+    run_state.transponder_config.longitudinalOffset = (ADSB_GPS_LONGITUDINAL_OFFSET)_frontend.out_state.cfg.gpsOffsetLon.get();
+    run_state.transponder_config.lateralOffset = (ADSB_GPS_LATERAL_OFFSET)_frontend.out_state.cfg.gpsOffsetLat.get();
+
+    memcpy(run_state.transponder_config.registration, _frontend.out_state.cfg.callsign, sizeof(run_state.transponder_config.registration));
+
+    run_state.transponder_config.stallSpeed_cmps = (_frontend.out_state.cfg.stall_speed_cm > 0) ? _frontend.out_state.cfg.stall_speed_cm : 1000;
+    run_state.transponder_config.emitterType = (ADSB_EMITTER)_frontend.out_state.cfg.emitterType.get();
+    run_state.transponder_config.baudRate = PING_COM_57600_BAUD;
+    run_state.transponder_config.modeAEnabled = 0;
+    run_state.transponder_config.modeCEnabled = 0;
+    run_state.transponder_config.modeSEnabled = 0;
+    run_state.transponder_config.es1090TxEnabled = 0;
+    run_state.transponder_config.defaultSquawk = _frontend.out_state.cfg.squawk_octal;
+    run_state.transponder_config.baro100 = 0; // 0 = 25 foot, 1 == 100 foot
+
+    // CONFIG_VALIDITY_BITMASK
+    run_state.transponder_config.valdityBitmask.icaoValid = 1;
+    run_state.transponder_config.valdityBitmask.silValid = 1;
+    run_state.transponder_config.valdityBitmask.sdaValid = 1;
+    run_state.transponder_config.valdityBitmask.baroAltSourceValid = 1;
+    run_state.transponder_config.valdityBitmask.aircraftMaxSpeedValid = 1;
+    run_state.transponder_config.valdityBitmask.adsbInCapValid = 1;
+    run_state.transponder_config.valdityBitmask.aircraftLenWidthValid = 1;
+    run_state.transponder_config.valdityBitmask.aircraftLatOffsetValid = 1;
+    run_state.transponder_config.valdityBitmask.aircraftLongOffsetValid = 1;
+    run_state.transponder_config.valdityBitmask.aircraftRegValid = 1;
+    run_state.transponder_config.valdityBitmask.aircraftStallSpeedValid = 1;
+    run_state.transponder_config.valdityBitmask.aircraftEmitterCatValid = 1;
+    run_state.transponder_config.valdityBitmask.default1090ExTxModeValid = 1;
+    run_state.transponder_config.valdityBitmask.defaultModeSReplyModeValid = 1;
+    run_state.transponder_config.valdityBitmask.defaultModeCReplyModeValid = 1;
+    run_state.transponder_config.valdityBitmask.defaultModeAReplyModeValid = 1;
+    run_state.transponder_config.valdityBitmask.defaultModeASquawkValid = 1;
+    run_state.transponder_config.valdityBitmask.baro100Valid = 1;
+    run_state.transponder_config.valdityBitmask.serialBaudRateValid = 1;
+}
+#endif // AP_ADSB_UAVIONIX_UCP_SET_CONFIG
 
 void AP_ADSB_uAvionix_UCP::send_Transponder_Control()
 {

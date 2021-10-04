@@ -28,6 +28,9 @@
 
 #define AP_ADSB_UAVIONIX_UCP_CAPTURE_ALL_RX_PACKETS         1
 
+#ifndef AP_ADSB_UAVIONIX_UCP_SET_CONFIG
+    #define AP_ADSB_UAVIONIX_UCP_SET_CONFIG                 0
+#endif
 
 #include <AP_GPS/AP_GPS.h>
 #include <AP_Baro/AP_Baro.h>
@@ -58,6 +61,13 @@ private:
     void send_Transponder_Control();
     void update_health();
     const char* get_hardware_name(const uint8_t hwId);
+    
+#if AP_ADSB_UAVIONIX_UCP_SET_CONFIG
+    void update_Transponder_Config();
+    void populate_Transponder_Config();
+    void send_Transponder_Config();
+    bool compare_Transponder_Config();
+#endif
 
     bool hostTransmit(uint8_t *buffer, uint16_t length);
     uint16_t gdl90Transmit(GDL90_TX_MESSAGE &message, const uint16_t length);
@@ -87,7 +97,12 @@ private:
     struct {
         uint32_t last_packet_GPS_ms;
         uint32_t last_packet_Transponder_Control_ms;
-        uint32_t last_packet_Transponder_Status_ms;
+#if AP_ADSB_UAVIONIX_UCP_SET_CONFIG
+        uint32_t transponder_config_ms;
+        GDL90_TRANSPONDER_CONFIG_MSG_V4_V5 transponder_config;
+        bool transponder_config_match;
+        uint32_t transponder_config_match_attempts;
+#endif
     } run_state;
 
 };
