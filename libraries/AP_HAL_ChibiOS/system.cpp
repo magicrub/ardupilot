@@ -240,6 +240,13 @@ void __cxa_pure_virtual() { while (1); } //TODO: Handle properly, maybe generate
 void NMI_Handler(void);
 void NMI_Handler(void) { while (1); }
 
+uint32_t chibios_rand_generate()
+{
+    uint32_t val;
+    hal.util->get_random_vals((uint8_t*)&val, sizeof(val));
+    return val;
+}
+
 }
 namespace AP_HAL {
 
