@@ -101,6 +101,9 @@ public:
         return pos_control->get_vel_desired_cms();
     }
 
+    // returns true if pilot's yaw input should be used to adjust vehicle's heading
+    virtual bool use_pilot_yaw() const {return true; }
+
 protected:
 
     // helper functions
@@ -394,6 +397,7 @@ public:
     bool is_landing() const override;
 
     bool is_taking_off() const override;
+    bool use_pilot_yaw() const override;
 
     bool requires_terrain_failsafe() const override { return true; }
 
@@ -428,8 +432,6 @@ private:
         AllowTakeOffWithoutRaisingThrottle = (1 << 1U),
         IgnorePilotYaw                     = (1 << 2U),
     };
-
-    bool use_pilot_yaw(void) const;
 
     bool start_command(const AP_Mission::Mission_Command& cmd);
     bool verify_command(const AP_Mission::Mission_Command& cmd);
@@ -866,6 +868,7 @@ public:
     bool set_attitude_target_provides_thrust() const;
     bool stabilizing_pos_xy() const;
     bool stabilizing_vel_xy() const;
+    bool use_wpnav_for_position_control() const;
 
     void limit_clear();
     void limit_init_time_and_pos();
@@ -879,6 +882,7 @@ public:
     enum class SubMode {
         TakeOff,
         WP,
+        Pos,
         PosVelAccel,
         VelAccel,
         Accel,
@@ -892,6 +896,8 @@ public:
 
     // return guided mode timeout in milliseconds.  Only used for velocity, acceleration and angle control
     uint32_t get_timeout_ms() const;
+
+    bool use_pilot_yaw() const override;
 
 protected:
 
@@ -912,7 +918,12 @@ private:
         SetAttitudeTarget_ThrustAsThrust = (1U << 3),
         DoNotStabilizePositionXY = (1U << 4),
         DoNotStabilizeVelocityXY = (1U << 5),
+        WPNavUsedForPosControl = (1U << 6),
     };
+
+    // wp controller
+    void wp_control_start();
+    void wp_control_run();
 
     void pva_control_start();
     void pos_control_start();
@@ -924,14 +935,12 @@ private:
     void accel_control_run();
     void velaccel_control_run();
     void posvelaccel_control_run();
-    void set_desired_velocity_with_accel_and_fence_limits(const Vector3f& vel_des);
     void set_yaw_state(bool use_yaw, float yaw_cd, bool use_yaw_rate, float yaw_rate_cds, bool relative_angle);
-    bool use_pilot_yaw(void) const;
 
     // controls which controller is run (pos or vel):
     SubMode guided_mode = SubMode::TakeOff;
     bool send_notification;     // used to send one time notification to ground station
-
+    bool takeoff_complete;      // true once takeoff has completed (used to trigger retracting of landing gear)
 };
 
 
@@ -1151,6 +1160,8 @@ public:
     // for reporting to GCS
     bool get_wp(Location &loc) override;
 
+    bool use_pilot_yaw() const override;
+
     // RTL states
     enum class SubMode : uint8_t {
         STARTING,
@@ -1233,8 +1244,6 @@ private:
         IgnorePilotYaw    = (1U << 2),
     };
 
-    bool use_pilot_yaw(void) const;
-
 };
 
 
@@ -1257,6 +1266,7 @@ public:
     void exit() override;
 
     bool is_landing() const override;
+    bool use_pilot_yaw() const override;
 
     // Safe RTL states
     enum class SubMode : uint8_t {
