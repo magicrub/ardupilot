@@ -234,6 +234,11 @@ bool Rover::set_mode(Mode &new_mode, ModeReason reason)
     return true;
 }
 
+bool Rover::set_mode_to_guided(const ModeReason reason)
+{
+    return set_mode(Mode::Number::GUIDED, reason);
+}
+
 bool Rover::set_mode(const uint8_t new_mode, ModeReason reason)
 {
     static_assert(sizeof(Mode::Number) == sizeof(new_mode), "The new mode can't be mapped to the vehicles mode number");
