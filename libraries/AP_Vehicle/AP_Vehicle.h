@@ -40,6 +40,7 @@
 #include <AP_Hott_Telem/AP_Hott_Telem.h>
 #include <AP_ESC_Telem/AP_ESC_Telem.h>
 #include <AP_GyroFFT/AP_GyroFFT.h>
+#include <AP_Swarming/AP_Swarming.h>
 #include <AP_VisualOdom/AP_VisualOdom.h>
 #include <AP_VideoTX/AP_VideoTX.h>
 #include <AP_MSP/AP_MSP.h>
@@ -299,6 +300,10 @@ protected:
     AP_SerialManager serial_manager;
 
     AP_Relay relay;
+
+#if HAL_AP_SWARMING_ENABLED
+    AP_Swarming swarming;
+#endif
 
     AP_ServoRelayEvents ServoRelayEvents;
 

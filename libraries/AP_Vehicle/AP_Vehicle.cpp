@@ -61,6 +61,12 @@ const AP_Param::GroupInfo AP_Vehicle::var_info[] = {
     AP_SUBGROUPINFO(externalAHRS, "EAHRS", 8, AP_Vehicle, AP_ExternalAHRS),
 #endif
 
+#if HAL_AP_SWARMING_ENABLED
+    // @Group: SWRM
+    // @Path: ../libraries/AP_Swarming/AP_Swarming.cpp
+    AP_SUBGROUPINFO(swarming, "SWRM_", 50, AP_Vehicle, AP_Swarming),
+#endif
+
     AP_GROUPEND
 };
 
@@ -229,6 +235,9 @@ const AP_Scheduler::Task AP_Vehicle::scheduler_tasks[] = {
     SCHED_TASK(send_watchdog_reset_statustext,         0.1,     20),
 #if HAL_WITH_ESC_TELEM
     SCHED_TASK_CLASS(AP_ESC_Telem, &vehicle.esc_telem,      update,                   10,  50),
+#endif
+#if HAL_AP_SWARMING_ENABLED
+    SCHED_TASK_CLASS(AP_Swarming,  &vehicle.swarming,       update_50Hz,              50, 100),
 #endif
 #if GENERATOR_ENABLED
     SCHED_TASK_CLASS(AP_Generator, &vehicle.generator,      update,                   10,  50),
