@@ -97,6 +97,11 @@ bool Sub::set_mode(control_mode_t mode, ModeReason reason)
     return success;
 }
 
+bool Sub::set_mode_to_guided(const ModeReason reason)
+{
+    return set_mode(control_mode_t::GUIDED, reason);
+}
+
 bool Sub::set_mode(const uint8_t new_mode, const ModeReason reason)
 {
     static_assert(sizeof(control_mode_t) == sizeof(new_mode), "The new mode can't be mapped to the vehicles mode number");
