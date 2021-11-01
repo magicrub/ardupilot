@@ -81,6 +81,8 @@ public:
     virtual bool set_mode(const uint8_t new_mode, const ModeReason reason) = 0;
     virtual uint8_t get_mode() const = 0;
 
+    virtual bool set_mode_to_guided(const ModeReason reason) { return false; }
+
     ModeReason get_control_mode_reason() const {
         return control_mode_reason;
     }
@@ -174,6 +176,8 @@ public:
         }
         return AP_HAL::millis() - _last_flying_ms;
     }
+
+    virtual uint32_t loiter_duration(void) const { return get_time_flying_ms(); }
 
     // returns true if the vehicle has crashed
     virtual bool is_crashed() const;
