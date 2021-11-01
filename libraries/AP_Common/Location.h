@@ -88,6 +88,8 @@ public:
     // longitude/latitude points to meters or centimeters
     static ftype longitude_scale(int32_t lat);
 
+    bool is_latlng_zero(void) const { return lat == 0 && lng == 0; }
+    
     bool is_zero(void) const WARN_IF_UNUSED;
 
     void zero(void);
