@@ -1015,6 +1015,7 @@ private:
     void startup_ground(void);
     bool set_mode(Mode& new_mode, const ModeReason reason);
     bool set_mode(const uint8_t mode, const ModeReason reason) override;
+    bool set_mode_to_guided(const ModeReason reason) override;
     bool set_mode_by_number(const Mode::Number new_mode_number, const ModeReason reason);
     void check_long_failsafe();
     void check_short_failsafe();
@@ -1148,6 +1149,8 @@ private:
 
 public:
     void failsafe_check(void);
+    uint32_t loiter_duration(void) const override;
+    bool get_circle_radius(float &radius_m) override;
 #ifdef ENABLE_SCRIPTING
     bool set_target_location(const Location& target_loc) override;
     bool get_target_location(Location& target_loc) override;

@@ -270,6 +270,11 @@ bool Plane::set_mode(Mode &new_mode, const ModeReason reason)
     return true;
 }
 
+bool Plane::set_mode_to_guided(const ModeReason reason)
+{
+    return set_mode_by_number(Mode::Number::GUIDED, reason);
+}
+
 bool Plane::set_mode(const uint8_t new_mode, const ModeReason reason)
 {
     static_assert(sizeof(Mode::Number) == sizeof(new_mode), "The new mode can't be mapped to the vehicles mode number");

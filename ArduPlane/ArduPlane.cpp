@@ -651,6 +651,21 @@ bool Plane::get_wp_crosstrack_error_m(float &xtrack_error) const
     return true;
 }
 
+
+uint32_t Plane::loiter_duration(void) const
+{
+    if (loiter.start_time_ms == 0) {
+        return 0;
+    }
+    return AP_HAL::millis() - loiter.start_time_ms;
+}
+
+bool Plane::get_circle_radius(float &radius_m)
+{
+    radius_m = plane.aparm.loiter_radius;
+    return true;
+}
+
 #ifdef ENABLE_SCRIPTING
 // set target location (for use by scripting)
 bool Plane::set_target_location(const Location& target_loc)
