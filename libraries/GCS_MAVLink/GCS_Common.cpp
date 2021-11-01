@@ -37,6 +37,7 @@
 #include <AP_SerialManager/AP_SerialManager.h>
 #include <AP_RCTelemetry/AP_Spektrum_Telem.h>
 #include <AP_Mount/AP_Mount.h>
+#include <AP_Swarming/AP_Swarming.h>
 #include <AP_Common/AP_FWVersion.h>
 #include <AP_VisualOdom/AP_VisualOdom.h>
 #include <AP_OpticalFlow/OpticalFlow.h>
@@ -3521,6 +3522,15 @@ void GCS_MAVLINK::handle_common_message(const mavlink_message_t &msg)
         handle_distance_sensor(msg);
         break;
 
+#if HAL_AP_SWARMING_ENABLED
+    case MAVLINK_MSG_ID_SWARM_VEHICLE:
+    case MAVLINK_MSG_ID_SWARM_COMMLINK_STATUS:
+        if (AP::swarm() != nullptr) {
+            AP::swarm()->handle_msg(chan, msg);
+        }
+        break;
+#endif
+
     case MAVLINK_MSG_ID_OBSTACLE_DISTANCE:
         handle_obstacle_distance(msg);
         break;
@@ -4112,6 +4122,16 @@ MAV_RESULT GCS_MAVLINK::handle_command_long_packet(const mavlink_command_long_t 
     case MAV_CMD_DO_SET_HOME:
         result = handle_command_do_set_home(packet);
         break;
+
+#if HAL_AP_SWARMING_ENABLED
+    case MAV_CMD_SWARM_RADIUS:
+        if (AP::swarm() == nullptr) {
+            result = MAV_RESULT_UNSUPPORTED;
+        } else {
+            result = AP::swarm()->handle_command_long(packet);
+        }
+        break;
+#endif
 
     case MAV_CMD_DO_FENCE_ENABLE:
         result = handle_command_do_fence_enable(packet);
