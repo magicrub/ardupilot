@@ -303,6 +303,11 @@ bool Copter::set_mode(Mode::Number mode, ModeReason reason)
     return true;
 }
 
+bool Copter::set_mode_to_guided(const ModeReason reason)
+{
+    return set_mode(Mode::Number::GUIDED, reason);
+}
+
 bool Copter::set_mode(const uint8_t new_mode, const ModeReason reason)
 {
     static_assert(sizeof(Mode::Number) == sizeof(new_mode), "The new mode can't be mapped to the vehicles mode number");
