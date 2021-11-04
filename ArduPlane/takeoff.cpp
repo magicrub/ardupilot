@@ -17,14 +17,14 @@ bool Plane::auto_takeoff_check(void)
 
     // reset all takeoff state if disarmed
     if (!hal.util->get_soft_armed()) {
-        memset(&takeoff_state, 0, sizeof(takeoff_state));
+        takeoff_state = {};
         auto_state.baro_takeoff_alt = barometer.get_altitude();
         return false;
     }
 
     // Reset states if process has been interrupted
     if (takeoff_state.last_check_ms && (now - takeoff_state.last_check_ms) > 200) {
-        memset(&takeoff_state, 0, sizeof(takeoff_state));
+        takeoff_state = {};
         return false;
     }
 
