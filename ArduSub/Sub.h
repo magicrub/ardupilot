@@ -106,9 +106,7 @@
 #include <AP_Camera/AP_Camera.h>          // Photo or video camera
 #endif
 
-#ifdef ENABLE_SCRIPTING
 #include <AP_Scripting/AP_Scripting.h>
-#endif
 
 #if CONFIG_HAL_BOARD == HAL_BOARD_SITL
 #include <SITL/SITL.h>

@@ -4,9 +4,7 @@
 
 #include <AP_Gripper/AP_Gripper.h>
 
-#ifdef ENABLE_SCRIPTING
 #include <AP_Scripting/AP_Scripting.h>
-#endif
 
 // Global parameter class.
 //
