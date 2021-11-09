@@ -270,7 +270,6 @@ void Copter::fast_loop()
     AP_Vehicle::fast_loop();
 }
 
-#ifdef ENABLE_SCRIPTING
 // start takeoff to given altitude (for use by scripting)
 bool Copter::start_takeoff(float alt)
 {
@@ -394,9 +393,6 @@ bool Copter::set_circle_rate(float rate_dps)
     circle_nav->set_rate(rate_dps);
     return true;
 }
-
-#endif // ENABLE_SCRIPTING
-
 
 // rc_loops - reads user input from transmitter/receiver
 // called at 100hz
