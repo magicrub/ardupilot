@@ -828,35 +828,8 @@ def start_mavproxy(opts, stuff):
     if old is not None:
         env['PYTHONPATH'] += os.path.pathsep + old
 
-    old_dir = os.getcwd()
-    for i, i_dir in zip(instances, instance_dir):
-        c = []
-
-        if not opts.no_extra_ports:
-            ports = [p + 10 * i for p in [14550, 14551]]
-            for port in ports:
-                if os.path.isfile("/ardupilot.vagrant"):
-                    # We're running inside of a vagrant guest; forward our
-                    # mavlink out to the containing host OS
-                    c.extend(["--out", "10.0.2.2:" + str(port)])
-                else:
-                    c.extend(["--out", "127.0.0.1:" + str(port)])
-
-        if True:
-            if opts.mcast:
-                c.extend(["--master", "mcast:"])
-            else:
-                c.extend(["--master", "tcp:127.0.0.1:" + str(5760 + 10 * i)])
-            if stuff["sitl-port"] and not opts.no_rcin:
-                c.extend(["--sitl", "127.0.0.1:" + str(5501 + 10 * i)])
-
-        os.chdir(i_dir)
-        if i == instances[-1]:
-            run_cmd_blocking("Run MavProxy", cmd + c, env=env)
-        else:
-            run_in_terminal_window("Run MavProxy", cmd + c, env=env)
-    os.chdir(old_dir)
-
+    run_cmd_blocking("Run MavProxy", cmd, env=env)
+    progress("MAVProxy exited")
 
 vehicle_options_string = '|'.join(vinfo.options.keys())
 
@@ -1073,6 +1046,10 @@ group_sim.add_option("", "--mcast",
                      action="store_true",
                      default=False,
                      help="Use multicasting at default 239.255.145.50:14550")
+group_sim.add_option("", "--udp",
+                     action="store_true",
+                     default=False,
+                     help="Use UDP on 127.0.0.1:5760")
 group_sim.add_option("", "--osd",
                      action='store_true',
                      dest='OSD',
