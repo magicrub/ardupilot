@@ -89,10 +89,18 @@ const AP_Param::GroupInfo AP_Swarming::var_info[] = {
     ///parameters for coverage
 
     // @Param: DEBUG1
+    // @DisplayName: DEBUG1
+    // @Description: DEBUG1
     AP_GROUPINFO("DEBUG1",   50, AP_Swarming, _params.debug1, 0),
+
     // @Param: DEBUG2
+    // @DisplayName: DEBUG2
+    // @Description: DEBUG2
     AP_GROUPINFO("DEBUG2",   51, AP_Swarming, _params.debug2, 0),
+
     // @Param: DEBUG3
+    // @DisplayName: DEBUG3
+    // @Description: DEBUG3
     AP_GROUPINFO("DEBUG3",   52, AP_Swarming, _params.debug3, 0),
 
     AP_GROUPEND

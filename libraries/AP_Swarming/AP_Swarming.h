@@ -19,13 +19,16 @@
 
 #pragma once
 
-#include <AP_HAL/AP_HAL.h>
 #include <AP_HAL/AP_HAL_Boards.h>
+#include <AP_Vehicle/AP_Vehicle_Type.h>
+
+#define HAL_AP_SWARMING_ENABLED 1
 
 #ifndef HAL_AP_SWARMING_ENABLED
-#define HAL_AP_SWARMING_ENABLED 1
+    #define HAL_AP_SWARMING_ENABLED (APM_BUILD_TYPE_IS_VEHICLE && !HAL_MINIMIZE_FEATURES)
 #endif
 
+#include <AP_HAL/AP_HAL.h>
 #include <AP_Common/AP_Common.h>
 #include <AP_Param/AP_Param.h>
 #include <GCS_MAVLink/GCS_MAVLink.h>

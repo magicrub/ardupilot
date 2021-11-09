@@ -19,7 +19,7 @@
 
 #include "AP_Swarming.h"
 
-#if 1 // HAL_AP_SWARMING_ENABLED
+#if HAL_AP_SWARMING_ENABLED
 #include "SwarmDB.h"
 
 #define SWARM_DB_LIST_UPDATE_INTERVAL_MAX_MS    1000

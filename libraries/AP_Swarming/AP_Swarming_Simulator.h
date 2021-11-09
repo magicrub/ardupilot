@@ -20,17 +20,13 @@
 
 
 #include <AP_HAL/AP_HAL.h>
-//#include <AP_HAL/AP_HAL_Boards.h>
+#include "AP_Swarming.h"
 
 #ifndef AP_SWARMING_SIMULATOR_ENABLE
     #define AP_SWARMING_SIMULATOR_ENABLE (HAL_AP_SWARMING_ENABLED && (CONFIG_HAL_BOARD == HAL_BOARD_SITL))
 #endif
 
-#if AP_SWARMING_SIMULATOR_ENABLE
-
 #include <AP_Param/AP_Param.h>
-#include <AP_Common/AP_Common.h>
-#include <AP_Common/Location.h>
 #include <GCS_MAVLink/GCS_MAVLink.h>
 #include <AP_Common/AP_ExpandingArray.h>
 
@@ -77,5 +73,3 @@ private:
     AP_Float        _coverage_overlap_percent;
     AP_Float        _loiter_radius_m;
 };
-
-#endif // AP_SWARMING_SIMULATOR_ENABLE
