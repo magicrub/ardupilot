@@ -54,9 +54,7 @@
 
 #include "AP_Arming.h"
 
-#ifdef ENABLE_SCRIPTING
 #include <AP_Scripting/AP_Scripting.h>
-#endif
 
 #if CONFIG_HAL_BOARD == HAL_BOARD_SITL
 #include <SITL/SITL.h>
