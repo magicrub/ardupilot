@@ -62,7 +62,7 @@ const AP_Param::GroupInfo AP_Vehicle::var_info[] = {
 #endif
 
 #if HAL_AP_SWARMING_ENABLED
-    // @Group: SWRM
+    // @Group: SWRM_
     // @Path: ../AP_Swarming/AP_Swarming.cpp
     AP_SUBGROUPINFO(swarming, "SWRM_", 50, AP_Vehicle, AP_Swarming),
 #endif
