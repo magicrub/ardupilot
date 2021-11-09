@@ -831,6 +831,7 @@ def start_mavproxy(opts, stuff):
     run_cmd_blocking("Run MavProxy", cmd, env=env)
     progress("MAVProxy exited")
 
+
 vehicle_options_string = '|'.join(vinfo.options.keys())
 
 
