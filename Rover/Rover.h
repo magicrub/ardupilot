@@ -69,10 +69,7 @@
 #include <AP_OSD/AP_OSD.h>
 #include <AP_WindVane/AP_WindVane.h>
 #include <AP_Motors/AP_MotorsUGV.h>
-
-#ifdef ENABLE_SCRIPTING
 #include <AP_Scripting/AP_Scripting.h>
-#endif
 
 #if CONFIG_HAL_BOARD == HAL_BOARD_SITL
 #include <SITL/SITL.h>
@@ -274,12 +271,10 @@ private:
 private:
 
     // Rover.cpp
-#ifdef ENABLE_SCRIPTING
     bool set_target_location(const Location& target_loc) override;
     bool set_target_velocity_NED(const Vector3f& vel_ned) override;
     bool set_steering_and_throttle(float steering, float throttle) override;
     bool get_control_output(AP_Vehicle::ControlOutput control_output, float &control_value) override;
-#endif // ENABLE_SCRIPTING
     void stats_update();
     void ahrs_update();
     void gcs_failsafe_check(void);
