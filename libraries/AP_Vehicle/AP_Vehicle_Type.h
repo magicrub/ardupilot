@@ -41,3 +41,4 @@
   build systems that don't support it
  */
 #define APM_BUILD_TYPE(type) ((type) == APM_BUILD_DIRECTORY)
+#define APM_BUILD_TYPE_IS_VEHICLE ((APM_BUILD_DIRECTORY == APM_BUILD_Rover) || (APM_BUILD_DIRECTORY == APM_BUILD_ArduCopter) || (APM_BUILD_DIRECTORY == APM_BUILD_ArduPlane) || (APM_BUILD_DIRECTORY == APM_BUILD_ArduSub) || (APM_BUILD_DIRECTORY == APM_BUILD_Blimp))
