@@ -106,9 +106,7 @@
 #include "defines.h"
 #include "mode.h"
 
-#ifdef ENABLE_SCRIPTING
 #include <AP_Scripting/AP_Scripting.h>
-#endif
 
 #include "RC_Channel.h"     // RC Channel Library
 #include "Parameters.h"
@@ -1151,11 +1149,8 @@ public:
     void failsafe_check(void);
     uint32_t loiter_duration(void) const override;
     bool get_circle_radius(float &radius_m) override;
-#ifdef ENABLE_SCRIPTING
     bool set_target_location(const Location& target_loc) override;
     bool get_target_location(Location& target_loc) override;
-#endif // ENABLE_SCRIPTING
-
 };
 
 extern Plane plane;

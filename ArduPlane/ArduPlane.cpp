@@ -666,7 +666,6 @@ bool Plane::get_circle_radius(float &radius_m)
     return true;
 }
 
-#ifdef ENABLE_SCRIPTING
 // set target location (for use by scripting)
 bool Plane::set_target_location(const Location& target_loc)
 {
@@ -704,6 +703,5 @@ bool Plane::get_target_location(Location& target_loc)
     }
     return false;
 }
-#endif // ENABLE_SCRIPTING
 
 AP_HAL_MAIN_CALLBACKS(&plane);
