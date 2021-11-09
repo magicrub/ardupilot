@@ -40,16 +40,26 @@ const AP_Param::GroupInfo AP_Swarming::var_info[] = {
     // @Description: Swarming Type
     // @Values: 0:Disabled,1:Radius
     // @User: Advanced
-    // @RebootRequired: False
     AP_GROUPINFO_FLAGS("TYPE",     0, AP_Swarming, _params.type,    0, AP_PARAM_FLAG_ENABLE),
 
     // @Param: ID_AIRCRAFT
+    // @DisplayName: Swarming Aircraft ID
+    // @Description: Swarming Aircraft ID. This, in combination with SWRM_ID_SQUADRON, should be a unique number
+    // @User: Advanced
     AP_GROUPINFO("ID_AIRCRAFT",   3, AP_Swarming, _params.id_aircraft, 1),
+
     // @Param: ID_SQUADRON
+    // @DisplayName: Swarming Aircraft ID
+    // @Description: Swarming Aircraft ID. This, in combination with SWRM_ID_AIRCRAFT, should be a unique number
+    // @User: Advanced
     AP_GROUPINFO("ID_SQUADRON",   4, AP_Swarming, _params.id_squadron, 0),
 
 #if HAL_ADSB_ENABLED
     // @Param: FWD_TO_ADSB
+    // @DisplayName: Fwd Swarm vehicles to ADSB library
+    // @Description: Forward Swarm Vehicles to the ADSB library so that it can be streamed down as an ADSB object via SRx_ADSB stream rates. Since ADSB vehicles are forwarded tot he avoidance library, this also gives us avoidance capabilities
+    // @Values: 0:Disabled,1:Enabled
+    // @User: Advanced
     AP_GROUPINFO("FWD_TO_ADSB",   5, AP_Swarming, _params.fwd_inbound_vehicles_to_adsb_lib, 1),
 #endif
 
@@ -60,11 +70,14 @@ const AP_Param::GroupInfo AP_Swarming::var_info[] = {
 #endif
 
     // @Param: SEND_CHAN
+    // @DisplayName: MAVLink channel to send Swarm Vehicle packets
+    // @Description: MAVLink channel to send Swarm Vehicle packets. Use -1 to disable sending, 0 to only send to a MAVLink port that it receives other Swarm-specific packets, else any other value will force sending it to that channel
+    // @User: Advanced
     AP_GROUPINFO("SEND_CHAN",   7, AP_Swarming, _params.chan_select, 0),
 
     // @Param: EFF_RAD
     // @DisplayName: Effective Radius
-    // @Description: Effective Radius
+    // @Description: Effective Radius of RF reach for stable connection to neighboring swarm vehicle. This highly depends on the capabilities of the installed radio system.
     // @Units: m
     AP_GROUPINFO("EFF_RAD",   8, AP_Swarming, _params.effective_radius, 10000),
 
@@ -75,8 +88,11 @@ const AP_Param::GroupInfo AP_Swarming::var_info[] = {
 
     ///parameters for coverage
 
+    // @Param: DEBUG1
     AP_GROUPINFO("DEBUG1",   50, AP_Swarming, _params.debug1, 0),
+    // @Param: DEBUG2
     AP_GROUPINFO("DEBUG2",   51, AP_Swarming, _params.debug2, 0),
+    // @Param: DEBUG3
     AP_GROUPINFO("DEBUG3",   52, AP_Swarming, _params.debug3, 0),
 
     AP_GROUPEND

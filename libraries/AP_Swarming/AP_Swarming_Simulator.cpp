@@ -40,10 +40,30 @@ const AP_Param::GroupInfo AP_Swarming_Simulator::var_info[] = {
     // @User: Advanced
     AP_GROUPINFO("COUNT", 1, AP_Swarming_Simulator, _count_param, 0),
 
+    // @Param: COUNT
     AP_GROUPINFO("DIST", 2, AP_Swarming_Simulator, _initial_distance_m, 1000),
+
+    // @Param: COUNT
+    // @DisplayName: Swarming Simulator vehicle count
+    // @Description: Swarming Simulator vehicle count
+    // @Range: 0 100
+    // @User: Advanced
     AP_GROUPINFO("SPD", 3, AP_Swarming_Simulator, _speed, 20),
+
+    // @Param: COUNT
+    // @DisplayName: Swarming Simulator vehicle count
+    // @Description: Swarming Simulator vehicle count
+    // @Range: 0 100
+    // @User: Advanced
     AP_GROUPINFO("EFF_RAD", 4, AP_Swarming_Simulator, _radius_effective_m, 10E3),
+
+    // @Param: COUNT
+    // @DisplayName: Swarming Simulator vehicle count
+    // @Description: Swarming Simulator vehicle count
+    // @Range: 0 100
+    // @User: Advanced
     AP_GROUPINFO("OVERLAP", 5, AP_Swarming_Simulator, _coverage_overlap_percent, 0),
+
     AP_GROUPINFO("LOIT_R", 6, AP_Swarming_Simulator, _loiter_radius_m, 300),
 
     AP_GROUPEND

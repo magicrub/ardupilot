@@ -22,8 +22,6 @@
 #include <AP_HAL/AP_HAL.h>
 #include <AP_HAL/AP_HAL_Boards.h>
 
-#define HAL_AP_SWARMING_ENABLED 1
-
 #ifndef HAL_AP_SWARMING_ENABLED
 #define HAL_AP_SWARMING_ENABLED 1
 #endif
