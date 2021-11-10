@@ -44,6 +44,7 @@ const AP_Param::GroupInfo AP_Swarming_Simulator::var_info[] = {
     // @Param: DIST
     // @DisplayName: Swarming Simulator spawn distance
     // @Description: Swarming Simulator spawn distance
+    // @Units: m
     AP_GROUPINFO("DIST", 2, AP_Swarming_Simulator, _initial_distance_m, 1000),
 
     // @Param: SPD
@@ -56,6 +57,7 @@ const AP_Param::GroupInfo AP_Swarming_Simulator::var_info[] = {
     // @Param: EFF_RAD
     // @DisplayName: Swarming Simulator Effective Radius
     // @Description: Swarming Simulator Effective Radius. The distance we can reliably keep a data link
+    // @Units: m
     // @User: Advanced
     AP_GROUPINFO("EFF_RAD", 4, AP_Swarming_Simulator, _radius_effective_m, 10E3),
 
@@ -63,12 +65,15 @@ const AP_Param::GroupInfo AP_Swarming_Simulator::var_info[] = {
     // @DisplayName: Swarming Simulator signal overlap
     // @Description: Swarming Simulator signal overlap
     // @Range: 0 100
+    // @Units: %
     // @User: Advanced
     AP_GROUPINFO("OVERLAP", 5, AP_Swarming_Simulator, _coverage_overlap_percent, 0),
 
     // @Param: LOIT_R
     // @DisplayName: Swarming Simulator loiter radius
     // @Description: Swarming Simulator loiter radius of the simulatoed vehicles
+    // @Units: m
+    // @User: Advanced
     AP_GROUPINFO("LOIT_R", 6, AP_Swarming_Simulator, _loiter_radius_m, 300),
 
     AP_GROUPEND
@@ -138,14 +143,11 @@ void AP_Swarming_Simulator::update_vehicle(SwarmSimVehicle &simVehicle)
 
     if (now_ms - simVehicle.last_msg_send_ms >= 1000) {
         simVehicle.last_msg_send_ms = now_ms;
-
-        
 #if AP_SWARMING_TIMESTAMP_IS_GPS
     simVehicle.vehicle.time_usec = AP::gps().time_epoch_usec();
 #else
     simVehicle.vehicle.time_usec = now_us;
 #endif
-
         AP::swarm()->handle_swarm_vehicle(simVehicle.vehicle);
     }
 

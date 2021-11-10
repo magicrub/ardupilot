@@ -150,11 +150,7 @@ bool SwarmDB::get_item(const int32_t index, mavlink_swarm_vehicle_t &vehicle) co
         return false;
     }
 
-#if 1
-    vehicle = _list[index].item;
-#else
     memcpy(&vehicle, &_list[index].item, sizeof(vehicle));
-#endif
     return true;
 }
 

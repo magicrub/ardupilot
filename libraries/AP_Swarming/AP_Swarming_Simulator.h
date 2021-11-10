@@ -30,10 +30,9 @@
 #include <GCS_MAVLink/GCS_MAVLink.h>
 #include <AP_Common/AP_ExpandingArray.h>
 
-#define AP_SWARMING_SIMULATOR_MAX_COUNT     1000
+#define AP_SWARMING_SIMULATOR_MAX_COUNT     100
 
 class AP_Swarming_Simulator {
-private:
     friend class AP_Swarming;
 
     // constructor
@@ -42,7 +41,6 @@ private:
     }
 
     static const struct AP_Param::GroupInfo var_info[];
-
 
     void update();
 

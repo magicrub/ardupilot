@@ -123,9 +123,7 @@ AP_Swarming::AP_Swarming()
  */
 void AP_Swarming::init(void)
 {
-    update_my_vehicle();
     _my_vehicle.state_nav = INGRESSING_TO_MESH;
-
     _is_initialized = true;
 }
 
@@ -141,10 +139,8 @@ void AP_Swarming::update_50Hz(void)
 
     if (!_is_initialized) {
         init();
-        return;
     }
     
-
     update_my_vehicle();
     _db.update();
 
@@ -348,7 +344,20 @@ void AP_Swarming::send_to_adsb(const mavlink_swarm_vehicle_t &msg)
     vehicle.info.hor_velocity = msg.speed * 100; // convert m/s to cm/s
     vehicle.info.ver_velocity = 0;
     vehicle.info.squawk = 1200;
+
+
+
     vehicle.info.emitter_type = ADSB_EMITTER_TYPE_UAV;
+    /*
+    // in MAVProxy module_adsb.py
+    obc_icons = {
+    100 : 'greenplane.png',
+    101 : 'greenplane.png',
+    102 : 'cloud.png',
+    103 : 'migbird.png',
+    104 : 'hawk.png'
+    }
+    */
 
     // convert squadron_id=5 aircraft_id=1234 to callsign "SWRMsaaa" like "SWRM5234"
     vehicle.info.callsign[0] = 'S';
@@ -399,8 +408,8 @@ void AP_Swarming::do_fancy_algorithm_stuff()
     const Location my_target = get_location_target();
     Location new_target;
 
-    const uint32_t loiter_duration = AP::vehicle()->loiter_duration(); // TODO: add support for all vehicle types (Rover, Copter... )
-    const bool is_loitering = (loiter_duration > 0);
+    const uint32_t loiter_duration_ms = AP::vehicle()->loiter_duration(); // TODO: add support for all vehicle types (Rover, Copter... )
+    const bool is_loitering = (loiter_duration_ms > 0);
 
     switch (_my_vehicle.state_nav) {
         default:
@@ -419,7 +428,7 @@ void AP_Swarming::do_fancy_algorithm_stuff()
             break;
 
         case ON_STATION:
-            if (is_loitering && (loiter_duration > (2U * 60UL * 1000UL))) {
+            if (is_loitering && (loiter_duration_ms > (2U * 60UL * 1000UL))) {
                 gcs().send_text(MAV_SEVERITY_DEBUG, "Swarm done loitering, lets go home");
                 _my_vehicle.state_nav = PROCEEDING_HOME;
                 new_target = home;
@@ -429,7 +438,7 @@ void AP_Swarming::do_fancy_algorithm_stuff()
         break;
 
         case PROCEEDING_HOME:
-            if (is_loitering && (loiter_duration > (1U * 60UL * 1000UL))) {
+            if (is_loitering && (loiter_duration_ms > (1U * 60UL * 1000UL))) {
             // nothing to do, we're just flying to home and we'll loiter forever once we're there.
                 _my_vehicle.state_nav = INGRESSING_TO_MESH;
                 load_nearest_swarm_vehicle(new_target);

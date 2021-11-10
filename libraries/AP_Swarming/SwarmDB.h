@@ -39,9 +39,6 @@ public:
 
     uint32_t get_count() const { return _count; }
 
-    // return index of given vehicle if ICAO_ADDRESS matches. return -1 if no match
-    int32_t find_index(const mavlink_swarm_vehicle_t &vehicle) const;
-
     void handle_swarm_vehicle(const mavlink_swarm_vehicle_t &me, const mavlink_swarm_vehicle_t &vehicle);
 
     int32_t get_nearest_index(const Location &loc) const;
@@ -49,6 +46,9 @@ public:
     bool get_item(const int32_t index, mavlink_swarm_vehicle_t &vehicle) const;
 
 private:
+
+    // return index of given vehicle if ICAO_ADDRESS matches. return -1 if no match
+    int32_t find_index(const mavlink_swarm_vehicle_t &vehicle) const;
 
     bool is_valid_index(int32_t index) const { return (index >= 0 && index < _count); }
 
@@ -58,16 +58,6 @@ private:
     // update an existing vehicle
     void set_vehicle(const int32_t index, const mavlink_swarm_vehicle_t &vehicle);
 
-    // void set_id(const int32_t index, const uint32_t id) {
-    //     set_id(index, id>>16, id);
-    // }
-    // void set_id(const int32_t index, const uint16_t id_MSB, const uint16_t id_LSB) {
-    //     if (is_valid_index(index)) {
-    //         _list[index].squadron_id = id_MSB;
-    //         _list[index].aircraft_id = id_LSB;
-    //     }
-    // }
-    
     struct SwarmDbItem_t {
         mavlink_swarm_vehicle_t item; // the whole mavlink struct with all the juicy details. sizeof() == 38
         uint32_t timestamp_ms; // last time this was refreshed, allows timeouts
