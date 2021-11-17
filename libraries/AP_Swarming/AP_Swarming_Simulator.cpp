@@ -59,7 +59,7 @@ const AP_Param::GroupInfo AP_Swarming_Simulator::var_info[] = {
     // @Description: Swarming Simulator Effective Radius. The distance we can reliably keep a data link
     // @Units: m
     // @User: Advanced
-    AP_GROUPINFO("EFF_RAD", 4, AP_Swarming_Simulator, _radius_effective_m, 10E3),
+    AP_GROUPINFO("EFF_RAD", 4, AP_Swarming_Simulator, _effective_radius_m, 10E3),
 
     // @Param: OVERLAP
     // @DisplayName: Swarming Simulator signal overlap
@@ -219,7 +219,7 @@ void AP_Swarming_Simulator::init_vehicle(SwarmSimVehicle &simVehicle)
     simVehicle.vehicle.squadron_id = host_vehicle.squadron_id;
 
     simVehicle.vehicle.cog = (rand() % 360);
-    simVehicle.vehicle.radius_effective = _radius_effective_m;
+    simVehicle.vehicle.effective_radius = _effective_radius_m;
     simVehicle.vehicle.state_nav = INGRESSING_TO_MESH;
     simVehicle.vehicle.speed = _speed;
 

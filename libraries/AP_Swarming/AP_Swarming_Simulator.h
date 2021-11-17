@@ -67,7 +67,7 @@ private:
     AP_Int32        _count_param;
     AP_Float        _initial_distance_m;
     AP_Float        _speed;
-    AP_Float        _radius_effective_m;
+    AP_Float        _effective_radius_m;
     AP_Float        _coverage_overlap_percent;
     AP_Float        _loiter_radius_m;
 };

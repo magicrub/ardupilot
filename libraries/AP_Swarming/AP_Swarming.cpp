@@ -192,7 +192,7 @@ MAV_RESULT AP_Swarming::handle_msg(const mavlink_channel_t chan, const mavlink_m
         gcs().send_text(MAV_SEVERITY_DEBUG, "Swarm Vehicle: %u, %u, %u, %d, %.2f, %.2f, %d, %d, %.2f, %d, %d, %.2f", 
             (unsigned)swarm_vehicle.aircraft_id, (unsigned)swarm_vehicle.squadron_id,
             (unsigned)swarm_vehicle.state_nav, (int)swarm_vehicle.speed, (double)swarm_vehicle.cog,
-            (double)swarm_vehicle.radius_effective,
+            (double)swarm_vehicle.effective_radius,
             (int)swarm_vehicle.lat, (int)swarm_vehicle.lon, (double)swarm_vehicle.altMSL,
             (int)swarm_vehicle.lat_target, (int)swarm_vehicle.lon_target, (double)swarm_vehicle.altMSL_target);
 
@@ -206,7 +206,7 @@ MAV_RESULT AP_Swarming::handle_msg(const mavlink_channel_t chan, const mavlink_m
 
         gcs().send_text(MAV_SEVERITY_DEBUG, "Swarm Commlink Status: %d, %d, %f, %d", 
             swarm_commlink_status.aircraft_id_self, swarm_commlink_status.aircraft_id_external,
-            swarm_commlink_status.ROSR, swarm_commlink_status.last_contact);
+            swarm_commlink_status.ROSER, swarm_commlink_status.last_contact);
         }
         return MAV_RESULT_ACCEPTED;
     
@@ -258,7 +258,7 @@ void AP_Swarming::update_my_vehicle()
     _my_vehicle.cog = degrees(atan2f(groundspeed.y, groundspeed.x));
     _my_vehicle.speed = groundspeed.length();
 
-    _my_vehicle.radius_effective = _params.effective_radius;
+    _my_vehicle.effective_radius = _params.effective_radius;
 
     Location loc;
     if (!AP::ahrs().get_position(loc)) {
