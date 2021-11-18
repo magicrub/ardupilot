@@ -12,6 +12,7 @@ BATT4_MONITOR           21
 BATT5_MONITOR           21
 BATT_CAPACITY           56800
 BATT_MONITOR            8
+BATT_OPTIONS            1
 BRD_BOOT_DELAY          7000
 BRD_IMU_TARGTEMP        60
 BRD_PWM_VOLT_SEL        1
