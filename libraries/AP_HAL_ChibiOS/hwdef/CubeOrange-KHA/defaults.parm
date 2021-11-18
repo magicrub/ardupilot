@@ -26,8 +26,7 @@ COMPASS_USE3            0
 FBWB_CLIMB_RATE         1.75
 FENCE_ACTION            0
 FENCE_AUTOENABLE        2
-FENCE_MAXALT            3657
-FENCE_MINALT            0
+FENCE_ALT_MAX           3657
 FLTMODE1                10
 FLTMODE2                10
 FLTMODE_CH              8
