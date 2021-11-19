@@ -66,6 +66,10 @@ RLL_RATE_D              0.1547
 RLL_RATE_FF             0.0
 RLL_RATE_I              0.1158
 RLL_RATE_P              2.5777
+RNGFND1_GNDCLEAR        20
+RNGFND1_MAX_CM          3500
+RNGFND1_MIN_CM          1
+RNGFND1_SCALING         1
 RNGFND1_TYPE            24
 RNGFND_LANDING          1
 RTL_AUTOLAND            2
