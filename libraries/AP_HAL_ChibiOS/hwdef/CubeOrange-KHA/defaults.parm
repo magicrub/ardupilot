@@ -36,7 +36,7 @@ FLTMODE_CH              8
 FS_GCS_ENABL            1
 FS_LONG_ACTN            1
 FS_LONG_TIMEOUT         1200
-GPS_SBAS_MODE           2
+GPS_SBAS_MODE           1
 GPS_TYPE                9
 KFF_THR2PTCH            4
 LAND_DISARMDELAY        3
