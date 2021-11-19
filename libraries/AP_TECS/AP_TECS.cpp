@@ -262,7 +262,28 @@ const AP_Param::GroupInfo AP_TECS::var_info[] = {
     // @Range: -5.0 0.0
     // @User: Advanced
     AP_GROUPINFO("PTCH_FF_K", 30, AP_TECS, _pitch_ff_k, 0.0),
-    
+
+    // @Param: TCONST_STE
+    // @DisplayName: Time constant for total energy control loop.
+    // @Description: This parameter allows a different (probably larger) time constant for total energy control from energy balance control. This allows fast control of e.g. airspeed but slower control of altitude if spdweight=2. Set to 0.0 to use TECS_TIME_CONST for both loops.
+    // @Range: 0.0 60.0
+    // @User: Advanced
+    AP_GROUPINFO("TCONST_STE", 31, AP_TECS, _timeConst_STE, 0.0),
+
+    // @Param: CLMB_OPER
+    // @DisplayName: Operational climb rate.
+    // @Description: This parameter allows a lower climb rate than CLMB_MAX for normal operation. Set to 0 to use CLMB_MAX.
+    // @Range: 0.0 5.0
+    // @User: Advanced
+    AP_GROUPINFO("CLMB_OPER", 32, AP_TECS, _operationalClimb, 0.0),
+
+    // @Param: SINK_OPER
+    // @DisplayName: Operational sink rate.
+    // @Description: This parameter allows a lower sink rate than SINK_MAX for normal operation. Set to 0 to use SINK_MAX.
+    // @Range: 0.0 5.0
+    // @User: Advanced
+    AP_GROUPINFO("SINK_OPER", 33, AP_TECS, _operationalSink, 0.0),
+
     AP_GROUPEND
 };
 
@@ -467,6 +488,11 @@ void AP_TECS::_update_height_demand(void)
     _hgt_dem_in_old = _hgt_dem;
 
     float max_sink_rate = _maxSinkRate;
+
+    if (_operationalSink > 0.0 && _operationalSink < max_sink_rate) {
+        max_sink_rate = _operationalSink;
+    }
+
     if (_maxSinkRate_approach > 0 && _flags.is_doing_auto_land) {
         // special sink rate for approach to accommodate steep slopes and reverse thrust.
         // A special check must be done to see if we're LANDing on approach but also if
@@ -477,9 +503,15 @@ void AP_TECS::_update_height_demand(void)
     }
 
     // Limit height rate of change
-    if ((_hgt_dem - _hgt_dem_prev) > (_maxClimbRate * 0.1f))
+    float max_climb_rate = _maxClimbRate;
+
+    if (_operationalClimb > 0.0 && _operationalClimb < _maxClimbRate) {
+        max_climb_rate = _operationalClimb;
+    }
+
+    if ((_hgt_dem - _hgt_dem_prev) > (max_climb_rate * 0.1f))
     {
-        _hgt_dem = _hgt_dem_prev + _maxClimbRate * 0.1f;
+        _hgt_dem = _hgt_dem_prev + max_climb_rate * 0.1f;
     }
     else if ((_hgt_dem - _hgt_dem_prev) < (-max_sink_rate * 0.1f))
     {
@@ -642,7 +674,15 @@ void AP_TECS::_update_throttle_with_airspeed(void)
     {
         // Calculate gain scaler from specific energy error to throttle
         // (_STEdot_max - _STEdot_min) / (_THRmaxf - _THRminf) is the derivative of STEdot wrt throttle measured across the max allowed throttle range.
-        float K_STE2Thr = 1 / (timeConstant() * (_STEdot_max - _STEdot_min) / (_THRmaxf - _THRminf));
+
+        // Handle specified STE time constant (not applied if zero or if landing)
+        float time_const_ste = timeConstant();
+
+        if (_timeConst_STE > 0.0 && !_flags.is_doing_auto_land) {
+            time_const_ste = _timeConst_STE;
+        }
+
+        float K_STE2Thr = 1 / (time_const_ste * (_STEdot_max - _STEdot_min) / (_THRmaxf - _THRminf));
 
         // Calculate feed-forward throttle
         float ff_throttle = 0;
