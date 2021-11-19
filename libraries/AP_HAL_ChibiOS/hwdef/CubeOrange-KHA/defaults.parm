@@ -32,7 +32,7 @@ FENCE_AUTOENABLE        2
 FENCE_ALT_MAX           3657
 FLTMODE1                10
 FLTMODE2                10
-FLTMODE_CH              8
+FLTMODE_CH              7
 FS_GCS_ENABL            1
 FS_LONG_ACTN            1
 FS_LONG_TIMEOUT         1200
