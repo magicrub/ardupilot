@@ -8,6 +8,10 @@
 #include <AP_ADSB/AP_ADSB.h>
 #include <AP_Vehicle/ModeReason.h>
 
+#ifndef HAL_STALL_RECOVERY_ENABLED
+#define HAL_STALL_RECOVERY_ENABLED !HAL_MINIMIZE_FEATURES && BOARD_FLASH_SIZE > 1024
+#endif
+
 class Mode
 {
 public:
@@ -43,6 +47,7 @@ public:
         QAUTOTUNE     = 22,
         QACRO         = 23,
         THERMAL       = 24,
+        STALLRECOVERY = 25,
     };
 
     // Constructor
@@ -263,7 +268,6 @@ protected:
 
     void _exit() override;
 };
-
 
 class ModeRTL : public Mode
 {
@@ -648,3 +652,71 @@ protected:
 };
 
 #endif
+
+
+#if HAL_STALL_RECOVERY_ENABLED
+class ModeStallRecovery : public Mode
+{
+public:
+    Number mode_number() const override { return Number::STALLRECOVERY; }
+    const char *name() const override { return "STALL"; }
+    const char *name4() const override { return "STALL"; }
+
+    // methods that affect movement of the vehicle in this mode
+    void update() override;
+
+    // false during STAGE 1, True during STAGE 2 if throttleMax2 < == -1
+    bool does_auto_throttle() const override;
+
+    void backup_mode_details();
+
+    // var_info for holding parameter information
+    static const struct AP_Param::GroupInfo var_info[];
+
+    // public params for detection
+    AP_Int32    detection_bitmask;
+    AP_Int32    recovery_enable;
+
+protected:
+    bool _enter() override;
+    void _exit() override;
+
+    struct {
+        // private-ish params for recovery
+        AP_Int8     throttle1;
+        AP_Int8     throttle2;
+        AP_Int8     elevator;
+        AP_Float    duration1_max;
+        AP_Float    duration2_max;
+        AP_Float    duration1_min;
+        AP_Float    duration2_min;
+        AP_Int32    algorithm1;
+        AP_Int32    algorithm2;
+        AP_Float    sink_rate;
+        AP_Float    spin_rate;
+    } param;
+
+private:
+    enum class STALL_RECOVERY_1 : uint32_t {
+        AIRSPEED_MIN                = (1<<0),
+        SPIN_RATE_PARAM             = (1<<1),
+        SINK_RATE_PARAM             = (1<<2),
+    };
+
+    enum class STALL_RECOVERY_2 : uint32_t {
+        AIRSPEED_CRUISE_100PCT      = (1<<0),
+        AIRSPEED_CRUISE_95PCT       = (1<<1),
+        AIRSPEED_CRUISE_90PCT       = (1<<2),
+    };
+
+    struct {
+        Location wp_next;
+        Location wp_prev;
+    } backup;
+    
+    void set_servo_behavior();
+    bool is_recovered_early() const;
+    void resume_previous_mode();
+};
+#endif
+

@@ -155,6 +155,7 @@ public:
     friend class ModeGuided;
     friend class ModeInitializing;
     friend class ModeManual;
+    friend class ModeStallRecovery;
     friend class ModeQStabilize;
     friend class ModeQHover;
     friend class ModeQLoiter;
@@ -282,6 +283,9 @@ private:
     ModeGuided mode_guided;
     ModeInitializing mode_initializing;
     ModeManual mode_manual;
+#if HAL_STALL_RECOVERY_ENABLED
+    ModeStallRecovery mode_stallrecovery;
+#endif
     ModeQStabilize mode_qstabilize;
     ModeQHover mode_qhover;
     ModeQLoiter mode_qloiter;
@@ -581,7 +585,85 @@ private:
         uint32_t impact_timer_ms;
     } crash_state;
 
-    // this controls throttle suppression in auto modes
+
+#if HAL_STALL_RECOVERY_ENABLED
+    class StallState {
+        // stall_detection.cpp
+    public:
+        friend class Plane;
+        friend class Mode;
+        friend class ModeStallRecovery;
+        
+        void detection_update();
+        bool is_stalled() const { return (confidence > 0.5f); }
+        uint32_t stall_duration_ms() const { return (stall_start_ms != 0) ? (AP_HAL::millis() - stall_start_ms) : 0; }
+        bool is_recovering() const { return (recovering_start_ms != 0); }
+        uint32_t recovering_duration_ms() const { return is_recovering() ? (AP_HAL::millis() - recovering_start_ms) : 0; }
+
+    private:
+        enum class Stall_Detect : uint32_t {
+            BAD_DESCENT                 = (1<<0),
+            SINKRATE_2X_MAX             = (1<<1),
+            SINKRATE_4X_MAX             = (1<<2),
+            BAD_ROLL_20DEG              = (1<<3),
+            BAD_ROLL_30DEG              = (1<<4),
+            BAD_ROLL_45DEG              = (1<<5),
+            BAD_PITCH_10DEG             = (1<<6),
+            BAD_PITCH_20DEG             = (1<<7),
+            BAD_PITCH_30DEG             = (1<<8),
+            BAD_PITCH_40DEG             = (1<<9),
+            BAD_ALT_10m                 = (1<<10),
+            BAD_ALT_20m                 = (1<<11),
+            BAD_ALT_40m                 = (1<<12),
+            BAD_ALT_60m                 = (1<<13),
+        };
+
+        enum class Stall_Detect_Exceptions : uint32_t {
+            CLIMBING_3mps               = (1<<0),
+        };
+        
+        void detection_log();
+        bool detect_stall();
+        uint32_t detection_single_check(const Stall_Detect _bitmask, const bool check) const;
+
+        // true if there is high confidence that he aircraft is currently stalled
+        void stall_start() { confidence = 1; stall_start_ms = AP_HAL::millis(); }
+        void stall_clear() { confidence = 0; stall_start_ms = 0; }
+        uint32_t stall_start_ms;
+
+
+        // true for a short time after a stall. Used to fly conservatively while we build airspeed and confidence
+        void recovering_start() { recovering_start_ms = AP_HAL::millis(); }
+        void recovering_clear() { recovering_start_ms = 0; }
+        uint32_t recovering_start_ms;
+
+        void reset() { stall_clear(); recovering_clear(); count = 0; last_detection = 0;}
+
+        // 0.0 to 1.0 metric where 1 means very confident that the aircraft is stalling
+        float confidence;
+
+        // LowPass Filter coef of confidence. Higher means confidence changes faster
+        const float LPFcoef = 0.2f;
+        
+        // keep track of how many times we've stalled
+        uint32_t count;
+
+        // previous update time
+        uint32_t last_update_ms;
+        // previous rate-limited nav roll angle
+        float last_limited_nav_roll;
+
+        // store last detection. This is only for logging
+        bool last_detection;
+
+        // stalls detected if all features enabled. Used for logging
+        uint32_t detection_result_if_everything_enabled;
+
+        // flags of thresholds of scenarios where we *know* we aren't stalling
+        uint32_t definitely_not_stalling_exception_flags;
+    } stall_state;
+#endif // HAL_STALL_RECOVERY_ENABLED
+
     bool throttle_suppressed;
 
     // reduce throttle to eliminate battery over-current
@@ -1105,6 +1187,7 @@ private:
         Failsafe_Action_Parachute = 5
     };
 
+
     // list of priorities, highest priority first
     static constexpr int8_t _failsafe_priorities[] = {
                                                       Failsafe_Action_Terminate,
@@ -1154,11 +1237,8 @@ private:
 
 public:
     void failsafe_check(void);
-#ifdef ENABLE_SCRIPTING
     bool set_target_location(const Location& target_loc) override;
     bool get_target_location(Location& target_loc) override;
-#endif // ENABLE_SCRIPTING
-
 };
 
 extern Plane plane;

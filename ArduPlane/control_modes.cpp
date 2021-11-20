@@ -7,6 +7,11 @@ Mode *Plane::mode_from_mode_num(const enum Mode::Number num)
     case Mode::Number::MANUAL:
         ret = &mode_manual;
         break;
+    case Mode::Number::STALLRECOVERY:
+#if HAL_STALL_RECOVERY_ENABLED
+        ret = &mode_stallrecovery;
+#endif
+        break;
     case Mode::Number::CIRCLE:
         ret = &mode_circle;
         break;
@@ -180,6 +185,11 @@ void Plane::autotune_enable(bool enable)
  */
 bool Plane::fly_inverted(void)
 {
+#if HAL_STALL_RECOVERY_ENABLED
+    if (control_mode == &plane.mode_stallrecovery) {
+        return false;
+    }
+#endif
     if (control_mode == &plane.mode_manual) {
         return false;
     }
