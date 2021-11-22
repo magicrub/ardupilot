@@ -222,7 +222,11 @@ int16_t Plane::rudder_input(void)
     }
 
     if ((g2.flight_options & FlightOptions::DIRECT_RUDDER_ONLY) &&
+#if HAL_STALL_RECOVERY_ENABLED
+        !(control_mode == &mode_manual || control_mode == &mode_stabilize || control_mode == &mode_acro || control_mode == &plane.mode_stallrecovery)) {
+#else
         !(control_mode == &mode_manual || control_mode == &mode_stabilize || control_mode == &mode_acro)) {
+#endif
         // the user does not want any input except in these modes
         return 0;
     }

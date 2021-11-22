@@ -1032,6 +1032,12 @@ const AP_Param::Info Plane::var_info[] = {
     // @Path: mode_takeoff.cpp
     GOBJECT(mode_takeoff, "TKOFF_", ModeTakeoff),
 
+#if HAL_STALL_RECOVERY_ENABLED
+    // @Group: STALL_
+    // @Path: mode_stallrecovery.cpp
+    GOBJECT(mode_stallrecovery, "STALL_", ModeStallRecovery),
+#endif
+
     // @Group:
     // @Path: ../libraries/AP_Vehicle/AP_Vehicle.cpp
     { AP_PARAM_GROUP, "", Parameters::k_param_vehicle, (const void *)&plane, {group_info : AP_Vehicle::var_info} },

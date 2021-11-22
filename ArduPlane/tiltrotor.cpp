@@ -19,6 +19,11 @@ float QuadPlane::tilt_max_change(bool up) const
     }
     if (tilt.tilt_type != TILT_TYPE_BINARY && !up) {
         bool fast_tilt = false;
+#if HAL_STALL_RECOVERY_ENABLED
+        if (plane.control_mode == &plane.mode_stallrecovery) {
+            fast_tilt = true;
+        }
+#endif
         if (plane.control_mode == &plane.mode_manual) {
             fast_tilt = true;
         }

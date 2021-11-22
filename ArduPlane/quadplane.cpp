@@ -1800,6 +1800,9 @@ bool QuadPlane::assistance_safe()
 void QuadPlane::update_transition(void)
 {
     if (plane.control_mode == &plane.mode_manual ||
+#if HAL_STALL_RECOVERY_ENABLED
+        plane.control_mode == &plane.mode_stallrecovery ||
+#endif
         plane.control_mode == &plane.mode_acro ||
         plane.control_mode == &plane.mode_training) {
         // in manual modes quad motors are always off

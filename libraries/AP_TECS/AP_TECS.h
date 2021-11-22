@@ -127,6 +127,16 @@ public:
         _pitch_max_limit = pitch_limit;
     }
 
+    // true when in Bad descent condition caused by unachievable airspeed demand
+    bool uncommanded_altitude_loss(void) const {
+        return _flags.badDescent;
+    }
+    
+    // return altitude error in meters
+    float get_altitude_error(void) const {
+        return _hgt_dem_adj - _height;
+    };
+
     // force use of synthetic airspeed for one loop
     void use_synthetic_airspeed(void) {
         _use_synthetic_airspeed_once = true;
