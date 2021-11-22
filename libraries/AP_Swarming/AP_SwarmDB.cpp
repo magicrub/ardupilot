@@ -20,14 +20,14 @@
 #include "AP_Swarming.h"
 
 #if HAL_AP_SWARMING_ENABLED
-#include "SwarmDB.h"
+#include "AP_SwarmDB.h"
 
 #define SWARM_DB_LIST_UPDATE_INTERVAL_MAX_MS    1000
 #define SWARM_DB_VEHICLE_TIMEOUT_US             (10UL*1E6)
 
 extern const AP_HAL::HAL& hal;
 
-void SwarmDB::handle_swarm_vehicle(const mavlink_swarm_vehicle_t &me, const mavlink_swarm_vehicle_t &vehicle)
+void AP_SwarmDB::handle_swarm_vehicle(const mavlink_swarm_vehicle_t &me, const mavlink_swarm_vehicle_t &vehicle)
 {
     const Location vehicle_loc = AP_Swarming::get_location(vehicle);
     const uint32_t id_me = AP_Swarming::get_id(me);
@@ -55,7 +55,7 @@ void SwarmDB::handle_swarm_vehicle(const mavlink_swarm_vehicle_t &me, const mavl
 }
 
 // periodic update to remove stale vehicles and cache location
-void SwarmDB::update()
+void AP_SwarmDB::update()
 {
     const uint32_t now_ms = AP_HAL::millis();
     if (now_ms - _swarmDb_update_ms < SWARM_DB_LIST_UPDATE_INTERVAL_MAX_MS) {
@@ -78,7 +78,7 @@ void SwarmDB::update()
 }
 
 // return index of given vehicle if ICAO_ADDRESS matches. return -1 if no match
-int32_t SwarmDB::find_index(const mavlink_swarm_vehicle_t &vehicle) const
+int32_t AP_SwarmDB::find_index(const mavlink_swarm_vehicle_t &vehicle) const
 {
     const uint32_t vehicle_id = AP_Swarming::get_id(vehicle);
     for (int32_t i = 0; i < _count; i++) {
@@ -91,7 +91,7 @@ int32_t SwarmDB::find_index(const mavlink_swarm_vehicle_t &vehicle) const
 }
 
 // update an existing vehicle
-void SwarmDB::set_vehicle(const int32_t index, const mavlink_swarm_vehicle_t &vehicle)
+void AP_SwarmDB::set_vehicle(const int32_t index, const mavlink_swarm_vehicle_t &vehicle)
 {
     if (!is_valid_index(index)) {
         return;
@@ -107,7 +107,7 @@ void SwarmDB::set_vehicle(const int32_t index, const mavlink_swarm_vehicle_t &ve
 }
 
 // remove a vehicle from the list
-void SwarmDB::remove_vehicle(const int32_t index)
+void AP_SwarmDB::remove_vehicle(const int32_t index)
 {
     if (!is_valid_index(index)) {
         return;
@@ -128,7 +128,7 @@ void SwarmDB::remove_vehicle(const int32_t index)
 #endif
 }
 
-int32_t SwarmDB::get_nearest_index(const Location &loc) const
+int32_t AP_SwarmDB::get_nearest_index(const Location &loc) const
 {
     float shortest = -1;
     int32_t index = -1;
@@ -144,7 +144,7 @@ int32_t SwarmDB::get_nearest_index(const Location &loc) const
     return index;
 }
 
-bool SwarmDB::get_item(const int32_t index, mavlink_swarm_vehicle_t &vehicle) const
+bool AP_SwarmDB::get_item(const int32_t index, mavlink_swarm_vehicle_t &vehicle) const
 {
     if (!is_valid_index(index)) {
         return false;

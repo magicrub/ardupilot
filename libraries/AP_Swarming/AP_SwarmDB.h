@@ -28,11 +28,11 @@
 
 #define SWARM_DB_LIST_MAX_SIZE                  1000
 
-class SwarmDB {
+class AP_SwarmDB {
 public:
 
     // constructor
-    SwarmDB() { }
+    AP_SwarmDB() { }
 
     // periodic update to remove stale vehicles
     void update();

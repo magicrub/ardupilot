@@ -32,7 +32,7 @@
 #include <AP_Common/AP_Common.h>
 #include <AP_Param/AP_Param.h>
 #include <GCS_MAVLink/GCS_MAVLink.h>
-#include "SwarmDB.h"
+#include "AP_SwarmDB.h"
 #include "AP_Swarming_Simulator.h"
 #include <AP_Common/Location.h>
 
@@ -126,7 +126,7 @@ private:
     bool chan_ok(const uint8_t chan) const;
     bool chan_ok(const mavlink_channel_t chan) const { return chan_ok((uint8_t)chan); }
 
-    SwarmDB _db;
+    AP_SwarmDB _db;
 
     const mavlink_channel_t MAVLINK_CHANNEL_INVALID = (mavlink_channel_t)99;
     mavlink_channel_t _chan_inbound = MAVLINK_CHANNEL_INVALID;          //MAVLink channel
