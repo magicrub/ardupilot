@@ -89,6 +89,8 @@ bool AP_Landing::type_slope_verify_land(const Location &prev_WP_loc, Location &n
     const bool below_flare_sec = (flare_sec > 0 && height <= sink_rate * flare_sec);
     const bool probably_crashed = (aparm.crash_detection_enable && fabsf(sink_rate) < 0.2f && !is_flying);
 
+    height_flare_log = height;
+
     const AP_GPS &gps = AP::gps();
 
     if ((on_approach_stage && below_flare_alt) ||
@@ -280,25 +282,6 @@ void AP_Landing::type_slope_setup_landing_glide_slope(const Location &prev_WP_lo
         aim_height = flare_alt*2;
     }
 
-    // calculate slope to landing point
-    bool is_first_calc = is_zero(slope);
-    slope = (sink_height - aim_height) / total_distance;
-    if (is_first_calc) {
-        gcs().send_text(MAV_SEVERITY_INFO, "Landing glide slope %.1f degrees", (double)degrees(atanf(slope)));
-    }
-
-    // time before landing that we will flare
-    float flare_time = aim_height / SpdHgt_Controller->get_land_sinkrate();
-
-    // distance to flare is based on ground speed, adjusted as we
-    // get closer. This takes into account the wind
-    float flare_distance = groundspeed * flare_time;
-
-    // don't allow the flare before half way along the final leg
-    if (flare_distance > total_distance/2) {
-        flare_distance = total_distance/2;
-    }
-
     // project a point 500 meters past the landing point, passing
     // through the landing point
     const float land_projection = 500;
@@ -307,8 +290,14 @@ void AP_Landing::type_slope_setup_landing_glide_slope(const Location &prev_WP_lo
     // now calculate our aim point, which is before the landing
     // point and above it
     Location loc = next_WP_loc;
-    loc.offset_bearing(land_bearing_cd * 0.01f, -flare_distance);
     loc.alt += aim_height*100;
+
+    // calculate slope to landing point
+    bool is_first_calc = is_zero(slope);
+    slope = (sink_height - aim_height) / total_distance;
+    if (is_first_calc) {
+        gcs().send_text(MAV_SEVERITY_INFO, "Landing glide slope %.1f degrees", (double)degrees(atanf(slope)));
+    }
 
     // calculate point along that slope 500m ahead
     loc.offset_bearing(land_bearing_cd * 0.01f, land_projection);
@@ -325,6 +314,21 @@ void AP_Landing::type_slope_setup_landing_glide_slope(const Location &prev_WP_lo
 
     // stay within the range of the start and end locations in altitude
     constrain_target_altitude_location_fn(loc, prev_WP_loc);
+
+    // log to DataFlash
+    AP::logger().Write(
+        "LND2",
+        "TimeUS,h_s,h_a,lat,lng,alt,offs",
+        "smmDDmm",
+        "F00GG00",
+        "Qffffff",
+        AP_HAL::micros64(),
+        (double)sink_height,
+        (double)aim_height,
+        (double)loc.lat*1e-7,
+        (double)loc.lng*1e-7,
+        (double)loc.alt*1e-2,
+        (double)target_altitude_offset_cm*1e-2);
 }
 
 int32_t AP_Landing::type_slope_get_target_airspeed_cm(void)
@@ -405,14 +409,16 @@ void AP_Landing::type_slope_log(void) const
 // @Field: slope: Slope to landing point
 // @Field: slopeInit: Initial slope to landing point
 // @Field: altO: Rangefinder correction
-    AP::logger().Write("LAND", "TimeUS,stage,f1,f2,slope,slopeInit,altO", "QBBBfff",
+// @Field: fh: Height for flare timing.
+    AP::logger().Write("LAND", "TimeUS,stage,f1,f2,slope,slopeInit,altO,fh", "QBBBffff",
                                             AP_HAL::micros64(),
                                             type_slope_stage,
                                             flags,
                                             type_slope_flags,
                                             (double)slope,
                                             (double)initial_slope,
-                                            (double)alt_offset);
+                                            (double)alt_offset,
+                                            (double)height_flare_log);
 }
 
 bool AP_Landing::type_slope_is_throttle_suppressed(void) const

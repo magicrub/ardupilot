@@ -7,6 +7,11 @@ Mode *Plane::mode_from_mode_num(const enum Mode::Number num)
     case Mode::Number::MANUAL:
         ret = &mode_manual;
         break;
+    case Mode::Number::STALLRECOVERY:
+#if HAL_STALL_RECOVERY_ENABLED
+        ret = &mode_stallrecovery;
+#endif
+        break;
     case Mode::Number::CIRCLE:
         ret = &mode_circle;
         break;
@@ -148,6 +153,7 @@ void Plane::reset_control_switch()
  */
 void Plane::autotune_start(void)
 {
+    gcs().send_text(MAV_SEVERITY_INFO, "Started autotune");
     rollController.autotune_start();
     pitchController.autotune_start();
 }
@@ -159,6 +165,7 @@ void Plane::autotune_restore(void)
 {
     rollController.autotune_restore();
     pitchController.autotune_restore();
+    gcs().send_text(MAV_SEVERITY_INFO, "Stopped autotune");
 }
 
 /*
@@ -178,6 +185,11 @@ void Plane::autotune_enable(bool enable)
  */
 bool Plane::fly_inverted(void)
 {
+#if HAL_STALL_RECOVERY_ENABLED
+    if (control_mode == &plane.mode_stallrecovery) {
+        return false;
+    }
+#endif
     if (control_mode == &plane.mode_manual) {
         return false;
     }

@@ -27,6 +27,7 @@ MAV_MODE GCS_MAVLINK_Plane::base_mode() const
         _base_mode = MAV_MODE_FLAG_MANUAL_INPUT_ENABLED;
         break;
     case Mode::Number::STABILIZE:
+    case Mode::Number::STALLRECOVERY:
     case Mode::Number::FLY_BY_WIRE_A:
     case Mode::Number::AUTOTUNE:
     case Mode::Number::FLY_BY_WIRE_B:
@@ -586,6 +587,7 @@ bool GCS_MAVLINK_Plane::handle_guided_request(AP_Mission::Mission_Command &cmd)
         // only accept position updates when in GUIDED mode
         return false;
     }
+    plane.guided_state.radius_m = cmd.p1;
     plane.guided_WP_loc = cmd.content.location;
     
     // add home alt if needed

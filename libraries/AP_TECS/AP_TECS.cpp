@@ -262,7 +262,28 @@ const AP_Param::GroupInfo AP_TECS::var_info[] = {
     // @Range: -5.0 0.0
     // @User: Advanced
     AP_GROUPINFO("PTCH_FF_K", 30, AP_TECS, _pitch_ff_k, 0.0),
-    
+
+    // @Param: TCONST_STE
+    // @DisplayName: Time constant for total energy control loop.
+    // @Description: This parameter allows a different (probably larger) time constant for total energy control from energy balance control. This allows fast control of e.g. airspeed but slower control of altitude if spdweight=2. Set to 0.0 to use TECS_TIME_CONST for both loops.
+    // @Range: 0.0 60.0
+    // @User: Advanced
+    AP_GROUPINFO("TCONST_STE", 31, AP_TECS, _timeConst_STE, 0.0),
+
+    // @Param: CLMB_OPER
+    // @DisplayName: Operational climb rate.
+    // @Description: This parameter allows a lower climb rate than CLMB_MAX for normal operation. Set to 0 to use CLMB_MAX.
+    // @Range: 0.0 5.0
+    // @User: Advanced
+    AP_GROUPINFO("CLMB_OPER", 32, AP_TECS, _operationalClimb, 0.0),
+
+    // @Param: SINK_OPER
+    // @DisplayName: Operational sink rate.
+    // @Description: This parameter allows a lower sink rate than SINK_MAX for normal operation. Set to 0 to use SINK_MAX.
+    // @Range: 0.0 5.0
+    // @User: Advanced
+    AP_GROUPINFO("SINK_OPER", 33, AP_TECS, _operationalSink, 0.0),
+
     AP_GROUPEND
 };
 
@@ -467,6 +488,11 @@ void AP_TECS::_update_height_demand(void)
     _hgt_dem_in_old = _hgt_dem;
 
     float max_sink_rate = _maxSinkRate;
+
+    if (_operationalSink > 0.0 && _operationalSink < max_sink_rate) {
+        max_sink_rate = _operationalSink;
+    }
+
     if (_maxSinkRate_approach > 0 && _flags.is_doing_auto_land) {
         // special sink rate for approach to accommodate steep slopes and reverse thrust.
         // A special check must be done to see if we're LANDing on approach but also if
@@ -477,9 +503,15 @@ void AP_TECS::_update_height_demand(void)
     }
 
     // Limit height rate of change
-    if ((_hgt_dem - _hgt_dem_prev) > (_maxClimbRate * 0.1f))
+    float max_climb_rate = _maxClimbRate;
+
+    if (_operationalClimb > 0.0 && _operationalClimb < _maxClimbRate) {
+        max_climb_rate = _operationalClimb;
+    }
+
+    if ((_hgt_dem - _hgt_dem_prev) > (max_climb_rate * 0.1f))
     {
-        _hgt_dem = _hgt_dem_prev + _maxClimbRate * 0.1f;
+        _hgt_dem = _hgt_dem_prev + max_climb_rate * 0.1f;
     }
     else if ((_hgt_dem - _hgt_dem_prev) < (-max_sink_rate * 0.1f))
     {
@@ -488,7 +520,11 @@ void AP_TECS::_update_height_demand(void)
     _hgt_dem_prev = _hgt_dem;
 
     // Apply first order lag to height demand
-    _hgt_dem_adj = 0.05f * _hgt_dem + 0.95f * _hgt_dem_adj_last;
+    if (!_flags.is_doing_auto_land) {
+        _hgt_dem_adj = 0.05f * _hgt_dem + 0.95f * _hgt_dem_adj_last;
+    } else {
+        _hgt_dem_adj = _hgt_dem;
+    }
 
     // when flaring force height rate demand to the
     // configured sink rate and adjust the demanded height to
@@ -496,6 +532,7 @@ void AP_TECS::_update_height_demand(void)
     if (_landing.is_flaring()) {
         _integSEB_state = 0;
         if (_flare_counter == 0) {
+            _flare_sinkrate = _climb_rate;
             _hgt_rate_dem = _climb_rate;
             _land_hgt_dem = _hgt_dem_adj;
         }
@@ -503,38 +540,26 @@ void AP_TECS::_update_height_demand(void)
         // adjust the flare sink rate to increase/decrease as your travel further beyond the land wp
         float land_sink_rate_adj = _land_sink + _land_sink_rate_change*_distance_beyond_land_wp;
 
-        // bring it in over 1s to prevent overshoot
-        if (_flare_counter < 10) {
-            _hgt_rate_dem = _hgt_rate_dem * 0.8f - 0.2f * land_sink_rate_adj;
+        // bring it in over 2s to prevent overshoot
+        const float nFlareStep = 20.0f;
+        if (_flare_counter < nFlareStep) {
+            _hgt_rate_dem = _flare_sinkrate * (1.0f - _flare_counter/nFlareStep) - land_sink_rate_adj * _flare_counter/nFlareStep;
             _flare_counter++;
         } else {
             _hgt_rate_dem = - land_sink_rate_adj;
         }
-        _land_hgt_dem += 0.1f * _hgt_rate_dem;
+
+        if (_flare_counter > 1) {
+            _land_hgt_dem += 0.1f * _hgt_rate_dem;
+        }
+
         _hgt_dem_adj = _land_hgt_dem;
     } else {
         _hgt_rate_dem = (_hgt_dem_adj - _hgt_dem_adj_last) / 0.1f;
         _flare_counter = 0;
     }
 
-    // for landing approach we will predict ahead by the time constant
-    // plus the lag produced by the first order filter. This avoids a
-    // lagged height demand while constantly descending which causes
-    // us to consistently be above the desired glide slope. This will
-    // be replaced with a better zero-lag filter in the future.
-    float new_hgt_dem = _hgt_dem_adj;
-    if (_flags.is_doing_auto_land) {
-        if (hgt_dem_lag_filter_slew < 1) {
-            hgt_dem_lag_filter_slew += 0.1f; // increment at 10Hz to gradually apply the compensation at first
-        } else {
-            hgt_dem_lag_filter_slew = 1;
-        }
-        new_hgt_dem += hgt_dem_lag_filter_slew*(_hgt_dem_adj - _hgt_dem_adj_last)*10.0f*(timeConstant()+1);
-    } else {
-        hgt_dem_lag_filter_slew = 0;
-    }
     _hgt_dem_adj_last = _hgt_dem_adj;
-    _hgt_dem_adj = new_hgt_dem;
 }
 
 void AP_TECS::_detect_underspeed(void)
@@ -612,21 +637,8 @@ float AP_TECS::timeConstant(void) const
  */
 void AP_TECS::_update_throttle_with_airspeed(void)
 {
-    // Calculate limits to be applied to potential energy error to prevent over or underspeed occurring due to large height errors
-    float SPE_err_max = 0.5f * _TASmax * _TASmax - _SKE_dem;
-    float SPE_err_min = 0.5f * _TASmin * _TASmin - _SKE_dem;
-
-    if (_flight_stage == AP_Vehicle::FixedWing::FLIGHT_VTOL) {
-        /*
-          when we are in a VTOL state then we ignore potential energy
-          errors as we have vertical motors that interfere with the
-          total energy calculation.
-         */
-        SPE_err_max = SPE_err_min = 0;
-    }
-    
     // Calculate total energy error
-    _STE_error = constrain_float((_SPE_dem - _SPE_est), SPE_err_min, SPE_err_max) + _SKE_dem - _SKE_est;
+    _STE_error = _SPE_dem - _SPE_est + _SKE_dem - _SKE_est;
     float STEdot_dem = constrain_float((_SPEdot_dem + _SKEdot_dem), _STEdot_min, _STEdot_max);
     float STEdot_error = STEdot_dem - _SPEdot - _SKEdot;
 
@@ -649,7 +661,15 @@ void AP_TECS::_update_throttle_with_airspeed(void)
     {
         // Calculate gain scaler from specific energy error to throttle
         // (_STEdot_max - _STEdot_min) / (_THRmaxf - _THRminf) is the derivative of STEdot wrt throttle measured across the max allowed throttle range.
-        float K_STE2Thr = 1 / (timeConstant() * (_STEdot_max - _STEdot_min) / (_THRmaxf - _THRminf));
+
+        // Handle specified STE time constant (not applied if zero or if landing)
+        float time_const_ste = timeConstant();
+
+        if (_timeConst_STE > 0.0 && !_flags.is_doing_auto_land) {
+            time_const_ste = _timeConst_STE;
+        }
+
+        float K_STE2Thr = 1 / (time_const_ste * (_STEdot_max - _STEdot_min) / (_THRmaxf - _THRminf));
 
         // Calculate feed-forward throttle
         float ff_throttle = 0;
@@ -1221,15 +1241,19 @@ void AP_TECS::update_pitch_throttle(int32_t hgt_dem_cm,
     // @Field: PErr: difference between estimated potential energy and desired potential energy
     // @Field: EDelta: current error in speed/balance weighting
     // @Field: LF: aerodynamic load factor
-    AP::logger().Write("TEC2", "TimeUS,pmax,pmin,KErr,PErr,EDelta,LF",
-                       "s------",
-                       "F------",
-                       "Qffffff",
+    // @Field: hdem1: demanded height input
+    // @Field: hdem2: rate-limited height demand
+    AP::logger().Write("TEC2", "TimeUS,pmax,pmin,KErr,PErr,EDelta,LF,hdem1,hdem2",
+                       "s--------",
+                       "F--------",
+                       "Qffffffff",
                        now,
                        (double)degrees(_PITCHmaxf),
                        (double)degrees(_PITCHminf),
                        (double)logging.SKE_error,
                        (double)logging.SPE_error,
                        (double)logging.SEB_delta,
-                       (double)load_factor);
+                       (double)load_factor,
+                       (double)hgt_dem_cm/100.0f,
+                       (double)_hgt_dem);
 }

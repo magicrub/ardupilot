@@ -128,7 +128,8 @@ void Plane::stabilize_roll(float speed_scaler)
         */
         rollController.decay_I();
     } else {
-        roll_out = rollController.get_servo_out(nav_roll_cd - ahrs.roll_sensor, speed_scaler, disable_integrator);
+        roll_out = rollController.get_servo_out(nav_roll_cd - ahrs.roll_sensor, speed_scaler, disable_integrator,
+                                                ground_mode && !(plane.g2.flight_options & FlightOptions::DISABLE_GROUND_PID_SUPPRESSION));
     }
     SRV_Channels::set_output_scaled(SRV_Channel::k_aileron, roll_out);
 }
@@ -147,7 +148,24 @@ void Plane::stabilize_pitch(float speed_scaler)
         SRV_Channels::set_output_scaled(SRV_Channel::k_elevator, 45*force_elevator);
         return;
     }
-    int32_t demanded_pitch = nav_pitch_cd + g.pitch_trim_cd + SRV_Channels::get_output_scaled(SRV_Channel::k_throttle) * g.kff_throttle_to_pitch;
+
+    float kff =  0.0f;
+
+    uint16_t nav_cmd_id = plane.mission.get_current_nav_cmd().id;
+
+    if (control_mode == &mode_auto && nav_cmd_id == MAV_CMD_NAV_TAKEOFF && auto_state.highest_airspeed < g.takeoff_rotate_speed) {
+        // No feedforward if we are still in takeoff.
+        kff = 0.0f;
+    } else if (plane.airspeed_error > 4.0f) {
+        // Don't apply any pitch-up if we're slow.
+        kff = 0.0f;
+    } else {
+        // Apply proportionately, with full effect at target airspeed minus 2.
+        kff = constrain_float((4.0f - plane.airspeed_error) / 2.0f, 0.0f, 1.0f) * g.kff_throttle_to_pitch;
+    }
+
+
+    int32_t demanded_pitch = nav_pitch_cd + g.pitch_trim_cd + constrain_int32(SRV_Channels::get_output_scaled(SRV_Channel::k_throttle), 0, 100) * kff;
     bool disable_integrator = false;
     if (control_mode == &mode_stabilize && channel_pitch->get_control_in() != 0) {
         disable_integrator = true;
@@ -172,9 +190,22 @@ void Plane::stabilize_pitch(float speed_scaler)
             demanded_pitch = landing.get_pitch_cd();
         }
 
-        pitch_out = pitchController.get_servo_out(demanded_pitch - ahrs.pitch_sensor, speed_scaler, disable_integrator);
+        pitch_out = pitchController.get_servo_out(demanded_pitch - ahrs.pitch_sensor, speed_scaler, disable_integrator,
+                                                  ground_mode && !(plane.g2.flight_options & FlightOptions::DISABLE_GROUND_PID_SUPPRESSION));
     }
     SRV_Channels::set_output_scaled(SRV_Channel::k_elevator, pitch_out);
+
+    AP::logger().Write(
+        "TPFF",
+        "TimeUS,AspdE,kff,nav_pitch,pitch_dem",
+        "sn-dd",
+        "FB0BB",
+        "Qffcc",
+         AP_HAL::micros64(),
+        (double)plane.airspeed_error,
+        (double)kff,
+        (int16_t)nav_pitch_cd,
+        (int16_t)demanded_pitch);
 }
 
 /*
@@ -372,7 +403,7 @@ void Plane::stabilize_acro(float speed_scaler)
         // 'stabilze' to true, which disables the roll integrator
         SRV_Channels::set_output_scaled(SRV_Channel::k_aileron, rollController.get_servo_out(roll_error_cd,
                                                                                              speed_scaler,
-                                                                                             true));
+                                                                                             true, false));
     } else {
         /*
           aileron stick is non-zero, use pure rate control until the
@@ -396,7 +427,7 @@ void Plane::stabilize_acro(float speed_scaler)
         nav_pitch_cd = acro_state.locked_pitch_cd;
         SRV_Channels::set_output_scaled(SRV_Channel::k_elevator, pitchController.get_servo_out(nav_pitch_cd - ahrs.pitch_sensor,
                                                                                                speed_scaler,
-                                                                                               false));
+                                                                                               false, false));
     } else {
         /*
           user has non-zero pitch input, use a pure rate controller
@@ -423,7 +454,11 @@ void Plane::stabilize_acro(float speed_scaler)
  */
 void Plane::stabilize()
 {
-    if (control_mode == &mode_manual) {
+    if (control_mode == &mode_manual
+#if HAL_STALL_RECOVERY_ENABLED
+     || (control_mode == &mode_stallrecovery && stall_state.is_stalled())
+#endif
+     ) {
         // reset steering controls
         steer_state.locked_course = false;
         steer_state.locked_course_err = 0;

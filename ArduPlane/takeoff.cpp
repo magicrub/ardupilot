@@ -17,14 +17,14 @@ bool Plane::auto_takeoff_check(void)
 
     // reset all takeoff state if disarmed
     if (!hal.util->get_soft_armed()) {
-        memset(&takeoff_state, 0, sizeof(takeoff_state));
+        takeoff_state = {};
         auto_state.baro_takeoff_alt = barometer.get_altitude();
         return false;
     }
 
     // Reset states if process has been interrupted
     if (takeoff_state.last_check_ms && (now - takeoff_state.last_check_ms) > 200) {
-        memset(&takeoff_state, 0, sizeof(takeoff_state));
+        takeoff_state = {};
         return false;
     }
 
@@ -130,10 +130,12 @@ void Plane::takeoff_calc_roll(void)
     // the takeoff altitude
     float roll_limit = roll_limit_cd*0.01f;
     float baro_alt = barometer.get_altitude();
-    // below 5m use the LEVEL_ROLL_LIMIT
-    const float lim1 = 5;    
-    // at 15m allow for full roll
-    const float lim2 = 15;
+
+    // below TKOFF_LVL_ALT use the LEVEL_ROLL_LIMIT
+    const float lim1 = mode_takeoff.level_alt;
+    // at 2*TKOFF_LVL_ALT allow for full roll
+    const float lim2 = mode_takeoff.level_alt*2;
+
     if ((baro_alt < auto_state.baro_takeoff_alt+lim1) || (auto_state.highest_airspeed < g.takeoff_rotate_speed)) {
         roll_limit = g.level_roll_limit;
     } else if (baro_alt < auto_state.baro_takeoff_alt+lim2) {

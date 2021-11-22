@@ -127,6 +127,16 @@ public:
         _pitch_max_limit = pitch_limit;
     }
 
+    // true when in Bad descent condition caused by unachievable airspeed demand
+    bool uncommanded_altitude_loss(void) const {
+        return _flags.badDescent;
+    }
+    
+    // return altitude error in meters
+    float get_altitude_error(void) const {
+        return _hgt_dem_adj - _height;
+    };
+
     // force use of synthetic airspeed for one loop
     void use_synthetic_airspeed(void) {
         _use_synthetic_airspeed_once = true;
@@ -187,6 +197,9 @@ private:
     AP_Int8  _land_pitch_max;
     AP_Float _maxSinkRate_approach;
     AP_Int32 _options;
+    AP_Float _timeConst_STE;
+    AP_Float _operationalClimb;
+    AP_Float _operationalSink;
 
     enum {
         OPTION_GLIDER_ONLY=(1<<0),
@@ -344,6 +357,9 @@ private:
 
     // counter for demanded sink rate on land final
     uint8_t _flare_counter;
+
+    // starting sink rate for sink rate slew post-flare
+    float _flare_sinkrate;
 
     // slew height demand lag filter value when transition to land
     float hgt_dem_lag_filter_slew;

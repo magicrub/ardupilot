@@ -529,7 +529,7 @@ class AutoTestPlane(AutoTest):
         num_wp = self.load_mission(filename, strict=strict)-1
         self.set_current_waypoint(0, check_afterwards=False)
         self.change_mode('AUTO')
-        self.wait_waypoint(1, num_wp, max_dist=60)
+        self.wait_waypoint(1, num_wp, max_dist=60, timeout=mission_timeout)
         self.wait_groundspeed(0, 0.5, timeout=mission_timeout)
         if quadplane:
             self.wait_statustext("Throttle disarmed", timeout=70)
@@ -2928,7 +2928,7 @@ class AutoTestPlane(AutoTest):
                 mission_file = "basic-quadplane.txt"
             self.wait_ready_to_arm()
             self.arm_vehicle()
-            self.fly_mission(mission_file, strict=False, quadplane=quadplane)
+            self.fly_mission(mission_file, strict=False, quadplane=quadplane, mission_timeout=400.0)
             self.wait_disarmed()
 
     def RCDisableAirspeedUse(self):
@@ -2952,6 +2952,98 @@ class AutoTestPlane(AutoTest):
             True,
             True,
             True)
+
+    def fly_landing_baro_drift(self):
+
+        self.customise_SITL_commandline([], wipe=True)
+
+        self.set_parameters({
+            "SIM_BARO_DRIFT": -0.02,
+            "SIM_TERRAIN": 0,
+            "RNGFND_LANDING": 1,
+            "RNGFND1_MAX_CM": 4000,
+            "LAND_SLOPE_RCALC": 2,
+            "LAND_ABORT_DEG": 2,
+        })
+
+        self.reboot_sitl()
+
+        self.wait_ready_to_arm()
+        self.arm_vehicle()
+
+        self.fly_mission("ap-circuit.txt", mission_timeout=1200)
+
+    def test_stall_recovery(self):
+        self.set_parameters({
+            "STALL_DETECT": 72.000000,
+            "STALL_DUR1MAX": 3.000000,
+            "STALL_DUR1MIN": 2.000000,
+            "STALL_DUR2MAX": 3.000000,
+            "STALL_DUR2MIN": 2.000000,
+            "STALL_ELEV": -3.000000,
+            "STALL_PREVENTION": 0.000000,
+            "STALL_RECOVERY": 1.000000,
+            "STICK_MIXING": 2})
+
+        # Get airborne to safe height
+        alt = 100
+        self.takeoff(alt*0.9, alt*1.1)
+
+        # Put into guided.
+        self.change_mode("GUIDED")
+        loc = self.mav.location()
+        self.location_offset_ne(loc, 500, 500)
+
+        new_alt = 500
+        self.run_cmd_int(
+            mavutil.mavlink.MAV_CMD_DO_REPOSITION,
+            0,
+            0,
+            0,
+            0,
+            int(loc.lat * 1e7),
+            int(loc.lng * 1e7),
+            new_alt,    # alt
+            frame=mavutil.mavlink.MAV_FRAME_GLOBAL_RELATIVE_ALT_INT,
+        )
+        self.wait_altitude(new_alt-10, new_alt, timeout=120, relative=True)
+
+        # Now override RC to send out of control.
+        self.set_rc(1, 1100)
+        self.set_rc(2, 1100)
+
+        # Stall recovery mode should take over.
+        self.delay_sim_time(5)
+
+        # Reset RC channels.
+        self.set_rc(1, 1500)
+        self.set_rc(2, 1500)
+
+        # The previous mode should be restored.
+        self.wait_mode("GUIDED", 10)
+
+        # Make sure restored state is sensible.
+        self.delay_sim_time(60)
+
+        # Descend in preparation for landing.
+        new_alt = 50
+        loc = self.mav.location()
+
+        self.run_cmd_int(
+            mavutil.mavlink.MAV_CMD_DO_REPOSITION,
+            0,
+            0,
+            0,
+            0,
+            int(loc.lat * 1e7),
+            int(loc.lng * 1e7),
+            new_alt,    # alt
+            frame=mavutil.mavlink.MAV_FRAME_GLOBAL_RELATIVE_ALT_INT,
+        )
+        self.wait_altitude(new_alt-10, new_alt, timeout=120, relative=True)
+
+        self.progress("Returning home")
+        self.fly_home_land_and_disarm(600)
 
     def tests(self):
         '''return list of all tests'''
@@ -3149,6 +3241,14 @@ class AutoTestPlane(AutoTest):
             ("RCDisableAirspeedUse",
              "Test RC DisableAirspeedUse option",
              self.RCDisableAirspeedUse),
+
+            ("Landing-Drift",
+             "Circuit with baro drift",
+             self.fly_landing_baro_drift),
+
+            ("StallRecovery",
+             "Test automatic detection and recovery from stall",
+             self.test_stall_recovery),
 
             ("LogUpload",
              "Log upload",
