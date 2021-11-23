@@ -184,6 +184,13 @@ void AP_Swarming::update_50Hz(void)
     if (now_ms - _last_swarm_vehicle_send_ms > 1000) {
         _last_swarm_vehicle_send_ms = now_ms;
         send_swarm_vehicle(_my_vehicle);
+
+        const bool is_breached_new = _roi.breached(_my_vehicle.lat, _my_vehicle.lon);
+        if (_is_breached != is_breached_new) {
+            _is_breached = is_breached_new;
+            const char* text = _is_breached ? "Outside" : "Inside";
+            gcs().send_text(MAV_SEVERITY_DEBUG, "SWARM: ROI %s", text);
+        }
     }
 
     do_fancy_algorithm_stuff();

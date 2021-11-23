@@ -154,6 +154,8 @@ private:
 
     mavlink_swarm_vehicle_t _my_vehicle;
 
+    bool _is_breached;
+
 #if AP_SWARMING_SIMULATOR_ENABLE
     AP_Swarming_Simulator _sim;
 #endif
