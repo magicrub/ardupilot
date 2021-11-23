@@ -33,6 +33,7 @@
 #include <AP_Param/AP_Param.h>
 #include <GCS_MAVLink/GCS_MAVLink.h>
 #include "AP_SwarmDB.h"
+#include "AP_SwarmROI.h"
 #include "AP_Swarming_Simulator.h"
 #include <AP_Common/Location.h>
 
@@ -101,6 +102,9 @@ public:
         return ((uint32_t)vehicle.squadron_id << 16) | ((uint32_t)vehicle.aircraft_id);
     }
 
+    AP_SwarmROI &get_roi();
+    const AP_SwarmROI &get_roi() const;
+
 private:
     static AP_Swarming *_singleton;
 
@@ -127,6 +131,7 @@ private:
     bool chan_ok(const mavlink_channel_t chan) const { return chan_ok((uint8_t)chan); }
 
     AP_SwarmDB _db;
+    AP_SwarmROI _roi;
 
     const mavlink_channel_t MAVLINK_CHANNEL_INVALID = (mavlink_channel_t)99;
     mavlink_channel_t _chan_inbound = MAVLINK_CHANNEL_INVALID;          //MAVLink channel

@@ -29,6 +29,24 @@
 #include <AP_GPS/AP_GPS.h>
 #endif
 
+#define AP_SWARMING_LOAD_TEST_ROI_POLY 1
+#define AP_SWARMING_LOAD_TEST_ROI_CIRCLES 1
+
+#if AP_SWARMING_LOAD_TEST_ROI_POLY
+static Vector2f test_ROI_poly[] = {
+        {39.1668360, -122.1327782},
+        {39.1669360, -122.0785332},
+        {39.1600150, -122.0785332},
+        {39.1600150, -122.1327782},
+    };
+#endif
+#if AP_SWARMING_LOAD_TEST_ROI_CIRCLES
+static AP_SwarmROI::Circle test_ROI_circles[] = {
+        {AP_SwarmROI::Circle(39.1629681, -122.0447159, 3000)},
+    };
+#endif
+
+
 extern const AP_HAL::HAL& hal;
 
 AP_Swarming *AP_Swarming::_singleton;
@@ -73,7 +91,7 @@ const AP_Param::GroupInfo AP_Swarming::var_info[] = {
     // @DisplayName: MAVLink channel to send Swarm Vehicle packets
     // @Description: MAVLink channel to send Swarm Vehicle packets. Use -1 to disable sending, 0 to only send to a MAVLink port that it receives other Swarm-specific packets, else any other value will force sending it to that channel
     // @User: Advanced
-    AP_GROUPINFO("SEND_CHAN",   7, AP_Swarming, _params.chan_select, 0),
+    AP_GROUPINFO("SEND_CHAN",   7, AP_Swarming, _params.chan_select, 1),
 
     // @Param: EFF_RAD
     // @DisplayName: Effective Radius
@@ -125,6 +143,24 @@ void AP_Swarming::init(void)
 {
     _my_vehicle.state_nav = INGRESSING_TO_MESH;
     _is_initialized = true;
+
+#if AP_SWARMING_LOAD_TEST_ROI_POLY || AP_SWARMING_LOAD_TEST_ROI_CIRCLES
+    _roi.clear();
+#endif
+#if AP_SWARMING_LOAD_TEST_ROI_POLY
+    for (uint32_t i=0; i<ARRAY_SIZE(test_ROI_poly); i++) {
+        if (!_roi.add(test_ROI_poly[i])) {
+            break;
+        }
+    }
+#endif
+#if AP_SWARMING_LOAD_TEST_ROI_CIRCLES
+    for (uint32_t i=0; i<ARRAY_SIZE(test_ROI_circles); i++) {
+        if (!_roi.add(test_ROI_circles[i])) {
+            break;
+        }
+    }
+#endif
 }
 
 /*
@@ -259,6 +295,8 @@ void AP_Swarming::update_my_vehicle()
     _my_vehicle.speed = groundspeed.length();
 
     _my_vehicle.effective_radius = _params.effective_radius;
+
+    _my_vehicle.ROI_crc = _roi.get_crc32();
 
     Location loc;
     if (!AP::ahrs().get_position(loc)) {
@@ -474,6 +512,15 @@ void AP_Swarming::load_nearest_swarm_vehicle(Location &loc)
         gcs().send_text(MAV_SEVERITY_DEBUG, "Swarm - heading to new loiter target");
     }
 
+}
+
+AP_SwarmROI &AP_Swarming::get_roi()
+{
+    return _roi;
+}
+const AP_SwarmROI &AP_Swarming::get_roi() const
+{
+    return _roi;
 }
 
 AP_Swarming *AP::swarm()
