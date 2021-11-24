@@ -68,6 +68,8 @@ public:
 
     // vehicle handler. Useful for recieving vehicles from external non-mavlink libraties
     void handle_swarm_vehicle(mavlink_swarm_vehicle_t &swarm_vehicle);
+
+    void handle_swarm_coverage_area(mavlink_swarm_coverage_area_t &swarm_coverage_area);
     
     // helper to always get MSL altitude as a float from a Location
     static float get_altitude_MSL(const Location loc) {
@@ -147,6 +149,7 @@ private:
         AP_Int8     fwd_inbound_vehicles_to_adsb_lib;
         AP_Int16    chan_select;
         AP_Int32    effective_radius;
+        AP_Int16    poly_points;
         AP_Float    debug1;
         AP_Float    debug2;
         AP_Float    debug3;

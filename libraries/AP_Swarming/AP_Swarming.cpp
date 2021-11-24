@@ -34,10 +34,15 @@
 
 #if AP_SWARMING_LOAD_TEST_ROI_POLY
 static Vector2f test_ROI_poly[] = {
-        {39.1668360, -122.1327782},
-        {39.1669360, -122.0785332},
-        {39.1600150, -122.0785332},
-        {39.1600150, -122.1327782},
+        //{39.1668360, -122.1327782},
+        //{39.1669360, -122.0785332},
+        //{39.1600150, -122.0785332},
+        //{39.1600150, -122.1327782},
+        //Michael's rectangle:
+        {39.167799049461195, -122.12520593777565},
+        {39.16727004085018, -122.1115594290257},
+        {39.15918327112204, -122.1117543791507},
+        {39.16009024485198, -122.12715543902563},
     };
 #endif
 #if AP_SWARMING_LOAD_TEST_ROI_CIRCLES
@@ -56,7 +61,7 @@ const AP_Param::GroupInfo AP_Swarming::var_info[] = {
     // @Param: TYPE
     // @DisplayName: Swarming Type
     // @Description: Swarming Type
-    // @Values: 0:Disabled,1:Radius
+    // @Values: 0:Disabled,1:Polygon,2:Radius
     // @User: Advanced
     AP_GROUPINFO_FLAGS("TYPE",     0, AP_Swarming, _params.type,    0, AP_PARAM_FLAG_ENABLE),
 
@@ -99,6 +104,11 @@ const AP_Param::GroupInfo AP_Swarming::var_info[] = {
     // @Units: m
     AP_GROUPINFO("EFF_RAD",   8, AP_Swarming, _params.effective_radius, 10000),
 
+    // @Param: POLY_PTS
+    // @DisplayName: Total polygons in the Swarm Coverage Area 
+    // @Description: Total polygons in the Swarm Coverage Area 
+    // @User: Advaanced
+    AP_GROUPINFO("POLY_PTS",   9, AP_Swarming, _params.poly_points, 0),
 
     //parameter that catches overlappyness of the radii
 
@@ -213,7 +223,36 @@ void AP_Swarming::handle_swarm_vehicle(mavlink_swarm_vehicle_t &swarm_vehicle)
 #endif
 
     _db.handle_swarm_vehicle(_my_vehicle, swarm_vehicle);
+    
+    if(! _roi.handle_swarm_ROI(_my_vehicle)) {
+        //TODO: 
+        gcs().send_text(MAV_SEVERITY_DEBUG, "Swarm ROI updated or changed!");
+    }
+
     send_to_adsb(swarm_vehicle);
+}
+
+void AP_Swarming::handle_swarm_coverage_area(mavlink_swarm_coverage_area_t &swarm_coverage_area)
+{
+#if AP_SWARMING_TIMESTAMP_IS_GPS
+    // create timestamp if empty
+    if (swarm_coverage_area.time_usec == 0) {
+        swarm_coverage_area.time_usec = AP::gps().time_epoch_usec();
+    }
+#else
+    // ignore external time, always use our own internal time since boot
+    swarm_coverage_area.time_usec = AP_HAL::micros64();
+#endif 
+
+    _roi.clear();
+
+    Location new_loc;
+    new_loc.alt = 9999999; 
+    for (int i = 0; i <= SWARM_ROI_POLY_MAX_SIZE; i = i+2) {
+       new_loc.lat = swarm_coverage_area.coverage_polys[i];
+       new_loc.lng = swarm_coverage_area.coverage_polys[i+1];
+       _roi.add(new_loc);
+    }
 }
 
 MAV_RESULT AP_Swarming::handle_msg(const mavlink_channel_t chan, const mavlink_message_t &msg)
@@ -232,12 +271,13 @@ MAV_RESULT AP_Swarming::handle_msg(const mavlink_channel_t chan, const mavlink_m
         mavlink_swarm_vehicle_t swarm_vehicle {};
         mavlink_msg_swarm_vehicle_decode(&msg, &swarm_vehicle);
 
-        gcs().send_text(MAV_SEVERITY_DEBUG, "Swarm Vehicle: %u, %u, %u, %d, %.2f, %.2f, %d, %d, %.2f, %d, %d, %.2f", 
+        /*gcs().send_text(MAV_SEVERITY_DEBUG, "Swarm Vehicle: %u, %u, %u, %d, %.2f, %.2f, %d, %d, %.2f, %d, %d, %.2f", 
             (unsigned)swarm_vehicle.aircraft_id, (unsigned)swarm_vehicle.squadron_id,
             (unsigned)swarm_vehicle.state_nav, (int)swarm_vehicle.speed, (double)swarm_vehicle.cog,
             (double)swarm_vehicle.effective_radius,
             (int)swarm_vehicle.lat, (int)swarm_vehicle.lon, (double)swarm_vehicle.altMSL,
             (int)swarm_vehicle.lat_target, (int)swarm_vehicle.lon_target, (double)swarm_vehicle.altMSL_target);
+        */
 
         handle_swarm_vehicle(swarm_vehicle);
         }
@@ -252,6 +292,14 @@ MAV_RESULT AP_Swarming::handle_msg(const mavlink_channel_t chan, const mavlink_m
             swarm_commlink_status.ROSER, swarm_commlink_status.last_contact);
         }
         return MAV_RESULT_ACCEPTED;
+
+    case MAVLINK_MSG_ID_SWARM_COVERAGE_AREA: {
+        mavlink_swarm_coverage_area_t swarm_coverage_area {};
+        mavlink_msg_swarm_coverage_area_decode(&msg, &swarm_coverage_area);
+
+        handle_swarm_coverage_area(swarm_coverage_area);
+        }
+        return MAV_RESULT_ACCEPTED;   
     
     default:
         return MAV_RESULT_UNSUPPORTED;

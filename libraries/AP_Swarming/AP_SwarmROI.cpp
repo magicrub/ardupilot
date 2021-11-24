@@ -25,9 +25,28 @@
 
 extern const AP_HAL::HAL& hal;
 
-void AP_SwarmROI::handle_swarm_ROI(const mavlink_message_t &msg)
+AP_SwarmROI::AP_SwarmROI() 
 {
-    // TODO
+    compute_crc32();
+    _crc32_is_calculated = true;
+}
+
+//Retuns false if the ROI CRC is new or updated; true otherwise
+bool AP_SwarmROI::handle_swarm_ROI(const mavlink_swarm_vehicle_t &this_vehicle)
+{
+    //if CRC is new or changed
+    if(! _crc32_is_calculated || get_crc32() != this_vehicle.ROI_crc) {  
+        _crc32 = this_vehicle.ROI_crc;
+        _crc32_is_calculated = false;
+
+        //blow the old ROI away
+        clear();
+
+        //let us know the CRC is changed or it's the first time we've seen it
+        return false;
+    }
+
+    return true;
 }
 
 bool AP_SwarmROI::breached(const Vector2l &pos) const
