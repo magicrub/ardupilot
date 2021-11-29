@@ -107,7 +107,7 @@ const AP_Param::GroupInfo AP_Swarming::var_info[] = {
     // @Param: POLY_PTS
     // @DisplayName: Total polygons in the Swarm Coverage Area 
     // @Description: Total polygons in the Swarm Coverage Area 
-    // @User: Advaanced
+    // @User: Advanced
     AP_GROUPINFO("POLY_PTS",   9, AP_Swarming, _params.poly_points, 0),
 
     //parameter that catches overlappyness of the radii
