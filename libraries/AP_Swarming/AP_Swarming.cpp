@@ -189,6 +189,7 @@ void AP_Swarming::update_50Hz(void)
     
     update_my_vehicle();
     _db.update();
+    _auctions.update();
 
     const uint32_t now_ms = AP_HAL::millis();
     if (now_ms - _last_swarm_vehicle_send_ms > 1000) {
@@ -569,14 +570,11 @@ void AP_Swarming::load_nearest_swarm_vehicle(Location &loc)
 
 }
 
-AP_SwarmROI &AP_Swarming::get_roi()
-{
-    return _roi;
-}
-const AP_SwarmROI &AP_Swarming::get_roi() const
-{
-    return _roi;
-}
+// accessors to get the sub-libraries
+AP_SwarmROI &AP_Swarming::get_roi() { return _roi; }
+const AP_SwarmROI &AP_Swarming::get_roi() const { return _roi; }
+AP_SwarmDB &AP_Swarming::get_db() { return _db; }
+const AP_SwarmDB &AP_Swarming::get_db() const { return _db; }
 
 AP_Swarming *AP::swarm()
 {

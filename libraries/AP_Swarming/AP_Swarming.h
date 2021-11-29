@@ -34,6 +34,7 @@
 #include <GCS_MAVLink/GCS_MAVLink.h>
 #include "AP_SwarmDB.h"
 #include "AP_SwarmROI.h"
+#include "AP_SwarmAuctions.h"
 #include "AP_Swarming_Simulator.h"
 #include <AP_Common/Location.h>
 
@@ -107,6 +108,9 @@ public:
     AP_SwarmROI &get_roi();
     const AP_SwarmROI &get_roi() const;
 
+    AP_SwarmDB &get_db();
+    const AP_SwarmDB &get_db() const;
+
 private:
     static AP_Swarming *_singleton;
 
@@ -134,6 +138,7 @@ private:
 
     AP_SwarmDB _db;
     AP_SwarmROI _roi;
+    AP_SwarmAuctions _auctions;
 
     const mavlink_channel_t MAVLINK_CHANNEL_INVALID = (mavlink_channel_t)99;
     mavlink_channel_t _chan_inbound = MAVLINK_CHANNEL_INVALID;          //MAVLink channel
