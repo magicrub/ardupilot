@@ -70,7 +70,11 @@ public:
     // vehicle handler. Useful for recieving vehicles from external non-mavlink libraties
     void handle_swarm_vehicle(mavlink_swarm_vehicle_t &swarm_vehicle);
 
+    // coverage area handler. 
     void handle_swarm_coverage_area(mavlink_swarm_coverage_area_t &swarm_coverage_area);
+
+    // swarm ROI point handler
+    //void handle_swarm_point(mavlink_swarm_point_t &swarm_point);
     
     // helper to always get MSL altitude as a float from a Location
     static float get_altitude_MSL(const Location loc) {

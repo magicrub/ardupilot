@@ -249,7 +249,7 @@ void AP_Swarming::handle_swarm_coverage_area(mavlink_swarm_coverage_area_t &swar
 
     Location new_loc;
     new_loc.alt = 9999999; 
-    for (int i = 0; i <= SWARM_ROI_POLY_MAX_SIZE; i++) {
+    for (int i = 0; i <= SWARM_ROI_POLY_MAX_SIZE; i = i+2) {
        new_loc.lat = swarm_coverage_area.coverage_polys[i];
        new_loc.lng = swarm_coverage_area.coverage_polys[i+1];
        _roi.add(new_loc);

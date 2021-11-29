@@ -3530,6 +3530,7 @@ void GCS_MAVLINK::handle_common_message(const mavlink_message_t &msg)
     case MAVLINK_MSG_ID_SWARM_VEHICLE:
     case MAVLINK_MSG_ID_SWARM_COMMLINK_STATUS:
     case MAVLINK_MSG_ID_SWARM_COVERAGE_AREA:
+    case MAVLINK_MSG_ID_SWARM_POINT:
         if (AP::swarm() != nullptr) {
             AP::swarm()->handle_msg(chan, msg);
         }
