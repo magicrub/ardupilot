@@ -25,7 +25,7 @@
 #include <AP_Common/Location.h>
 #include <GCS_MAVLink/GCS_MAVLink.h>
 
-#define SWARM_ROI_POLY_MAX_SIZE               50
+#define SWARM_ROI_POLY_MAX_SIZE               8
 #define SWARM_ROI_CIRCLES_MAX_SIZE            20
 
 
@@ -33,7 +33,7 @@ class AP_SwarmROI {
 public:
 
     // constructor
-    AP_SwarmROI() { }
+    AP_SwarmROI();
 
     struct Circle {
     public:
@@ -100,7 +100,7 @@ public:
 
     void clear() { _poly_count = 0; _circles_count = 0; _crc32_is_calculated = false; }
 
-    void handle_swarm_ROI(const mavlink_message_t &msg);
+    bool handle_swarm_ROI(const mavlink_swarm_vehicle_t &swarm_vehicle);
 
     bool breached(const Location &loc) const;
     bool breached(const Vector2l &pos) const;
