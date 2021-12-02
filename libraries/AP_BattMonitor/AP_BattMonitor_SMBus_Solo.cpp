@@ -80,7 +80,7 @@ void AP_BattMonitor_SMBus_Solo::timer()
 
         if (_button_press_count >= BATTMONITOR_SMBUS_SOLO_BUTTON_DEBOUNCE) {
             // vehicle will power off, set state flag
-            _state.is_powering_off = true;
+            set_powered_state(AP_BattMonitor::PoweredState::Powered_Off);
         } else if (pressed) {
             // battery will power off if the button is held
             _button_press_count++;
