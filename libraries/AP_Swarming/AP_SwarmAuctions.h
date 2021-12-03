@@ -14,7 +14,7 @@
    You should have received a copy of the GNU General Public License
    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-   Author: Tom Pittenger
+   Author: Tom Pittenger and Michael Day
  */
 
 #pragma once
@@ -29,11 +29,38 @@ class AP_SwarmAuctions {
 public:
 
     // constructor
-    AP_SwarmAuctions() { }
+    AP_SwarmAuctions();
+
+    void init();
 
     // periodic update to remove stale vehicles
-    void update();
+    void update(); 
 
-private:
+protected:
+    struct AuctionBid_t {
+        AP_Int32    sender_id;
+        AP_Float    bid;
+    };
+
+    struct CostFunction_t {
+        AP_Float    distance;
+        AP_Float    batt_remaining;
+        //TODO: other factors
+    };
+
+    AP_ExpandingArray<AuctionBid_t> _bid_list {1};
+    uint16_t _bid_count;
+
+    //desired_state_->vel() << 0, 0, 0;
+    //desired_state_->quat().set(0, 0, state_->quat().yaw());
+    //desired_state_->pos() = Eigen::Vector3d::UnitZ()*state_->pos()(2);
+
+    //struct {
+    //    AP_Int8     bid_type;
+    //    AP_Float    distance;
+        //AP_Float    batt_remaining;
+    //    AP_Int32    id_target;
+    //} _params;
+    
     uint32_t _last_update_ms;
 };

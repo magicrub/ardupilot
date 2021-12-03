@@ -144,6 +144,24 @@ int32_t AP_SwarmDB::get_nearest_index(const Location &loc) const
     return index;
 }
 
+//TODO: remove this when you find the Ardu blessed way
+#include <algorithm>
+//AP_ExpandingArray<AP_Float> AP_SwarmDB::get_sorted_distances() const
+std::vector<float> AP_SwarmDB::get_sorted_distances(const Location &loc) const
+{
+    //TODO: make this size based on db.get_count
+    AP_ExpandingArray<AP_Float> sorted_distances {10};
+
+    std::vector<float> distances;
+    for (uint16_t i = 0; i < _count; i++) {
+        const float distance = AP_Swarming::get_location(_list[i].item).get_distance(loc);
+        distances.push_back(distance);
+    }
+    std::sort(distances.begin(), distances.end());
+
+    return distances;
+}
+
 bool AP_SwarmDB::get_item(const int32_t index, mavlink_swarm_vehicle_t &vehicle) const
 {
     if (!is_valid_index(index)) {
@@ -151,6 +169,14 @@ bool AP_SwarmDB::get_item(const int32_t index, mavlink_swarm_vehicle_t &vehicle)
     }
 
     memcpy(&vehicle, &_list[index].item, sizeof(vehicle));
+    return true;
+}
+
+bool AP_SwarmDB::get_item_no_copy(const int32_t &index) const
+{
+    if (!is_valid_index(index)) {
+        return false;
+    }
     return true;
 }
 

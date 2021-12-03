@@ -14,7 +14,7 @@
    You should have received a copy of the GNU General Public License
    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-   Author: Tom Pittenger
+   Author: Tom Pittenger and Michael Day
  */
 
 #include "AP_Swarming.h"
@@ -23,6 +23,10 @@
 #include "AP_SwarmAuctions.h"
 
 extern const AP_HAL::HAL& hal;
+
+AP_SwarmAuctions::AP_SwarmAuctions()
+{//TODO: initalize class
+}
 
 // periodic update
 void AP_SwarmAuctions::update()
@@ -38,9 +42,26 @@ void AP_SwarmAuctions::update()
 
     AP_SwarmDB &db = AP::swarm()->get_db();
     (void)db.get_count();
+    //int32_t swarm_count = db.get_count();
+
+    //sort distances 
 
     // TODO: auction stuff at 1Hz
+    for (uint16_t i=0; i<_bid_count; i++) {
+        //TODO: take battery remaining into account for bid as well
 
+        //db.get_nearest_index
+        //TODO: return sorted indexs
+
+        if (db.get_item_no_copy(i)) {
+            //db.get_sorted_distances(db.get);
+        } 
+
+    }
+
+
+    //void assign_new_target() { assign_new_target(get_location_target(_my_vehicle)); }
+       
 }
 
 #endif // HAL_AP_SWARMING_ENABLED

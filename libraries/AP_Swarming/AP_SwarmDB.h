@@ -28,6 +28,9 @@
 
 #define SWARM_DB_LIST_MAX_SIZE                  1000
 
+//TODO: remove this when you find the Ardu blessed way
+#include <vector>
+
 class AP_SwarmDB {
 public:
 
@@ -43,7 +46,12 @@ public:
 
     int32_t get_nearest_index(const Location &loc) const;
 
+    //AP_ExpandingArray<AP_Float> get_sorted_distances() const;
+    std::vector<float> get_sorted_distances(const Location &loc) const;
+
     bool get_item(const int32_t index, mavlink_swarm_vehicle_t &vehicle) const;
+
+    bool get_item_no_copy(const int32_t &index) const;
 
 private:
 
