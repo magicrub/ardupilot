@@ -28,11 +28,14 @@
 
 #define SWARM_DB_LIST_MAX_SIZE                  1000
 
-//TODO: remove this when you find the Ardu blessed way
-#include <vector>
-
 class AP_SwarmDB {
 public:
+
+    struct SwarmDbItem_t {
+        mavlink_swarm_vehicle_t item; // the whole mavlink struct with all the juicy details. sizeof() == 38
+        uint32_t timestamp_ms; // last time this was refreshed, allows timeouts
+    };
+
 
     // constructor
     AP_SwarmDB() { }
@@ -46,30 +49,20 @@ public:
 
     int32_t get_nearest_index(const Location &loc) const;
 
-    //AP_ExpandingArray<AP_Float> get_sorted_distances() const;
-    std::vector<float> get_sorted_distances(const Location &loc) const;
-
     bool get_item(const int32_t index, mavlink_swarm_vehicle_t &vehicle) const;
-
-    bool get_item_no_copy(const int32_t &index) const;
-
-private:
+    bool get_item(const int32_t index, SwarmDbItem_t &dbItem) const;
 
     // return index of given vehicle if ICAO_ADDRESS matches. return -1 if no match
     int32_t find_index(const mavlink_swarm_vehicle_t &vehicle) const;
 
     bool is_valid_index(int32_t index) const { return (index >= 0 && index < _count); }
 
-    // remove a vehicle from the list
-    void remove_vehicle(const int32_t index);
-
+private:
     // update an existing vehicle
     void set_vehicle(const int32_t index, const mavlink_swarm_vehicle_t &vehicle);
 
-    struct SwarmDbItem_t {
-        mavlink_swarm_vehicle_t item; // the whole mavlink struct with all the juicy details. sizeof() == 38
-        uint32_t timestamp_ms; // last time this was refreshed, allows timeouts
-    };
+    // remove a vehicle from the list
+    void remove_vehicle(const int32_t index);
 
     AP_ExpandingArray<SwarmDbItem_t> _list {1};
 
