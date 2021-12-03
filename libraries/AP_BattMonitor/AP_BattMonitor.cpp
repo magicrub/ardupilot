@@ -533,11 +533,12 @@ bool AP_BattMonitor::arming_checks(size_t buflen, char *buffer) const
     return true;
 }
 
+#include <AP_Arming/AP_Arming.h>
 // Check's each smart battery instance for its powering off state and broadcasts notifications
 void AP_BattMonitor::check_powered_state(void)
 {
     // check if vehicle armed state has changed
-    const bool vehicle_armed = hal.util->get_soft_armed();
+    const bool vehicle_armed = AP::arming().is_armed();
     const bool vehicle_armed_changed = (_vehicle_armed_last != vehicle_armed);
     _vehicle_armed_last = vehicle_armed;
 
