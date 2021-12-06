@@ -19,14 +19,6 @@ public:
         UAVCAN_BATTERY_INFO = 0
     };
 
-    enum class MPPT_FaultFlags : uint8_t {
-        NONE                = 0,
-        OVER_VOLTAGE        = (1U<<0),
-        UNDER_VOLTAGE       = (1U<<1),
-        OVER_CURRENT        = (1U<<2),
-        OVER_TEMPERATURE    = (1U<<3),
-    };
-
     /// Constructor
     AP_BattMonitor_UAVCAN(AP_BattMonitor &mon, AP_BattMonitor::BattMonitor_State &mon_state, BattMonitor_UAVCAN_Type type, AP_BattMonitor_Params &params);
 
@@ -67,14 +59,20 @@ private:
         return (AP::battery().get_serial_number(instance) < 0) || (AP::battery().get_serial_number(instance) == (int32_t)battery_id);
     }
 
-    // MPPT related methods
+    // MPPT related enums and methods
+    enum class MPPT_FaultFlags : uint8_t {
+        OVER_VOLTAGE        = (1U<<0),
+        UNDER_VOLTAGE       = (1U<<1),
+        OVER_CURRENT        = (1U<<2),
+        OVER_TEMPERATURE    = (1U<<3),
+    };
     void handle_mppt_stream(const MpptStreamCb &cb);
     void handle_mppt_enable_output_response(const uavcan::ServiceCallResult<mppt::OutputEnable>& response);
     void mppt_set_bootup_powered_state();
     void mppt_set_armed_powered_state();
     void mppt_set_powered_state(bool power_on, bool force);
-    void mppt_check_and_report_faults(const uint8_t flags);
-    static const char* mppt_fault_string(const MPPT_FaultFlags fault);
+    void mppt_check_and_report_faults(uint8_t fault_flags);
+    const char* mppt_fault_string(MPPT_FaultFlags fault);
 
     AP_BattMonitor::BattMonitor_State _interim_state;
     BattMonitor_UAVCAN_Type _type;
