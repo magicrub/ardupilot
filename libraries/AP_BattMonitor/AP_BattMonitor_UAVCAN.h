@@ -81,4 +81,5 @@ private:
     uint8_t _mppt_fault_flags;
     uint8_t _instance;
     uavcan::Node<0> *_node;
+    int8_t _curr_pin_last = -2;
 };

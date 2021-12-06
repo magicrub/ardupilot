@@ -218,6 +218,18 @@ void AP_BattMonitor_UAVCAN::read()
     set_powered_state(_interim_state.powered_state);
 
     _has_temperature = (AP_HAL::millis() - _state.temperature_time) <= AP_BATT_MONITOR_TIMEOUT;
+
+
+    // KHA HACK:
+    // BATTx_CURR_PIN = current power state
+    if ((_is_mppt_packet_digital == true) &&
+        (_curr_pin_last != _params._curr_pin) &&
+        (_params._curr_pin == 0 || _params._curr_pin == 1))
+    {
+        const AP_BattMonitor::PoweredState new_state = (_params._curr_pin == 0) ? AP_BattMonitor::PoweredState::Powered_Off : AP_BattMonitor::PoweredState::Powered_On;
+        set_powered_state(new_state);
+    }
+
 }
 
 void AP_BattMonitor_UAVCAN::set_hardware_to_powered_state(const AP_BattMonitor::PoweredState desired_state)
@@ -239,6 +251,9 @@ void AP_BattMonitor_UAVCAN::mppt_send_enable_output(const bool enable)
     }
 
     GCS_SEND_TEXT(MAV_SEVERITY_INFO, "Battery %u: Setting power to: %s", (unsigned)_instance+1, enable?"ON":"OFF");
+
+    _params._curr_pin.set_and_notify(enable?1:0);
+    _curr_pin_last = _params._curr_pin;
 
     mppt::OutputEnable::Request request;
     request.enable = enable ? true : false;
