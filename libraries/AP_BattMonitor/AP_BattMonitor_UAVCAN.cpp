@@ -398,4 +398,26 @@ const char* AP_BattMonitor_UAVCAN::mppt_fault_string(MPPT_FaultFlags fault)
     return "unknown";
 }
 
+// return mavlink fault bitmask (see MAV_BATTERY_FAULT enum)
+uint32_t AP_BattMonitor_UAVCAN::get_mavlink_fault_bitmask() const
+{
+    // return immediately if not mppt or no faults
+    if (!_is_mppt_packet_digital || (_mppt.fault_flags == 0)) {
+        return 0;
+    }
+
+    // convert mppt fault bitmask to mavlink fault bitmask
+    uint32_t mav_fault_bitmask = 0;
+    if ((_mppt.fault_flags & (uint8_t)MPPT_FaultFlags::OVER_VOLTAGE) || (_mppt.fault_flags & (uint8_t)MPPT_FaultFlags::UNDER_VOLTAGE)) {
+        mav_fault_bitmask |= MAV_BATTERY_FAULT_INCOMPATIBLE_VOLTAGE;
+    }
+    if (_mppt.fault_flags & (uint8_t)MPPT_FaultFlags::OVER_CURRENT) {
+        mav_fault_bitmask |= MAV_BATTERY_FAULT_OVER_CURRENT;
+    }
+    if (_mppt.fault_flags & (uint8_t)MPPT_FaultFlags::OVER_TEMPERATURE) {
+        mav_fault_bitmask |= MAV_BATTERY_FAULT_OVER_TEMPERATURE;
+    }
+    return mav_fault_bitmask;
+}
+
 #endif
