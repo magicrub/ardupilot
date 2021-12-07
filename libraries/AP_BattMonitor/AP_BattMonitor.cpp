@@ -689,7 +689,7 @@ MAV_BATTERY_CHARGE_STATE AP_BattMonitor::get_mavlink_charge_state(const uint8_t 
     switch (state[instance].failsafe) {
 
     case Failsafe::None:
-        if (get_mavlink_fault_bitmask(instance) != 0) {
+        if (get_mavlink_fault_bitmask(instance) != 0 || !healthy()) {
             return MAV_BATTERY_CHARGE_STATE_UNHEALTHY;
         }
         return MAV_BATTERY_CHARGE_STATE_OK;

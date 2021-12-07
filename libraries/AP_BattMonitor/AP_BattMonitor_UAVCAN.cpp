@@ -120,7 +120,7 @@ void AP_BattMonitor_UAVCAN::handle_battery_info(const BattInfoCb &cb)
     _full_charge_capacity_wh = cb.msg->full_charge_capacity_wh;
 }
 
-void AP_BattMonitor_UAVCAN::update_interim_state(float voltage, float current, float temperature, uint8_t soc)
+void AP_BattMonitor_UAVCAN::update_interim_state(float voltage, float current, float temperature_K, uint8_t soc)
 {
     WITH_SEMAPHORE(_sem_battmon);
 
@@ -128,9 +128,9 @@ void AP_BattMonitor_UAVCAN::update_interim_state(float voltage, float current, f
     _interim_state.current_amps = current;
     _soc = soc;
 
-    if (!isnanf(temperature) && temperature > 0) {
+    if (!isnanf(temperature_K) && temperature_K > 0) {
         // Temperature reported from battery in kelvin and stored internally in Celsius.
-        _interim_state.temperature = temperature - C_TO_KELVIN;
+        _interim_state.temperature = temperature_K - C_TO_KELVIN;
         _interim_state.temperature_time = AP_HAL::millis();
     }
 
