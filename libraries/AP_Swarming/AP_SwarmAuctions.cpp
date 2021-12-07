@@ -29,6 +29,34 @@ AP_SwarmAuctions::AP_SwarmAuctions()
 {//TODO: initalize class
 }
 
+void AP_SwarmAuctions::init() 
+{
+    init_ac_to_locs();
+}
+
+void AP_SwarmAuctions::init_ac_to_locs() 
+{
+    // if(_sorted_list.size() > 2) {
+    //      //no swarm
+    //      return;
+    // }
+
+    // _ac_to_location.clear();
+
+    // _ac_to_locs_inited = true;
+}
+
+bool AP_SwarmAuctions::add_to_vehicle_callsign_list(string callsign) {
+    if (std::find(vehicle_callsigns.begin(), vehicle_callsigns.end(), callsign) != 
+        vehicle_callsigns.end()) {
+        //vehicle already exists in vehicle_callsigns:
+        return false;
+    }
+
+    vehicle_callsigns.push_back(callsign);
+    return true;
+}
+
 // periodic update
 void AP_SwarmAuctions::update()
 {
@@ -39,37 +67,133 @@ void AP_SwarmAuctions::update()
     _last_update_ms = now_ms;
 
     // Auction stuff at 1Hz
+    //int m = 3;
+    //int n = 3;
+    //float agentMatrix[m][n];
 
+    //introduce inertia into the bidding process to prevent assignment oscillation
+    //float bid_factor = 200.0; //TODO: figure out better bid factor via sim
 
+    AP_SwarmROI &roi = AP::swarm()->get_roi();
+        //***IDEA: define the center of the swarm based on the centroid of the swarm_ROI 
+        //how to get the centroid of the swarm_roi?
+        //***Note that this may not work for some concave polygons
+    //TODO: figure out where the centroid of the swarm ROI lives
+    //(void)roi.get_count();
+    //A side effect of calling roi.get_crc32 is we update the crc and centroid
+    //TODO: find a better way to do this?
+    (void) roi.get_crc32();
+    //uint32_t crc32 = roi.get_crc32();
+    Vector2l roi_centroid;
+    roi.calc_poly_centroid(roi_centroid);
 
-    // AP_SwarmROI &roi = AP::swarm()->get_roi();
-    // (void)roi.get_count();
+    AP_SwarmDB &db = AP::swarm()->get_db();
+    (void)db.get_count();
+    int32_t ownship_index = -1;
+    if(! db.get_ownship_id(ownship_index)) {
+        //printf("inside if\n");
+        //TODO: where is ownship??
+        //printf("setting ownship_id to: %d \n", ); //where is the ownship index??
+    }
+    //printf("ownship id: %d \n", ownship_index);
 
-    // AP_SwarmDB &db = AP::swarm()->get_db();
-    // (void)db.get_count();
+    //db.get_item(  
+        //where is THIS aircraft?? //item.effective_radius;
 
+    //int aircraft_assignment_num = 0;
+    //int location_assignment_num = 0;
 
+    //+1 because _sorted_list does not include ownship:
+    int total_swarm_aircraft = _sorted_list.size();
+    printf("Total swarm aircraft: %d\n", total_swarm_aircraft);
 
+    //TODO: store total_locations elsewhere
+    int total_locations = 3;
+
+    // AP_ADSB::adsb_vehicle_t vehicle {};
+
+    // vehicle.info.callsign[0] = 'S';
+    // vehicle.info.callsign[1] = 'W';
+    // vehicle.info.callsign[2] = 'R';
+    // vehicle.info.callsign[3] = 'M';
+    // vehicle.info.callsign[4] = '0'; //squadron id msg.squadron_id % 10 + '0';
+    // vehicle.info.callsign[5] = ((msg.aircraft_id / 100) % 10) + '0';
+    // vehicle.info.callsign[6] = ((msg.aircraft_id / 10) % 10) + '0';
+    // vehicle.info.callsign[7] = ((msg.aircraft_id / 1) % 10) + '0';
+
+    // //if (vehicle string not in vehicle_callsigns) {
+    // if (! std::count(vehicle_callsigns.begin(), vehicle_callsigns.end(), vehicle.info.callsign)) {
+    //     add_to_vehicle_callsign_list(vehicle.info.callsign);  //TODO: find the actual callsign
+    //     printf("added to vehicle_callsigns");
+    // }
+
+    // int total_aircraft_assignments = 0;
+    // int total_location_assignments = 0;
+
+    //if (! _ac_to_locs_inited) {
+    //    init_ac_to_locs();
+    //}
 
     // sort vector<>_sorted_list by distance to my vehicle from ap::swarming().get_vehicle() which is updated at 50Hz
+    //AP_SwarmAuctions::SwarmAuctionItem_t next_item;
+    //Location next_loc;
     sort_list_by_distance_to_me();
 
-
+    // for(auto& itr : _sorted_list) {
+    //     Location next_loc;
+    //     next_loc.lat = itr.dbItem.item.lat;
+    //     //printf("%d\n", next_loc.lat);
+    // }
+    //printf("\n");
 
     // sort an arbitrary list to an arbitrary locaction
-    vector<SwarmAuctionItem_t> my_list;
-    Location loc; loc.alt = 123;
-    sort_list_by_distance_to(loc, my_list);
+    //vector<SwarmAuctionItem_t> my_list;
+    //Location loc; loc.alt = 123;
+    //sort_list_by_distance_to(loc, my_list);
 
+    //s is number of backup relays (s = size of subteams)
+    //int s = 1; // !!!! can't be 0 because this gets multiplied later on
 
+    AuctionBid_t next_bid;
+    // while (aircraft_assignment_num < total_swarm_aircraft) {
+    //     //for (uint16_t i=0; i<_bid_count; i++) {
 
-    
+        for (int i = 0; i < total_swarm_aircraft; i++) {
+            int num_bids_made = 0;
 
-    for (uint16_t i=0; i<_bid_count; i++) {
-        //TODO: take battery remaining into account for bid as well
-        //TODO: return sorted indexes
-    }
+            //Map aircraft to locations:
+            for (int j = 0; j < total_locations; j++) {
+                //TODO: implement get_num_assignments
+                printf("%d %d, ", i, j);
 
+                // for(int l = 0; l < _sorted_list.size(); l++) {
+                //     //IDEA: DEFINE desired ROI locations based on centroid and number of desired locations
+                //     //AND Base it on Effective Radii of indivdual aircraft!
+                    
+
+                //     //Get next closest location from list
+                //     SwarmAuctionItem_t next_loc = _sorted_list[l];
+                //     next_loc.dbItem.item;
+                // }
+
+                //if (get_num_assignments(agentMatrix[i][j]) < s) {       
+                    // next_bid = (s-j) * int(bid_factor);
+                    num_bids_made++;
+                    // if (num_bids_made == s) {
+                    //      break;
+                    // }
+                //}
+            }
+            printf("\n");
+            //TODO: iterate through bids and determine auction winners for this round
+
+    //         total_aircraft_assignments++;
+    //         total_location_assignments++;
+         }
+         printf("\n");
+        
+    //     //TODO: take battery remaining into account for bid as well
+    // }
 
     //void assign_new_target() { assign_new_target(get_location_target(_my_vehicle)); }
 }

@@ -49,6 +49,65 @@ bool AP_SwarmROI::handle_swarm_ROI(const mavlink_swarm_vehicle_t &this_vehicle)
     return true;
 }
 
+bool AP_SwarmROI::add_poly(const Vector2l& point) {
+    if (_poly_count >= SWARM_ROI_POLY_MAX_SIZE) {
+            return false;
+        }
+    _poly_count++;
+
+    return set_poly(_poly_count-1, point);
+}
+
+bool AP_SwarmROI::set_poly(const uint16_t index, const Vector2l& point) 
+{
+    if (index >= _poly_count) {
+        return false;
+    }
+    _poly[index].x = point.x;
+    _poly[index].y = point.y;
+    _crc32_is_calculated = false;
+
+    return true;
+}
+
+bool AP_SwarmROI::calc_poly_centroid(Vector2l &centroid) 
+{
+    if(_poly_count < 3) {
+        //can't have a polygon with < 3 sides
+        return false;
+    }
+
+    Vector2l min_loc;
+    if (min_loc.is_zero()) {
+        return false;
+    }
+    Vector2l max_loc = min_loc;
+    for (uint8_t i=0; i<_poly_count; i++) {
+        Vector2l new_loc = _poly[i];
+
+        if (new_loc.is_zero()) {
+            return false;
+        }
+        if (new_loc.x < min_loc.x) {
+            min_loc.x = new_loc.x;
+        }
+        if (new_loc.y < min_loc.y) {
+            min_loc.y = new_loc.y;
+        }
+        if (new_loc.x > max_loc.x) {
+            max_loc.x = new_loc.x;
+        }
+        if (new_loc.y > max_loc.y) {
+            max_loc.y = new_loc.y;
+        }
+    }
+
+    centroid.x = (min_loc.x / 2) + (max_loc.x / 2);
+    centroid.y = (min_loc.y / 2) + (max_loc.y / 2);
+
+    return true;
+}
+
 bool AP_SwarmROI::breached(const Vector2l &pos) const
 {
     Location loc;
@@ -82,6 +141,8 @@ bool AP_SwarmROI::breached(const Location &loc) const
 void AP_SwarmROI::compute_crc32()
 {
     uint32_t crc = 0;
+    calc_poly_centroid(_poly_centroid);
+
     for (uint16_t i=0; i< _poly_count; i++) {
         crc = crc_crc32(crc, (uint8_t*)&_poly[i], sizeof(_poly[0]));
     }

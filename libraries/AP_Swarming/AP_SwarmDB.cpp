@@ -27,15 +27,33 @@
 
 extern const AP_HAL::HAL& hal;
 
+AP_SwarmDB::AP_SwarmDB()
+// AP_SwarmDB::AP_SwarmDB(uint32_t ownship_id, mavlink_swarm_vehicle_t ownship_v) :
+//     _ownship_id(ownship_id),
+//     _ownship_vehicle(ownship_v)
+{
+    //get_item(ownship_id, ownship_v);
+}
+
 void AP_SwarmDB::handle_swarm_vehicle(const mavlink_swarm_vehicle_t &me, const mavlink_swarm_vehicle_t &vehicle)
 {
+    //printf("Inside db::handle_swarm_vehicle  ");
     const Location vehicle_loc = AP_Swarming::get_location(vehicle);
     const uint32_t id_me = AP_Swarming::get_id(me);
     const uint32_t id_them = AP_Swarming::get_id(vehicle);
+
+    //printf("ID Me: %d ID Them: %d \n", id_me, id_them);
     const bool detected_ourself = (id_me == id_them);
 
     const int32_t index = find_index(vehicle);
     const bool is_tracked_in_list = (index >= 0);
+
+    //THIS WILL NOT WORK -- experiments confirm this check only returns true on one plane ONLY!
+    // if (detected_ourself) {
+    //     printf("Inside detected ourself, ownship is: %d \n", id_me);
+    //     printf("   Setting ownship to: %d \n", id_me);
+    //     set_ownship_id(id_me); 
+    // }
 
     if (vehicle_loc.is_latlng_zero() || detected_ourself) {
         // drop it if it's out of range, invalid lat/lng or unknown time. If we're tracking it, delete from list. Otherwise ignore it.
@@ -55,7 +73,7 @@ void AP_SwarmDB::handle_swarm_vehicle(const mavlink_swarm_vehicle_t &me, const m
 }
 
 // periodic update to remove stale vehicles and cache location
-void AP_SwarmDB::update()
+void AP_SwarmDB::update(const mavlink_swarm_vehicle_t &ownship)
 {
     const uint32_t now_ms = AP_HAL::millis();
     if (now_ms - _swarmDb_update_ms < SWARM_DB_LIST_UPDATE_INTERVAL_MAX_MS) {
@@ -142,6 +160,25 @@ int32_t AP_SwarmDB::get_nearest_index(const Location &loc) const
     }
 
     return index;
+}
+
+void AP_SwarmDB::set_ownship_id(const int32_t index) 
+{
+    _ownship_id = index;
+}
+
+bool AP_SwarmDB::get_ownship_id(const int32_t index) 
+{
+    return get_my_id(index);
+}
+
+bool AP_SwarmDB::get_my_id(const int32_t index) 
+{
+    if (!is_valid_index(index)) {
+        return false;
+    } 
+
+    return _ownship_id;
 }
 
 bool AP_SwarmDB::get_item(const int32_t index, mavlink_swarm_vehicle_t &vehicle) const

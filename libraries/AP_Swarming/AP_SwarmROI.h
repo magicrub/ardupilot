@@ -25,9 +25,8 @@
 #include <AP_Common/Location.h>
 #include <GCS_MAVLink/GCS_MAVLink.h>
 
-#define SWARM_ROI_POLY_MAX_SIZE               8
+#define SWARM_ROI_POLY_MAX_SIZE               200
 #define SWARM_ROI_CIRCLES_MAX_SIZE            20
-
 
 class AP_SwarmROI {
 public:
@@ -48,28 +47,13 @@ public:
 
     uint32_t get_count() const { return _poly_count + _circles_count; }
 
-
     bool add(const Location &loc) { return add_poly(loc); }
     bool add(const Vector2l &point) { return add_poly(point); }
     bool add(const Vector2f &point) { return add_poly(Vector2l(point.x*1e7,point.y*1e7)); }
     bool add_poly(const Location &loc) { return add_poly(Vector2l(loc.lat, loc.lng)); }
-    bool add_poly(const Vector2l& point) {
-        if (_poly_count >= SWARM_ROI_POLY_MAX_SIZE) {
-            return false;
-        }
-        _poly_count++;
-        return set_poly(_poly_count-1, point);
-    }
-
-    bool set_poly(const uint16_t index, const Vector2l& point) {
-        if (index >= _poly_count) {
-            return false;
-        }
-        _poly[index].x = point.x;
-        _poly[index].y = point.y;
-        _crc32_is_calculated = false;
-        return true;
-    };
+    bool add_poly(const Vector2l& point);
+    bool calc_poly_centroid(Vector2l &centroid); 
+    bool set_poly(const uint16_t index, const Vector2l& point);
 
     bool add(const Circle &circle) { return add_circle(circle); }
     bool add_circle(const Circle &circle) {
@@ -115,9 +99,9 @@ private:
 
     //AP_ExpandingArray<Vector2l> _poly {5};
     Vector2l _poly[SWARM_ROI_POLY_MAX_SIZE];
+    Vector2l _poly_centroid;
     uint16_t _poly_count;
 
     AP_ExpandingArray<Circle> _circles {1};
     uint16_t _circles_count;
-
 };

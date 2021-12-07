@@ -24,10 +24,14 @@
 
 #include <AP_Common/Location.h>
 #include <GCS_MAVLink/GCS_MAVLink.h>
+#include <AP_ADSB/AP_ADSB.h>
+
 #include "AP_SwarmDB.h"
 
 #if HAL_AP_SWARMING_ENABLED
 #include <vector>
+#include <map>
+#include <stdio.h>
 
 using namespace std;
 
@@ -43,6 +47,7 @@ public:
     AP_SwarmAuctions();
 
     void init();
+    void init_ac_to_locs();
 
     // periodic update to remove stale vehicles
     void update(); 
@@ -72,6 +77,11 @@ protected:
     void sync_db(vector<SwarmAuctionItem_t> list) const;
 
     std::vector<SwarmAuctionItem_t> _sorted_list;
+    
+    std::vector<string> vehicle_callsigns;
+    bool add_to_vehicle_callsign_list(string callsign);
+
+    bool _ac_to_locs_inited;
 
     AP_ExpandingArray<AuctionBid_t> _bid_list {1};
     uint16_t _bid_count;

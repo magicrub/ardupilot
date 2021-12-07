@@ -188,7 +188,7 @@ void AP_Swarming::update_50Hz(void)
     }
     
     update_my_vehicle();
-    _db.update();
+    _db.update(_my_vehicle);
     _auctions.update();
 
     const uint32_t now_ms = AP_HAL::millis();
@@ -223,6 +223,7 @@ void AP_Swarming::handle_swarm_vehicle(mavlink_swarm_vehicle_t &swarm_vehicle)
     swarm_vehicle.time_usec = AP_HAL::micros64();
 #endif
 
+    //printf("Calling from AP_Swarming: ");
     _db.handle_swarm_vehicle(_my_vehicle, swarm_vehicle);
     
     if(! _roi.handle_swarm_ROI(_my_vehicle)) {
@@ -247,13 +248,13 @@ void AP_Swarming::handle_swarm_coverage_area(mavlink_swarm_coverage_area_t &swar
 
     _roi.clear();
 
-    Location new_loc;
-    new_loc.alt = 9999999; 
-    for (int i = 0; i <= SWARM_ROI_POLY_MAX_SIZE; i = i+2) {
-       new_loc.lat = swarm_coverage_area.coverage_polys[i];
-       new_loc.lng = swarm_coverage_area.coverage_polys[i+1];
-       _roi.add(new_loc);
-    }
+    // Location new_loc;
+    // new_loc.alt = 9999999; 
+    // for (int i = 0; i <= SWARM_ROI_POLY_MAX_SIZE; i = i+2) {
+    //    new_loc.lat = swarm_coverage_area.coverage_polys[i];
+    //    new_loc.lng = swarm_coverage_area.coverage_polys[i+1];
+    //    _roi.add(new_loc);
+    // }
 }
 
 MAV_RESULT AP_Swarming::handle_msg(const mavlink_channel_t chan, const mavlink_message_t &msg)
@@ -414,6 +415,13 @@ void AP_Swarming::send_swarm_vehicle(const mavlink_swarm_vehicle_t &vehicle)
     }
 }
 
+// bool AP_Swarming::get_adsb_ICAO_address(uint32_t icao_address)
+// {
+//    //TODO: determine if the ICAO address is valid
+
+//    return 
+// }
+
 void AP_Swarming::send_to_adsb(const mavlink_swarm_vehicle_t &msg)
 {
 #if HAL_ADSB_ENABLED
@@ -438,8 +446,6 @@ void AP_Swarming::send_to_adsb(const mavlink_swarm_vehicle_t &msg)
     vehicle.info.hor_velocity = msg.speed * 100; // convert m/s to cm/s
     vehicle.info.ver_velocity = 0;
     vehicle.info.squawk = 1200;
-
-
 
     vehicle.info.emitter_type = ADSB_EMITTER_TYPE_UAV;
     /*
@@ -479,7 +485,14 @@ void AP_Swarming::send_to_adsb(const mavlink_swarm_vehicle_t &msg)
 
     vehicle.last_update_ms = AP_HAL::millis();
     adsb->handle_adsb_vehicle(vehicle);
+
+    //add_adsb_vehicle_to_swarm(vehicle);
 #endif
+}
+
+void add_adsb_vehicle_to_swarm(AP_ADSB::adsb_vehicle_t v)
+{
+    
 }
 
 void AP_Swarming::do_fancy_algorithm_stuff()

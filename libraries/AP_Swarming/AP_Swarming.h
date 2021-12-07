@@ -120,6 +120,8 @@ private:
 
     void init();
     void send_to_adsb(const mavlink_swarm_vehicle_t &msg);
+    //void add_adsb_vehicle_to_swarm(AP_ADSB::adsb_vehicle_t v);
+    //bool get_adsb_ICAO_address(uint32_t icao_address);
     void send_swarm_vehicle(const mavlink_swarm_vehicle_t &vehicle);
 
     // helpers for set/get for loc/loc_target of _my_vehicle

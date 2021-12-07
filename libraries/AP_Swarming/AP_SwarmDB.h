@@ -30,24 +30,28 @@
 
 class AP_SwarmDB {
 public:
-
     struct SwarmDbItem_t {
         mavlink_swarm_vehicle_t item; // the whole mavlink struct with all the juicy details. sizeof() == 38
         uint32_t timestamp_ms; // last time this was refreshed, allows timeouts
+        bool exists_in_adsb; 
     };
 
-
     // constructor
-    AP_SwarmDB() { }
+    AP_SwarmDB();
 
     // periodic update to remove stale vehicles
-    void update();
+    void update(const mavlink_swarm_vehicle_t &ownship);
 
     uint32_t get_count() const { return _count; }
 
     void handle_swarm_vehicle(const mavlink_swarm_vehicle_t &me, const mavlink_swarm_vehicle_t &vehicle);
 
     int32_t get_nearest_index(const Location &loc) const;
+
+    //returns ownship index
+    bool get_my_id(const int32_t index);
+    bool get_ownship_id(const int32_t index);
+    void set_ownship_id(const int32_t index);
 
     bool get_item(const int32_t index, mavlink_swarm_vehicle_t &vehicle) const;
     bool get_item(const int32_t index, SwarmDbItem_t &dbItem) const;
@@ -68,4 +72,7 @@ private:
 
     int32_t     _count;
     uint32_t    _swarmDb_update_ms;
+
+    uint32_t    _ownship_id;
+    mavlink_swarm_vehicle_t _ownship_vehicle;
 };
