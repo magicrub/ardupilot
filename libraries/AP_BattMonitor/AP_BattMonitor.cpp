@@ -25,6 +25,7 @@
 #include <AP_Logger/AP_Logger.h>
 #include <GCS_MAVLink/GCS.h>
 #include <AP_Notify/AP_Notify.h>
+#include <AP_Arming/AP_Arming.h>
 
 extern const AP_HAL::HAL& hal;
 
@@ -214,6 +215,8 @@ AP_BattMonitor::init()
             // there will be a gap, but as we always check for drivers[instances] being nullptr
             // this is safe
             _num_instances = instance + 1;
+
+            drivers[instance]->set_bootup_powered_state();
         }
     }
 }
@@ -317,7 +320,7 @@ void AP_BattMonitor::read()
 
     check_failsafes();
     
-    checkPoweringOff();
+    check_powered_state();
 }
 
 // healthy - returns true if monitor is functioning
@@ -532,15 +535,51 @@ bool AP_BattMonitor::arming_checks(size_t buflen, char *buffer) const
 }
 
 // Check's each smart battery instance for its powering off state and broadcasts notifications
-void AP_BattMonitor::checkPoweringOff(void)
+void AP_BattMonitor::check_powered_state(void)
 {
-    for (uint8_t i = 0; i < _num_instances; i++) {
-        if (state[i].is_powering_off && !state[i].powerOffNotified) {
-#ifndef HAL_BUILD_AP_PERIPH
-            // Set the AP_Notify flag, which plays the power off tones
-            AP_Notify::flags.powering_off = true;
+    // check if vehicle armed state has changed
+#ifdef HAL_BUILD_AP_PERIPH
+    const bool vehicle_armed = hal.util->get_soft_armed();
+#else
+    const bool vehicle_armed = AP::arming().is_armed();
 #endif
 
+    const bool vehicle_armed_changed = (_vehicle_armed_last != vehicle_armed);
+    _vehicle_armed_last = vehicle_armed;
+
+    for (uint8_t i = 0; i < _num_instances; i++) {
+        if (drivers[i] == nullptr || get_type(i) == Type::NONE) {
+            continue;
+        }
+
+        if (vehicle_armed_changed) {
+            // check options for arming state change events
+            const uint32_t options = (uint32_t(_params[i]._options.get()));
+            const bool power_on_at_arm = (options & uint32_t(AP_BattMonitor_Params::Options::Power_On_At_Arm)) != 0;
+            const bool power_off_at_disarm = (options & uint32_t(AP_BattMonitor_Params::Options::Power_Off_At_Disarm)) != 0;
+
+            if (vehicle_armed && power_on_at_arm) {
+                drivers[i]->set_powered_state(AP_BattMonitor::PoweredState::Powered_On);
+            } else if (!vehicle_armed && power_off_at_disarm) {
+                drivers[i]->set_powered_state(AP_BattMonitor::PoweredState::Powered_Off);
+            }
+        }
+
+        // check for state change. If none, nothing to do.
+        if (!state[i].powered_state_changed || state[i].powered_state == PoweredState::Powered_Unknown) {
+            continue;
+        }
+        state[i].powered_state_changed = false;
+
+        // command the hardware to change its state (power on/off)
+        drivers[i]->set_hardware_to_powered_state(state[i].powered_state);
+
+        const bool is_turning_off = (state[i].powered_state == PoweredState::Powered_Off);
+#ifndef HAL_BUILD_AP_PERIPH
+        // Set the AP_Notify flag, which plays the power off tones
+        AP_Notify::flags.powering_off = is_turning_off;
+#endif
+        if (is_turning_off) {
             // Send a Mavlink broadcast announcing the shutdown
 #ifndef HAL_NO_GCS
             mavlink_command_long_t cmd_msg{};
@@ -549,9 +588,6 @@ void AP_BattMonitor::checkPoweringOff(void)
             GCS_MAVLINK::send_to_components(MAVLINK_MSG_ID_COMMAND_LONG, (char*)&cmd_msg, sizeof(cmd_msg));
             gcs().send_text(MAV_SEVERITY_WARNING, "Vehicle %d battery %d is powering off", mavlink_system.sysid, i+1);
 #endif
-
-            // only send this once
-            state[i].powerOffNotified = true;
         }
     }
 }

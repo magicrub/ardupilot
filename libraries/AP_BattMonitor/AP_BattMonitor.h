@@ -93,6 +93,13 @@ public:
         MPPT_PacketDigital         = 20,
     };
 
+    // battery power states
+    enum class PoweredState {
+        Powered_Unknown = 0,
+        Powered_On,
+        Powered_Off,
+    };
+
     FUNCTOR_TYPEDEF(battery_failsafe_handler_fn_t, void, const char *, const int8_t);
 
     AP_BattMonitor(uint32_t log_battery_bit, battery_failsafe_handler_fn_t battery_failsafe_handler_fn, const int8_t *failsafe_priorities);
@@ -124,10 +131,10 @@ public:
         uint32_t    temperature_time;          // timestamp of the last received temperature message
         float       voltage_resting_estimate;  // voltage with sag removed based on current and resistance estimate in Volt
         float       resistance;                // resistance, in Ohms, calculated by comparing resting voltage vs in flight voltage
-        Failsafe failsafe;                     // stage failsafe the battery is in
+        Failsafe    failsafe;                  // stage failsafe the battery is in
         bool        healthy;                   // battery monitor is communicating correctly
-        bool        is_powering_off;           // true when power button commands power off
-        bool        powerOffNotified;          // only send powering off notification once
+        PoweredState powered_state;            // either reported, desired or actual powered state: on or off
+        bool        powered_state_changed;     // only send powering state change notifications once per change
     };
 
     // Return the number of battery monitor instances
@@ -211,8 +218,8 @@ public:
     // returns false if we fail arming checks, in which case the buffer will be populated with a failure message
     bool arming_checks(size_t buflen, char *buffer) const;
 
-    // sends powering off mavlink broadcasts and sets notify flag
-    void checkPoweringOff(void);
+    // sends powering off mavlink broadcasts, sets notify flag, and can power HW on and off
+    void check_powered_state(void);
 
     // reset battery remaining percentage
     bool reset_remaining_mask(uint16_t battery_mask, float percentage);
@@ -247,6 +254,7 @@ private:
 
     int8_t      _highest_failsafe_priority; // highest selected failsafe action level (used to restrict what actions we move into)
     bool        _has_triggered_failsafe;  // true after a battery failsafe has been triggered for the first time
+    bool        _vehicle_armed_last;        // used by check_powered_state to detect changes in arming state
 
 };
 

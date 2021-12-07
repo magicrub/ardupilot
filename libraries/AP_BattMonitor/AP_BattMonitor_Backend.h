@@ -68,6 +68,14 @@ public:
     // reset remaining percentage to given value
     virtual bool reset_remaining(float percentage);
 
+    virtual void set_hardware_to_powered_state(const AP_BattMonitor::PoweredState desired_state) { };
+
+    virtual void set_bootup_powered_state();
+
+    void set_powered_state(const AP_BattMonitor::PoweredState new_state, const bool force = false);
+
+    AP_BattMonitor::PoweredState get_powered_state() const { return _state.powered_state; }
+
     // logging functions 
     void Log_Write_BAT(const uint8_t instance, const uint64_t time_us) const;
     void Log_Write_BCL(const uint8_t instance, const uint64_t time_us) const;

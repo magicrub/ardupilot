@@ -245,3 +245,29 @@ bool AP_BattMonitor_Backend::reset_remaining(float percentage)
 
     return true;
 }
+
+void AP_BattMonitor_Backend::set_bootup_powered_state()
+{
+    const uint32_t options = uint32_t(_params._options.get());
+    const bool on_at_boot = (options & uint32_t(AP_BattMonitor_Params::Options::Power_On_At_Boot)) != 0;
+    const bool off_at_boot = (options & uint32_t(AP_BattMonitor_Params::Options::Power_Off_At_Boot)) != 0;
+    const bool force_update = true;
+
+    if (off_at_boot) {
+        set_powered_state(AP_BattMonitor::PoweredState::Powered_Off, force_update);
+    } else if (on_at_boot) {
+        set_powered_state(AP_BattMonitor::PoweredState::Powered_On, force_update);
+    }
+}
+
+void AP_BattMonitor_Backend::set_powered_state(const AP_BattMonitor::PoweredState new_state, const bool force)
+{
+    if ((new_state != AP_BattMonitor::PoweredState::Powered_On) && (new_state != AP_BattMonitor::PoweredState::Powered_Off)) {
+        return;
+    } else if (_state.powered_state == new_state && !force) {
+        return;
+    }
+    _state.powered_state = new_state;
+    _state.powered_state_changed = true;
+}
+
