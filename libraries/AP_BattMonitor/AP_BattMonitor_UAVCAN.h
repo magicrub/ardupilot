@@ -70,7 +70,6 @@ private:
         OVER_TEMPERATURE    = (1U<<3),
     };
     void handle_mppt_stream(const MpptStreamCb &cb);
-    void handle_mppt_enable_output_response(const uavcan::ServiceCallResult<mppt::OutputEnable>& response);
     void mppt_set_bootup_powered_state();
     void mppt_set_armed_powered_state();
     void mppt_set_powered_state(bool power_on, bool force);
@@ -97,8 +96,8 @@ private:
     uavcan::Node<0> *_node;             // UAVCAN node id
 
     // MPPT variables
-    bool _is_mppt_packet_digital;       // true if this UAVCAN device is a Packet Digital MPPT
     struct {
+        bool is_detected;               // true if this UAVCAN device is a Packet Digital MPPT
         bool powered_state;             // true if the mppt is powered on, false if powered off
         bool powered_state_changed;     // true if _mppt_powered_state has changed and should be sent to MPPT board
         bool vehicle_armed_last;        // latest vehicle armed state. used to detect changes and power on/off MPPT board

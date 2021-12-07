@@ -136,7 +136,7 @@ void AP_BattMonitor_UAVCAN::update_interim_state(float voltage, float current, f
 
     const uint32_t tnow = AP_HAL::micros();
 
-    if (!_has_battery_info_aux || _is_mppt_packet_digital) {
+    if (!_has_battery_info_aux || _mppt.is_detected) {
         uint32_t dt = tnow - _interim_state.last_time_micros;
 
         // update total current drawn since startup
@@ -190,19 +190,14 @@ void AP_BattMonitor_UAVCAN::handle_mppt_stream(const MpptStreamCb &cb)
 
     update_interim_state(voltage, current, temperature_K, soc); 
 
-    if (!_is_mppt_packet_digital) {
+    if (!_mppt.is_detected) {
         // this is the first time the mppt message has been received
         // so set powered up state
-        _is_mppt_packet_digital = true;
+        _mppt.is_detected = true;
         mppt_set_bootup_powered_state();
     }
 
     mppt_check_and_report_faults(cb.msg->fault_flags);
-}
-
-void AP_BattMonitor_UAVCAN::handle_mppt_enable_output_response(const uavcan::ServiceCallResult<mppt::OutputEnable>& response)
-{
-    // not supported
 }
 
 void AP_BattMonitor_UAVCAN::handle_battery_info_trampoline(AP_UAVCAN* ap_uavcan, uint8_t node_id, const BattInfoCb &cb)
@@ -259,7 +254,7 @@ void AP_BattMonitor_UAVCAN::read()
     _has_temperature = (AP_HAL::millis() - _state.temperature_time) <= AP_BATT_MONITOR_TIMEOUT;
 
     // check if MPPT should be powered on/off depending upon arming state
-    if (_is_mppt_packet_digital) {
+    if (_mppt.is_detected) {
         mppt_set_armed_powered_state();
     }
 }
@@ -268,7 +263,7 @@ void AP_BattMonitor_UAVCAN::read()
 bool AP_BattMonitor_UAVCAN::capacity_remaining_pct(uint8_t &percentage) const
 {
     if ((uint32_t(_params._options.get()) & uint32_t(AP_BattMonitor_Params::Options::Ignore_UAVCAN_SoC)) ||
-        _is_mppt_packet_digital ||
+        _mppt.is_detected ||
         _soc > 100) {
         // a UAVCAN battery monitor may not be able to supply a state of charge. If it can't then
         // the user can set the option to use current integration in the backend instead.
@@ -298,8 +293,8 @@ bool AP_BattMonitor_UAVCAN::get_cycle_count(uint16_t &cycles) const
 void AP_BattMonitor_UAVCAN::mppt_set_bootup_powered_state()
 {
     const uint32_t options = uint32_t(_params._options.get());
-    const bool on_at_boot = (options & uint32_t(AP_BattMonitor_Params::Options::Power_On_At_Boot)) != 0;
-    const bool off_at_boot = (options & uint32_t(AP_BattMonitor_Params::Options::Power_Off_At_Boot)) != 0;
+    const bool on_at_boot = (options & uint32_t(AP_BattMonitor_Params::Options::MPPT_Power_On_At_Boot)) != 0;
+    const bool off_at_boot = (options & uint32_t(AP_BattMonitor_Params::Options::MPPT_Power_Off_At_Boot)) != 0;
 
     if (on_at_boot) {
         mppt_set_powered_state(true, true);
@@ -320,8 +315,8 @@ void AP_BattMonitor_UAVCAN::mppt_set_armed_powered_state()
 
     // check options for arming state change events
     const uint32_t options = uint32_t(_params._options.get());
-    const bool power_on_at_arm = (options & uint32_t(AP_BattMonitor_Params::Options::Power_On_At_Arm)) != 0;
-    const bool power_off_at_disarm = (options & uint32_t(AP_BattMonitor_Params::Options::Power_Off_At_Disarm)) != 0;
+    const bool power_on_at_arm = (options & uint32_t(AP_BattMonitor_Params::Options::MPPT_Power_On_At_Arm)) != 0;
+    const bool power_off_at_disarm = (options & uint32_t(AP_BattMonitor_Params::Options::MPPT_Power_Off_At_Disarm)) != 0;
 
     if (vehicle_armed && power_on_at_arm) {
         mppt_set_powered_state(true, false);
@@ -335,7 +330,7 @@ void AP_BattMonitor_UAVCAN::mppt_set_armed_powered_state()
 // force should be true to force sending the state change request to the MPPT
 void AP_BattMonitor_UAVCAN::mppt_set_powered_state(bool power_on, bool force)
 {
-    if (_ap_uavcan == nullptr || _node == nullptr || !_is_mppt_packet_digital) {
+    if (_ap_uavcan == nullptr || _node == nullptr || !_mppt.is_detected) {
         return;
     }
 
@@ -402,7 +397,7 @@ const char* AP_BattMonitor_UAVCAN::mppt_fault_string(MPPT_FaultFlags fault)
 uint32_t AP_BattMonitor_UAVCAN::get_mavlink_fault_bitmask() const
 {
     // return immediately if not mppt or no faults
-    if (!_is_mppt_packet_digital || (_mppt.fault_flags == 0)) {
+    if (!_mppt.is_detected || (_mppt.fault_flags == 0)) {
         return 0;
     }
 
