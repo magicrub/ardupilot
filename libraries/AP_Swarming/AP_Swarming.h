@@ -67,7 +67,7 @@ public:
     MAV_RESULT handle_msg(const mavlink_channel_t chan, const mavlink_message_t &msg);
     MAV_RESULT handle_command_long(const mavlink_command_long_t &packet);
 
-    // vehicle handler. Useful for recieving vehicles from external non-mavlink libraties
+    // vehicle handler. Useful for receiving vehicles from external non-mavlink libraties
     void handle_swarm_vehicle(mavlink_swarm_vehicle_t &swarm_vehicle);
 
     // coverage area handler. 
@@ -120,8 +120,6 @@ private:
 
     void init();
     void send_to_adsb(const mavlink_swarm_vehicle_t &msg);
-    //void add_adsb_vehicle_to_swarm(AP_ADSB::adsb_vehicle_t v);
-    //bool get_adsb_ICAO_address(uint32_t icao_address);
     void send_swarm_vehicle(const mavlink_swarm_vehicle_t &vehicle);
 
     // helpers for set/get for loc/loc_target of _my_vehicle

@@ -33,7 +33,6 @@ public:
     struct SwarmDbItem_t {
         mavlink_swarm_vehicle_t item; // the whole mavlink struct with all the juicy details. sizeof() == 38
         uint32_t timestamp_ms; // last time this was refreshed, allows timeouts
-        bool exists_in_adsb; 
     };
 
     // constructor
@@ -44,14 +43,13 @@ public:
 
     uint32_t get_count() const { return _count; }
 
-    void handle_swarm_vehicle(const mavlink_swarm_vehicle_t &me, const mavlink_swarm_vehicle_t &vehicle);
+    void handle_swarm_vehicle(const mavlink_swarm_vehicle_t &vehicle);
 
     int32_t get_nearest_index(const Location &loc) const;
 
     //returns ownship index
-    bool get_my_id(const int32_t index);
-    bool get_ownship_id(const int32_t index);
-    void set_ownship_id(const int32_t index);
+    uint32_t get_ownship_id() const;
+    SwarmDbItem_t get_ownship() const { return _list[0]; };
 
     bool get_item(const int32_t index, mavlink_swarm_vehicle_t &vehicle) const;
     bool get_item(const int32_t index, SwarmDbItem_t &dbItem) const;
@@ -68,11 +66,8 @@ private:
     // remove a vehicle from the list
     void remove_vehicle(const int32_t index);
 
-    AP_ExpandingArray<SwarmDbItem_t> _list {1};
+    AP_ExpandingArray<SwarmDbItem_t> _list {10};
 
     int32_t     _count;
     uint32_t    _swarmDb_update_ms;
-
-    uint32_t    _ownship_id;
-    mavlink_swarm_vehicle_t _ownship_vehicle;
 };

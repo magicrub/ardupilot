@@ -28,35 +28,26 @@
 extern const AP_HAL::HAL& hal;
 
 AP_SwarmDB::AP_SwarmDB()
-// AP_SwarmDB::AP_SwarmDB(uint32_t ownship_id, mavlink_swarm_vehicle_t ownship_v) :
-//     _ownship_id(ownship_id),
-//     _ownship_vehicle(ownship_v)
 {
-    //get_item(ownship_id, ownship_v);
+    // assign ownship at index. Index 0 will *always* be yourself.
+    // if you ever want to ignore yourself in a list, just loop from index 1 to get_count() intead of 0
+    _count = 1;
+    set_vehicle(0, mavlink_swarm_vehicle_t {});
 }
 
-void AP_SwarmDB::handle_swarm_vehicle(const mavlink_swarm_vehicle_t &me, const mavlink_swarm_vehicle_t &vehicle)
+void AP_SwarmDB::handle_swarm_vehicle(const mavlink_swarm_vehicle_t &vehicle)
 {
-    //printf("Inside db::handle_swarm_vehicle  ");
+    if (get_ownship_id() == AP_Swarming::get_id(vehicle)) {
+        // we've detected ourselves or someone is trying to impersonate us.
+        return;
+    }
+
     const Location vehicle_loc = AP_Swarming::get_location(vehicle);
-    const uint32_t id_me = AP_Swarming::get_id(me);
-    const uint32_t id_them = AP_Swarming::get_id(vehicle);
-
-    //printf("ID Me: %d ID Them: %d \n", id_me, id_them);
-    const bool detected_ourself = (id_me == id_them);
-
     const int32_t index = find_index(vehicle);
-    const bool is_tracked_in_list = (index >= 0);
+    const bool is_tracked_in_list = (index > 0); // index == 0 is reserved for "me" which is not allowed to be updated externally
 
-    //THIS WILL NOT WORK -- experiments confirm this check only returns true on one plane ONLY!
-    // if (detected_ourself) {
-    //     printf("Inside detected ourself, ownship is: %d \n", id_me);
-    //     printf("   Setting ownship to: %d \n", id_me);
-    //     set_ownship_id(id_me); 
-    // }
-
-    if (vehicle_loc.is_latlng_zero() || detected_ourself) {
-        // drop it if it's out of range, invalid lat/lng or unknown time. If we're tracking it, delete from list. Otherwise ignore it.
+    if (vehicle_loc.is_latlng_zero() || !vehicle_loc.check_latlng()) {
+        // invalid lat/lng or unknown time. If we're tracking it, delete from list. Otherwise ignore it.
         if (is_tracked_in_list) {
             remove_vehicle(index);
         }
@@ -75,6 +66,9 @@ void AP_SwarmDB::handle_swarm_vehicle(const mavlink_swarm_vehicle_t &me, const m
 // periodic update to remove stale vehicles and cache location
 void AP_SwarmDB::update(const mavlink_swarm_vehicle_t &ownship)
 {
+    // assign ownship at index. Index 0 will *always* be yourself.
+    set_vehicle(0, ownship);
+
     const uint32_t now_ms = AP_HAL::millis();
     if (now_ms - _swarmDb_update_ms < SWARM_DB_LIST_UPDATE_INTERVAL_MAX_MS) {
         return;
@@ -115,11 +109,7 @@ void AP_SwarmDB::set_vehicle(const int32_t index, const mavlink_swarm_vehicle_t 
         return;
     }
 
-#if 0
-    memcpy(&_list[index].item, &vehicle, sizeof(_list[index].item));
-#else
-    _list[index].item = vehicle;
-#endif
+    memcpy(&_list[index].item, &vehicle, sizeof(_list[0].item));
 
     _list[index].timestamp_ms = AP_HAL::millis();
 }
@@ -139,11 +129,7 @@ void AP_SwarmDB::remove_vehicle(const int32_t index)
         return;
     }
     // Else, overwrite the removed index with the last index
- #if 1
-    _list[index] = _list[_count];
-#else
-    memcpy(&_list[index], &_list[_count], sizeof(_list[index]));
-#endif
+    memcpy(&_list[index], &_list[_count], sizeof(_list[0]));
 }
 
 int32_t AP_SwarmDB::get_nearest_index(const Location &loc) const
@@ -162,24 +148,10 @@ int32_t AP_SwarmDB::get_nearest_index(const Location &loc) const
     return index;
 }
 
-void AP_SwarmDB::set_ownship_id(const int32_t index) 
+uint32_t AP_SwarmDB::get_ownship_id() const
 {
-    _ownship_id = index;
-}
-
-bool AP_SwarmDB::get_ownship_id(const int32_t index) 
-{
-    return get_my_id(index);
-}
-
-bool AP_SwarmDB::get_my_id(const int32_t index) 
-{
-    if (!is_valid_index(index)) {
-        return false;
-    } 
-
-    return _ownship_id;
-}
+    return AP_Swarming::get_id(_list[0].item);
+};
 
 bool AP_SwarmDB::get_item(const int32_t index, mavlink_swarm_vehicle_t &vehicle) const
 {

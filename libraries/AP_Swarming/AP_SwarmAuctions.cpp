@@ -26,7 +26,7 @@
 extern const AP_HAL::HAL& hal;
 
 AP_SwarmAuctions::AP_SwarmAuctions()
-{//TODO: initalize class
+{
 }
 
 void AP_SwarmAuctions::init() 
@@ -89,12 +89,12 @@ void AP_SwarmAuctions::update()
 
     AP_SwarmDB &db = AP::swarm()->get_db();
     (void)db.get_count();
-    int32_t ownship_index = -1;
-    if(! db.get_ownship_id(ownship_index)) {
+    //int32_t ownship_index = -1;
+    //if (!db.get_ownship_id(ownship_index)) {
         //printf("inside if\n");
         //TODO: where is ownship??
         //printf("setting ownship_id to: %d \n", ); //where is the ownship index??
-    }
+    //}
     //printf("ownship id: %d \n", ownship_index);
 
     //db.get_item(  

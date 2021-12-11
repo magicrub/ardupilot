@@ -224,7 +224,7 @@ void AP_Swarming::handle_swarm_vehicle(mavlink_swarm_vehicle_t &swarm_vehicle)
 #endif
 
     //printf("Calling from AP_Swarming: ");
-    _db.handle_swarm_vehicle(_my_vehicle, swarm_vehicle);
+    _db.handle_swarm_vehicle(swarm_vehicle);
     
     if(! _roi.handle_swarm_ROI(_my_vehicle)) {
         //TODO: 
@@ -415,13 +415,6 @@ void AP_Swarming::send_swarm_vehicle(const mavlink_swarm_vehicle_t &vehicle)
     }
 }
 
-// bool AP_Swarming::get_adsb_ICAO_address(uint32_t icao_address)
-// {
-//    //TODO: determine if the ICAO address is valid
-
-//    return 
-// }
-
 void AP_Swarming::send_to_adsb(const mavlink_swarm_vehicle_t &msg)
 {
 #if HAL_ADSB_ENABLED
@@ -485,14 +478,7 @@ void AP_Swarming::send_to_adsb(const mavlink_swarm_vehicle_t &msg)
 
     vehicle.last_update_ms = AP_HAL::millis();
     adsb->handle_adsb_vehicle(vehicle);
-
-    //add_adsb_vehicle_to_swarm(vehicle);
 #endif
-}
-
-void add_adsb_vehicle_to_swarm(AP_ADSB::adsb_vehicle_t v)
-{
-    
 }
 
 void AP_Swarming::do_fancy_algorithm_stuff()
