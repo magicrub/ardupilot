@@ -24,11 +24,8 @@
 
 #include <AP_Common/Location.h>
 #include <GCS_MAVLink/GCS_MAVLink.h>
-#include <AP_ADSB/AP_ADSB.h>
+//#include "AP_SwarmDB.h"
 
-#include "AP_SwarmDB.h"
-
-#if HAL_AP_SWARMING_ENABLED
 #include <vector>
 #include <map>
 #include <stdio.h>
@@ -39,8 +36,15 @@ class AP_SwarmAuctions {
 public:
 
     struct SwarmAuctionItem_t {
-        AP_SwarmDB::SwarmDbItem_t dbItem;
-        float sort_criteria;
+        mavlink_swarm_vehicle_t vehicle;
+        float       sort_criteria;  // used by the sort() callback as sort criteria
+
+        // Bidding
+        float       bid;
+
+        // Cost Functions
+        float       distance;
+        float       batt_remaining;
     };
 
     // constructor
@@ -59,32 +63,19 @@ public:
     void sort_list_by_effective_radius();
 
     static bool compare_sort_criteria(SwarmAuctionItem_t a, SwarmAuctionItem_t b) { return (a.sort_criteria < b.sort_criteria); }
-    static bool compare_sort_effective_radius(SwarmAuctionItem_t a, SwarmAuctionItem_t b) { return (a.dbItem.item.effective_radius < b.dbItem.item.effective_radius); }
+    static bool compare_sort_effective_radius(SwarmAuctionItem_t a, SwarmAuctionItem_t b) { return (a.vehicle.effective_radius < b.vehicle.effective_radius); }
 
 protected:
-    struct AuctionBid_t {
-        AP_Int32    sender_id;
-        AP_Float    bid;
-    };
-
-    struct CostFunction_t {
-        AP_Float    distance;
-        AP_Float    batt_remaining;
-        //TODO: other factors
-    };
 
     void sync_db_sorted_list();
     void sync_db(vector<SwarmAuctionItem_t> list) const;
 
     std::vector<SwarmAuctionItem_t> _sorted_list;
     
-    std::vector<string> vehicle_callsigns;
-    bool add_to_vehicle_callsign_list(string callsign);
-
     bool _ac_to_locs_inited;
 
-    AP_ExpandingArray<AuctionBid_t> _bid_list {1};
-    uint16_t _bid_count;
+    //AP_ExpandingArray<AuctionBid_t> _bid_list {1};
+    //uint16_t _bid_count;
 
     //desired_state_->vel() << 0, 0, 0;
     //desired_state_->quat().set(0, 0, state_->quat().yaw());
@@ -100,4 +91,4 @@ protected:
     uint32_t _last_update_ms;
 };
 
-#endif
+//#endif

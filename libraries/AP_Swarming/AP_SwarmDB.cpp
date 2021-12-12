@@ -151,10 +151,13 @@ int32_t AP_SwarmDB::get_nearest_index(const Location &loc) const
     return index;
 }
 
-uint32_t AP_SwarmDB::get_ownship_id() const
+uint32_t AP_SwarmDB::get_item_id(const int32_t index) const
 {
-    return AP_Swarming::get_id(_list[0].item);
-};
+    if (!is_valid_index(index)) {
+        return 0;
+    }
+    return AP_Swarming::get_id(_list[index].item);
+}
 
 bool AP_SwarmDB::get_item(const int32_t index, mavlink_swarm_vehicle_t &vehicle) const
 {

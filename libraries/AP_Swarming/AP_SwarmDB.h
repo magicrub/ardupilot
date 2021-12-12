@@ -50,9 +50,10 @@ public:
     int32_t get_nearest_index(const Location &loc) const;
 
     //returns ownship index
-    uint32_t get_ownship_id() const;
+    uint32_t get_ownship_id() const { return get_item_id(0); }
     SwarmDbItem_t get_ownship() const { return _list[0]; };
 
+    uint32_t get_item_id(const int32_t index) const;
     bool get_item(const int32_t index, mavlink_swarm_vehicle_t &vehicle) const;
     bool get_item(const int32_t index, SwarmDbItem_t &dbItem) const;
 

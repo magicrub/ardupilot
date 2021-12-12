@@ -100,7 +100,7 @@ void AP_Swarming_Simulator::update()
 void AP_Swarming_Simulator::init()
 {
     if (_count_param <= 0 || _count_param > AP_SWARMING_SIMULATOR_MAX_COUNT) {
-        // quick sanity check. If coutn values are invalid are YUUUGE just disable immediately
+        // quick sanity check. If count values are invalid are YUUUGE just disable immediately
         _count_param.set_and_notify(0);
 
     } else {

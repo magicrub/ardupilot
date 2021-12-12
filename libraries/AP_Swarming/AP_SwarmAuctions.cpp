@@ -21,6 +21,7 @@
 
 #if HAL_AP_SWARMING_ENABLED
 #include "AP_SwarmAuctions.h"
+#include "AP_SwarmDB.h"
 #include <algorithm>
 
 extern const AP_HAL::HAL& hal;
@@ -47,16 +48,6 @@ void AP_SwarmAuctions::init_ac_to_locs()
     // _ac_to_locs_inited = true;
 }
 
-bool AP_SwarmAuctions::add_to_vehicle_callsign_list(string callsign) {
-    if (std::find(vehicle_callsigns.begin(), vehicle_callsigns.end(), callsign) != 
-        vehicle_callsigns.end()) {
-        //vehicle already exists in vehicle_callsigns:
-        return false;
-    }
-
-    vehicle_callsigns.push_back(callsign);
-    return true;
-}
 
 // periodic update
 void AP_SwarmAuctions::update()
@@ -90,6 +81,8 @@ void AP_SwarmAuctions::update()
 
     AP_SwarmDB &db = AP::swarm()->get_db();
     (void)db.get_count();
+    const uint32_t ownship_id = db.get_ownship_id();
+
     //int32_t ownship_index = -1;
     //if (!db.get_ownship_id(ownship_index)) {
         //printf("inside if\n");
@@ -105,28 +98,11 @@ void AP_SwarmAuctions::update()
     //int location_assignment_num = 0;
 
     //+1 because _sorted_list does not include ownship:
-    int total_swarm_aircraft = _sorted_list.size();
-    printf("Total swarm aircraft: %d\n", total_swarm_aircraft);
+    // const int total_swarm_aircraft = _sorted_list.size();
+    // printf("Total swarm aircraft: %d\n", total_swarm_aircraft);
 
     //TODO: store total_locations elsewhere
-    int total_locations = 3;
-
-    // AP_ADSB::adsb_vehicle_t vehicle {};
-
-    // vehicle.info.callsign[0] = 'S';
-    // vehicle.info.callsign[1] = 'W';
-    // vehicle.info.callsign[2] = 'R';
-    // vehicle.info.callsign[3] = 'M';
-    // vehicle.info.callsign[4] = '0'; //squadron id msg.squadron_id % 10 + '0';
-    // vehicle.info.callsign[5] = ((msg.aircraft_id / 100) % 10) + '0';
-    // vehicle.info.callsign[6] = ((msg.aircraft_id / 10) % 10) + '0';
-    // vehicle.info.callsign[7] = ((msg.aircraft_id / 1) % 10) + '0';
-
-    // //if (vehicle string not in vehicle_callsigns) {
-    // if (! std::count(vehicle_callsigns.begin(), vehicle_callsigns.end(), vehicle.info.callsign)) {
-    //     add_to_vehicle_callsign_list(vehicle.info.callsign);  //TODO: find the actual callsign
-    //     printf("added to vehicle_callsigns");
-    // }
+    uint32_t total_locations = 3;
 
     // int total_aircraft_assignments = 0;
     // int total_location_assignments = 0;
@@ -155,15 +131,27 @@ void AP_SwarmAuctions::update()
     //s is number of backup relays (s = size of subteams)
     //int s = 1; // !!!! can't be 0 because this gets multiplied later on
 
-    AuctionBid_t next_bid;
+    const uint32_t total_swarm_aircraft = _sorted_list.size();
+
+    // AuctionBid_t next_bid;
+    // (void)next_bid;
+
     // while (aircraft_assignment_num < total_swarm_aircraft) {
     //     //for (uint16_t i=0; i<_bid_count; i++) {
 
-        for (int i = 0; i < total_swarm_aircraft; i++) {
-            int num_bids_made = 0;
+        for (uint32_t i = 0; i < total_swarm_aircraft; i++) {
 
-            //Map aircraft to locations:
-            for (int j = 0; j < total_locations; j++) {
+            SwarmAuctionItem_t auctionItem = _sorted_list[i];
+            
+            const uint32_t id = AP_Swarming::get_id(auctionItem.vehicle);
+            if (id == ownship_id) {
+                continue;
+            }
+
+            uint32_t num_bids_made = 0;
+
+            // Map aircraft to locations:
+            for (uint32_t j = 0; j < total_locations; j++) {
                 //TODO: implement get_num_assignments
                 printf("%d %d, ", i, j);
 
@@ -185,6 +173,12 @@ void AP_SwarmAuctions::update()
                     // }
                 //}
             }
+
+
+
+            // 7x$10 1x$25
+            // holiday thank you
+
             printf("\n");
             //TODO: iterate through bids and determine auction winners for this round
 
@@ -205,16 +199,17 @@ void AP_SwarmAuctions::sync_db_sorted_list()
     _sorted_list.resize(db.get_count());
 
     for (uint16_t i=0; i< _sorted_list.size(); i++) {
-        db.get_item(i, _sorted_list[i].dbItem);
+        db.get_item(i, _sorted_list[i].vehicle);
     }
 }
+
 void AP_SwarmAuctions::sync_db(vector<SwarmAuctionItem_t> list) const
 {
     AP_SwarmDB &db = AP::swarm()->get_db();
     list.resize(db.get_count());
 
     for (uint16_t i=0; i< list.size(); i++) {
-        db.get_item(i, list[i].dbItem);
+        db.get_item(i, list[i].vehicle);
     }
 }
 
@@ -230,8 +225,10 @@ void AP_SwarmAuctions::sort_list_by_distance_to_me()
 void AP_SwarmAuctions::sort_list_by_distance_to(const Location &loc)
 {
     sync_db_sorted_list();
+
     for (uint16_t i = 0; i < _sorted_list.size(); i++) {
-        _sorted_list[i].sort_criteria = AP_Swarming::get_location(_sorted_list[i].dbItem.item).get_distance(loc);
+        _sorted_list[i].sort_criteria = AP_Swarming::get_location(_sorted_list[i].vehicle).get_distance(loc);
+        _sorted_list[i].distance = _sorted_list[i].sort_criteria;
     }
     std::sort(std::begin(_sorted_list), std::end(_sorted_list), compare_sort_criteria);
 }
@@ -268,7 +265,8 @@ void AP_SwarmAuctions::sort_list_by_distance_to(const Location &loc, vector<Swar
 {
     sync_db(list);
     for (uint16_t i = 0; i < list.size(); i++) {
-        list[i].sort_criteria = AP_Swarming::get_location(list[i].dbItem.item).get_distance(loc);
+        list[i].sort_criteria = AP_Swarming::get_location(list[i].vehicle).get_distance(loc);
+        list[i].distance = list[i].sort_criteria;
     }
     std::sort(std::begin(list), std::end(list), compare_sort_criteria);
 
