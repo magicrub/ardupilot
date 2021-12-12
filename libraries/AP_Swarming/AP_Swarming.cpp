@@ -189,7 +189,9 @@ void AP_Swarming::update_50Hz(void)
     
     update_my_vehicle();
     _db.update(_my_vehicle);
+#if HAL_AP_SWARMING_AUCTIONS_ENABLED
     _auctions.update();
+#endif
 
     const uint32_t now_ms = AP_HAL::millis();
     if (now_ms - _last_swarm_vehicle_send_ms > 1000) {

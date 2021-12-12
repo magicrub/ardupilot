@@ -23,6 +23,7 @@
 #include <AP_Vehicle/AP_Vehicle_Type.h>
 
 #define HAL_AP_SWARMING_ENABLED 1
+#define HAL_AP_SWARMING_AUCTIONS_ENABLED 1
 
 #ifndef HAL_AP_SWARMING_ENABLED
     #define HAL_AP_SWARMING_ENABLED (APM_BUILD_TYPE_IS_VEHICLE && !HAL_MINIMIZE_FEATURES)
@@ -34,9 +35,12 @@
 #include <GCS_MAVLink/GCS_MAVLink.h>
 #include "AP_SwarmDB.h"
 #include "AP_SwarmROI.h"
-#include "AP_SwarmAuctions.h"
 #include "AP_Swarming_Simulator.h"
 #include <AP_Common/Location.h>
+
+#if HAL_AP_SWARMING_AUCTIONS_ENABLED
+#include "AP_SwarmAuctions.h"
+#endif
 
 #define AP_SWARMING_TIMESTAMP_IS_GPS 0
 
@@ -142,7 +146,9 @@ private:
 
     AP_SwarmDB _db;
     AP_SwarmROI _roi;
+#if HAL_AP_SWARMING_AUCTIONS_ENABLED
     AP_SwarmAuctions _auctions;
+#endif
 
     const mavlink_channel_t MAVLINK_CHANNEL_INVALID = (mavlink_channel_t)99;
     mavlink_channel_t _chan_inbound = MAVLINK_CHANNEL_INVALID;          //MAVLink channel
