@@ -31,9 +31,16 @@ public:
 
     /// constructors
     Location();
+    Location(float latitude, float longitude);
+    Location(float latitude, float longitude, float alt_MSL);
     Location(int32_t latitude, int32_t longitude, int32_t alt_in_cm, AltFrame frame);
     Location(const Vector3f &ekf_offset_neu, AltFrame frame);
     Location(const Vector3d &ekf_offset_neu, AltFrame frame);
+
+
+    // comparison operator (relies on all bytes in the structure even if they may not be used)
+    bool operator ==(const Location &b) const { return (memcmp(this, &b, sizeof(Location)) == 0); }
+    bool operator !=(const Location &b) const { return !operator==(b); }
 
     static void set_terrain(AP_Terrain* terrain) { _terrain = terrain; }
 

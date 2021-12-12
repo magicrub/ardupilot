@@ -26,6 +26,18 @@ void Location::zero(void)
     memset(this, 0, sizeof(*this));
 }
 
+// Construct location using floats and altitude MSL == 0
+Location::Location(float latitude, float longitude)
+{
+    Location(latitude, longitude, 0);
+}
+
+// Construct location using floats and altitude MSL
+Location::Location(float latitude, float longitude, float alt_MSL)
+{
+    Location((int32_t)latitude*1E7, (int32_t)longitude*1E7, alt_MSL, AltFrame::ABSOLUTE);
+}
+
 // Construct location using position (NEU) from ekf_origin for the given altitude frame
 Location::Location(int32_t latitude, int32_t longitude, int32_t alt_in_cm, AltFrame frame)
 {
