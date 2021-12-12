@@ -27,6 +27,8 @@ extern const AP_HAL::HAL& hal;
 
 AP_SwarmROI::AP_SwarmROI() 
 {
+    _circles.reserve(SWARM_ROI_CIRCLES_MAX_SIZE);
+
     compute_crc32();
     _crc32_is_calculated = true;
 }

@@ -24,9 +24,11 @@
 
 #include <AP_Common/Location.h>
 #include <GCS_MAVLink/GCS_MAVLink.h>
-#include <AP_Common/AP_ExpandingArray.h>
+#include <vector>
 
-#define SWARM_DB_LIST_MAX_SIZE                  1000
+using namespace std;
+
+#define SWARM_DB_LIST_MAX_SIZE                  25
 
 class AP_SwarmDB {
 public:
@@ -66,7 +68,7 @@ private:
     // remove a vehicle from the list
     void remove_vehicle(const int32_t index);
 
-    AP_ExpandingArray<SwarmDbItem_t> _list {10};
+    std::vector<SwarmDbItem_t> _list;
 
     int32_t     _count;
     uint32_t    _swarmDb_update_ms;

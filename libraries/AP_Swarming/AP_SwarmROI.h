@@ -25,7 +25,7 @@
 #include <AP_Common/Location.h>
 #include <GCS_MAVLink/GCS_MAVLink.h>
 
-#define SWARM_ROI_POLY_MAX_SIZE               200
+#define SWARM_ROI_POLY_MAX_SIZE               50
 #define SWARM_ROI_CIRCLES_MAX_SIZE            20
 
 class AP_SwarmROI {
@@ -57,10 +57,11 @@ public:
 
     bool add(const Circle &circle) { return add_circle(circle); }
     bool add_circle(const Circle &circle) {
-        if (_circles_count >= SWARM_ROI_CIRCLES_MAX_SIZE || !_circles.expand_to_hold(_circles_count+1)) {
+        if (_circles_count >= SWARM_ROI_CIRCLES_MAX_SIZE) {
             return false;
         }
         _circles_count++;
+        _circles.resize(_circles_count);
         return set_circle(_circles_count-1, circle);
     }
 
@@ -97,11 +98,11 @@ private:
     uint32_t _crc32;
     bool _crc32_is_calculated;
 
-    //AP_ExpandingArray<Vector2l> _poly {5};
+    //std::vector<Vector2l> _poly {5};
     Vector2l _poly[SWARM_ROI_POLY_MAX_SIZE];
     Vector2l _poly_centroid;
     uint16_t _poly_count;
 
-    AP_ExpandingArray<Circle> _circles {1};
+    std::vector<Circle> _circles;
     uint16_t _circles_count;
 };

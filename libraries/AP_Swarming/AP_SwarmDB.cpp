@@ -29,6 +29,8 @@ extern const AP_HAL::HAL& hal;
 
 AP_SwarmDB::AP_SwarmDB()
 {
+    _list.reserve(SWARM_DB_LIST_MAX_SIZE);
+
     // assign ownship at index. Index 0 will *always* be yourself.
     // if you ever want to ignore yourself in a list, just loop from index 1 to get_count() intead of 0
     _count = 1;
@@ -56,9 +58,10 @@ void AP_SwarmDB::handle_swarm_vehicle(const mavlink_swarm_vehicle_t &vehicle)
         // found, update it
         set_vehicle(index, vehicle);
 
-    } else if (_count < SWARM_DB_LIST_MAX_SIZE && _list.expand_to_hold(_count+1)) {
+    } else if (_count < SWARM_DB_LIST_MAX_SIZE) {
         // not found and there's room, add it to the end of the list
         _count++;
+        _list.resize(_count);
         set_vehicle(_count-1, vehicle);
     }
 }

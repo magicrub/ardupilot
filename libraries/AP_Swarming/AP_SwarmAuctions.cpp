@@ -27,6 +27,7 @@ extern const AP_HAL::HAL& hal;
 
 AP_SwarmAuctions::AP_SwarmAuctions()
 {
+    _sorted_list.reserve(SWARM_DB_LIST_MAX_SIZE);
 }
 
 void AP_SwarmAuctions::init() 

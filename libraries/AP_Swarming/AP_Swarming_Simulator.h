@@ -28,7 +28,7 @@
 
 #include <AP_Param/AP_Param.h>
 #include <GCS_MAVLink/GCS_MAVLink.h>
-#include <AP_Common/AP_ExpandingArray.h>
+#include <vector>
 
 #define AP_SWARMING_SIMULATOR_MAX_COUNT     100
 
@@ -37,6 +37,8 @@ class AP_Swarming_Simulator {
 
     // constructor
     AP_Swarming_Simulator() {
+        _vehicles.reserve(AP_SWARMING_SIMULATOR_MAX_COUNT);
+        
         AP_Param::setup_object_defaults(this, var_info);
     }
 
@@ -58,7 +60,7 @@ private:
     void update_vehicle(SwarmSimVehicle &simVehicle);
     void init_vehicle(SwarmSimVehicle &simVehicle);
     
-    AP_ExpandingArray<SwarmSimVehicle> _vehicles {10};
+    std::vector<SwarmSimVehicle> _vehicles;
 
     uint16_t        _count;
     bool            _initialized;

@@ -103,10 +103,8 @@ void AP_Swarming_Simulator::init()
         // quick sanity check. If coutn values are invalid are YUUUGE just disable immediately
         _count_param.set_and_notify(0);
 
-    } else if (!_vehicles.expand_to_hold(_count_param)) {
-        _count_param.set_and_notify(_count_param-1);
-        gcs().send_text(MAV_SEVERITY_DEBUG, "SwarmSim: unable to expand list, reduced count to: %d", (int)_count_param.get());
-        return;
+    } else {
+        _vehicles.resize(_count_param);
     }
 
     if (!AP::ahrs().home_is_set()) {
