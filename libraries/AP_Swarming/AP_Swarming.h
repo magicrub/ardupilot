@@ -113,6 +113,8 @@ public:
         return ((uint32_t)vehicle.squadron_id << 16) | ((uint32_t)vehicle.aircraft_id);
     }
 
+    void assign_new_target(const Location loc_target);
+
     AP_SwarmROI &get_roi();
     const AP_SwarmROI &get_roi() const;
 
@@ -136,7 +138,6 @@ private:
 
     // Helper Functions to 
     void assign_new_target() { assign_new_target(get_location_target(_my_vehicle)); }
-    void assign_new_target(const Location loc_target);
 
     void do_fancy_algorithm_stuff();
     void load_nearest_swarm_vehicle(Location &new_target);

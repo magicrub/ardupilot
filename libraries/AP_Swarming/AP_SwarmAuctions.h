@@ -39,55 +39,59 @@ public:
         mavlink_swarm_vehicle_t vehicle;
         float       sort_criteria;  // used by the sort() callback as sort criteria
 
+
         // Bidding
         float       bid;
-
-        // Cost Functions
         float       distance;
+        Location    loc;
         float       batt_remaining;
+
+        void init() {
+            sort_criteria = 0;
+            bid = -1;
+            distance = -1;
+            loc = Location();
+            batt_remaining = 0;
+        }
+
+        bool has_bidded() const { return bid >= 0; }
+
+        void init_bidding() {
+            bid = -1;
+            distance = -1;
+            loc = Location();
+        }
     };
 
     // constructor
     AP_SwarmAuctions();
 
-    void init();
-    void init_ac_to_locs();
-
     // periodic update to remove stale vehicles
     void update(); 
 
-    void sort_list_by_distance_to(const Location &loc, vector<SwarmAuctionItem_t> list) const;
-
-    void sort_list_by_distance_to_me();
-    void sort_list_by_distance_to(const Location &loc);
-    void sort_list_by_effective_radius();
+    static void sort_list_by_distance_to(vector<SwarmAuctionItem_t> list, const Location &loc);
+    static void sort_list_by_effective_radius(vector<SwarmAuctionItem_t> list);
 
     static bool compare_sort_criteria(SwarmAuctionItem_t a, SwarmAuctionItem_t b) { return (a.sort_criteria < b.sort_criteria); }
     static bool compare_sort_effective_radius(SwarmAuctionItem_t a, SwarmAuctionItem_t b) { return (a.vehicle.effective_radius < b.vehicle.effective_radius); }
 
 protected:
+    static bool all_bidding_is_complete(const vector<SwarmAuctionItem_t> list, const uint32_t skip_this_id = 0);
+    static bool all_locations_are_valid_and_unique(const vector<SwarmAuctionItem_t> list);
 
-    void sync_db_sorted_list();
-    void sync_db(vector<SwarmAuctionItem_t> list) const;
+    static void generate_target_locations(vector<Location> loc, uint32_t count);
+
+    static bool find_nearest_target_loc(SwarmAuctionItem_t &item, const vector<Location> target_locs, uint32_t skip_count);
+
+    static void assign_locations_by_distance_mins(vector<SwarmAuctionItem_t> list, const vector<Location> target_locs);
+
+    //void sync_db_sorted_list();
+    void copy_db_to(vector<SwarmAuctionItem_t> list) const;
 
     std::vector<SwarmAuctionItem_t> _sorted_list;
+    std::vector<Location> _target_locs;
     
-    bool _ac_to_locs_inited;
-
-    //AP_ExpandingArray<AuctionBid_t> _bid_list {1};
-    //uint16_t _bid_count;
-
-    //desired_state_->vel() << 0, 0, 0;
-    //desired_state_->quat().set(0, 0, state_->quat().yaw());
-    //desired_state_->pos() = Eigen::Vector3d::UnitZ()*state_->pos()(2);
-
-    //struct {
-    //    AP_Int8     bid_type;
-    //    AP_Float    distance;
-        //AP_Float    batt_remaining;
-    //    AP_Int32    id_target;
-    //} _params;
-    
+    uint32_t _last_assign_target_ms;
     uint32_t _last_update_ms;
 };
 
