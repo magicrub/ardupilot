@@ -41,6 +41,8 @@ void AP_SwarmAuctions::update()
     }
     _last_update_ms = now_ms;
 
+    printf("\n%d -----------------\n", (int)now_ms);
+
     // Vector2l roi_centroid;
     // roi.calc_poly_centroid(roi_centroid);
 
@@ -50,8 +52,11 @@ void AP_SwarmAuctions::update()
 
     // sync db to _sorted_list
     copy_db_to(_sorted_list);
+    //printf("_sorted_list.size()1 = %u\n", (int)_sorted_list.size());
 
     generate_target_locations(_target_locs, _sorted_list.size());
+    //printf("_sorted_list.size()2 = %u\n", (int)_sorted_list.size());
+
 
     // sort _sorted_list by 
     // mavlink_swarm_vehicle_t my_vehicle = AP::swarm()->get_vehicle();
@@ -60,12 +65,19 @@ void AP_SwarmAuctions::update()
 
     // may result in duplicates
     assign_locations_by_distance_mins(_sorted_list, _target_locs);
+    if (_sorted_list.size() <= 0) {
+        _last_assign_target_ms = 0;
+        return;
+    }
 
+    //printf("_sorted_list size: %d, loc:\n", (int)_sorted_list.size());
+    if (now_ms - _last_assign_target_ms >= 5000 && _sorted_list.size() > 0) {
+        if (AP::swarm()->get_debug3() > 1) {
+            _last_assign_target_ms = now_ms;
 
-
-    if (now_ms - _last_assign_target_ms >= 5000) {
-        _last_assign_target_ms = now_ms;
-        AP::swarm()->assign_new_target(_sorted_list[0].loc);
+            _sorted_list[0].loc.alt = 20000;
+            AP::swarm()->assign_new_target(_sorted_list[0].loc, false);
+        }
     }
 
 
@@ -142,7 +154,7 @@ void AP_SwarmAuctions::update()
 
 
 
-bool AP_SwarmAuctions::all_locations_are_valid_and_unique(const vector<SwarmAuctionItem_t> list)
+bool AP_SwarmAuctions::all_locations_are_valid_and_unique(const vector<SwarmAuctionItem_t> &list)
 {
     const uint32_t list_size = list.size();
 
@@ -171,7 +183,7 @@ bool AP_SwarmAuctions::all_locations_are_valid_and_unique(const vector<SwarmAuct
     return true;
 }
 
-bool AP_SwarmAuctions::find_nearest_target_loc(SwarmAuctionItem_t& item, const vector<Location> target_locs, uint32_t skip_count)
+bool AP_SwarmAuctions::find_nearest_target_loc(SwarmAuctionItem_t& item, const vector<Location> &target_locs, uint32_t skip_count)
 {
     bool success = false;
 
@@ -197,7 +209,7 @@ bool AP_SwarmAuctions::find_nearest_target_loc(SwarmAuctionItem_t& item, const v
     return success;
 }
 
-bool AP_SwarmAuctions::all_bidding_is_complete(const vector<SwarmAuctionItem_t> list, const uint32_t skip_this_id)
+bool AP_SwarmAuctions::all_bidding_is_complete(const vector<SwarmAuctionItem_t> &list, const uint32_t skip_this_id)
 {
     for (uint32_t i=0; i< list.size(); i++) {
         if (skip_this_id > 0 && AP_Swarming::get_id(list[i].vehicle) == skip_this_id) {
@@ -213,16 +225,27 @@ bool AP_SwarmAuctions::all_bidding_is_complete(const vector<SwarmAuctionItem_t> 
 }
 
 
-void AP_SwarmAuctions::copy_db_to(vector<SwarmAuctionItem_t> list) const
+void AP_SwarmAuctions::copy_db_to(vector<SwarmAuctionItem_t> &list) const
 {
     AP_SwarmDB &db = AP::swarm()->get_db();
     const uint32_t count = db.get_count();
-    list.resize(count);
+
+
+
+    list.clear();
+    list.reserve(count);
 
     for (uint32_t i=0; i< count; i++) {
-        list[i].init();
-        db.get_item(i, list[i].vehicle);
+
+        SwarmAuctionItem_t item {};
+        db.get_item(i, item.vehicle);
+        item.init();
+
+        list.push_back(item);
     }
+
+    //printf("%d db.count = %d,  %d\n", AP_HAL::millis(), (int)count, (int)list.size());
+
 }
 
 // void AP_SwarmAuctions::sort_list_by_distance_to(const Location &loc)
@@ -234,7 +257,7 @@ void AP_SwarmAuctions::copy_db_to(vector<SwarmAuctionItem_t> list) const
 //     std::sort(std::begin(_sorted_list), std::end(_sorted_list), compare_sort_criteria);
 // }
 
-void AP_SwarmAuctions::assign_locations_by_distance_mins(vector<SwarmAuctionItem_t> list, const vector<Location> target_locs)
+void AP_SwarmAuctions::assign_locations_by_distance_mins(vector<SwarmAuctionItem_t> &list, const vector<Location> &target_locs)
 {
     for (uint16_t i_list = 0; i_list < list.size(); i_list++) {
         for (uint16_t j_locs = 0; j_locs < target_locs.size(); j_locs++) {
@@ -242,7 +265,7 @@ void AP_SwarmAuctions::assign_locations_by_distance_mins(vector<SwarmAuctionItem
             const Location list_vehicle = AP_Swarming::get_location(list[i_list].vehicle);
             const float distance = list_vehicle.get_distance(target_locs[j_locs]);
 
-            if (j_locs == 0 || (list[i_list].distance < distance)) {
+            if (j_locs == 0 || (list[i_list].distance > distance)) {
                 list[i_list].distance = distance;
                 list[i_list].loc = target_locs[j_locs];
             }
@@ -250,12 +273,12 @@ void AP_SwarmAuctions::assign_locations_by_distance_mins(vector<SwarmAuctionItem
     }
 }
 
-void AP_SwarmAuctions::sort_list_by_effective_radius(vector<SwarmAuctionItem_t> list)
+void AP_SwarmAuctions::sort_list_by_effective_radius(vector<SwarmAuctionItem_t> &list)
 {
     std::sort(std::begin(list), std::end(list), compare_sort_effective_radius);
 }
 
-void AP_SwarmAuctions::sort_list_by_distance_to(vector<SwarmAuctionItem_t> list, const Location &loc)
+void AP_SwarmAuctions::sort_list_by_distance_to(vector<SwarmAuctionItem_t> &list, const Location &loc)
 {
     for (uint16_t i = 0; i < list.size(); i++) {
         list[i].distance = AP_Swarming::get_location(list[i].vehicle).get_distance(loc);
@@ -264,37 +287,49 @@ void AP_SwarmAuctions::sort_list_by_distance_to(vector<SwarmAuctionItem_t> list,
     std::sort(std::begin(list), std::end(list), compare_sort_criteria);
 }
 
-void AP_SwarmAuctions::generate_target_locations(vector<Location> loc, uint32_t count)
+void AP_SwarmAuctions::generate_target_locations(vector<Location> &loc, uint32_t count)
 {
     // AP_SwarmROI &roi = AP::swarm()->get_roi();
     // const uint32_t crc32 = roi.get_crc32();
     // (void)crc32;
 
     // TODO: change hard-coded Locations with dynamically generated ones considering:
-    // - Roi dimenstions
-    // - count
+    // --- Roi dimenstions
+    // --- count
 
-    // if (loc.size == count) {
-    //     return;
-    // }
+    loc.clear();
+    if (count == 0) {
+        return;
+    }
 
     const uint32_t static_target_locactions_max_count = 5;
     const Location static_target_locactions[][5] = {
-        {Location(39.1, -122.1), Location(), Location(), Location(), Location()},
-        {Location(39.1, -122.1), Location(39.2, -122.2), Location(), Location(), Location()},
-        {Location(39.1, -122.1), Location(39.2, -122.2), Location(39.3, -122.3), Location(), Location()},
-        {Location(39.1, -122.1), Location(39.2, -122.2), Location(39.3, -122.3), Location(39.4, -122.4), Location()},
-        {Location(39.1, -122.1), Location(39.2, -122.2), Location(39.3, -122.3), Location(39.4, -122.4), Location(39.5, -122.5)},
+        {Location(39.1634756, -122.1282399), Location(), Location(), Location(), Location()},
+        {Location(39.1649063, -122.1284544), Location(39.1621279, -122.1285188), Location(), Location(), Location()},
+        {Location(39.1648315, -122.1286476), Location(39.1621446, -122.1302354), Location(39.1622111, -122.1270168), Location(), Location()},
+        {Location(39.1646318, -122.1302462), Location(39.1646734, -122.1269095), Location(39.1620198, -122.1268129), Location(39.1620697, -122.1300638), Location()},
+        {Location(39.1656716, -122.1305144), Location(39.1657798, -122.1262765), Location(39.1616538, -122.1266627), Location(39.1611713, -122.1305680), Location(39.1637584, -122.1285725)},
+
+        // {Location(39.1,-122.1), Location(), Location(), Location(), Location()},
+        // {Location(39.1, -122.1), Location(39.2, -122.2), Location(), Location(), Location()},
+        // {Location(39.1610847,-122.1301585), Location(39.1629760,-122.1295883), Location(39.1619073,-122.1277440), Location(), Location()},
+        // {Location(39.1610847,-122.1301585), Location(39.1647042, -122.1272124), Location(39.1625075,-122.1261559), Location(39.1626801,-122.1283261), Location()},
+        // {Location(39.1610847,-122.1301585), Location(39.1647042, -122.1272124), Location(39.1625075,-122.1261559), Location(39.1626801,-122.1283261), Location(39.1634312,-122.1305816)},
     };
 
     count = MIN(count, static_target_locactions_max_count);
-
-    loc.clear();
-    loc.resize(count);
+    loc.reserve(count);
 
     for (uint32_t i=0; i<count; i++) {
-        loc.push_back(static_target_locactions[i][count]);
+        loc.push_back(static_target_locactions[count-1][i]);
     }
+
+    printf("loc size: %d\n", (int)loc.size());
+    for (uint16_t j_locs = 0; j_locs < loc.size(); j_locs++) {
+        printf("( %.4f, %.4f), ",loc[j_locs].lat*1.0e-7, loc[j_locs].lng*1.0e-7);
+    }
+    printf("\n");
+
 }
 
 #endif // HAL_AP_SWARMING_ENABLED

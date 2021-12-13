@@ -23,7 +23,7 @@
 #include "AP_SwarmDB.h"
 
 #define SWARM_DB_LIST_UPDATE_INTERVAL_MAX_MS    1000
-#define SWARM_DB_VEHICLE_TIMEOUT_US             (10UL*1E6)
+#define SWARM_DB_VEHICLE_TIMEOUT_MS             (5UL * 1E3)
 
 extern const AP_HAL::HAL& hal;
 
@@ -77,12 +77,13 @@ void AP_SwarmDB::update(const mavlink_swarm_vehicle_t &ownship)
         return;
     }
     _swarmDb_update_ms = now_ms;
+    //printf("%d db.count = %d\n", now_ms, (int)get_count());
 
     // check current list for vehicles that time out
     int32_t index = 0;
     while (index < _count) {
         // check list and drop stale vehicles. When disabled, the list will get flushed
-        if (now_ms - _list[index].timestamp_ms > SWARM_DB_VEHICLE_TIMEOUT_US) {
+        if (now_ms - _list[index].timestamp_ms > SWARM_DB_VEHICLE_TIMEOUT_MS) {
             // don't increment index, we want to check this same index again because the contents changed
             // also, if we're disabled then clear the list
             remove_vehicle(index);

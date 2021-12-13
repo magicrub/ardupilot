@@ -151,6 +151,8 @@ AP_Swarming::AP_Swarming()
  */
 void AP_Swarming::init(void)
 {
+    _params.debug3 = 0;
+
     _my_vehicle.state_nav = INGRESSING_TO_MESH;
     _is_initialized = true;
 
@@ -187,8 +189,12 @@ void AP_Swarming::update_50Hz(void)
         init();
     }
     
-    update_my_vehicle();
+    if (!update_my_vehicle()) {
+        return;
+    }
+
     _db.update(_my_vehicle);
+
 #if HAL_AP_SWARMING_AUCTIONS_ENABLED
     _auctions.update();
 #endif
@@ -206,11 +212,12 @@ void AP_Swarming::update_50Hz(void)
         }
     }
 
-    do_fancy_algorithm_stuff();
-
 #if AP_SWARMING_SIMULATOR_ENABLE
     _sim.update();
 #endif
+
+    //do_fancy_algorithm_stuff();
+
 }
 
 void AP_Swarming::handle_swarm_vehicle(mavlink_swarm_vehicle_t &swarm_vehicle)
@@ -337,7 +344,7 @@ MAV_RESULT AP_Swarming::handle_command_long(const mavlink_command_long_t &packet
     return MAV_RESULT_FAILED;
 }
 
-void AP_Swarming::update_my_vehicle()
+bool AP_Swarming::update_my_vehicle()
 {
 #if AP_SWARMING_TIMESTAMP_IS_GPS
     const uint64_t now_us = AP::gps().time_epoch_usec();
@@ -358,9 +365,9 @@ void AP_Swarming::update_my_vehicle()
     _my_vehicle.ROI_crc = _roi.get_crc32();
 
     Location loc;
-    if (!AP::ahrs().get_position(loc)) {
+    if (!AP::ahrs().get_position(loc) || loc.is_zero() || loc.same_latlon_as(Location(0.0f,0.0f))) {
         // not sure how to handle this.. just quit here I guess
-        return;
+        return false;
     }
 
     set_location(loc);
@@ -372,10 +379,21 @@ void AP_Swarming::update_my_vehicle()
         // if target is unknown, use current location
         set_location_target(loc);
     }
+    return true;
 }
 
-void AP_Swarming::assign_new_target(const Location loc)
+void AP_Swarming::assign_new_target(Location loc, const bool use_current_alt)
 {
+    if (loc.is_zero() || loc.same_latlon_as(Location(0.0f,0.0f))) {
+        return;
+    }
+
+    if (use_current_alt) {
+        loc.set_alt_cm(_my_vehicle.altMSL, Location::AltFrame::ABSOLUTE);
+    }
+
+    printf("assign_new_target: %.5f, %.5f  alt= %.2fm MSL\n", (double)(loc.lat*1.0e-7), (double)(loc.lng*1.0e-7), (double)loc.alt*0.01f);
+
     set_location_target(loc);
     if (AP::vehicle() != nullptr) {
         AP::vehicle()->set_mode_to_guided(ModeReason::SWARM); // this is a hack for PLANE to set us into GUided mode. Wont' work for Coptyer/rover... yet

@@ -69,24 +69,24 @@ public:
     // periodic update to remove stale vehicles
     void update(); 
 
-    static void sort_list_by_distance_to(vector<SwarmAuctionItem_t> list, const Location &loc);
-    static void sort_list_by_effective_radius(vector<SwarmAuctionItem_t> list);
+    static void sort_list_by_distance_to(vector<SwarmAuctionItem_t> &list, const Location &loc);
+    static void sort_list_by_effective_radius(vector<SwarmAuctionItem_t> &list);
 
-    static bool compare_sort_criteria(SwarmAuctionItem_t a, SwarmAuctionItem_t b) { return (a.sort_criteria < b.sort_criteria); }
-    static bool compare_sort_effective_radius(SwarmAuctionItem_t a, SwarmAuctionItem_t b) { return (a.vehicle.effective_radius < b.vehicle.effective_radius); }
+    static bool compare_sort_criteria(SwarmAuctionItem_t &a, SwarmAuctionItem_t &b) { return (a.sort_criteria < b.sort_criteria); }
+    static bool compare_sort_effective_radius(SwarmAuctionItem_t &a, SwarmAuctionItem_t &b) { return (a.vehicle.effective_radius < b.vehicle.effective_radius); }
 
 protected:
-    static bool all_bidding_is_complete(const vector<SwarmAuctionItem_t> list, const uint32_t skip_this_id = 0);
-    static bool all_locations_are_valid_and_unique(const vector<SwarmAuctionItem_t> list);
+    static bool all_bidding_is_complete(const vector<SwarmAuctionItem_t> &list, const uint32_t skip_this_id = 0);
+    static bool all_locations_are_valid_and_unique(const vector<SwarmAuctionItem_t> &list);
 
-    static void generate_target_locations(vector<Location> loc, uint32_t count);
+    static void generate_target_locations(vector<Location> &loc, uint32_t count);
 
-    static bool find_nearest_target_loc(SwarmAuctionItem_t &item, const vector<Location> target_locs, uint32_t skip_count);
+    static bool find_nearest_target_loc(SwarmAuctionItem_t &item, const vector<Location> &target_locs, uint32_t skip_count);
 
-    static void assign_locations_by_distance_mins(vector<SwarmAuctionItem_t> list, const vector<Location> target_locs);
+    static void assign_locations_by_distance_mins(vector<SwarmAuctionItem_t> &list, const vector<Location> &target_locs);
 
     //void sync_db_sorted_list();
-    void copy_db_to(vector<SwarmAuctionItem_t> list) const;
+    void copy_db_to(vector<SwarmAuctionItem_t> &list) const;
 
     std::vector<SwarmAuctionItem_t> _sorted_list;
     std::vector<Location> _target_locs;
