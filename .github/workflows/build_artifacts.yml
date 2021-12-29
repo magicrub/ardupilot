@@ -56,11 +56,11 @@ jobs:
           PATH="/github/home/.local/bin:$PATH"
           cd target
           ./waf configure --board ${{matrix.config}}
-          ./waf
+          ./waf plane
       - name: archive targets
         shell: bash
         run: |
-          zip -r artifacts.zip $GITHUB_WORKSPACE/target_bin/
+          zip -r artifacts.zip $GITHUB_WORKSPACE/target/build/
       - name: Archive artifacts.zip output
         uses: actions/upload-artifact@v2
         with:
