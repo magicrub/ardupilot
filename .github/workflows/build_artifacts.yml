@@ -60,6 +60,6 @@ jobs:
       - name: Upload build target artifacts
         uses: actions/upload-artifact@v2
         with:
-          name: ardupilot_artifacts
-          path: ${{ github.workspace }}/target/build/${{matrix.config}}/bin/
+          name: ${{matrix.config}}
+          path: ${{ github.workspace }}/target/build/${{matrix.config}}/bin/*.*
           retention-days: 14
