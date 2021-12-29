@@ -56,14 +56,12 @@ jobs:
           PATH="/github/home/.local/bin:$PATH"
           cd target
           ./waf configure --board ${{matrix.config}}
-          ./waf plane
-      - name: archive targets
-        shell: bash
-        run: |
-          zip -r artifacts.zip $GITHUB_WORKSPACE/target/build/
-      - name: Archive artifacts.zip output
+          ./waf plane           
+      - name: Upload build target artifacts
         uses: actions/upload-artifact@v2
         with:
-           name: BUILD_ARTIFACT_${{matrix.config}}
-           path: artifacts.zip
-           retention-days: 14
+          name: artifacts
+          path: |
+          $GITHUB_WORKSPACE/target/build/*/bin/ardupilot.apj
+          $GITHUB_WORKSPACE/target/build/*/bin/ardupilot.bin
+          retention-days: 14
