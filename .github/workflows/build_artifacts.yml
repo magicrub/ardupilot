@@ -1,6 +1,9 @@
-name: Build targets
+name: Build Targets
 
 on: [push, pull_request, workflow_dispatch]
+# paths:
+# - "*"
+# - "!README.md" <-- don't rebuild on doc change
 concurrency:
   group: ci-${{github.workflow}}-${{ github.ref }}
   cancel-in-progress: true
@@ -8,41 +11,69 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-20.04
-
+    container: ardupilot/ardupilot-dev-chibios:latest
+    strategy:
+      fail-fast: false  # don't cancel if a job from the matrix fails
+      matrix:
+        toolchain: [
+            base,  # GCC
+        ]
+        config: [
+            CubeOrange,
+            mRoPixracerPro
+        ]
     steps:
       - uses: actions/checkout@v2
         with:
           submodules: 'recursive'
+      # Put ccache into github cache for faster build
+      - name: Prepare ccache timestamp
+        id: ccache_cache_timestamp
+        run: |
+          NOW=$(date -u +"%F-%T")
+          echo "::set-output name=timestamp::${NOW}"
+      - name: ccache cache files
+        uses: actions/cache@v2
+        with:
+          path: ~/.ccache
+          key: ${{github.workflow}}-ccache-${{ matrix.toolchain }}-${{steps.ccache_cache_timestamp.outputs.timestamp}}
+          restore-keys: ${{github.workflow}}-ccache-${{ matrix.toolchain }}-  # restore ccache from either previous build on this branch or on master
+      - name: setup ccache
+        run: |
+          mkdir -p ~/.ccache
+          echo "base_dir = ${GITHUB_WORKSPACE}" > ~/.ccache/ccache.conf
+          echo "compression = true" >> ~/.ccache/ccache.conf
+          echo "compression_level = 6" >> ~/.ccache/ccache.conf
+          echo "max_size = 400M" >> ~/.ccache/ccache.conf
+          ccache -s
+          ccache -z
+      - name: Build target ${{matrix.config}} ${{ matrix.toolchain }}
+        env:
+          CI_BUILD_TARGET: ${{matrix.config}}
+        shell: bash
+        run: |
+          PATH="/github/home/.local/bin:$PATH"
+          cd target
+          ./waf configure --board ${{matrix.config}}
+          ./waf
+          mkdir -p $GITHUB_WORKSPACE/target_bin
+          cp -r build/${{matrix.config}}/bin/* $GITHUB_WORKSPACE/target_bin/
+      - uses: actions/checkout@v2
 
-      - name: Install dependencies
-        env:
-          HOME: ${{ runner.workspace }}/ardupilot
+      - name: Full size compare with Master
+        shell: bash
         run: |
-            export DEBIAN_FRONTEND=noninteractive
-            apt-get update && apt-get install --no-install-recommends -y \
-                lsb-release \
-                sudo \
-                bash-completion \
-                software-properties-common
-            cp Tools/environment_install/install-prereqs-ubuntu.sh /ardupilot/Tools/environment_install/
-            cp Tools/completion /ardupilot/Tools/completion/
-            export SKIP_AP_EXT_ENV=1 SKIP_AP_GRAPHIC_ENV=1 SKIP_AP_COV_ENV=1 SKIP_AP_GIT_CHECK=1
-            ./Tools/environment_install/install-prereqs-ubuntu.sh -y
-            # add waf alias to ardupilot waf to .bashrc
-            echo "alias waf=\"/ardupilot/waf\"" >> ~/.bashrc
-            # Check that local/bin are in PATH for pip --user installed package
-            echo "if [ -d \"\$HOME/.local/bin\" ] ; then\nPATH=\"\$HOME/.local/bin:\$PATH\"\nfi" >> ~/.bashrc
-            # Set the buildlogs directory into /tmp as other directory aren't accessible
-            BUILDLOGS=/tmp/buildlogs
-      - name: Build SITL
-        env:
-          HOME: ${{ runner.workspace }}/ardupilot
+          cd pr/
+          python3 -m pip install -U tabulate
+          Tools/scripts/pretty_diff_size.py -m $GITHUB_WORKSPACE/master_bin -s $GITHUB_WORKSPACE/pr_bin
+      - name: archive targets
+        shell: bash
         run: |
-            ./waf configure --boards=CubeOrange
-            ./waf build
-      - name: Archive build
+          zip -r artifacts.zip $GITHUB_WORKSPACE/target_bin/
+    
+      - name: Archive artifacts.zip output
         uses: actions/upload-artifact@v2
         with:
-           name: binaries
-           path: artifacts
-           retention-days: 30
+           name: BUILD_ARTIFACT_${{matrix.config}}
+           path: artifacts.zip
+           retention-days: 14
