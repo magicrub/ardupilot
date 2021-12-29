@@ -61,5 +61,5 @@ jobs:
         uses: actions/upload-artifact@v2
         with:
           name: ardupilot_artifacts
-          path: ${{ github.workspace }}/target/build/
+          path: ${{ github.workspace }}/target/build/${{matrix.config}}/bin/
           retention-days: 14
