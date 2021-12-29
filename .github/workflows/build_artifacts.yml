@@ -57,14 +57,10 @@ jobs:
           cd target
           ./waf configure --board ${{matrix.config}}
           ./waf
-          mkdir -p $GITHUB_WORKSPACE/target_bin
-          cp -r build/${{matrix.config}}/bin/* $GITHUB_WORKSPACE/target_bin/
-      - uses: actions/checkout@v2
       - name: archive targets
         shell: bash
         run: |
           zip -r artifacts.zip $GITHUB_WORKSPACE/target_bin/
-    
       - name: Archive artifacts.zip output
         uses: actions/upload-artifact@v2
         with:
