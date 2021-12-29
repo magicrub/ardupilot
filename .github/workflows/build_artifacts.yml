@@ -61,5 +61,5 @@ jobs:
         uses: actions/upload-artifact@v2
         with:
           name: ardupilot_artifacts
-          path: ${{ github.workspace }}/target/build/**/bin/ardupilot.*
+          path: ${{ github.workspace }}/target/build/**/bin/ardupilot.apj
           retention-days: 14
