@@ -62,6 +62,6 @@ jobs:
         with:
           name: artifacts
           path: |
-          ${{env.GITHUB_WORKSPACE}}/target/build/*/bin/ardupilot.apj
-          ${{env.GITHUB_WORKSPACE}}/target/build/*/bin/ardupilot.bin
+          ${{ github.workspace }}/target/build/*/bin/ardupilot.apj
+          ${{ github.workspace }}/target/build/*/bin/ardupilot..bin
           retention-days: 14
