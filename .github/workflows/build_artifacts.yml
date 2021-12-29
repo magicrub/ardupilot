@@ -60,13 +60,6 @@ jobs:
           mkdir -p $GITHUB_WORKSPACE/target_bin
           cp -r build/${{matrix.config}}/bin/* $GITHUB_WORKSPACE/target_bin/
       - uses: actions/checkout@v2
-
-      - name: Full size compare with Master
-        shell: bash
-        run: |
-          cd pr/
-          python3 -m pip install -U tabulate
-          Tools/scripts/pretty_diff_size.py -m $GITHUB_WORKSPACE/master_bin -s $GITHUB_WORKSPACE/pr_bin
       - name: archive targets
         shell: bash
         run: |
