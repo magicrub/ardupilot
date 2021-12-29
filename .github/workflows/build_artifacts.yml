@@ -25,6 +25,7 @@ jobs:
     steps:
       - uses: actions/checkout@v2
         with:
+          path: 'target'
           submodules: 'recursive'
       # Put ccache into github cache for faster build
       - name: Prepare ccache timestamp
