@@ -19,7 +19,7 @@ jobs:
             base,  # GCC
         ]
         config: [
-            CubeOrange,
+            CubeOrange-KHA,
             mRoPixracerPro
         ]
     steps:
@@ -56,7 +56,7 @@ jobs:
           PATH="/github/home/.local/bin:$PATH"
           cd target
           ./waf configure --board ${{matrix.config}}
-          ./waf plane           
+          ./waf plane
       - name: Upload build target artifacts
         uses: actions/upload-artifact@v2
         with:
