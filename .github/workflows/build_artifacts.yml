@@ -49,7 +49,7 @@ jobs:
           ccache -s
           ccache -z
       - name: Build ArduPlane ${{matrix.config}} ${{ matrix.toolchain }}
-        if: matrix.config != "kha2-periph"
+        if: if: ${{matrix.config != 'kha2-periph'}}
         env:
           CI_BUILD_TARGET: ${{matrix.config}}
         shell: bash
@@ -60,7 +60,7 @@ jobs:
           ./waf plane
 
       - name: Build AP_Periph ${{matrix.config}} ${{ matrix.toolchain }}
-        if: matrix.config == "kha2-periph"
+        if: ${{matrix.config == 'kha2-periph'}}
         env:
           CI_BUILD_TARGET: ${{matrix.config}}
         shell: bash
