@@ -48,7 +48,8 @@ jobs:
           echo "max_size = 400M" >> ~/.ccache/ccache.conf
           ccache -s
           ccache -z
-      - name: Build target ${{matrix.config}} ${{ matrix.toolchain }}
+      - name: Build ArduPlane ${{matrix.config}} ${{ matrix.toolchain }}
+        if: ${{matrix.config != 'kha2-periph'}}
         env:
           CI_BUILD_TARGET: ${{matrix.config}}
         shell: bash
@@ -56,12 +57,18 @@ jobs:
           PATH="/github/home/.local/bin:$PATH"
           cd target
           ./waf configure --board ${{matrix.config}}
-          if [ "${{matrix.config}}" = "kha2-periph"]; then
-            ./waf AP_Periph
-          fi
-          if [ "${{matrix.config}}" != "kha2-periph"]; then
-            ./waf plane
-          fi
+          ./waf plane
+
+      - name: Build AP_Periph ${{matrix.config}} ${{ matrix.toolchain }}
+        if: ${{matrix.config == 'kha2-periph'}}
+        env:
+          CI_BUILD_TARGET: ${{matrix.config}}
+        shell: bash
+        run: |
+          PATH="/github/home/.local/bin:$PATH"
+          cd target
+          ./waf configure --board ${{matrix.config}}
+          ./waf AP_Periph
 
       - name: Upload build target artifacts
         uses: actions/upload-artifact@v2
