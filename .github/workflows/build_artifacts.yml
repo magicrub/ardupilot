@@ -56,10 +56,10 @@ jobs:
           PATH="/github/home/.local/bin:$PATH"
           cd target
           ./waf configure --board ${{matrix.config}}
-          if [ "${{matrix.config}}" = "kha2-periph"]
+          if [ "${{matrix.config}}" = "kha2-periph"]; then
             ./waf AP_Periph
           fi
-          if [ "${{matrix.config}}" != "kha2-periph"]
+          if [ "${{matrix.config}}" != "kha2-periph"]; then
             ./waf plane
           fi
 
