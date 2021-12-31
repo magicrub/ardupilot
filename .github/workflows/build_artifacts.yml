@@ -56,7 +56,13 @@ jobs:
           PATH="/github/home/.local/bin:$PATH"
           cd target
           ./waf configure --board ${{matrix.config}}
-          ./waf plane
+          if [ "${{matrix.config}}" = "kha2-periph"]
+            ./waf AP_Periph
+          fi
+          if [ "${{matrix.config}}" != "kha2-periph"]
+            ./waf plane
+          fi
+
       - name: Upload build target artifacts
         uses: actions/upload-artifact@v2
         with:
