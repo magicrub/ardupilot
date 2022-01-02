@@ -1503,6 +1503,28 @@ void AP_Periph_FW::pwm_hardpoint_update()
 }
 #endif // HAL_PERIPH_ENABLE_PWM_HARDPOINT
 
+void AP_Periph_FW::tempSensor_update()
+{
+#if 0
+    can_printf("%u Temp: %.3f C", (unsigned)AP_HAL::native_millis(), tempSensor.temperature());
+#endif
+
+    uavcan_equipment_esc_Status pkt {};
+    pkt.temperature = tempSensor.temperature() + C_TO_KELVIN;
+
+    fix_float16(pkt.temperature);
+
+    uint8_t buffer[UAVCAN_EQUIPMENT_ESC_STATUS_MAX_SIZE] {};
+    uint16_t total_size = uavcan_equipment_esc_Status_encode(&pkt, buffer);
+    canardBroadcast(&canard,
+                    UAVCAN_EQUIPMENT_ESC_STATUS_SIGNATURE,
+                    UAVCAN_EQUIPMENT_ESC_STATUS_ID,
+                    &transfer_id,
+                    CANARD_TRANSFER_PRIORITY_LOW,
+                    &buffer[0],
+                    total_size);
+}
+
 #ifdef HAL_PERIPH_ENABLE_HWESC
 void AP_Periph_FW::hwesc_telem_update()
 {

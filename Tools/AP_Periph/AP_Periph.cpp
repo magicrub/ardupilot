@@ -210,6 +210,8 @@ void AP_Periph_FW::init()
     }
 #endif
     
+    tempSensor.init(0);
+
 #ifdef HAL_PERIPH_ENABLE_NOTIFY
     notify.init();
 #endif
@@ -350,6 +352,8 @@ void AP_Periph_FW::update()
 #ifdef HAL_PERIPH_ENABLE_RC_OUT
         rcout_init_1Hz();
 #endif
+
+        tempSensor_update();
 
 #if HAL_GCS_ENABLED
         gcs().send_message(MSG_HEARTBEAT);
