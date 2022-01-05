@@ -144,6 +144,7 @@ public:
     enum class Options : uint16_t {
         DNA_CLEAR_DATABASE        = (1U<<0),
         DNA_IGNORE_DUPLICATE_NODE = (1U<<1),
+        SEND_GNSS                 = (1U<<2),
     };
 
     // check if a option is set
@@ -174,6 +175,9 @@ private:
 
     // SafetyState
     void safety_state_send();
+
+    // send GNSS Fix and status
+    void gnss_send();
 
     // send GNSS injection
     void rtcm_stream_send();
@@ -228,6 +232,18 @@ private:
         float duration;
         uint8_t pending_mask; // mask of interfaces to send to
     } _buzzer;
+
+    // GNSS Fix and Status
+    struct {
+        uint32_t last_fix_ms;
+        uint32_t last_fix2_ms;
+        uint32_t last_auxiliary_ms;
+        uint32_t last_heading_ms;
+        uint32_t last_status_ms;
+
+        uint32_t last_gps_lib_change_ms;
+        uint32_t heading_interval_ms;
+    } _gnss;
 
     // GNSS RTCM injection
     struct {
