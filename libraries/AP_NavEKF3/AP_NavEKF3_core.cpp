@@ -1923,6 +1923,7 @@ void NavEKF3_core::ConstrainVariances()
             }
             // reset all delta velocity bias covariances
             zeroCols(P,13,15);
+            zeroRows(P,13,15);
             // restore all delta velocity bias variances
             for (uint8_t i=0; i<=2; i++) {
                 P[i+13][i+13] = delVelBiasVar[i];
@@ -2181,7 +2182,6 @@ void NavEKF3_core::verifyTiltErrorVariance()
     }
 
     tiltErrorVarianceAlt = MIN(tiltErrorVarianceAlt, sq(radians(30.0f)));
-    static uint32_t lastLogTime_ms = 0;
     if (imuSampleTime_ms - lastLogTime_ms > 500) {
         lastLogTime_ms = imuSampleTime_ms;
         const struct log_XKTV msg {

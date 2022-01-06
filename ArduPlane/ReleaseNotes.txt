@@ -1,3 +1,71 @@
+Release 4.1.6 3rd January 2022
+------------------------------
+
+This is a minor release with some important bug fixes:
+
+ - disable the STLink debug pins after boot by default to prevent ESD
+   from triggering CPU changes or a reset
+ - support ICM-20608-D, IIM-42652 and ICM-40605 sensors
+ - fixed missing covarience reset row in EKF3
+ - fixed failure to detect inverted RC input on uarts when transmitter
+   is on at boot
+ - fixed QAUTOTUNE to obey maximum attitude rate limits
+ - fixed a bug in smartaudio support that increased CPU usage
+ - added lowpass filter to speed scaling to prevent sudden surface
+   movement on VTOL arming
+ - fixed hang when BATT_MONITOR is set to 14
+ - fixed gaps in EKF3 logging of variances and timing
+
+Happy flying!
+
+Release 4.1.5 13th December 2021
+--------------------------------
+
+This is a minor release with some important bug fixes and small number
+of new features.
+
+ - fixed switching airspeed sensors based on EKF3 affinity
+ - added servo voltage pin on CUAV-X7
+ - make 2nd reduction of P gain in AUTOTUNE smaller
+ - fixed fence count on upload from old fence protocol
+ - fixed reset of ground steering lock for landing
+ - reset VTOL takeoff if not armed
+ - fixed 16 bit timer bug on MatekH743
+ - added FETTec onewire ESC support
+ - set slew rate to zero while in QUATOTUNE twitch
+ - fixed rate of notch filter to follow configured rate
+
+Happy flying!
+
+
+Release 4.1.4 25th November 2021
+--------------------------------
+
+This is a minor release with some important bug fixes and small number
+of new features.
+
+ - fixed RC parachute release to only trigger on RC input channel
+   above 1800, fixing an issue with trigger on power on
+
+ - added QRTL flight mode as an RCn_OPTION
+
+ - display VTOL position1 state change when landing approach and
+   airbrake logic is disabled using Q_OPTIONS
+
+ - limit Q_VFWD integrator to be below TRIM_THROTTLE to prevent very
+   high forward throttle building up in some landing approach
+   conditions
+
+ - fixed an issue with high position1 landing approach target speed
+   causing the nose to dip when going between VTOL approach and
+   position1 states
+
+ - allow for a wider range of Q_A_THR_MIX values to be configured, to
+   better support landing quadplanes in high wind
+
+Happy flying!
+
+
 Release 4.1.3 16th November 2021
 --------------------------------
 
