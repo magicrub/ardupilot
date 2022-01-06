@@ -54,7 +54,7 @@ void AP_Periph_FW::AP_Periph_GPS_In::uavcan_handle_fix(const uavcan_equipment_gn
             interim_state.have_vertical_velocity = false;
         }
 
-        float pos_cov[9];
+        float pos_cov[9] {};
         memcpy(&pos_cov[0], msg.position_covariance.data, ARRAY_SIZE(pos_cov));
         if (!isnan(pos_cov[8])) {
             if (pos_cov[8] > 0) {
@@ -79,7 +79,7 @@ void AP_Periph_FW::AP_Periph_GPS_In::uavcan_handle_fix(const uavcan_equipment_gn
             interim_state.have_horizontal_accuracy = false;
         }
 
-        float vel_cov[9];
+        float vel_cov[9] {};
         memcpy(&vel_cov[0], msg.position_covariance.data, ARRAY_SIZE(vel_cov));
         if (!isnan(vel_cov[0])) {
             interim_state.speed_accuracy = sqrtf((vel_cov[0] + vel_cov[4] + vel_cov[8]) / 3.0);
