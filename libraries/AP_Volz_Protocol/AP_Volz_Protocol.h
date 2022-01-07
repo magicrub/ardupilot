@@ -51,6 +51,8 @@
 #define VOLZ_PWM_POSITION_MIN				1000
 #define VOLZ_PWM_POSITION_MAX				2000
 
+#define VOLZ_CRC16_SEED                     0xFFFF
+
 class AP_Volz_Protocol {
 public:
     AP_Volz_Protocol();
@@ -67,7 +69,6 @@ private:
     AP_HAL::UARTDriver *port;
     
     void init(void);
-    void send_command(uint8_t data[VOLZ_DATA_FRAME_SIZE]);
     void update_volz_bitmask(uint32_t new_bitmask);
 
     uint32_t last_volz_update_time;

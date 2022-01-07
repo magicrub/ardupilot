@@ -6,6 +6,7 @@
  */
 #include <AP_HAL/AP_HAL.h>
 #include <SRV_Channel/SRV_Channel.h>
+#include <AP_Math/crc.h>
 
 #include "AP_Volz_Protocol.h"
 #if NUM_SERVO_CHANNELS
@@ -96,36 +97,14 @@ void AP_Volz_Protocol::update()
             data[2] = HIGHBYTE(value);
             data[3] = LOWBYTE(value);
 
-            send_command(data);
+            // calculate and add CRC result to the message
+            const uint16_t crc = crc16_ibm(data, VOLZ_DATA_FRAME_SIZE-2, VOLZ_CRC16_SEED);
+            data[4] = HIGHBYTE(crc);
+            data[5] = LOWBYTE(crc);
+
+            port->write(data, VOLZ_DATA_FRAME_SIZE);
         }
     }
-}
-
-// calculate CRC for volz serial protocol and send the data.
-void AP_Volz_Protocol::send_command(uint8_t data[VOLZ_DATA_FRAME_SIZE])
-{
-    uint8_t i,j;
-    uint16_t crc = 0xFFFF;
-
-    // calculate Volz CRC value according to protocol definition
-    for(i=0; i<4; i++) {
-        // take input data into message that will be transmitted.
-        crc = ((data[i] << 8) ^ crc);
-
-        for(j=0; j<8; j++) {
-
-            if (crc & 0x8000) {
-                crc = (crc << 1) ^ 0x8005;
-            } else {
-                crc = crc << 1;
-            }
-        }
-    }
-
-    // add CRC result to the message
-    data[4] = HIGHBYTE(crc);
-    data[5] = LOWBYTE(crc);
-    port->write(data, VOLZ_DATA_FRAME_SIZE);
 }
 
 void AP_Volz_Protocol::update_volz_bitmask(uint32_t new_bitmask)
