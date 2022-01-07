@@ -182,32 +182,51 @@ uint8_t crc8_maxim(const uint8_t *data, uint16_t length)
     return crc;
 }
 
+
+// generalize CRC-16 for multiple protocols per
+// https://en.wikipedia.org/wiki/Cyclic_redundancy_check
+uint16_t crc16(const uint8_t *data, const uint16_t len, const uint16_t seed, const uint16_t poly)
+{
+    uint16_t crc = seed;
+    for(uint16_t i=0; i<len; i++) {
+        crc = crc16_update(crc, *data++, poly);
+    }
+    return crc;
+}
+
+uint16_t crc16_update(uint16_t crc, const uint8_t data, const uint16_t poly)
+{
+    crc = (((uint16_t)data << 8) ^ crc);
+    for(uint8_t j=0; j<8; j++) {
+        if (crc & 0x8000) {
+            crc = (crc << 1) ^ poly;
+        } else {
+			crc <<= 1;
+        }
+    }
+    return crc;
+}
+
+uint16_t crc16_ibm(const uint8_t *data, const uint16_t len, const uint16_t seed)
+{
+    return crc16(data, len, seed, 0x8005);
+}
+uint16_t crc16_ibm_update(const uint16_t crc, const uint8_t data)
+{
+    return crc16_update(crc, data, 0x8005);
+}
+
 /*
   xmodem CRC thanks to avr-liberty
   https://github.com/dreamiurg/avr-liberty
  */
-uint16_t crc_xmodem_update(uint16_t crc, uint8_t data)
+uint16_t crc_xmodem(const uint8_t *data, const uint16_t len, const uint16_t seed)
 {
-	crc = crc ^ ((uint16_t)data << 8);
-	for (uint16_t i=0; i<8; i++)
-	{
-		if(crc & 0x8000) {
-			crc = (crc << 1) ^ 0x1021;
-		} else {
-			crc <<= 1;
-        }
-	}
-
-	return crc;
+    return crc16(data, len, seed, 0x1021);
 }
-
-uint16_t crc_xmodem(const uint8_t *data, uint16_t len)
+uint16_t crc_xmodem_update(const uint16_t crc, const uint8_t data)
 {
-    uint16_t crc = 0;
-    for (uint16_t i=0; i<len; i++) {
-        crc = crc_xmodem_update(crc, data[i]);
-    }
-    return crc;
+    return crc16_update(crc, data, 0x1021);
 }
 
 /*
