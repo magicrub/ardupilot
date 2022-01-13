@@ -2897,6 +2897,7 @@ class AutoTestPlane(AutoTest):
             "quadplane-cl84": "falls out of sky instead of transitioning",
             "quadplane-tilttri": "falls out of sky instead of transitioning",
             "quadplane-tilttrivec": "loses attitude control and crashes",
+            "plane-soaring-k1000": "correctly fails due to no landing WP",
         }
         for frame in sorted(vinfo_options["frames"].keys()):
             self.start_subtest("Testing frame (%s)" % str(frame))

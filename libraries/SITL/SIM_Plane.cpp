@@ -89,6 +89,20 @@ Plane::Plane(const char *frame_str) :
         mass = 2.0;
         coefficient.c_drag_p = 0.05;
     }
+
+    if (strstr(frame_str, "-k1000")) {
+        mass = 13.8;
+        coefficient.c_drag_p = 0.0164;
+        coefficient.s = 1.67;
+        coefficient.b = 5.0;
+        coefficient.c = 0.36;
+        coefficient.oswald = 0.66;
+        thrust_scale = 100;
+        have_launcher = true;
+        launch_accel = 2;
+        launch_time = 15;
+        reverse_thrust = true;
+    }
 }
 
 /*
