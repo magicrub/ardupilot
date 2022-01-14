@@ -1,0 +1,7 @@
+
+# SBG Systems driver for local library includes
+def configure(cfg):
+    cfg.env.INCLUDES += [
+        cfg.srcnode.find_dir('libraries/AP_ExternalAHRS/sbgECom/src').abspath(),
+        cfg.srcnode.find_dir('libraries/AP_ExternalAHRS/sbgECom/common').abspath(),
+    ]
