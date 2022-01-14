@@ -199,7 +199,7 @@
  * when an intentional break is missing
  */
 #ifndef SBG_FALLTHROUGH
-	#if __cplusplus >= 201703L
+	#if defined(__cplusplus) && __cplusplus >= 201703L
 		#define SBG_FALLTHROUGH			[[fallthrough]]					/* introduced in C++ 17 */
 	#elif defined(__GNUC__)
 		#define SBG_FALLTHROUGH			__attribute__ ((fallthrough))
