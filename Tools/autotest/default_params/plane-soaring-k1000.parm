@@ -60,6 +60,7 @@ RNGFND1_TYPE            1
 RNGFND_LANDING          1
 RTL_AUTOLAND            2
 RTL_RADIUS              200
+SCR_ENABLE              1
 SIM_THML_SCENARI        4.00
 SIM_BATT_VOLTAGE        25.2
 STAB_PITCH_DOWN         0
