@@ -108,7 +108,7 @@ const AP_Param::GroupInfo AP_UAVCAN::var_info[] = {
     // @Param: OPTION
     // @DisplayName: UAVCAN options
     // @Description: Option flags
-    // @Bitmask: 0:ClearDNADatabase,1:IgnoreDNANodeConflicts,2:SendGNSS,3:ESC Index matches Motor name instead of Servo Index (ESC 3 is Motor3 regardless of what servo it's on)
+    // @Bitmask: 0:ClearDNADatabase,1:IgnoreDNANodeConflicts,2:SendGNSS
     // @User: Advanced
     AP_GROUPINFO("OPTION", 5, AP_UAVCAN, _options, 0),
     
@@ -535,23 +535,6 @@ void AP_UAVCAN::SRV_push_servos()
 {
     WITH_SEMAPHORE(SRV_sem);
 
-    _SRV_armed = hal.util->safety_switch_state() != AP_HAL::Util::SAFETY_DISARMED;
-    
-    if (option_is_set(AP_UAVCAN::Options::ESC_IDX_MATCHES_MOTOR_NAME)) {
-        for (uint8_t motor = 0; motor < 12; motor++) {
-            for (uint8_t srv = 0; srv < NUM_SERVO_CHANNELS; srv++) {
-                if (SRV_Channels::channel_function(srv) != SRV_Channels::get_motor_function(motor)) {
-                    continue;
-                }
-                _SRV_conf[motor].pulse = SRV_Channels::srv_channel(srv)->get_output_pwm();
-                _SRV_conf[motor].esc_pending = true;
-                _SRV_conf[motor].servo_pending = true;
-                break;
-            }
-        }
-        return;
-    }
-
     for (uint8_t i = 0; i < NUM_SERVO_CHANNELS; i++) {
         // Check if this channels has any function assigned
         if (SRV_Channels::channel_function(i)) {
@@ -560,6 +543,8 @@ void AP_UAVCAN::SRV_push_servos()
             _SRV_conf[i].servo_pending = true;
         }
     }
+
+    _SRV_armed = hal.util->safety_switch_state() != AP_HAL::Util::SAFETY_DISARMED;
 }
 
 
