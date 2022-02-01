@@ -145,6 +145,7 @@ public:
         DNA_CLEAR_DATABASE        = (1U<<0),
         DNA_IGNORE_DUPLICATE_NODE = (1U<<1),
         SEND_GNSS                 = (1U<<2),
+        ESC_IDX_MATCHES_MOTOR_NAME= (1U<<3),
     };
 
     // check if a option is set
