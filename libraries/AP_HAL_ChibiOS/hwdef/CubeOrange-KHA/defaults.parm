@@ -104,12 +104,14 @@ SERVO3_MIN              1000
 SERVO4_FUNCTION         19
 SERVO4_MAX              2000
 SERVO4_MIN              1000
+SERVO4_REVERSED         1
 SERVO5_FUNCTION         19
 SERVO5_MAX              2000
 SERVO5_MIN              1000
 SERVO6_FUNCTION         21
 SERVO6_MAX              2000
 SERVO6_MIN              1000
+SERVO6_REVERSED         1
 SERVO7_FUNCTION         33
 SERVO7_MAX              2000
 SERVO7_MIN              1000
