@@ -48,12 +48,14 @@
 */
 
 #define LWIP_PLATFORM_DIAG(x)    do {printf x; } while(0)
-#define LWIP_DEBUG
+// #define LWIP_DEBUG
 #define U16_F "u"
 #define X8_F  "x"
 #define X16_F  "x"
-#define LWIP_STATS_DISPLAY 1
-#define ETHARP_STATS 1
+// #define LWIP_STATS_DISPLAY 1
+// #define ETHARP_STATS 1
+#define LWIP_IPV6 1
+#define LWIP_IGMP 1
 /**
  * SYS_LIGHTWEIGHT_PROT==1: if you want inter-task protection for certain
  * critical regions during buffer allocation, deallocation and memory
@@ -316,7 +318,7 @@
  * The formula expects settings to be either '0' or '1'.
  */
 #ifndef MEMP_NUM_SYS_TIMEOUT
-#define MEMP_NUM_SYS_TIMEOUT            (LWIP_TCP + IP_REASSEMBLY + LWIP_ARP + (2*LWIP_DHCP) + LWIP_AUTOIP + LWIP_IGMP + LWIP_DNS + PPP_SUPPORT)
+#define MEMP_NUM_SYS_TIMEOUT            (LWIP_TCP + IP_REASSEMBLY + LWIP_ARP + (2*LWIP_DHCP) + LWIP_AUTOIP + LWIP_IGMP + LWIP_DNS + PPP_SUPPORT + (LWIP_IPV6 * (1 + LWIP_IPV6_REASS + LWIP_IPV6_MLD)))
 #endif
 
 /**
