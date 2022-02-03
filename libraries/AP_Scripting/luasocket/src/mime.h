@@ -17,6 +17,11 @@
 #define MIME_COPYRIGHT  "Copyright (C) 2004-2013 Diego Nehab"
 #define MIME_AUTHORS    "Diego Nehab"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
 LUASOCKET_API int luaopen_mime_core(lua_State *L);
-
+#ifdef __cplusplus
+}
+#endif
 #endif /* MIME_H */

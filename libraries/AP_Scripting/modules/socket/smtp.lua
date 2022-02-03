@@ -9,8 +9,6 @@
 -----------------------------------------------------------------------------
 local base = _G
 local coroutine = require("coroutine")
-local string = require("string")
-local math = require("math")
 local os = require("os")
 local socket = require("socket")
 local tp = require("socket.tp")
