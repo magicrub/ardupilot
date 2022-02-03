@@ -165,6 +165,11 @@ def options(opt):
         default=False,
         help='enable OS level thread statistics.')
     
+    g.add_option('--enable-luasocket',
+        action='store_true',
+        default=False,
+        help='enable compiling in luasocket module.')
+    
     g.add_option('--bootloader',
         action='store_true',
         default=False,
