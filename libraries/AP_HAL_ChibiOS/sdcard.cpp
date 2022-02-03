@@ -19,7 +19,7 @@
 #include "hwdef/common/spi_hook.h"
 #include <AP_BoardConfig/AP_BoardConfig.h>
 #include <AP_Filesystem/AP_Filesystem.h>
-
+#include "hwdef/common/bouncebuffer.c"
 extern const AP_HAL::HAL& hal;
 
 #ifdef USE_POSIX

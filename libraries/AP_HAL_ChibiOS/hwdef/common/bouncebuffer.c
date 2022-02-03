@@ -46,11 +46,11 @@
  */
 void bouncebuffer_init(struct bouncebuffer_t **bouncebuffer, uint32_t prealloc_bytes, bool axi_sram)
 {
-    (*bouncebuffer) = calloc(1, sizeof(struct bouncebuffer_t));
+    (*bouncebuffer) = (struct bouncebuffer_t *)calloc(1, sizeof(struct bouncebuffer_t));
     osalDbgAssert(((*bouncebuffer) != NULL), "bouncebuffer init");
     (*bouncebuffer)->on_axi_sram = axi_sram;
     if (prealloc_bytes) {
-        (*bouncebuffer)->dma_buf = axi_sram?malloc_axi_sram(prealloc_bytes):malloc_dma(prealloc_bytes);
+        (*bouncebuffer)->dma_buf = axi_sram?(uint8_t*)malloc_axi_sram(prealloc_bytes):(uint8_t*)malloc_dma(prealloc_bytes);
         if ((*bouncebuffer)->dma_buf) {
             (*bouncebuffer)->size = prealloc_bytes;
         }
@@ -74,7 +74,7 @@ bool bouncebuffer_setup_read(struct bouncebuffer_t *bouncebuffer, uint8_t **buf,
         if (bouncebuffer->size > 0) {
             free(bouncebuffer->dma_buf);
         }
-        bouncebuffer->dma_buf = bouncebuffer->on_axi_sram?malloc_axi_sram(size):malloc_dma(size);
+        bouncebuffer->dma_buf = bouncebuffer->on_axi_sram?(uint8_t*)malloc_axi_sram(size):(uint8_t*)malloc_dma(size);
         if (!bouncebuffer->dma_buf) {
             bouncebuffer->size = 0;
             return false;
@@ -122,7 +122,7 @@ bool bouncebuffer_setup_write(struct bouncebuffer_t *bouncebuffer, const uint8_t
         if (bouncebuffer->size > 0) {
             free(bouncebuffer->dma_buf);
         }
-        bouncebuffer->dma_buf = bouncebuffer->on_axi_sram?malloc_axi_sram(size):malloc_dma(size);
+        bouncebuffer->dma_buf = bouncebuffer->on_axi_sram?(uint8_t*)malloc_axi_sram(size):(uint8_t*)malloc_dma(size);
         if (!bouncebuffer->dma_buf) {
             bouncebuffer->size = 0;
             return false;
