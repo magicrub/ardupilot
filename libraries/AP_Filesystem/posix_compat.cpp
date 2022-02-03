@@ -88,6 +88,11 @@ APFS_FILE *apfs_fopen(const char *pathname, const char *mode)
         return nullptr;
     }
     f->unget = -1;
+    if (posix_fopen_modes_to_open(mode) == O_RDONLY && f->fd < 0) {
+        // we are supposed to return NULL for this
+        delete f;
+        return nullptr;
+    }
     return f;
 }
 
