@@ -25,6 +25,8 @@ char keyword_userdata[]            = "userdata";
 char keyword_write[]               = "write";
 char keyword_literal[]             = "literal";
 char keyword_reference[]           = "reference";
+char keyword_module[]              = "module";
+char keyword_opencall[]            = "opencall";
 
 // attributes (should include the leading ' )
 char keyword_attr_enum[]    = "'enum";
@@ -55,6 +57,7 @@ enum error_codes {
   ERROR_GENERAL         = 6, // general error
   ERROR_SINGLETON       = 7, // singletons
   ERROR_DEPENDS         = 8, // dependencies
+  ERROR_MODULE          = 9, // modules
 };
 
 struct header {
@@ -86,6 +89,7 @@ enum trace_level {
   TRACE_USERDATA  = (1 << 3),
   TRACE_SINGLETON = (1 << 4),
   TRACE_DEPENDS   = (1 << 5),
+  TRACE_MODULE   = (1 << 5),
 };
 
 enum access_flags {
@@ -323,6 +327,7 @@ enum userdata_type {
   UD_USERDATA,
   UD_SINGLETON,
   UD_AP_OBJECT,
+  UD_MODULE,
 };
 
 struct argument {
@@ -379,6 +384,16 @@ struct userdata {
   int flags; // flags from the userdata_flags enum
   char *dependency;
 };
+
+struct module {
+  struct module * next;
+  char *name; // name of the module
+  char *sanatized_name; // sanatized name of the module
+  char *method_name; // name of the method to call for initialization
+  char *header; // name of the header
+  char *dependency;
+};
+
 
 static struct userdata *parsed_userdata;
 static struct userdata *parsed_ap_objects;
@@ -1027,6 +1042,58 @@ void handle_ap_object(void) {
   }
 }
 
+struct module *parsed_modules = NULL;
+
+void handle_module(void) {
+  trace(TRACE_MODULE, "Adding a module");
+
+  char *name = next_token();
+  if (name == NULL) {
+    error(ERROR_MODULE, "Expected a name for the module");
+  }
+
+  struct module *node = parsed_modules;
+  while (node != NULL && strcmp(node->name, name)) {
+    node = node->next;
+  }
+
+  if (node == NULL) {
+    trace(TRACE_USERDATA, "Allocating new module for %s", name);
+    node = (struct module *)allocate(sizeof(struct userdata));
+    node->name = (char *)allocate(strlen(name) + 1);
+    strcpy(node->name, name);
+    sanatize_name(&(node->sanatized_name), node->name);
+    node->next = parsed_modules;
+    parsed_modules = node;
+  }
+
+  char *type = next_token();
+
+  if (strcmp(type, keyword_opencall) == 0) {
+    char *opencall = next_token();
+    if (opencall == NULL) {
+      error(ERROR_MODULE, "Expected a name for the opencall");
+    }
+    node->method_name = (char *)allocate(strlen(opencall) + 1);
+    strcpy(node->method_name, opencall);
+  }
+
+  char *include = next_token();
+  if (strcmp(include, keyword_include) == 0) {
+    char *header = next_token();
+    if (header == NULL) {
+      error(ERROR_MODULE, "Expected a name for the include");
+    }
+    node->header = (char *)allocate(strlen(header) + 1);
+    strcpy(node->header, header);
+  }
+
+  // ensure no more tokens on the line
+  if (next_token()) {
+    error(ERROR_HEADER, "module contained an unexpected extra token: %s", state.token);
+  }
+}
+
 void sanity_check_userdata(void) {
   struct userdata * node = parsed_userdata;
   while(node) {
@@ -1650,6 +1717,9 @@ void emit_userdata_method(const struct userdata *data, const struct method *meth
       fprintf(source, "        return luaL_error(L, \"Internal error, null pointer\");\n");
       fprintf(source, "    }\n");
       break;
+    case UD_MODULE:
+      // Nothing to do
+      break;
   }
 
   // extract the arguments
@@ -2179,7 +2249,43 @@ void emit_sandbox(void) {
   fprintf(source, "    load_boxed_numerics_sandbox(L);\n");
 
   // load the userdata complex functions
-  fprintf(source, "}\n");
+  fprintf(source, "}\n\n");
+}
+
+void emit_module(void) {
+  struct module *module = parsed_modules;
+
+  // place header files for modules
+  while (module) {
+    start_dependency(source, module->dependency);
+    fprintf(source, "#include <%s>\n", module->header);
+    end_dependency(source, module->dependency);
+    module = module->next;
+  }
+  fprintf(source, "const struct module_def {\n");
+  fprintf(source, "    const char *name;\n");
+  fprintf(source, "    const lua_CFunction fun;\n");
+  fprintf(source, "} module_list[] = {\n");
+
+  module = parsed_modules;
+  while (module) {
+    start_dependency(source, module->dependency);
+    fprintf(source, "    {\"%s\", %s},\n", module->name, module->method_name);
+    end_dependency(source, module->dependency);
+    module = module->next;
+  }
+  fprintf(source, "};\n");
+
+  // preload modules for require
+  fprintf(source, "\n");
+  fprintf(source, "void preload_modules(lua_State *L) {\n");
+  fprintf(source, "    for (uint32_t i = 0; i < ARRAY_SIZE(module_list); i++) {\n");
+  fprintf(source, "        luaL_getsubtable(L, LUA_REGISTRYINDEX, LUA_PRELOAD_TABLE);\n");
+  fprintf(source, "        lua_pushcfunction(L, module_list[i].fun);\n");
+  fprintf(source, "        lua_setfield(L, -2, module_list[i].name);\n");
+  fprintf(source, "        lua_pop(L, 1);  // remove PRELOAD table\n");
+  fprintf(source, "    }\n");
+  fprintf(source, "}\n\n");
 }
 
 void emit_argcheck_helper(void) {
@@ -2437,6 +2543,8 @@ int main(int argc, char **argv) {
         handle_singleton();
       } else if (strcmp (state.token, keyword_ap_object) == 0){
         handle_ap_object();
+      } else if (strcmp (state.token, keyword_module) == 0){
+        handle_module();
       } else {
         error(ERROR_UNKNOWN_KEYWORD, "Expected a keyword, got: %s", state.token);
       }
@@ -2504,6 +2612,8 @@ int main(int argc, char **argv) {
 
   emit_sandbox();
 
+  emit_module();
+
   fclose(source);
   source = NULL;
 
@@ -2525,6 +2635,7 @@ int main(int argc, char **argv) {
 
   fprintf(header, "void load_generated_bindings(lua_State *L);\n");
   fprintf(header, "void load_generated_sandbox(lua_State *L);\n");
+  fprintf(header, "void preload_modules(lua_State *L);\n");
 
   fclose(header);
   header = NULL;

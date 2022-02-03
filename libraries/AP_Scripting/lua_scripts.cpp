@@ -20,6 +20,7 @@
 #include <AP_Scripting/lua_generated_bindings.h>
 
 extern const AP_HAL::HAL& hal;
+#define ENABLE_DEBUG_MODULE 0
 
 bool lua_scripts::overtime;
 jmp_buf lua_scripts::panic_jmp;
@@ -145,6 +146,19 @@ lua_scripts::script_info *lua_scripts::load_script(lua_State *L, char *filename)
 void lua_scripts::create_sandbox(lua_State *L) {
     lua_newtable(L);
     luaopen_base_sandbox(L);
+
+    lua_pushstring(L, "package");
+    luaopen_package(L);
+    lua_settable(L, -3);
+    // make require visible
+    lua_pushstring(L, "require");
+    lua_getglobal(L, "require");
+    lua_settable(L, -3);
+#if ENABLE_DEBUG_MODULE
+    lua_pushstring(L, "debug");
+    luaopen_debug(L);
+    lua_settable(L, -3);
+#endif
     lua_pushstring(L, "math");
     luaopen_math(L);
     lua_settable(L, -3);
@@ -162,7 +176,7 @@ void lua_scripts::create_sandbox(lua_State *L) {
     lua_settable(L, -3);
     load_lua_bindings(L);
     load_generated_sandbox(L);
-
+    preload_modules(L);
 }
 
 void lua_scripts::load_all_scripts_in_dir(lua_State *L, const char *dirname) {
