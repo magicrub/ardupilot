@@ -14,17 +14,13 @@
  */
 #pragma once
 
+#include <AP_HAL/AP_HAL.h>
+
 #ifndef AP_TEMPERATURE_SENSOR_ENABLED
 #define AP_TEMPERATURE_SENSOR_ENABLED (BOARD_FLASH_SIZE > 1024)
 #endif
 
 #if AP_TEMPERATURE_SENSOR_ENABLED
-
-#include <AP_Common/AP_Common.h>
-#include <AP_Param/AP_Param.h>
-#include <AP_Math/AP_Math.h>
-#include <GCS_MAVLink/GCS_MAVLink.h>
-
 #include "AP_TemperatureSensor_Params.h"
 
 // maximum number of Temperature Sensors

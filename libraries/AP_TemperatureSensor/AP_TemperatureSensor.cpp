@@ -16,11 +16,8 @@
 #include "AP_TemperatureSensor.h"
 
 #if AP_TEMPERATURE_SENSOR_ENABLED
-
 #include "AP_TemperatureSensor_TSYS01.h"
 
-// #include <AP_Common/AP_Common.h>
-// #include <AP_HAL/AP_HAL.h>
 #include <AP_Logger/AP_Logger.h>
 #include <AP_Vehicle/AP_Vehicle_Type.h>
 

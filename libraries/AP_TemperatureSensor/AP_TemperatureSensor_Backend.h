@@ -14,8 +14,6 @@
  */
 #pragma once
 
-#include <AP_Common/AP_Common.h>
-#include <AP_HAL/AP_HAL.h>
 #include "AP_TemperatureSensor.h"
 
 #if AP_TEMPERATURE_SENSOR_ENABLED
