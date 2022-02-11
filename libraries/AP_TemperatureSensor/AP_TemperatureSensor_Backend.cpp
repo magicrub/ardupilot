@@ -20,6 +20,7 @@
 
 #include <AP_Common/AP_Common.h>
 #include <AP_HAL/AP_HAL.h>
+#include <AP_Logger/AP_Logger.h>
 
 /*
   base class constructor.
@@ -32,4 +33,15 @@ AP_TemperatureSensor_Backend::AP_TemperatureSensor_Backend(AP_TemperatureSensor 
         _params(params)
 {
 }
+
+void AP_TemperatureSensor_Backend::Log_Write_TEMP(uint64_t time_us) const
+{
+    AP::logger().Write("TEMP",
+            "TimeUS," "Instance," "Temp", // labels
+            "s"           "#"     "O"    , // units
+            "F"           "-"     "0"    , // multipliers
+            "Q"           "B"     "f"    , // types
+            time_us, _state.instance, _state.temperature);
+}
+
 #endif // AP_TEMPERATURE_SENSOR_ENABLED
