@@ -496,6 +496,13 @@ LUAMOD_API int luaopen_base (lua_State *L) {
   /* set global _VERSION */
   lua_pushliteral(L, LUA_VERSION);
   lua_setfield(L, -2, "_VERSION");
+  lua_pop(L, 1);  /* pop global table */
+
+  for (uint8_t i = 0; base_funcs[i].name != NULL; i++) {
+    lua_pushstring(L, base_funcs[i].name);
+    lua_getglobal(L, base_funcs[i].name);
+    lua_settable(L, -3);
+  }
   return 1;
 }
 
