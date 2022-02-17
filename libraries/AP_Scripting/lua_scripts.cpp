@@ -145,7 +145,7 @@ lua_scripts::script_info *lua_scripts::load_script(lua_State *L, char *filename)
 
 void lua_scripts::create_sandbox(lua_State *L) {
     lua_newtable(L);
-    luaopen_base_sandbox(L);
+    luaopen_base(L);
 
     lua_pushstring(L, "package");
     luaopen_package(L);
