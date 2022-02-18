@@ -101,7 +101,6 @@ Plane::Plane(const char *frame_str) :
         have_launcher = true;
         launch_accel = 2;
         launch_time = 15;
-        reverse_thrust = true;
     }
 }
 
