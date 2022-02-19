@@ -45,6 +45,43 @@ public:
     }
 
 private:
+    static constexpr uint8_t SBG_PACKET_SYNC1 = 0xFF;
+    static constexpr uint8_t SBG_PACKET_SYNC2 = 0x5A;
+    static constexpr uint8_t SBG_PACKET_ETX = 0x33;
+    static constexpr uint16_t SBG_PACKET_PAYLOAD_SIZE_MAX = 4086;
+
+    struct PACKED sbgMessage {
+        uint8_t msgid;
+        uint8_t msgclass;
+        uint16_t len;
+        uint8_t data[SBG_PACKET_PAYLOAD_SIZE_MAX];
+    };
+
+    enum class SBG_PACKET_PARSE_STATE : uint8_t {
+        SYNC1,
+        SYNC2,
+        MSG,
+        CLASS,
+        LEN1,
+        LEN2,
+        DATA,
+        CRC1,
+        CRC2,
+        ETX
+    };
+
+    struct SBG_PACKET_INBOUND_STATE {
+        SBG_PACKET_PARSE_STATE parser;
+        uint16_t data_count;
+        uint16_t crc;
+    } _inbound_state;
+
+    sbgMessage _inbound_msg;
+
+    static bool parse_byte(const uint8_t data, sbgMessage &msg, SBG_PACKET_INBOUND_STATE &state);
+    void handle_msg(const sbgMessage &msg);
+    static uint16_t calcCRC(const void *pBuffer, const uint16_t bufferSize);
+
     AP_HAL::UARTDriver *uart;
     int8_t port_num;
     bool port_opened;
@@ -54,8 +91,6 @@ private:
     void update_thread();
     bool check_uart();
 
-    void process_packet1(const uint8_t *b);
-    void process_packet2(const uint8_t *b);
     void send_config(void) const;
 
     uint8_t *pktbuf;
