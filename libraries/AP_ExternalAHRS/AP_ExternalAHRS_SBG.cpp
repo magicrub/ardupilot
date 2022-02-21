@@ -7,7 +7,7 @@
    This program is distributed in the hope that it will be useful,
    but WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-   GNU General Public License for more details.
+   GNU General Public License for more details. #include <sbgCommon.h>
 
    You should have received a copy of the GNU General Public License
    along with this program.  If not, see <http://www.gnu.org/licenses/>.
@@ -19,6 +19,8 @@
 #define ALLOW_DOUBLE_MATH_FUNCTIONS
 
 #include "AP_ExternalAHRS_SBG.h"
+#if HAL_EXTERNAL_AHRS_ENABLED
+
 #include <AP_Math/AP_Math.h>
 #include <AP_Math/crc.h>
 #include <AP_Baro/AP_Baro.h>
@@ -31,13 +33,7 @@
 #include <stdio.h>
 #include <AP_BoardConfig/AP_BoardConfig.h>
 
-#if HAL_EXTERNAL_AHRS_ENABLED
-
 extern const AP_HAL::HAL &hal;
-
-void AP_ExternalAHRS_SBG::send_config(void) const
-{
-}
 
 // constructor
 AP_ExternalAHRS_SBG::AP_ExternalAHRS_SBG(AP_ExternalAHRS *_frontend,
@@ -59,41 +55,50 @@ AP_ExternalAHRS_SBG::AP_ExternalAHRS_SBG(AP_ExternalAHRS *_frontend,
     GCS_SEND_TEXT(MAV_SEVERITY_INFO, "ExternalAHRS initialised");
 }
 
-/*
-  check the UART for more data
-  returns true if the function should be called again straight away
- */
-bool AP_ExternalAHRS_SBG::check_uart()
+#pragma GCC diagnostic push
+#pragma GCC diagnostic error "-Wframe-larger-than=4200"
+void AP_ExternalAHRS_SBG::send_config(void)
 {
-    if (!port_opened) {
-        return false;
+    sbgMessage pkt_out {};
+    send_msg(*uart, pkt_out);
+}
+#pragma GCC diagnostic pop
+
+void AP_ExternalAHRS_SBG::send_msg(AP_HAL::UARTDriver &uart_driver, const uint8_t msgId, const uint8_t msgClass, const uint16_t len, const uint8_t &data)
+{
+    sbgMessage msg {};
+
+    msg.msgid = msgId;
+    msg.msgclass = msgClass;
+    msg.len = len;
+    memcpy(msg.data, &data, MIN(sizeof(msg.data), len));
+
+    send_msg(uart_driver, msg);
+}
+
+void AP_ExternalAHRS_SBG::send_msg(AP_HAL::UARTDriver &uart_driver, const sbgMessage &msg)
+{
+    const uint16_t buffer_size = MIN(msg.len,sizeof(msg.data)) + 9;
+    uint8_t buffer[buffer_size];
+    
+    buffer[0] = SBG_PACKET_SYNC1;
+    buffer[1] = SBG_PACKET_SYNC2;
+    buffer[2] = msg.msgid;
+    buffer[3] = msg.msgclass;
+    buffer[4] = msg.len & 0xFF;
+    buffer[5] = msg.len >> 8;
+
+    for (uint16_t i=0; i<msg.len; i++) {
+        buffer[6+i] = msg.data[i];
     }
-    WITH_SEMAPHORE(state.sem);
 
-    uint32_t n = uart->available();
-    if (n == 0) {
-        return false;
-    }
-    while (n--) {
-        const int16_t data_byte = uart->read();
-        if (data_byte < 0) {
-            return false;
-        }
-        if (parse_byte((uint8_t)data_byte, _inbound_msg, _inbound_state)) {
-            handle_msg(_inbound_msg);
-        }
-    }
+    const uint16_t crc = calcCRC(&msg, msg.len+4);
 
-    // if (pktoffset < bufsize) {
-    //     ssize_t nread = uart->read(&pktbuf[pktoffset], MIN(n, unsigned(bufsize-pktoffset)));
-    //     if (nread <= 0) {
-    //         return false;
-    //     }
-    //     pktoffset += nread;
-    // }
+    buffer[buffer_size-3] = crc & 0xFF;
+    buffer[buffer_size-2] = crc >> 8;
+    buffer[buffer_size-1] = SBG_PACKET_ETX;
 
-
-    return true;
+    uart_driver.write(buffer, buffer_size);
 }
 
 bool AP_ExternalAHRS_SBG::parse_byte(const uint8_t data, sbgMessage &msg, SBG_PACKET_INBOUND_STATE &state)
@@ -189,32 +194,177 @@ uint16_t AP_ExternalAHRS_SBG::calcCRC(const void *pBuffer, const uint16_t buffer
     return crc;
 }
 
+
 void AP_ExternalAHRS_SBG::handle_msg(const sbgMessage &msg)
 {
+    WITH_SEMAPHORE(state.sem);
+
     GCS_SEND_TEXT(MAV_SEVERITY_INFO, "SBG: ID=%u, CLASS=%u, LEN=%u", (unsigned)msg.msgid, (unsigned)msg.msgclass, (unsigned)msg.len);
 
-    // switch (msg.msgid) {
-    //     case 120:
-    //     case 121:
-    //     case 122:
-    //     case 123:
-    //     case 124:
-    //     break;
-    // }
+    if ((_SbgEComClass)msg.msgclass == SBG_ECOM_CLASS_LOG_ECOM_0 || msg.msgclass == (_SbgEComClass)SBG_ECOM_CLASS_LOG_ECOM_1) {
+        // SBG_ECOM_CLASS_LOG_ECOM_0 Class that contains sbgECom output log messages
+        // SBG_ECOM_CLASS_LOG_ECOM_1 Class that contains sbgECom messages that handle high frequency output
+
+        switch ((_SbgEComLog)msg.msgid) {
+            // case SBG_ECOM_LOG_MAG:
+            //     if (sizeof(SbgEComMagCalibResults) == msg.len) {
+            //         SbgEComMagCalibResults pkt;
+            //         memcpy(&pkt, msg.data, sizeof(pkt));
+            //         handle_msg(pkt);
+            //     }
+            //     break;
+
+            case SBG_ECOM_LOG_STATUS: /*!< Status general, clock, com aiding, solution, heave */
+            case SBG_ECOM_LOG_UTC_TIME: /*!< Provides UTC time reference */
+            case SBG_ECOM_LOG_IMU_DATA: /*!< Includes IMU status, acc., gyro, temp delta speeds and delta angles values */
+            case SBG_ECOM_LOG_MAG: /*!< Magnetic data with associated accelerometer on each axis */
+            case SBG_ECOM_LOG_MAG_CALIB: /*!< Magnetometer calibration data (raw buffer) */
+            case SBG_ECOM_LOG_EKF_EULER: /*!< Includes roll, pitch, yaw and their accuracies on each axis */
+            case SBG_ECOM_LOG_EKF_QUAT: /*!< Includes the 4 quaternions values */
+            case SBG_ECOM_LOG_EKF_NAV: /*!< Position and velocities in NED coordinates with the accuracies on each axis */
+            case SBG_ECOM_LOG_GPS1_VEL: /*!< GPS velocities from primary or secondary GPS receiver */
+            case SBG_ECOM_LOG_GPS1_POS: /*!< GPS positions from primary or secondary GPS receiver */
+            case SBG_ECOM_LOG_GPS1_HDT: /*!< GPS true heading from dual antenna system */
+            case SBG_ECOM_LOG_GPS1_RAW: /*!< GPS 1 raw data for post processing. */
+
+            case SBG_ECOM_LOG_AIR_DATA: /*!< Air Data aiding such as barometric altimeter and true air speed. */
+
+            case SBG_ECOM_LOG_IMU_RAW_DATA: /*!< DEPRECATED: Private only log. */
+
+            case SBG_ECOM_LOG_IMU_SHORT: /*!< Short IMU message recommended for post processing usages. */
+                break;
+
+            default:
+                return;
+            } // switch log
+
+    } else if ((_SbgEComClass)msg.msgclass == SBG_ECOM_CLASS_LOG_CMD_0) {
+        switch ((_SbgEComCmd)msg.msgid) {
+            case SBG_ECOM_CMD_ACK: /*!< Acknowledge */
+            case SBG_ECOM_CMD_SETTINGS_ACTION: /*!< Performs various settings actions */
+            case SBG_ECOM_CMD_IMPORT_SETTINGS: /*!< Imports a new settings structure to the sensor */
+            case SBG_ECOM_CMD_EXPORT_SETTINGS: /*!< Export the whole configuration from the sensor */
+
+            /* Device info */
+            case SBG_ECOM_CMD_INFO: /*!< Get basic device information */
+
+            /* Sensor parameters */
+            case SBG_ECOM_CMD_INIT_PARAMETERS: /*!< Initial configuration */
+            case SBG_ECOM_CMD_MOTION_PROFILE_ID: /*!< Set/get motion profile information */
+            case SBG_ECOM_CMD_IMU_ALIGNMENT_LEVER_ARM: /*!< Sensor alignment and lever arm on vehicle configuration */
+            case SBG_ECOM_CMD_AIDING_ASSIGNMENT: /*!< Aiding assignments such as RTCM / GPS / Odometer configuration */
+
+            /* Magnetometer configuration */
+            case SBG_ECOM_CMD_MAGNETOMETER_MODEL_ID: //	 	= 11,		/*!< Set/get magnetometer error model information */
+            case SBG_ECOM_CMD_MAGNETOMETER_REJECT_MODE: // 	= 12,		/*!< Magnetometer aiding rejection mode */
+            case SBG_ECOM_CMD_SET_MAG_CALIB: // 				= 13,		/*!< Set magnetic soft and hard Iron calibration data */
+
+            /* Magnetometer on-board calibration */
+            case SBG_ECOM_CMD_START_MAG_CALIB: //			= 14,		/*!< Start / reset internal magnetic field logging for calibration. */
+            case SBG_ECOM_CMD_COMPUTE_MAG_CALIB: //			= 15,		/*!< Compute a magnetic calibration based on previously logged data. */
+
+            /* GNSS configuration */
+            case SBG_ECOM_CMD_GNSS_1_MODEL_ID: // 			= 17,		/*!< Set/get GNSS model information */
+            case SBG_ECOM_CMD_GNSS_1_LEVER_ARM_ALIGNMENT: // = 18,		/*!< DEPRECATED: GNSS installation configuration (lever arm, antenna alignments) */
+            case SBG_ECOM_CMD_GNSS_1_INSTALLATION: //		= 46,		/*!< Define or retrieve the GNSS 1 main and secondary lever arms configuration. */
+            case SBG_ECOM_CMD_GNSS_1_REJECT_MODES: // 		= 19,		/*!< GNSS aiding rejection modes configuration. */
+
+            /* Odometer configuration */
+            case SBG_ECOM_CMD_ODO_CONF: // 					= 20,		/*!< Odometer gain, direction configuration */
+            case SBG_ECOM_CMD_ODO_LEVER_ARM: // 				= 21,		/*!< Odometer installation configuration (lever arm) */
+            case SBG_ECOM_CMD_ODO_REJECT_MODE: // 			= 22,		/*!< Odometer aiding rejection mode configuration. */
+
+            /* Interfaces configuration */
+            case SBG_ECOM_CMD_UART_CONF: // 					= 23,		/*!< UART interfaces configuration */
+            case SBG_ECOM_CMD_CAN_BUS_CONF: // 				= 24,		/*!< CAN bus interface configuration */
+            case SBG_ECOM_CMD_CAN_OUTPUT_CONF: //			= 25,		/*!< CAN identifiers configuration */
+
+            /* Events configuration */
+            case SBG_ECOM_CMD_SYNC_IN_CONF: // 				= 26,		/*!< Synchronization inputs configuration */
+            case SBG_ECOM_CMD_SYNC_OUT_CONF: // 				= 27,		/*!< Synchronization outputs configuration */
+
+            /* Output configuration */
+            case SBG_ECOM_CMD_NMEA_TALKER_ID: // 			= 29,		/*!< NMEA talker ID configuration */
+            case SBG_ECOM_CMD_OUTPUT_CONF: // 				= 30,		/*!< Output configuration */
+
+            /* Advanced configuration */
+            case SBG_ECOM_CMD_ADVANCED_CONF: // 				= 32,		/*!< Advanced settings configuration */
+
+            /* Features related commands */
+            case SBG_ECOM_CMD_FEATURES: //					= 33,		/*!< Retrieve device features */
+
+            /* Licenses related commands */
+            case SBG_ECOM_CMD_LICENSE_APPLY: //				= 34,		/*!< Upload and apply a new license */
+
+            /* Message class output switch */
+            case SBG_ECOM_CMD_OUTPUT_CLASS_ENABLE: //		= 35,		/*!< Enable/disable the output of an entire class */
+
+            /* Ethernet configuration */
+            case SBG_ECOM_CMD_ETHERNET_CONF: //				= 36,		/*!< Set/get Ethernet configuration such as DHCP mode and IP address. */
+            case SBG_ECOM_CMD_ETHERNET_INFO: //				= 37,		/*!< Return the current IP used by the device. */
+
+            /* Validity thresholds */
+            case SBG_ECOM_CMD_VALIDITY_THRESHOLDS: //		= 38,		/*!< Set/get Validity flag thresholds for position, velocity, attitude and heading */
+
+            /* DVL configuration */
+            case SBG_ECOM_CMD_DVL_MODEL_ID: //				= 39,		/*!< Set/get DVL model id to use */
+            case SBG_ECOM_CMD_DVL_INSTALLATION: //			= 40,		/*!< DVL installation configuration (lever arm, alignments) */
+            case SBG_ECOM_CMD_DVL_REJECT_MODES: //			= 41,		/*!< DVL aiding rejection modes configuration. */
+
+            /* AirData configuration */
+            case SBG_ECOM_CMD_AIRDATA_MODEL_ID: //			= 42,		/*!< Set/get AirData model id and protocol to use. */
+            case SBG_ECOM_CMD_AIRDATA_LEVER_ARM: //			= 43,		/*!< AirData installation configuration (lever arm, offsets) */
+            case SBG_ECOM_CMD_AIRDATA_REJECT_MODES: //		= 44,		/*!< AirData aiding rejection modes configuration. */
+
+            /* Odometer configuration (using CAN) */
+            case SBG_ECOM_CMD_ODO_CAN_CONF: // 				= 45,		/*!< Configuration for CAN based odometer (CAN ID & DBC) */
+            default:
+                break;
+
+        } // switch cmd
+    } else {
+        // unhandled class type
+        return;
+    }
+}
+
+void AP_ExternalAHRS_SBG::handle_msg(const SbgEComMagCalibResults &msg)
+{
+
+}
+
+void AP_ExternalAHRS_SBG::update(void)
+{
+
 }
 
 void AP_ExternalAHRS_SBG::update_thread()
 {
+    if (uart == nullptr) {
+        return;
+    }
+
     if (!port_opened) {
         // open port in the thread
-        port_opened = true;
         uart->begin(baudrate, 1024, 512);
+        port_opened = true;
         send_config();
     }
 
     while (true) {
-        if (!check_uart()) {
+        uint32_t n = uart->available();
+        if (n == 0) {
             hal.scheduler->delay(1);
+            continue;
+        }
+        while (n--) {
+            const int16_t data_byte = uart->read();
+            if (data_byte < 0) {
+                continue;
+            }
+            if (parse_byte((uint8_t)data_byte, _inbound_msg, _inbound_state)) {
+                handle_msg(_inbound_msg);
+            }
         }
     }
 }
@@ -222,10 +372,7 @@ void AP_ExternalAHRS_SBG::update_thread()
 // get serial port number for the uart
 int8_t AP_ExternalAHRS_SBG::get_port(void) const
 {
-    if (uart == nullptr) {
-        return -1;
-    }
-    return port_num;
+    return (uart == nullptr) ? -1 : port_num;
 };
 
 // accessors for AP_AHRS

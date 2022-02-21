@@ -23,6 +23,8 @@
 #if HAL_EXTERNAL_AHRS_ENABLED
 
 #include <GCS_MAVLink/GCS_MAVLink.h>
+#include "sbgECom/sbgEComIds.h"
+#include "sbgECom/commands/sbgEComCmd.h"
 
 class AP_ExternalAHRS_SBG : public AP_ExternalAHRS_backend {
 
@@ -39,10 +41,8 @@ public:
     void get_filter_status(nav_filter_status &status) const override;
     void send_status_report(mavlink_channel_t chan) const override;
 
-    // check for new data
-    void update() override {
-        check_uart();
-    }
+    // periodic update
+    void update() override;
 
 private:
     static constexpr uint8_t SBG_PACKET_SYNC1 = 0xFF;
@@ -70,6 +70,7 @@ private:
         ETX
     };
 
+
     struct SBG_PACKET_INBOUND_STATE {
         SBG_PACKET_PARSE_STATE parser;
         uint16_t data_count;
@@ -78,9 +79,13 @@ private:
 
     sbgMessage _inbound_msg;
 
-    static bool parse_byte(const uint8_t data, sbgMessage &msg, SBG_PACKET_INBOUND_STATE &state);
     void handle_msg(const sbgMessage &msg);
     static uint16_t calcCRC(const void *pBuffer, const uint16_t bufferSize);
+
+    static bool parse_byte(const uint8_t data, sbgMessage &msg, SBG_PACKET_INBOUND_STATE &state);
+    static void send_msg(AP_HAL::UARTDriver& uart_driver, const sbgMessage &msg);
+    static void send_msg(AP_HAL::UARTDriver &uart_driver, const uint8_t msgId, const uint8_t msgClass, const uint16_t len, const uint8_t &data);
+
 
     AP_HAL::UARTDriver *uart;
     int8_t port_num;
@@ -89,19 +94,11 @@ private:
     uint16_t rate;
 
     void update_thread();
-    bool check_uart();
 
-    void send_config(void) const;
+    void send_config(void);
 
-    uint8_t *pktbuf;
-    uint16_t pktoffset;
-    uint16_t bufsize;
+    void handle_msg(const SbgEComMagCalibResults &msg);
 
-    struct VN_packet1 *last_pkt1;
-    struct VN_packet2 *last_pkt2;
-
-    uint32_t last_pkt1_ms;
-    uint32_t last_pkt2_ms;
 };
 
 #endif  // HAL_EXTERNAL_AHRS_ENABLED
