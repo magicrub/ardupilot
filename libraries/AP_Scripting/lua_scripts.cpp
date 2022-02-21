@@ -28,10 +28,11 @@ char *lua_scripts::error_msg_buf;
 uint8_t lua_scripts::print_error_count;
 uint32_t lua_scripts::last_print_ms;
 
-lua_scripts::lua_scripts(const AP_Int32 &vm_steps, const AP_Int32 &heap_size, const AP_Int8 &debug_options, struct AP_Scripting::terminal_s &_terminal)
+lua_scripts::lua_scripts(const AP_Int32 &vm_steps, const AP_Int32 &heap_size, const AP_Int8 &debug_options, struct AP_Scripting::terminal_s &_terminal, uint8_t instance)
     : _vm_steps(vm_steps),
       _debug_options(debug_options),
-     terminal(_terminal) {
+     terminal(_terminal),
+     _instance(instance) {
     _heap = hal.util->allocate_heap_memory(heap_size);
 }
 

@@ -27,7 +27,7 @@
 class lua_scripts
 {
 public:
-    lua_scripts(const AP_Int32 &vm_steps, const AP_Int32 &heap_size, const AP_Int8 &debug_options, struct AP_Scripting::terminal_s &_terminal);
+    lua_scripts(const AP_Int32 &vm_steps, const AP_Int32 &heap_size, const AP_Int8 &debug_options, struct AP_Scripting::terminal_s &_terminal, uint8_t instance);
 
     /* Do not allow copies */
     lua_scripts(const lua_scripts &other) = delete;
@@ -99,6 +99,8 @@ private:
     static jmp_buf panic_jmp;
 
     lua_State *lua_state;
+
+    uint8_t _instance;
 
     const AP_Int32 & _vm_steps;
     const AP_Int8 & _debug_options;
