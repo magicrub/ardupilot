@@ -99,11 +99,13 @@ private:
     AP_Int32 _script_heap_size;
     AP_Int8 _debug_options;
     AP_Int16 _dir_disable;
+    AP_Int8 _thread_count;
 
     bool _init_failed;  // true if memory allocation failed
     bool _restart; // true if scripts should be restarted
     bool _stop; // true if scripts should be stopped
-
+    uint8_t _instance;
+    
     static AP_Scripting *_singleton;
 
 };

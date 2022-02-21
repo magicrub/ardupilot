@@ -28,10 +28,11 @@ char *lua_scripts::error_msg_buf;
 uint8_t lua_scripts::print_error_count;
 uint32_t lua_scripts::last_print_ms;
 
-lua_scripts::lua_scripts(const AP_Int32 &vm_steps, const AP_Int32 &heap_size, const AP_Int8 &debug_options, struct AP_Scripting::terminal_s &_terminal)
+lua_scripts::lua_scripts(const AP_Int32 &vm_steps, const AP_Int32 &heap_size, const AP_Int8 &debug_options, struct AP_Scripting::terminal_s &_terminal, uint8_t instance)
     : _vm_steps(vm_steps),
       _debug_options(debug_options),
-     terminal(_terminal) {
+     terminal(_terminal),
+     _instance(instance) {
     _heap = hal.util->allocate_heap_memory(heap_size);
 }
 
@@ -433,11 +434,24 @@ void lua_scripts::run(void) {
     uint16_t dir_disable = AP_Scripting::get_singleton()->get_disabled_dir();
     bool loaded = false;
     if ((dir_disable & uint16_t(AP_Scripting::SCR_DIR::SCRIPTS)) == 0) {
-        load_all_scripts_in_dir(L, SCRIPTING_DIRECTORY);
+        if (_instance == 0) {
+            load_all_scripts_in_dir(L, SCRIPTING_DIRECTORY);
+        } else {
+            char dir[200];
+            hal.util->snprintf(dir, sizeof(dir), "%s/thread%d", SCRIPTING_DIRECTORY, _instance+2);
+            load_all_scripts_in_dir(L, dir);
+        }
         loaded = true;
     }
     if ((dir_disable & uint16_t(AP_Scripting::SCR_DIR::ROMFS)) == 0) {
-        load_all_scripts_in_dir(L, "@ROMFS/scripts");
+        const char* romfs_dir = "@ROMFS/scripts";
+        if (_instance == 0) {
+            load_all_scripts_in_dir(L, romfs_dir);
+        } else {
+            char dir[200];
+            hal.util->snprintf(dir, sizeof(dir), "%s/thread%d", romfs_dir, _instance+2);
+            load_all_scripts_in_dir(L, dir);
+        }
         loaded = true;
     }
     if (!loaded) {
