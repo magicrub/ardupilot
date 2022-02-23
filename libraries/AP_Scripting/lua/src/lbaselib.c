@@ -473,7 +473,7 @@ static const luaL_Reg base_funcs[] = {
 //  {"rawlen", luaB_rawlen},
 //  {"rawget", luaB_rawget},
 //  {"rawset", luaB_rawset},
-//  {"select", luaB_select},
+  {"select", luaB_select},
   {"setmetatable", luaB_setmetatable},
   {"tonumber", luaB_tonumber},
   {"tostring", luaB_tostring},
