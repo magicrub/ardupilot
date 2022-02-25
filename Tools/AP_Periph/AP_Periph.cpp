@@ -92,6 +92,8 @@ void AP_Periph_FW::init()
 
     stm32_watchdog_pat();
 
+    hal.gpio->init();
+
 #if !HAL_GCS_ENABLED
     hal.serial(0)->begin(AP_SERIALMANAGER_CONSOLE_BAUD, 32, 32);
 #endif
