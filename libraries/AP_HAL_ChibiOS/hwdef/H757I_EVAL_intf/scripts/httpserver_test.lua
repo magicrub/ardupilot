@@ -14,12 +14,69 @@ function update() -- this is the loop which periodically runs
     c = s:accept()
     l, e = c:receive()
     while not e do
-        gcs:send_text(0, l)
+        -- gcs:send_text(0, l)
         -- check if we received GET line
         if l:find("GET") then
+            request_uri = l:match("GET /(.*) HTTP")
+            if not request_uri or request_uri == "" then
+                request_uri = "index.html"
+            end
+            -- gcs:send_text(0, "file_name: " .. request_uri)
             -- send response
-            c:send("HTTP/1.0 200 OK\r\nContent-Type: text/html\r\nConnection: close\r\n\r\n")
-            c:send("<html><body>Hello World!</body></html>\r\n")
+            resp_file = io.open("@ROMFS/scripts/fs/"..request_uri, "r")
+            -- send html file if exists
+            if resp_file and request_uri:match(".html") then
+                c:send("HTTP/1.0 200 OK\r\nContent-Type: text/html\r\nConnection: close\r\n\r\n")
+                while true do
+                    l = resp_file:read(1024)
+                    if not l then break end
+                    c:send(l)
+                end
+            elseif resp_file and request_uri:match(".png") then
+                c:send("HTTP/1.0 200 OK\r\nContent-Type: image/png\r\nConnection: close\r\n\r\n")
+                while true do
+                    l = resp_file:read(1024)
+                    if not l then break end
+                    c:send(l)
+                end
+            elseif resp_file and request_uri:match(".js") then
+                c:send("HTTP/1.0 200 OK\r\nContent-Type: application/javascript\r\nConnection: close\r\n\r\n")
+                while true do
+                    l = resp_file:read(1024)
+                    if not l then break end
+                    c:send(l)
+                end
+            elseif resp_file and request_uri:match(".css") then
+                c:send("HTTP/1.0 200 OK\r\nContent-Type: text/css\r\nConnection: close\r\n\r\n")
+                while true do
+                    l = resp_file:read(1024)
+                    if not l then break end
+                    c:send(l)
+                end
+            elseif resp_file and request_uri:match(".ajax") then
+                c:send("HTTP/1.0 200 OK\r\nContent-Type: application/json\r\nConnection: close\r\n\r\n")
+                while true do
+                    l = resp_file:read(1024)
+                    if not l then break end
+                    c:send(l)
+                end
+            -- handle get system time ajax commands
+            elseif request_uri == "read/time" then
+                c:send("HTTP/1.0 200 OK\r\nContent-Type: application/json\r\nConnection: close\r\n\r\n")
+                c:send("{\"time\":\""..tostring(millis()).."\"}")
+            elseif request_uri == "write/0" then
+                c:send("HTTP/1.0 200 OK\r\nContent-Type: application/json\r\nConnection: close\r\n\r\n")
+                c:send("{\"result\":\"ok\"}")
+                gpio:write(102, 0)
+            elseif request_uri == "write/1" then
+                c:send("HTTP/1.0 200 OK\r\nContent-Type: application/json\r\nConnection: close\r\n\r\n")
+                c:send("{\"result\":\"ok\"}")
+                gpio:write(102, 1)
+            else
+                -- send 404 if file not found
+                c:send("HTTP/1.0 404 Not Found\r\nContent-Type: text/html\r\nConnection: close\r\n\r\n")
+                c:send("<html><body><h1>404 Not Found</h1></body></html>")
+            end
             break
         end
         l, e = c:receive()
