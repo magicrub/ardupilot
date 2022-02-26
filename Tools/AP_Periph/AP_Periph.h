@@ -22,7 +22,9 @@
 #elif CONFIG_HAL_BOARD == HAL_BOARD_SITL
 #include <AP_HAL_SITL/CANSocketIface.h>
 #endif
-
+#if HAL_ENABLE_NETWORKING
+#include "lwipthread.h"
+#endif
 #if HAL_GCS_ENABLED
 #include "GCS_MAVLink.h"
 #endif
@@ -255,6 +257,11 @@ public:
     void show_stack_free();
 
     static bool no_iface_finished_dna;
+
+#if HAL_ENABLE_NETWORKING
+    lwipthread_opts_t lwip_opts;
+    uint8_t macaddress[6];
+#endif
 };
 
 namespace AP
