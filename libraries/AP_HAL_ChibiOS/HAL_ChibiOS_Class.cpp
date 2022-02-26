@@ -304,10 +304,6 @@ void HAL_ChibiOS::run(int argc, char * const argv[], Callbacks* callbacks) const
     usb_initialise();
 #endif
 
-#if HAL_ENABLE_NETWORKING
-    lwipInit(NULL);
-#endif
-
 #ifdef HAL_STDOUT_SERIAL
     //STDOUT Initialisation
     SerialConfig stdoutcfg =
