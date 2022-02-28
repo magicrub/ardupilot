@@ -96,11 +96,11 @@ STDOUT_BAUDRATE 115200
 define HAL_STORAGE_SIZE 32768
 ###########################
 # OPTION A: build-in flash
-STORAGE_FLASH_PAGE 14
+#STORAGE_FLASH_PAGE 14
 ###########################
 # OPTION B: external RAMTRON flash
-#define HAL_WITH_RAMTRON 1
-#SPIDEV ramtron        SPI4 DEVID10 FRAM_CS      MODE3  8*MHZ  8*MHZ 
+define HAL_WITH_RAMTRON 1
+SPIDEV ramtron        SPI4 DEVID10 FRAM_CS      MODE3  8*MHZ  8*MHZ 
 ###########################
 
 

@@ -17,6 +17,8 @@ FLASH_SIZE_KB 2048
 # setup build for a peripheral firmware
 env AP_PERIPH 1
 
+STORAGE_FLASH_PAGE 14
+
 # bootloader is installed at zero offset
 FLASH_RESERVE_START_KB 0
 

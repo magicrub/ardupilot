@@ -131,6 +131,12 @@ void AP_Periph_FW::init()
     //     lwip_opts.addrMode = NET_ADDRESS_STATIC;
     // }
     lwipInit(NULL);
+
+    /// Apply Errata 6.4
+mii_write(&ETHD1, 0x00, 0x3100);
+mii_write(&ETHD1, 0x12, 0x0800);
+mii_write(&ETHD1, 0x00, 0x3100 | (1 << 9));
+
 //    lwipInit(&lwip_opts);
 #endif
     stm32_watchdog_pat();
