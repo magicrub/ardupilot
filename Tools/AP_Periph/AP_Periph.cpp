@@ -29,10 +29,6 @@
 #include <AP_HAL_ChibiOS/hwdef/common/watchdog.h>
 #endif
 
-#if HAL_ENABLE_NETWORKING
-#include <lwip/ip4_addr.h>
-#endif
-
 extern const AP_HAL::HAL &hal;
 
 AP_Periph_FW periph;
@@ -105,33 +101,10 @@ void AP_Periph_FW::init()
 
     load_parameters();
 
-    // initialise LWIP
 #if HAL_ENABLE_NETWORKING
-    // set mac address
-    for (uint8_t i = 0; i < ARRAY_SIZE(g.lwip_macaddr); i++) {
-        macaddress[i] = g.lwip_macaddr[i];
-    }
-    lwip_opts.macaddress = macaddress;
-
-    ip4_addr_t ipaddr, gw;
-    IP4_ADDR(&ipaddr, g.lwip_ipaddr[0], g.lwip_ipaddr[1], g.lwip_ipaddr[2], g.lwip_ipaddr[3]);
-    lwip_opts.address = ipaddr.addr;
-    // create a subnet mask based on the configured netmask
-    for (uint8_t i=0; i<g.lwip_netmask; i++) {
-        lwip_opts.netmask = lwip_opts.netmask | (0x10000000UL >> i);
-    }
-    //set gateway
-    IP4_ADDR(&gw, g.lwip_gwaddr[0], g.lwip_gwaddr[1], g.lwip_gwaddr[2], g.lwip_gwaddr[3]);
-    lwip_opts.gateway = gw.addr;
-
-    // set DHCP option
-    if (g.lwip_dhcp) {
-        lwip_opts.addrMode = NET_ADDRESS_DHCP;
-    } else {
-        lwip_opts.addrMode = NET_ADDRESS_STATIC;
-    }
-    lwipInit(&lwip_opts);
+    networking.init();
 #endif
+
     stm32_watchdog_pat();
 
     can_start();
@@ -437,6 +410,11 @@ void AP_Periph_FW::update()
 #if (defined(HAL_PERIPH_NEOPIXEL_COUNT_WITHOUT_NOTIFY) && HAL_PERIPH_NEOPIXEL_COUNT_WITHOUT_NOTIFY == 8) || defined(HAL_PERIPH_ENABLE_NOTIFY)
     update_rainbow();
 #endif
+
+#if HAL_ENABLE_NETWORKING
+    networking.update();
+#endif
+
 #ifdef HAL_PERIPH_ENABLE_ADSB
     adsb_update();
 #endif

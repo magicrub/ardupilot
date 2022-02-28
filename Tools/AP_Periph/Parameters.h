@@ -7,7 +7,7 @@
 //
 class Parameters {
 public:
-    static const uint16_t k_format_version = 2;
+    static const uint16_t k_format_version = 5;
 
     enum {
         // Layout version number, always key zero.
@@ -51,22 +51,7 @@ public:
         k_param_gps_mb_only_can_port,
         k_param_scripting,
         k_param_esc_telem_port,
-        k_param_lwip_ipaddr0,
-        k_param_lwip_ipaddr1,
-        k_param_lwip_ipaddr2,
-        k_param_lwip_ipaddr3,
-        k_param_lwip_netmask,
-        k_param_lwip_dhcp,
-        k_param_lwip_gwaddr0,
-        k_param_lwip_gwaddr1,
-        k_param_lwip_gwaddr2,
-        k_param_lwip_gwaddr3,
-        k_param_lwip_macaddr0,
-        k_param_lwip_macaddr1,
-        k_param_lwip_macaddr2,
-        k_param_lwip_macaddr3,
-        k_param_lwip_macaddr4,
-        k_param_lwip_macaddr5,
+        k_param_networking,
     };
 
     AP_Int16 format_version;
@@ -137,14 +122,6 @@ public:
 
 #if HAL_GCS_ENABLED
     AP_Int16 sysid_this_mav;
-#endif
-
-#if HAL_ENABLE_NETWORKING
-    AP_Int16 lwip_ipaddr[4];
-    AP_Int16 lwip_netmask;
-    AP_Int16 lwip_dhcp;
-    AP_Int16 lwip_gwaddr[4];
-    AP_Int16 lwip_macaddr[6];
 #endif
 
     Parameters() {}
