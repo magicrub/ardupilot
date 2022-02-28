@@ -133,9 +133,15 @@ void AP_Periph_FW::init()
     lwipInit(NULL);
 
     /// Apply Errata 6.4
-mii_write(&ETHD1, 0x00, 0x3100);
-mii_write(&ETHD1, 0x12, 0x0800);
-mii_write(&ETHD1, 0x00, 0x3100 | (1 << 9));
+#if BOARD_PHY_ID == MII_KSZ9896C_ID
+    for (uint8_t i = 0; i < 32; i++) {
+        if (ETHD1.phyaddrmask & (1 << i)) {
+            mii_write(&ETHD1, i, 0x00, 0x3100);
+            mii_write(&ETHD1, i, 0x12, 0x0800);
+            mii_write(&ETHD1, i, 0x00, 0x3100 | (1 << 9));
+        }
+    }
+#endif
 
 //    lwipInit(&lwip_opts);
 #endif
