@@ -125,12 +125,13 @@ void AP_Periph_FW::init()
     lwip_opts.gateway = gw.addr;
 
     // set DHCP option
-    if (g.lwip_dhcp) {
-        lwip_opts.addrMode = NET_ADDRESS_DHCP;
-    } else {
-        lwip_opts.addrMode = NET_ADDRESS_STATIC;
-    }
-    lwipInit(&lwip_opts);
+    // if (g.lwip_dhcp) {
+    //     lwip_opts.addrMode = NET_ADDRESS_DHCP;
+    // } else {
+    //     lwip_opts.addrMode = NET_ADDRESS_STATIC;
+    // }
+    lwipInit(NULL);
+//    lwipInit(&lwip_opts);
 #endif
     stm32_watchdog_pat();
 

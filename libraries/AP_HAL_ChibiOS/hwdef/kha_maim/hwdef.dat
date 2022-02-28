@@ -90,27 +90,17 @@ STDOUT_SERIAL SD8
 STDOUT_BAUDRATE 115200
 
 ###########################
-# IP Configuration
-define LWIP_DHCP 0
-
-# static IP for when LWIP_DHCP == 0. 
-# **NOTE** Use commas instead of periods
-define LWIP_IPADDR(p)   IP4_ADDR(p, 172,20,13,93)
-define LWIP_GATEWAY(p)  IP4_ADDR(p, 172,20,1,1)
-define LWIP_NETMASK(p)  IP4_ADDR(p, 255,255,0,0)
-
-###########################
 # storage
 ###########################
 #define HAL_USE_EMPTY_STORAGE 1
 define HAL_STORAGE_SIZE 32768
 ###########################
 # OPTION A: build-in flash
-#STORAGE_FLASH_PAGE 14
+STORAGE_FLASH_PAGE 14
 ###########################
 # OPTION B: external RAMTRON flash
-define HAL_WITH_RAMTRON 1
-SPIDEV ramtron        SPI4 DEVID10 FRAM_CS      MODE3  8*MHZ  8*MHZ 
+#define HAL_WITH_RAMTRON 1
+#SPIDEV ramtron        SPI4 DEVID10 FRAM_CS      MODE3  8*MHZ  8*MHZ 
 ###########################
 
 
@@ -125,38 +115,18 @@ PC1  ETH_MDC            ETH1
 PA2  ETH_MDIO           ETH1
 PA1  ETH_RMII_REF_CLK   ETH1
 
-
-# PHY address 0 (invalid or ALL?). This is what it actually says
-define MII_KSZ9896C 0x00221631  # datasheet page 116
-#define MII_KSZ9896C 0x0022207F  # PHY 0. This is what it actually says
-#define MII_KSZ9896C 0x00110B18  # PHY 1-5. This is what it actually says
-#define MII_KSZ9896C 0xFFFFFFFF  # PHY 6-31. This is what it actually says
-
-#define BOARD_PHY_RESET_PIN HAL_GPIO_PIN_GPIO_ETH_RESET_N
-
-define BOARD_PHY_ID MII_KSZ9896C
-#define BOARD_PHY_ASSUME_AUTONEGOTIATE_100MBPS_FULL_DUPLEX
+define BOARD_PHY_ID MII_KSZ9896C_ID
 define BOARD_PHY_RMII
-define BOARD_PHY_ADDRESS 1
-define STM32_MAC_ETH1_CHANGE_PHY_STATE FALSE
-define BOARD_PHY_RESET_SKIP
-define BOARD_PHY_USE_CACHED_LINK_STATUS
-define AP_NETWORKING_PHY_COUNT 5
-define AP_NETWORKING_PHY_PRIMARY 5
+#define BOARD_PHY_ADDRESS 5
 
-define AP_NETWORKING_DEFAULT_IP_ADDR0      172
-define AP_NETWORKING_DEFAULT_IP_ADDR1       20
-define AP_NETWORKING_DEFAULT_IP_ADDR2       13
-define AP_NETWORKING_DEFAULT_IP_ADDR3       93
+# IP Configuration
+define LWIP_DHCP 0
 
-define AP_NETWORKING_DEFAULT_GW_ADDR0      172
-define AP_NETWORKING_DEFAULT_GW_ADDR1       20
-define AP_NETWORKING_DEFAULT_GW_ADDR2        1
-define AP_NETWORKING_DEFAULT_GW_ADDR3        1
-
-define AP_NETWORKING_DEFAULT_NM_ADDR         16
-
-define AP_NETWORKING_DEFAULT_DHCP_ENABLE      0
+# static IP for when LWIP_DHCP == 0. 
+# **NOTE** Use commas instead of periods
+define LWIP_IPADDR(p)   IP4_ADDR(p, 172,20,13,93)
+define LWIP_GATEWAY(p)  IP4_ADDR(p, 172,20,1,1)
+define LWIP_NETMASK(p)  IP4_ADDR(p, 255,255,0,0)
 
 ###################
 
@@ -179,8 +149,6 @@ PE4 FRAM_CS CS SPEED_VERYLOW  # SPI4_NSS
 PE2 SPI4_SCK SPI4
 PE5 SPI4_MISO SPI4
 PE6 SPI4_MOSI SPI4
-
-
 
 # GPIO
 PE11 POWER_VALID1 INPUT GPIO(1)
