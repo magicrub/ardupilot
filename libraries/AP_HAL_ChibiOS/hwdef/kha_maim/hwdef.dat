@@ -1,0 +1,284 @@
+# hw definition file for processing by chibios_hwdef.py
+# for H743
+
+# MCU class and specific type
+MCU STM32H7xx STM32H743xx
+
+# USB setup
+USB_STRING_MANUFACTURER "ArduPilot"
+USB_STRING_PRODUCT "%BOARD%"
+
+define WATCHDOG_DISABLED
+
+# crystal frequency
+OSCILLATOR_HZ 25000000
+
+
+FLASH_SIZE_KB 2048
+
+# setup build for a peripheral firmware
+env AP_PERIPH 1
+env AP_PERIPH_HEAVY 1
+
+define HAL_BUILD_AP_PERIPH
+define HAL_GCS_ENABLED 1
+
+# bootloader is installed at zero offset
+FLASH_RESERVE_START_KB 128
+
+
+
+# board ID for firmware load
+APJ_BOARD_ID 1314
+
+PA13 JTMS-SWDIO SWD
+PA14 JTCK-SWCLK SWD
+
+###########################
+
+# CAN setup
+PB8 CAN1_RX CAN1
+PB9 CAN1_TX CAN1
+
+###########################
+
+# SBG
+PA9 USART1_TX USART1
+PA10 USART1_RX USART1
+
+# Payload 1 Console
+PD5 USART2_TX USART2
+PD6 USART2_RX USART2
+
+# Payload 1 State
+PD8 USART3_TX USART3
+PD9 USART3_RX USART3
+
+# unused, available for debug
+#PC10 UART4_TX UART4
+#PC11 UART4_RX UART4
+
+# Payload 2 Console
+PB5 UART5_RX UART5
+PB6 UART5_TX UART5
+
+# Payload 2 State
+PC6 USART6_TX USART6
+PC7 USART6_RX USART6
+
+# Avionics
+PB3 UART7_RX UART7
+PB4 UART7_TX UART7
+
+# Maintenance
+PE0 UART8_RX UART8
+PE1 UART8_TX UART8
+
+# Now we define the pins that USB is connected on.
+PA11 OTG_FS_DM OTG1
+PA12 OTG_FS_DP OTG1
+
+# order of UARTs (and USB)
+#SERIAL_ORDER OTG1 USART1 USART2 USART3 EMPTY UART5 USART6 UART7 UART8
+
+# MAVLink on Serial 0 and Serial 1
+# CONSOLE/STDOUT on Serial 2
+SERIAL_ORDER OTG1 USART1 USART2 UART8
+#SERIAL_ORDER OTG1 USART1 USART2 UART8
+
+STDOUT_SERIAL SD8
+STDOUT_BAUDRATE 115200
+
+###########################
+# IP Configuration
+define LWIP_DHCP 0
+
+# static IP for when LWIP_DHCP == 0. 
+# **NOTE** Use commas instead of periods
+define LWIP_IPADDR(p)   IP4_ADDR(p, 172,20,13,93)
+define LWIP_GATEWAY(p)  IP4_ADDR(p, 172,20,1,1)
+define LWIP_NETMASK(p)  IP4_ADDR(p, 255,255,0,0)
+
+###########################
+# storage
+###########################
+#define HAL_USE_EMPTY_STORAGE 1
+define HAL_STORAGE_SIZE 32768
+###########################
+# OPTION A: build-in flash
+#STORAGE_FLASH_PAGE 14
+###########################
+# OPTION B: external RAMTRON flash
+define HAL_WITH_RAMTRON 1
+SPIDEV ramtron        SPI4 DEVID10 FRAM_CS      MODE3  8*MHZ  8*MHZ 
+###########################
+
+
+# Ethernet
+PB11 ETH_RMII_TX_EN     ETH1
+PB12 ETH_RMII_TXD0      ETH1
+PB13 ETH_RMII_TXD1      ETH1
+PC4  ETH_RMII_RXD0      ETH1
+PC5  ETH_RMII_RXD1      ETH1
+PA7  ETH_RMII_CRS_DV    ETH1
+PC1  ETH_MDC            ETH1
+PA2  ETH_MDIO           ETH1
+PA1  ETH_RMII_REF_CLK   ETH1
+
+
+# PHY address 0 (invalid or ALL?). This is what it actually says
+define MII_KSZ9896C 0x00221631  # datasheet page 116
+#define MII_KSZ9896C 0x0022207F  # PHY 0. This is what it actually says
+#define MII_KSZ9896C 0x00110B18  # PHY 1-5. This is what it actually says
+#define MII_KSZ9896C 0xFFFFFFFF  # PHY 6-31. This is what it actually says
+
+#define BOARD_PHY_RESET_PIN HAL_GPIO_PIN_GPIO_ETH_RESET_N
+
+define BOARD_PHY_ID MII_KSZ9896C
+#define BOARD_PHY_ASSUME_AUTONEGOTIATE_100MBPS_FULL_DUPLEX
+define BOARD_PHY_RMII
+define BOARD_PHY_ADDRESS 1
+define STM32_MAC_ETH1_CHANGE_PHY_STATE FALSE
+define BOARD_PHY_RESET_SKIP
+define BOARD_PHY_USE_CACHED_LINK_STATUS
+define AP_NETWORKING_PHY_COUNT 5
+define AP_NETWORKING_PHY_PRIMARY 5
+
+define AP_NETWORKING_DEFAULT_IP_ADDR0      172
+define AP_NETWORKING_DEFAULT_IP_ADDR1       20
+define AP_NETWORKING_DEFAULT_IP_ADDR2       13
+define AP_NETWORKING_DEFAULT_IP_ADDR3       93
+
+define AP_NETWORKING_DEFAULT_GW_ADDR0      172
+define AP_NETWORKING_DEFAULT_GW_ADDR1       20
+define AP_NETWORKING_DEFAULT_GW_ADDR2        1
+define AP_NETWORKING_DEFAULT_GW_ADDR3        1
+
+define AP_NETWORKING_DEFAULT_NM_ADDR         16
+
+define AP_NETWORKING_DEFAULT_DHCP_ENABLE      0
+
+###################
+
+#Communications and debug
+# use DNA
+define HAL_CAN_DEFAULT_NODE_ID 0
+define CAN_APP_NODE_NAME "com.KHA.maim"
+#################################
+
+# Multi-purpose pins like SPI, I2C, GPIO, PWMs, LEDs, ADC
+
+I2C_ORDER I2C4
+PD12 I2C4_SCL I2C4
+PD13 I2C4_SDA I2C4
+
+# SPI
+# The CS pin for FRAM (ramtron). This one is marked as using
+# SPEED_VERYLOW, which matches the HAL_PX4 setup.
+PE4 FRAM_CS CS SPEED_VERYLOW  # SPI4_NSS
+PE2 SPI4_SCK SPI4
+PE5 SPI4_MISO SPI4
+PE6 SPI4_MOSI SPI4
+
+
+
+# GPIO
+PE11 POWER_VALID1 INPUT GPIO(1)
+PE12 POWER_VALID2 INPUT GPIO(2)
+PE14 ENABLE_28V_1 OUTPUT LOW GPIO(3)
+PE15 ENABLE_28V_2 OUTPUT LOW GPIO(4)
+PA15 GPIO_ETH_RESET_N OUTPUT HIGH GPIO(5)
+PE7  GPIO_ETH_PWR_ENABLE OUTPUT HIGH GPIO(14)
+
+PD1  DEBUG_EXTRA1    OUTPUT LOW GPIO(60)
+PD0  DEBUG_EXTRA2    OUTPUT LOW GPIO(61)
+PC11 DEBUG_EXTRA3    OUTPUT LOW GPIO(62)
+PC10 DEBUG_EXTRA4    OUTPUT LOW GPIO(63)
+
+# Zeroize
+PE13 TIM1_CH3 TIM1 PWM(1) GPIO(20)
+
+# LEDs
+PE9 LED_RED OUTPUT HIGH GPIO(6)
+define HAL_GPIO_PIN_LED             HAL_GPIO_PIN_LED_RED
+define HAL_LED_ON 1
+
+# BOOT LOADER/SOFTWARE VERSIONING PINS
+PD2 HW_VERSION_0 INPUT PULLUP GPIO(7)
+PD3 HW_VERSION_1 INPUT PULLUP GPIO(8)
+PD4 HW_VERSION_2 INPUT PULLUP GPIO(9)
+
+
+
+# ADC
+PA3 ADC_PYLD_2_VOLTAGE  ADC1 SCALE(1)   # PARAM PIN 15
+PA4 ADC_PYLD_2_CURRENT  ADC1 SCALE(1)   # PARAM PIN 18
+PA5 ADC_PYLD_1_VOLTAGE  ADC1 SCALE(1)   # PARAM PIN 19
+PA6 ADC_PYLD_1_CURRENT  ADC1 SCALE(1)   # PARAM PIN 3
+PB0 ADC_VBAT_SENSE      ADC1 SCALE(1)   # PARAM PIN 9
+PB1 ADC_MAIM_CURRENT    ADC1 SCALE(1)   # PARAM PIN 5
+
+# spare pins
+PA0  ADC_SPARE1     ADC1 SCALE(1)   # PARAM PIN 16
+PE8  TIM1_CH1N TIM1 PWM(2) GPIO(12)
+PE10 TIM1_CH2N TIM1 PWM(3) GPIO(13)
+
+#################################
+
+#DMA_NOSHARE SPI4* USART1_RX USART3_TX USART6_TX UART7*
+
+
+# ---------------------------------------------------------------------------------------------
+# AP_Periph - boiler-plate configurations that all HW AP-Periph need
+# ---------------------------------------------------------------------------------------------
+define DISABLE_SERIAL_ESC_COMM TRUE
+define HAL_NO_RCIN_THREAD
+define HAL_NO_GPIO_IRQ
+
+
+
+
+#################################
+# AP_Periph - configurations specific to this App
+#################################
+
+define HAL_PERIPH_ENABLE_BATTERY
+#define HAL_PERIPH_ENABLE_RC_OUT
+#define HAL_PERIPH_ENABLE_NOTIFY
+#define HAL_PERIPH_ENABLE_GPIO
+
+#define HAL_EXTERNAL_AHRS_ENABLED 1
+
+# listen for reboot command from uploader.py script
+# undefine to disable. Use -1 to allow on all ports, otherwise serial number index defined in SERIAL_ORDER starting at 0
+define HAL_PERIPH_LISTEN_FOR_SERIAL_UART_REBOOT_CMD_PORT 0
+#################################
+
+
+
+##############################################
+################## Scripting #################
+
+# Now setup the pins for the microSD card, if available.
+PC8 SDMMC1_D0 SDMMC1
+#PC9 SDMMC1_D1 SDMMC1
+#PC10 SDMMC1_D2 SDMMC1
+#PC11 SDMMC1_D3 SDMMC1
+PC12 SDMMC1_CK SDMMC1
+#PD2 SDMMC1_CMD SDMMC1
+
+define SCRIPTING_HEAP_SIZE (128*1024)
+
+define HAL_OS_FATFS_IO 1
+
+ROMFS lua_modules/headers.lua libraries/AP_Scripting/modules/headers.lua
+ROMFS lua_modules/ltn12.lua libraries/AP_Scripting/modules/ltn12.lua
+ROMFS lua_modules/mbox.lua libraries/AP_Scripting/modules/mbox.lua
+ROMFS lua_modules/mime.lua libraries/AP_Scripting/modules/mime.lua
+ROMFS lua_modules/socket.lua libraries/AP_Scripting/modules/socket.lua
+ROMFS lua_modules/socket/ftp.lua libraries/AP_Scripting/modules/socket/ftp.lua
+ROMFS lua_modules/socket/http.lua libraries/AP_Scripting/modules/socket/http.lua
+ROMFS lua_modules/socket/smtp.lua libraries/AP_Scripting/modules/socket/smtp.lua
+ROMFS lua_modules/socket/tp.lua libraries/AP_Scripting/modules/socket/tp.lua
+ROMFS lua_modules/socket/url.lua libraries/AP_Scripting/modules/socket/url.lua
+ROMFS lua_modules/socket/headers.lua libraries/AP_Scripting/modules/socket/headers.lua
