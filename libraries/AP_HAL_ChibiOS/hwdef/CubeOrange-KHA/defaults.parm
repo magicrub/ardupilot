@@ -4,6 +4,8 @@ ARMING_MIS_ITEMS        13
 ARMING_RUDDER           0
 ARSPD_FBW_MAX           20
 ARSPD_FBW_MIN           13
+ARSPD_WIND_MAX          15
+AHRS_WIND_MAX           15
 ARSPD_SKIP_CAL          1
 ARSPD_OPTIONS           3
 ARSPD_TYPE              8
