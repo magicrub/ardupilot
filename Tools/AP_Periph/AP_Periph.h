@@ -15,6 +15,7 @@
 #include <AP_MSP/msp.h>
 #include "../AP_Bootloader/app_comms.h"
 #include "hwing_esc.h"
+#include <AP_KHA/AP_KHA.h>
 #include <AP_CANManager/AP_CANManager.h>
 #include <AP_Scripting/AP_Scripting.h>
 #if CONFIG_HAL_BOARD == HAL_BOARD_CHIBIOS
@@ -190,6 +191,8 @@ public:
     void hwesc_telem_update();
 #endif
 
+    AP_KHA kha;
+    
 #ifdef HAL_PERIPH_ENABLE_RC_OUT
 #if HAL_WITH_ESC_TELEM
     AP_ESC_Telem esc_telem;

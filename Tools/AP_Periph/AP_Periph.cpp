@@ -519,6 +519,9 @@ void AP_Periph_FW::update()
 #if (defined(HAL_PERIPH_NEOPIXEL_COUNT_WITHOUT_NOTIFY) && HAL_PERIPH_NEOPIXEL_COUNT_WITHOUT_NOTIFY == 8) || defined(HAL_PERIPH_ENABLE_NOTIFY)
     update_rainbow();
 #endif
+
+    kha.update();
+
 #ifdef HAL_PERIPH_ENABLE_ADSB
     adsb_update();
 #endif

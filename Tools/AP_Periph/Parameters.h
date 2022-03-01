@@ -67,6 +67,7 @@ public:
         k_param_lwip_macaddr3,
         k_param_lwip_macaddr4,
         k_param_lwip_macaddr5,
+        k_param_kha,
     };
 
     AP_Int16 format_version;
