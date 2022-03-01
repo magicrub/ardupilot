@@ -18,7 +18,7 @@ BATT5_OPTIONS           29
 BATT_CAPACITY           56800
 BATT_MONITOR            8
 BATT_OPTIONS            1
-BRD_BOOT_DELAY          7000
+BRD_BOOT_DELAY          1000
 BRD_IMU_TARGTEMP        60
 BRD_PWM_VOLT_SEL        1
 BRD_SAFETYENABLE        0
@@ -37,7 +37,6 @@ COMPASS_PRIO2_ID        96515.0
 COMPASS_PRIO3_ID        590114.0
 COMPASS_USE2            1
 COMPASS_USE3            0
-FBWB_CLIMB_RATE         1.75
 FENCE_ACTION            0
 FENCE_AUTOENABLE        2
 FENCE_ALT_MAX           3657
@@ -69,6 +68,9 @@ PTCH2SRV_RMAX_UP        40
 PTCH2SRV_TCONST         0.6
 PTCH_RATE_D             0.0
 PTCH_RATE_FF            0.810922
+PTCH_RATE_FLTD          0
+PTCH_RATE_FLTE          0
+PTCH_RATE_FLTT          10
 PTCH_RATE_I             0.18
 PTCH_RATE_IMAX          0.888889
 PTCH_RATE_P             0.102102
@@ -78,11 +80,14 @@ RCMAP_THROTTLE          1
 RC_OPTIONS              0
 RLL_RATE_D              0.0
 RLL_RATE_FF             1.350305
+RLL_RATE_FLTD           0
+RLL_RATE_FLTE           0
+RLL_RATE_FLTT           10
 RLL_RATE_I              0.069458
 RLL_RATE_IMAX           0.666667
 RLL_RATE_P              0.154664
 RNGFND1_GNDCLEAR        20
-RNGFND1_MAX_CM          3500
+RNGFND1_MAX_CM          9000
 RNGFND1_MIN_CM          1
 RNGFND1_SCALING         1
 RNGFND1_TYPE            24
@@ -131,7 +136,7 @@ SERVO9_MAX              2000
 SERVO9_MIN              1000
 STAB_PITCH_DOWN         0
 STICK_MIXING            0
-TECS_APPR_SMAX          3
+TECS_APPR_SMAX          1
 TECS_CLMB_MAX           1.75
 TECS_CLMB_OPER          1.5
 TECS_INTEG_GAIN         0.01
@@ -142,9 +147,9 @@ TECS_PITCH_MAX          10
 TECS_PTCH_DAMP          0.2
 TECS_PTCH_FF_V0         15
 TECS_RLL2THR            0
-TECS_SINK_MAX           2
-TECS_SINK_MIN           0.8
-TECS_SINK_OPER          2
+TECS_SINK_MAX           0.7
+TECS_SINK_MIN           0.5
+TECS_SINK_OPER          0.7
 TECS_SPDWEIGHT          2
 TECS_TCONST_STE         0
 TECS_VERT_ACC           15
