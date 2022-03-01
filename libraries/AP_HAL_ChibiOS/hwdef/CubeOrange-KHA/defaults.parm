@@ -144,7 +144,7 @@ STALL_DUR2MAX           3
 STALL_DUR2MIN           2
 STALL_ELEV              -3
 STALL_PREVENTION        0
-STALL_SELF_RECVY        1
+STALL_RECOVERY          1
 STALL_SINK_RATE         -1
 STALL_SPIN_RATE         -1
 STALL_THR1              0
