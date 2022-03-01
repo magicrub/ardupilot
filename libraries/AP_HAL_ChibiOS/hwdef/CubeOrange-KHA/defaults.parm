@@ -185,7 +185,7 @@ TRIM_ARSPD_CM           1500
 TRIM_THROTTLE           51
 USE_REV_THRUST          0
 WP_LOITER_RAD           250
-WP_RADIUS               50
+WP_RADIUS               50  @READONLY
 YAW2SRV_DAMP            0.9
 YAW2SRV_INT             1
 YAW2SRV_RLL             1
