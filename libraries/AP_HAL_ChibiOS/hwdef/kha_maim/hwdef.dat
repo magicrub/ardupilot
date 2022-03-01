@@ -112,9 +112,11 @@ PA1  ETH_RMII_REF_CLK   ETH1
 
 define BOARD_PHY_ID MII_KSZ9896C_ID
 define BOARD_PHY_RMII
+#define BOARD_PHY_ADDRESS_MASK 0x0000003C
+define STM32_MAC_ETH1_CHANGE_PHY_STATE FALSE
 
 # IP Configuration
-#define LWIP_DHCP 0
+define LWIP_DHCP 1
 
 # static IP for when LWIP_DHCP == 0. 
 # **NOTE** Use commas instead of periods
