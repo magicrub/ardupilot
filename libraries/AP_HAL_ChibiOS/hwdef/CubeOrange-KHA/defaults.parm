@@ -59,7 +59,7 @@ LAND_THEN_NEUTRL        1
 LAND_THR_SLEW           126
 LIM_PITCH_MAX           1000
 LIM_PITCH_MIN           -2000
-LIM_ROLL_CD             2000
+LIM_ROLL_CD             3000
 LOG_DISARMED            1
 LOG_FILE_DSRMROT        1
 NTF_LED_TYPES           231
@@ -180,7 +180,7 @@ TRIM_ARSPD_CM           1500
 TRIM_THROTTLE           51
 USE_REV_THRUST          0
 WP_LOITER_RAD           250
-WP_RADIUS               400
+WP_RADIUS               50
 YAW2SRV_DAMP            0.9
 YAW2SRV_INT             1
 YAW2SRV_RLL             1
