@@ -1,0 +1,4 @@
+#
+# support for GPIO on UAVCAN
+
+uint32 pin_states
