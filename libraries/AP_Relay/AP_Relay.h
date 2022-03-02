@@ -11,7 +11,9 @@
 
 #include <AP_Param/AP_Param.h>
 
+#ifndef AP_RELAY_NUM_RELAYS
 #define AP_RELAY_NUM_RELAYS 6
+#endif
 
 /// @class	AP_Relay
 /// @brief	Class to manage the ArduPilot relay
@@ -33,7 +35,16 @@ public:
     void        off(uint8_t instance) { set(instance, false); }
 
     // see if the relay is enabled
-    bool        enabled(uint8_t instance) { return instance < AP_RELAY_NUM_RELAYS && _pin[instance] != -1; }
+    bool        enabled(uint8_t instance) const { return instance < AP_RELAY_NUM_RELAYS && _pin[instance] != -1; }
+
+    // see if ANY relay is enabled
+    bool        enabled() const { for (uint8_t i=0; i<AP_RELAY_NUM_RELAYS; i++) { if (enabled(i)) { return true; } } return false; }
+
+    // get a bitfield of the state of all the pins
+    uint32_t get_pin_values() const { return _pin_values; }
+
+    // activate the relay with logic level value.
+    void        set(uint8_t instance, bool value);
 
     // toggle the relay status
     void        toggle(uint8_t instance);
@@ -51,7 +62,7 @@ private:
     AP_Int8 _pin[AP_RELAY_NUM_RELAYS];
     AP_Int8 _default;
 
-    void set(uint8_t instance, bool value);
+    uint32_t _pin_values;
 };
 
 namespace AP {
