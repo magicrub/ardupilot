@@ -68,14 +68,16 @@ function update() -- this is the loop which periodically runs
                 c:send("HTTP/1.0 200 OK\r\nContent-Type: application/json\r\nConnection: close\r\n\r\n")
                 c:send("{\"result\":\"ok\"}")
                 gpio:write(60, 1)
+                gpio:write(20, 1)
                 gpio:write(3, 1)
-                gpio:write(4, 0)
+                gpio:write(4, 1)
             elseif request_uri == "write/1" then
                 c:send("HTTP/1.0 200 OK\r\nContent-Type: application/json\r\nConnection: close\r\n\r\n")
                 c:send("{\"result\":\"ok\"}")
                 gpio:write(60, 0)
+                gpio:write(20, 0)
                 gpio:write(3, 0)
-                gpio:write(4, 1)
+                gpio:write(4, 0)
             else
                 -- send 404 if file not found
                 c:send("HTTP/1.0 404 Not Found\r\nContent-Type: text/html\r\nConnection: close\r\n\r\n")
