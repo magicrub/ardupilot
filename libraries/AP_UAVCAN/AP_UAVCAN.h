@@ -225,6 +225,14 @@ private:
 
     HAL_Semaphore _led_out_sem;
 
+    struct {
+        AP_Int32 param_bm;
+        uint32_t last_send_ms;
+        uint32_t last_update_ms;
+        uint16_t last_pin_values;
+    } _gpio;
+    void gpio_send();
+
     // buzzer
     struct {
         HAL_Semaphore sem;

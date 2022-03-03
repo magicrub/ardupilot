@@ -124,6 +124,13 @@ AP_Relay::AP_Relay(void)
 
 void AP_Relay::init()
 {
+    uint32_t pin_values = 0;
+    for (uint8_t i=0; i<AP_RELAY_NUM_RELAYS; i++) {
+      pin_values <<= 1UL;
+      pin_values |= (uint32_t)(hal.gpio->read(_pin[i]) & 0x01);
+    }
+    _pin_values = pin_values;
+
     if (_default != 0 && _default != 1) {
         return;
     }
@@ -142,6 +149,9 @@ void AP_Relay::set(const uint8_t instance, const bool value)
     }
     hal.gpio->pinMode(_pin[instance], HAL_GPIO_OUTPUT);
     hal.gpio->write(_pin[instance], value);
+
+    const uint32_t bitfield = (1UL<<instance);
+    _pin_values = value ? (_pin_values | bitfield) : (_pin_values & ~bitfield);
 }
 
 void AP_Relay::toggle(uint8_t instance)
