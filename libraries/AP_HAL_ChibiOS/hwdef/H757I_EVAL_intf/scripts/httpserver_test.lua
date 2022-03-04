@@ -45,7 +45,7 @@ function update() -- this is the loop which periodically runs
                 request_uri = "index.html"
             end
             -- send response
-            resp_file = io.open("./fs/"..request_uri, "r")
+            resp_file = io.open("./scripts/fs/"..request_uri, "r")
 
             -- send html file if exists
             if resp_file and request_uri:match(".html") then
