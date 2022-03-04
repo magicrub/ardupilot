@@ -37,13 +37,13 @@ function update() -- this is the loop which periodically runs
     c = s:accept()
     l, e = c:receive()
     while not e do
-        gcs:send_text(0, l)
         -- check if we received GET line
         if l:find("GET") then
             request_uri = l:match("GET /(.*) HTTP")
             if not request_uri or request_uri == "" then
                 request_uri = "index.html"
             end
+            
             -- send response
             resp_file = io.open("./scripts/fs/"..request_uri, "r")
 
