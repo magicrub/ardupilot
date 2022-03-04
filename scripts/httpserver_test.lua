@@ -46,8 +46,8 @@ function update() -- this is the loop which periodically runs
                 request_uri = "/index.html"
             end
 
-            path, query = request_uri:match("(.*)(?.*)")
-            gcs:send_text(0, "Query: " .. query)
+            path, query = request_uri:match("(.*)?(.*)")
+            if query then  gcs:send_text(0, "Query: " .. query) end
 
             -- send response
             resp_file = io.open("./scripts/fs"..request_uri, "r")
