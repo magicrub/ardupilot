@@ -16,7 +16,7 @@ state = {
         consoleForward = {
             ip = "127.0.0.1",
             port = 1234
-        }
+        },
         maintenancePort = "none"
     },
     payload1 = {
@@ -56,6 +56,23 @@ function update() -- this is the loop which periodically runs
                     c:send(l)
                 end
 
+            elseif request_uri == "state" then
+                c:send("HTTP/1.0 200 OK\r\nContent-Type: application/json\r\nConnection: close\r\n\r\n")
+                c:send([[{
+                    "system": {
+                        "voltage": ]] math.random() [[,
+                        "current": ]] math.random() [[
+                    },
+                    "payload1": {
+                        "voltage": ]] math.random() [[,
+                        "current": ]] math.random() [[
+                    },
+                    "payload2": {
+                        "voltage": ]] math.random() [[,
+                        "current": ]] math.random() [[
+                    }
+                }]])
+
             elseif request_uri == "configuration" then
                 c:send("HTTP/1.0 200 OK\r\nContent-Type: application/json\r\nConnection: close\r\n\r\n")
                 c:send([[{
@@ -63,20 +80,20 @@ function update() -- this is the loop which periodically runs
                         "consoleForward": {
                             "ip": "]] state.system.consoleForward.ip [[",
                             "port": ]] state.system.consoleForward.port [[
-                        }
+                        },
                         "maintenancePort": "]] state.system.maintenancePort [["
                     },
                     "payload1": {
                         "enabled": ]] state.payload1.enabled [[,
                         "ip": "]] state.payload1.ip [[",
                         "netmask": "]] state.payload1.netmask [[",
-                        "gateway": "]] state.payload1.gateway [[",
+                        "gateway": "]] state.payload1.gateway [["
                     },
                     "payload2": {
                         "enabled": ]] state.payload2.enabled [[,
                         "ip": "]] state.payload2.ip [[",
                         "netmask": "]] state.payload2.netmask [[",
-                        "gateway": "]] state.payload2.gateway [[",
+                        "gateway": "]] state.payload2.gateway [["
                     }
                 }]])
 
