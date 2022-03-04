@@ -192,3 +192,16 @@ YAW2SRV_DAMP            0.9
 YAW2SRV_INT             1
 YAW2SRV_RLL             1
 YAW2SRV_SLIP            6
+
+
+# MAIM payload
+BRD_PWM_COUNT           2
+RELAY_DEFAULT           1
+RELAY_PIN               52
+RELAY_PIN2              53
+RELAY_PIN3              54
+SERVO11_FUNCTION        -1
+SERVO12_FUNCTION        -1
+SERVO13_FUNCTION        -1
+CAN_D1_UC_GPIO          6
+
