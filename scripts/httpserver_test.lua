@@ -84,13 +84,13 @@ function update() -- this is the loop which periodically runs
                         "maintenancePort": "]] .. state.system.maintenancePort .. [["
                     },
                     "payload1": {
-                        "enabled": ]] .. state.payload1.enabled .. [[,
+                        "enabled": ]] .. tostring(state.payload1.enabled) .. [[,
                         "ip": "]] .. state.payload1.ip .. [[",
                         "netmask": "]] .. state.payload1.netmask .. [[",
                         "gateway": "]] .. state.payload1.gateway .. [["
                     },
                     "payload2": {
-                        "enabled": ]] .. state.payload2.enabled .. [[,
+                        "enabled": ]] .. tostring(state.payload2.enabled) .. [[,
                         "ip": "]] .. state.payload2.ip .. [[",
                         "netmask": "]] .. state.payload2.netmask .. [[",
                         "gateway": "]] .. state.payload2.gateway .. [["
