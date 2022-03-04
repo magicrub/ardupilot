@@ -39,18 +39,18 @@ function update() -- this is the loop which periodically runs
         l, e = c:receive()
         if e then break end
 
-        gcs:send_text(0, l)
-
-
         -- check if we received GET line
         if l:find("GET") then
-            request_uri = l:match("GET /(.*) HTTP")
-            if not request_uri or request_uri == "" then
-                request_uri = "index.html"
+            request_uri = l:match("GET (/.*) HTTP")
+            if request_uri == "/" then
+                request_uri = "/index.html"
             end
 
+            path, query = request_uri.match("(.*)(?.*)")
+            gcs:send_text(0, "Query: " .. query)
+
             -- send response
-            resp_file = io.open("./scripts/fs/"..request_uri, "r")
+            resp_file = io.open("./scripts/fs"..request_uri, "r")
 
             -- send html file if exists
             if resp_file and request_uri:match(".html") then
@@ -108,11 +108,9 @@ function update() -- this is the loop which periodically runs
                 c:send("<html><body><h1>404 Not Found</h1></body></html>")
 
             end
-
-            break
         end
+    end
 
-         end
     c:close()
     return update, 1 -- reschedules the loop
 end
