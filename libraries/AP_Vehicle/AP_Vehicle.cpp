@@ -73,6 +73,10 @@ const AP_Param::GroupInfo AP_Vehicle::var_info[] = {
     AP_SUBGROUPINFO(airspeed, "ARSPD", 10, AP_Vehicle, AP_Airspeed),
 #endif
 
+    // @Group: KHA_
+    // @Path: ../libraries/AP_KHA/AP_KHA.cpp
+    AP_SUBGROUPINFO(kha, "KHA_", 50, AP_Vehicle, AP_KHA),
+
     AP_GROUPEND
 };
 

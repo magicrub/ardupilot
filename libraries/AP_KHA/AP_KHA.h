@@ -19,8 +19,15 @@
  */
 
 #include <AP_HAL/AP_HAL.h>
+#include <AP_Common/AP_Common.h>
 #include <AP_Param/AP_Param.h>
-#include <AP_InertialSensor/AP_InertialSensor.h>
+#include <AP_SerialManager/AP_SerialManager.h>
+
+#define AP_KHA_MAIM_PAYLOAD_COUNT_MAX 2
+
+#if AP_KHA_MAIM_PAYLOAD_COUNT_MAX <= 0
+#error "AP_KHA_MAIM_PAYLOAD_COUNT_MAX must be at least 1"
+#endif
 
 class AP_KHA
 {
@@ -28,10 +35,12 @@ public:
     // constructor.  This remains because construction of Copter's g2
     // object becomes problematic if we don't have at least one object
     // to initialise
-    AP_KHA() {}
+    AP_KHA();
 
     // settable parameters
     static const struct AP_Param::GroupInfo var_info[];
+
+    static AP_KHA *get_singleton(void) { return _singleton; }
 
     void update(void);
 
@@ -39,25 +48,92 @@ public:
     AP_KHA(const AP_KHA &other) = delete;
     AP_KHA &operator=(const AP_KHA&) = delete;
 
+    char* get_json_str() { return (char*)"This is a test of const string function"; }
+    
+    enum class KHA_MAIM_Maint_Serial_Protocol_t : uint8_t {
+        NONE            = 0,
+        PAYLOAD1        = 1,
+        PAYLOAD2        = 2,
+        AIRCRAFT        = 3,
+        AHRS            = 4,
+        SLCAN           = 5,
+    } ;
+
+    enum class KHA_Vehicle_Type_t : uint8_t {
+        MAIM            = 0,
+        Plane           = 1,
+        Plane_VTOL      = 2,
+    } ;
+
+
+    struct KHA_IP_t {
+        AP_Int16 ip[4];
+    };
+    struct KHA_IP_PORT_t {
+        AP_Int16 ip[4];
+        AP_Int32 port;
+    };
+
+    AP_Enum<KHA_Vehicle_Type_t> _type;
+
+    struct KHA_MAIM_t {
+        KHA_IP_t my_ip;
+        AP_Int32 my_netmask;
+        KHA_IP_t my_gateway;
+
+        struct KHA_MAIM_Payload_t {
+            struct {
+                KHA_IP_PORT_t eth_out;
+                AP_Int8 eth_out_enabled_at_boot;
+                bool eth_out_enabled;
+                AP_HAL::UARTDriver *port;
+            } console;
+
+            struct {
+                AP_Int8 enabled_at_boot;
+                bool enabled;
+                float voltage;
+                float current;
+            } power;
+
+            AP_HAL::UARTDriver *state_port;
+            bool zeroize;
+            uint32_t pps_start_ms;
+            uint32_t pps_on_ms;
+            uint32_t pps_off_ms;
+        } payload[AP_KHA_MAIM_PAYLOAD_COUNT_MAX];
+
+        struct KHA_MAIM_Maint_t {
+            AP_Enum<KHA_MAIM_Maint_Serial_Protocol_t> protocol;
+            AP_HAL::UARTDriver *port;
+        } maint;
+
+        struct KHA_MAIM_Avionics_t {
+            AP_Enum<KHA_MAIM_Maint_Serial_Protocol_t> protocol;
+            AP_HAL::UARTDriver *port;
+        } avionics;
+
+        struct {
+            KHA_IP_PORT_t eth_out;
+            AP_Int8 enabled_at_boot;
+            bool enabled;
+            uint32_t timer_ms;
+        } state_json;
+    } _maim;
     
 private:
+    static AP_KHA *_singleton;
 
     void init();
-    void service_loopback();
-
+    
     struct {
         uint32_t timer_ms;
         bool done;
         uint8_t state;
     } _init;
 
-    struct {
-        AP_Int8 enabled;
-        AP_Int8 serial_loopback_broadcast;
-        
-    } _param;
-    
-    AP_HAL::UARTDriver *_port_loopback[SERIALMANAGER_NUM_PORTS];
+};
 
-    
+namespace AP {
+    AP_KHA *kha(void);
 };

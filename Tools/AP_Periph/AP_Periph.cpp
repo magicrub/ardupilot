@@ -125,12 +125,12 @@ void AP_Periph_FW::init()
     IP4_ADDR(&gw, g.lwip_gwaddr[0], g.lwip_gwaddr[1], g.lwip_gwaddr[2], g.lwip_gwaddr[3]);
     lwip_opts.gateway = gw.addr;
 
-    // set DHCP option
-    if (g.lwip_dhcp) {
-        lwip_opts.addrMode = NET_ADDRESS_DHCP;
-    } else {
-        lwip_opts.addrMode = NET_ADDRESS_STATIC;
-    }
+    // // set DHCP option
+    // if (g.lwip_dhcp) {
+    //     lwip_opts.addrMode = NET_ADDRESS_DHCP;
+    // } else {
+    //     lwip_opts.addrMode = NET_ADDRESS_STATIC;
+    // }
     lwipInit(NULL);
 
 #if BOARD_PHY_ID == MII_KSZ9896C_ID

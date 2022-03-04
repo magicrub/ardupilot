@@ -912,6 +912,14 @@ function RPM:get_rpm(instance) end
 
 
 -- desc
+---@class kha
+kha = {}
+
+-- desc
+---@return string
+function kha:get_json_str() end
+
+-- desc
 ---@class mission
 ---@field MISSION_COMPLETE number
 ---@field MISSION_RUNNING number
