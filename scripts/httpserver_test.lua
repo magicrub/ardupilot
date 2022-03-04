@@ -37,8 +37,10 @@ function update() -- this is the loop which periodically runs
     c = s:accept()
     while true do
         l, e = c:receive()
-        gcs:send_text(0, l)
         if e then break end
+
+        gcs:send_text(0, l)
+
 
         -- check if we received GET line
         if l:find("GET") then
