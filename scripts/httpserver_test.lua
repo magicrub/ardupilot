@@ -35,15 +35,18 @@ state = {
 
 function update() -- this is the loop which periodically runs
     c = s:accept()
-    l, e = c:receive()
-    while not e do
+    while true do
+        l, e = c:receive()
+        gcs:send_text(0, l)
+        if e break
+
         -- check if we received GET line
         if l:find("GET") then
             request_uri = l:match("GET /(.*) HTTP")
             if not request_uri or request_uri == "" then
                 request_uri = "index.html"
             end
-            
+
             -- send response
             resp_file = io.open("./scripts/fs/"..request_uri, "r")
 
@@ -97,16 +100,17 @@ function update() -- this is the loop which periodically runs
                     }
                 }]])
 
-            else
+            else 
                 -- send 404 if file not found
                 c:send("HTTP/1.0 404 Not Found\r\nContent-Type: text/html\r\nConnection: close\r\n\r\n")
                 c:send("<html><body><h1>404 Not Found</h1></body></html>")
+
             end
-            
+
             break
         end
-        l, e = c:receive()
-    end
+
+         end
     c:close()
     return update, 1 -- reschedules the loop
 end
