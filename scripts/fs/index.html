@@ -384,8 +384,8 @@
             }
 
             async function load() {
-                //const response = await fetch("configuration");
-                //configuration = await response.json();
+                const response = await fetch("configuration");
+                configuration = await response.json();
                 update();
             }
 
@@ -397,22 +397,8 @@
             }
 
             async function refresh() {
-                //const response = await fetch("state");
-                //state = await response.json();
-                state = {
-                    system: {
-                        voltage: Math.random(),
-                        current: Math.random(),
-                    },
-                    payload1: {
-                        voltage: Math.random(),
-                        current: Math.random(),
-                    },
-                    payload2: {
-                        voltage: Math.random(),
-                        current: Math.random(),
-                    },
-                };
+                const response = await fetch("state");
+                state = await response.json();
                 updateState();
             }
 
