@@ -47,7 +47,7 @@ function update() -- this is the loop which periodically runs
             end
 
             path, query = request_uri:match("(.*)?(.*)")
-            if query != nil then  gcs:send_text(0, "Query: " .. query) end
+            if query ~= nil then  gcs:send_text(0, "Query: " .. query) end
 
             -- send response
             resp_file = io.open("./scripts/fs"..request_uri, "r")
