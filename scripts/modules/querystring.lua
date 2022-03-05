@@ -20,7 +20,6 @@ limitations under the License.
   tags = {"luvit", "url", "codec"}
 ]]
 
-require("string")
 
 local find = string.find
 local gsub = string.gsub
