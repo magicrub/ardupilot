@@ -11,7 +11,7 @@ assert(i, p)
 gcs:send_text(0, "Waiting connection from talker on " .. i .. ":" .. p .. "...")
 gcs:send_text(0, "Connected. Here is the stuff:")
 
-state = {
+configuration = {
     system = {
         consoleForward = {
             ip = "127.0.0.1",
@@ -85,22 +85,22 @@ function update() -- this is the loop which periodically runs
                 c:send([[{
                     "system": {
                         "consoleForward": {
-                            "ip": "]] .. state.system.consoleForward.ip .. [[",
-                            "port": ]] .. state.system.consoleForward.port .. [[
+                            "ip": "]] .. configuration.system.consoleForward.ip .. [[",
+                            "port": ]] .. configuration.system.consoleForward.port .. [[
                         },
-                        "maintenancePort": "]] .. state.system.maintenancePort .. [["
+                        "maintenancePort": "]] .. configuration.system.maintenancePort .. [["
                     },
                     "payload1": {
-                        "enabled": ]] .. tostring(state.payload1.enabled) .. [[,
-                        "ip": "]] .. state.payload1.ip .. [[",
-                        "netmask": "]] .. state.payload1.netmask .. [[",
-                        "gateway": "]] .. state.payload1.gateway .. [["
+                        "enabled": ]] .. tostring(configuration.payload1.enabled) .. [[,
+                        "ip": "]] .. configuration.payload1.ip .. [[",
+                        "netmask": "]] .. configuration.payload1.netmask .. [[",
+                        "gateway": "]] .. configuration.payload1.gateway .. [["
                     },
                     "payload2": {
-                        "enabled": ]] .. tostring(state.payload2.enabled) .. [[,
-                        "ip": "]] .. state.payload2.ip .. [[",
-                        "netmask": "]] .. state.payload2.netmask .. [[",
-                        "gateway": "]] .. state.payload2.gateway .. [["
+                        "enabled": ]] .. tostring(configuration.payload2.enabled) .. [[,
+                        "ip": "]] .. configuration.payload2.ip .. [[",
+                        "netmask": "]] .. configuration.payload2.netmask .. [[",
+                        "gateway": "]] .. configuration.payload2.gateway .. [["
                     }
                 }]])
 
