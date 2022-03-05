@@ -47,7 +47,7 @@ function update() -- this is the loop which periodically runs
             end
 
         
-            path, query = request_uri:match("(.*)?(.*)")
+            path, query = request_uri:match("(.*)(?.*)")
             if query ~= nil then  gcs:send_text(0, "Query: " .. query) end
 
             -- send response
@@ -62,7 +62,7 @@ function update() -- this is the loop which periodically runs
                     c:send(l)
                 end
 
-            elseif request_uri == "state" then
+            elseif request_uri == "/state" then
                 c:send("HTTP/1.0 200 OK\r\nContent-Type: application/json\r\nConnection: close\r\n\r\n")
                 c:send([[{
                     "system": {
@@ -79,7 +79,7 @@ function update() -- this is the loop which periodically runs
                     }
                 }]])
 
-            elseif request_uri == "configuration" then
+            elseif request_uri == "/configuration" then
                 c:send("HTTP/1.0 200 OK\r\nContent-Type: application/json\r\nConnection: close\r\n\r\n")
                 c:send([[{
                     "system": {
