@@ -1,5 +1,7 @@
-local math = require "math"
 local socket = require "socket"
+
+socket.select(nil, nil, 1)
+
 local lunajson = require "lunajson"
 
 local host = "*"
@@ -8,7 +10,7 @@ local port = 80
 gcs:send_text(0, "Binding to host '" .. host .. "' and port " .. port .. "...")
 
 local socket = assert(socket.bind(host, port))
-local ip, port = s:getsockname()
+local ip, port = socket:getsockname()
 assert(ip, port)
 
 gcs:send_text(0, "Waiting connection from talker on " .. ip .. ":" .. port .. "...")
