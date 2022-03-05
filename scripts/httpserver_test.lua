@@ -2,6 +2,7 @@
 -- HTTPSERVER sample
 -----------------------------------------------------------------------------
 local socket = require("socket")
+local querystring = require("querystring")
 host = "*"
 port = 80
 gcs:send_text(0, "Binding to host '" ..host.. "' and port " ..port.. "...")
@@ -48,13 +49,13 @@ function update() -- this is the loop which periodically runs
 
         
             path, query = request_uri:match("(.*)(?.*)")
-            if query ~= nil then  gcs:send_text(0, "Query: " .. query) end
+            if query then gcs:send_text(0, querystring.parse(query)) end
 
             -- send response
-            resp_file = io.open("./scripts/fs"..request_uri, "r")
+            resp_file = io.open("./scripts/fs"..path, "r")
 
             -- send html file if exists
-            if resp_file and request_uri:match(".html") then
+            if resp_file and path:match(".html") then
                 c:send("HTTP/1.0 200 OK\r\nContent-Type: text/html\r\nConnection: close\r\n\r\n")
                 while true do
                     l = resp_file:read(1024)
@@ -62,7 +63,7 @@ function update() -- this is the loop which periodically runs
                     c:send(l)
                 end
 
-            elseif request_uri == "/state" then
+            elseif path == "/state" then
                 c:send("HTTP/1.0 200 OK\r\nContent-Type: application/json\r\nConnection: close\r\n\r\n")
                 c:send([[{
                     "system": {
@@ -79,7 +80,7 @@ function update() -- this is the loop which periodically runs
                     }
                 }]])
 
-            elseif request_uri == "/configuration" then
+            elseif path == "/configuration" then
                 c:send("HTTP/1.0 200 OK\r\nContent-Type: application/json\r\nConnection: close\r\n\r\n")
                 c:send([[{
                     "system": {
