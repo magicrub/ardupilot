@@ -121,7 +121,7 @@ end
 return update() -- run immediately before starting to reschedule
 
 
-local function urldecode(str)
+function urldecode(str)
     str = string.gsub(str, '+', ' ')
     str = string.gsub(str, '%%(%x%x)', function(h)
       return string.char(tonumber(h, 16))
@@ -131,7 +131,7 @@ local function urldecode(str)
   end
 
 -- parse querystring into table. urldecode tokens
-local function parse_query_string(str, sep, eq)
+function parse_query_string(str, sep, eq)
     if not sep then sep = '&' end
     if not eq then eq = '=' end
     local vars = {}
