@@ -82,7 +82,12 @@ function update() -- this is the loop which periodically runs
             elseif path == "/configuration" then
                 if query then 
                     configuration = parse_query_string(query)
-                    gcs:send_text(0, table.tostring(configuration))
+                    local keyset = ""
+                    for k,v in pairs(tab) do
+                        keyset = keyset .. k
+                    end
+                    gcs:send_text(0, keyset)
+
                     if configuration["system.consoleForward.ip"] then state.system.consoleForward.ip = configuration["system.consoleForward.ip"] end
                 end
 
