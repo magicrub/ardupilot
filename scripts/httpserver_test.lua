@@ -116,3 +116,5 @@ function update() -- this is the loop which periodically runs
 
     return update, 1 -- reschedules the loop
 end
+
+return update()
