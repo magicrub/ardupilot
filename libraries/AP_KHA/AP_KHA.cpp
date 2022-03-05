@@ -36,20 +36,6 @@ const AP_Param::GroupInfo AP_KHA::var_info[] = {
 
     AP_GROUPINFO("TYPE"        ,  1, AP_KHA, _type, (int8_t)KHA_Vehicle_Type_t::MAIM),
 
-
-    AP_GROUPINFO("IP0"         ,  2, AP_KHA, _maim.my_ip.ip[0], 172),
-    AP_GROUPINFO("IP1"         ,  3, AP_KHA, _maim.my_ip.ip[1], 20),
-    AP_GROUPINFO("IP2"         ,  4, AP_KHA, _maim.my_ip.ip[2], 13),
-    AP_GROUPINFO("IP3"         ,  5, AP_KHA, _maim.my_ip.ip[3], 90),
-
-    AP_GROUPINFO("NETMASK"     ,  6, AP_KHA, _maim.my_netmask, 16),
-
-    AP_GROUPINFO("GWP0"        ,  7, AP_KHA, _maim.my_gateway.ip[0], 172),
-    AP_GROUPINFO("GW1"         ,  8, AP_KHA, _maim.my_gateway.ip[1], 20),
-    AP_GROUPINFO("GW2"         ,  9, AP_KHA, _maim.my_gateway.ip[2], 1),
-    AP_GROUPINFO("GW3"         , 10, AP_KHA, _maim.my_gateway.ip[3], 1),
-
-
     AP_GROUPINFO("JSON_IP0"    , 11, AP_KHA, _maim.state_json.eth_out.ip[0], 239),
     AP_GROUPINFO("JSON_IP1"    , 12, AP_KHA, _maim.state_json.eth_out.ip[1], 2),
     AP_GROUPINFO("JSON_IP2"    , 13, AP_KHA, _maim.state_json.eth_out.ip[2], 3),

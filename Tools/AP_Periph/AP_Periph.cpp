@@ -221,13 +221,11 @@ void AP_Periph_FW::init()
     notify.init();
 #endif
 
+    kha.init();
+
 #if AP_SCRIPTING_ENABLED
     scripting.init();
 #endif
-
-    printf("\r\n*****************\r\n");
-    printf("ETHD1.phyaddrmask: 0x%08X\r\n", ETHD1.phyaddrmask);
-    printf("*****************\r\n");
 
     start_ms = AP_HAL::native_millis();
 }

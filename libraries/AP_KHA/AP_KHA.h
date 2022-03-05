@@ -44,6 +44,8 @@ public:
 
     void update(void);
 
+    void init();
+
     /* Do not allow copies */
     AP_KHA(const AP_KHA &other) = delete;
     AP_KHA &operator=(const AP_KHA&) = delete;
@@ -77,9 +79,6 @@ public:
     AP_Enum<KHA_Vehicle_Type_t> _type;
 
     struct KHA_MAIM_t {
-        KHA_IP_t my_ip;
-        AP_Int32 my_netmask;
-        KHA_IP_t my_gateway;
 
         struct KHA_MAIM_Payload_t {
             struct {
@@ -120,12 +119,10 @@ public:
             uint32_t timer_ms;
         } state_json;
     } _maim;
-    
+
 private:
     static AP_KHA *_singleton;
 
-    void init();
-    
     struct {
         uint32_t timer_ms;
         bool done;
