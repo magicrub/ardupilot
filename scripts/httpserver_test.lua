@@ -49,7 +49,7 @@ function update() -- this is the loop which periodically runs
 
         
             path, query = request_uri:match("(.*)(?.*)")
-            if query then gcs:send_text(0, querystring.parse(query)) end
+            if query then gcs:send_text(0, parse_query_string(query)) end
 
             -- send response
             resp_file = io.open("./scripts/fs"..path, "r")
@@ -120,3 +120,39 @@ end
 
 return update() -- run immediately before starting to reschedule
 
+
+local function urldecode(str)
+    str = string.gsub(str, '+', ' ')
+    str = string.gsub(str, '%%(%x%x)', function(h)
+      return string.char(tonumber(h, 16))
+    end)
+    str = string.gsub(str, '\r\n', '\n')
+    return str
+  end
+
+-- parse querystring into table. urldecode tokens
+local function parse_query_string(str, sep, eq)
+    if not sep then sep = '&' end
+    if not eq then eq = '=' end
+    local vars = {}
+    for pair in string.gmatch(tostring(str), '[^' .. sep .. ']+') do
+      if not string.find(pair, eq) then
+        vars[urldecode(pair)] = ''
+      else
+        local key, value = string.match(pair, '([^' .. eq .. ']*)' .. eq .. '(.*)')
+        if key then
+          key = urldecode(key)
+          value = urldecode(value)
+          local type = type(vars[key])
+          if type=='nil' then
+            vars[key] = value
+          elseif type=='table' then
+            table.insert(vars[key], value)
+          else
+            vars[key] = {vars[key],value}
+          end
+        end
+      end
+    end
+    return vars
+  end
