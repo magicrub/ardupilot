@@ -18,13 +18,11 @@
 #include <AP_KHA/AP_KHA.h>
 #include <AP_CANManager/AP_CANManager.h>
 #include <AP_Scripting/AP_Scripting.h>
+#include <AP_Networking/AP_Networking.h>
 #if CONFIG_HAL_BOARD == HAL_BOARD_CHIBIOS
 #include <AP_HAL_ChibiOS/CANIface.h>
 #elif CONFIG_HAL_BOARD == HAL_BOARD_SITL
 #include <AP_HAL_SITL/CANSocketIface.h>
-#endif
-#if HAL_ENABLE_NETWORKING
-#include "lwipthread.h"
 #endif
 #if HAL_GCS_ENABLED
 #include "GCS_MAVLink.h"
@@ -262,8 +260,7 @@ public:
     static bool no_iface_finished_dna;
 
 #if HAL_ENABLE_NETWORKING
-    lwipthread_opts_t lwip_opts;
-    uint8_t macaddress[6];
+    AP_Networking networking;
 #endif
 };
 

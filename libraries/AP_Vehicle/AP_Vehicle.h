@@ -41,6 +41,7 @@
 #include <AP_Hott_Telem/AP_Hott_Telem.h>
 #include <AP_ESC_Telem/AP_ESC_Telem.h>
 #include <AP_GyroFFT/AP_GyroFFT.h>
+#include <AP_Networking/AP_Networking.h>
 #include <AP_VisualOdom/AP_VisualOdom.h>
 #include <AP_VideoTX/AP_VideoTX.h>
 #include <AP_MSP/AP_MSP.h>
@@ -364,6 +365,10 @@ protected:
     
 #if HAL_SMARTAUDIO_ENABLED
     AP_SmartAudio smartaudio;
+#endif
+
+#if HAL_ENABLE_NETWORKING
+    AP_Networking networking;
 #endif
 
 #if HAL_EFI_ENABLED
