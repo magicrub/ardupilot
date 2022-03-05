@@ -80,7 +80,6 @@ function update() -- this is the loop which periodically runs
                 }]])
 
             elseif path == "/configuration" then
-
                 c:send("HTTP/1.0 200 OK\r\nContent-Type: application/json\r\nConnection: close\r\n\r\n")
                 c:send([[{
                     "system": {
