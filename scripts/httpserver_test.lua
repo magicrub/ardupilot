@@ -48,7 +48,6 @@ function update() -- this is the loop which periodically runs
 
         
             path, query = request_uri:match("(.*)(?.*)")
-            if query then gcs:send_text(0, parse_query_string(query)) end
 
             -- send response
             resp_file = io.open("./scripts/fs"..path, "r")
@@ -80,6 +79,11 @@ function update() -- this is the loop which periodically runs
                 }]])
 
             elseif path == "/configuration" then
+                if query then 
+                    configuration = parse_query_string(query)
+                    if configuration["system.consoleForward.ip"] then state.system.consoleForward.ip = configuration["system.consoleForward.ip"] end
+                end
+                
                 c:send("HTTP/1.0 200 OK\r\nContent-Type: application/json\r\nConnection: close\r\n\r\n")
                 c:send([[{
                     "system": {
