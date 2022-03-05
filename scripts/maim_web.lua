@@ -1,5 +1,6 @@
 local socket = require "socket"
 local lunajson = require "lunajson"
+local math = require "math"
 
 local host = "*"
 local port = 80
