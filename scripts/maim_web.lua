@@ -1,6 +1,6 @@
 local socket = require "socket"
 
-socket.select(nil, nil, 1)
+gcs:send_text(0, tostring(math.random()))
 
 local lunajson = require "lunajson"
 
