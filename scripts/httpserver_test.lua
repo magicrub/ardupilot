@@ -11,7 +11,7 @@ assert(i, p)
 gcs:send_text(0, "Waiting connection from talker on " .. i .. ":" .. p .. "...")
 gcs:send_text(0, "Connected. Here is the stuff:")
 
-state = {
+configuration = {
     system = {
         consoleForward = {
             ip = "127.0.0.1",
@@ -80,27 +80,26 @@ function update() -- this is the loop which periodically runs
                 }]])
 
             elseif path == "/configuration" then
-
                 c:send("HTTP/1.0 200 OK\r\nContent-Type: application/json\r\nConnection: close\r\n\r\n")
                 c:send([[{
                     "system": {
                         "consoleForward": {
-                            "ip": "]] .. state.system.consoleForward.ip .. [[",
-                            "port": ]] .. state.system.consoleForward.port .. [[
+                            "ip": "]] .. configuration.system.consoleForward.ip .. [[",
+                            "port": ]] .. configuration.system.consoleForward.port .. [[
                         },
-                        "maintenancePort": "]] .. state.system.maintenancePort .. [["
+                        "maintenancePort": "]] .. configuration.system.maintenancePort .. [["
                     },
                     "payload1": {
-                        "enabled": ]] .. tostring(state.payload1.enabled) .. [[,
-                        "ip": "]] .. state.payload1.ip .. [[",
-                        "netmask": "]] .. state.payload1.netmask .. [[",
-                        "gateway": "]] .. state.payload1.gateway .. [["
+                        "enabled": ]] .. tostring(configuration.payload1.enabled) .. [[,
+                        "ip": "]] .. configuration.payload1.ip .. [[",
+                        "netmask": "]] .. configuration.payload1.netmask .. [[",
+                        "gateway": "]] .. configuration.payload1.gateway .. [["
                     },
                     "payload2": {
-                        "enabled": ]] .. tostring(state.payload2.enabled) .. [[,
-                        "ip": "]] .. state.payload2.ip .. [[",
-                        "netmask": "]] .. state.payload2.netmask .. [[",
-                        "gateway": "]] .. state.payload2.gateway .. [["
+                        "enabled": ]] .. tostring(configuration.payload2.enabled) .. [[,
+                        "ip": "]] .. configuration.payload2.ip .. [[",
+                        "netmask": "]] .. configuration.payload2.netmask .. [[",
+                        "gateway": "]] .. configuration.payload2.gateway .. [["
                     }
                 }]])
 
@@ -118,42 +117,4 @@ function update() -- this is the loop which periodically runs
     return update, 1 -- reschedules the loop
 end
 
-
-function urldecode(str)
-    str = string.gsub(str, '+', ' ')
-    str = string.gsub(str, '%%(%x%x)', function(h)
-      return string.char(tonumber(h, 16))
-    end)
-    str = string.gsub(str, '\r\n', '\n')
-    return str
-  end
-
--- parse querystring into table. urldecode tokens
-function parse_query_string(str, sep, eq)
-    if not sep then sep = '&' end
-    if not eq then eq = '=' end
-    local vars = {}
-    for pair in string.gmatch(tostring(str), '[^' .. sep .. ']+') do
-      if not string.find(pair, eq) then
-        vars[urldecode(pair)] = ''
-      else
-        local key, value = string.match(pair, '([^' .. eq .. ']*)' .. eq .. '(.*)')
-        if key then
-          key = urldecode(key)
-          value = urldecode(value)
-          local type = type(vars[key])
-          if type=='nil' then
-            vars[key] = value
-          elseif type=='table' then
-            table.insert(vars[key], value)
-          else
-            vars[key] = {vars[key],value}
-          end
-        end
-      end
-    end
-    return vars
-  end
-
-
-return update() -- run immediately before starting to reschedule
+return update()
