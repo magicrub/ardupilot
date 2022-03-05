@@ -46,8 +46,9 @@ function update() -- this is the loop which periodically runs
                 request_uri = "/index.html"
             end
 
-           -- path, query = request_uri:match("(.*)?(.*)")
-           -- if query ~= nil then  gcs:send_text(0, "Query: " .. query) end
+        
+            path, query = request_uri:match("(.*)?(.*)")
+            if query ~= nil then  gcs:send_text(0, "Query: " .. query) end
 
             -- send response
             resp_file = io.open("./scripts/fs"..request_uri, "r")
@@ -108,10 +109,11 @@ function update() -- this is the loop which periodically runs
                 c:send("<html><body><h1>404 Not Found</h1></body></html>")
 
             end
+
+            c:close()
         end
     end
 
-    c:close()
     return update, 1 -- reschedules the loop
 end
 
