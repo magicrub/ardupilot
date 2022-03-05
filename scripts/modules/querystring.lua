@@ -20,20 +20,30 @@ limitations under the License.
   tags = {"luvit", "url", "codec"}
 ]]
 
+require("string")
+
+local find = string.find
+local gsub = string.gsub
+local char = string.char
+local byte = string.byte
+local format = string.format
+local match = string.match
+local gmatch = string.gmatch
+
 local function urldecode(str)
-  str = string.gsub(str, '+', ' ')
-  str = string.gsub(str, '%%(%x%x)', function(h)
-    return string.char(tonumber(h, 16))
+  str = gsub(str, '+', ' ')
+  str = gsub(str, '%%(%x%x)', function(h)
+    return char(tonumber(h, 16))
   end)
-  str = string.gsub(str, '\r\n', '\n')
+  str = gsub(str, '\r\n', '\n')
   return str
 end
 
 local function urlencode(str)
   if str then
-    str = string.gsub(str, '\n', '\r\n')
-    str = string.gsub(str, '([^%w-_.~])', function(c)
-      return string.format('%%%02X', string.byte(c))
+    str = gsub(str, '\n', '\r\n')
+    str = gsub(str, '([^%w-_.~])', function(c)
+      return format('%%%02X', byte(c))
     end)
   end
   return str
@@ -68,11 +78,11 @@ local function parse(str, sep, eq)
   if not sep then sep = '&' end
   if not eq then eq = '=' end
   local vars = {}
-  for pair in string.gmatch(tostring(str), '[^' .. sep .. ']+') do
-    if not string.find(pair, eq) then
+  for pair in gmatch(tostring(str), '[^' .. sep .. ']+') do
+    if not find(pair, eq) then
       vars[urldecode(pair)] = ''
     else
-      local key, value = string.match(pair, '([^' .. eq .. ']*)' .. eq .. '(.*)')
+      local key, value = match(pair, '([^' .. eq .. ']*)' .. eq .. '(.*)')
       if key then
         key = urldecode(key)
         value = urldecode(value)
