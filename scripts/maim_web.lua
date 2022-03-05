@@ -1,5 +1,5 @@
 local socket = require "socket"
-local json = require "json"
+local lunajson = require "lunajson"
 
 local host = "*"
 local port = 80
@@ -66,7 +66,7 @@ local function update() -- this is the loop which periodically runs
 
             elseif path == "/state" then
                 connection:send("HTTP/1.0 200 OK\r\nContent-Type: application/json\r\nConnection: close\r\n\r\n")
-                connection:send(json.encode({
+                connection:send(lunajson.encode({
                     system = {
                         voltage = math.random(),
                         current = math.random()
@@ -82,7 +82,7 @@ local function update() -- this is the loop which periodically runs
 
             elseif path == "/configuration" then
                 connection:send("HTTP/1.0 200 OK\r\nContent-Type: application/json\r\nConnection: close\r\n\r\n")
-                connection:send(json.encode(configuration))
+                connection:send(lunajson.encode(configuration))
 
             else 
                 -- send 404 if file not found
