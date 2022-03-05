@@ -2,7 +2,6 @@
 -- HTTPSERVER sample
 -----------------------------------------------------------------------------
 local socket = require("socket")
-local querystring = require("querystring")
 host = "*"
 port = 80
 gcs:send_text(0, "Binding to host '" ..host.. "' and port " ..port.. "...")
