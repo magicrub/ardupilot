@@ -80,16 +80,6 @@ function update() -- this is the loop which periodically runs
                 }]])
 
             elseif path == "/configuration" then
-                if query then 
-                    configuration = parse_query_string(query)
-                    local keyset = ""
-                    for k,v in pairs(tab) do
-                        keyset = keyset .. k
-                    end
-                    gcs:send_text(0, keyset)
-
-                    if configuration["system.consoleForward.ip"] then state.system.consoleForward.ip = configuration["system.consoleForward.ip"] end
-                end
 
                 c:send("HTTP/1.0 200 OK\r\nContent-Type: application/json\r\nConnection: close\r\n\r\n")
                 c:send([[{
