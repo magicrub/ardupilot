@@ -47,7 +47,7 @@ Q_A_RAT_YAW_I     0.09
 Q_A_RAT_YAW_P     4.37
 Q_M_THST_HOVER    0.52
 Q_OPTIONS         1057
-Q_P_ACCZ_P        1.33
+Q_P_ACCZ_P        0.665
 Q_P_ANGLE_MAX     15
 Q_P_POSXY_P       1.15
 Q_P_POSZ_P        1.5
