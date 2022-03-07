@@ -40,7 +40,9 @@ CAN_P2_DRIVER           2
 COMPASS_EXTERNAL        1
 COMPASS_ORIENT          4   @READONLY
 COMPASS_ORIENT2         4   @READONLY
-COMPASS_USE2            0
+COMPASS_PRIO1_ID        97539
+COMPASS_PRIO3_ID        590114
+COMPASS_USE2            1
 COMPASS_USE3            0
 FENCE_ACTION            0
 FENCE_AUTOENABLE        2
@@ -196,3 +198,15 @@ YAW2SRV_DAMP            0.9
 YAW2SRV_INT             1
 YAW2SRV_RLL             1
 YAW2SRV_SLIP            6
+
+
+# MAIM payload
+BRD_PWM_COUNT           2
+RELAY_DEFAULT           1
+RELAY_PIN               52
+RELAY_PIN2              53
+RELAY_PIN3              54
+SERVO11_FUNCTION        -1
+SERVO12_FUNCTION        -1
+SERVO13_FUNCTION        -1
+CAN_D1_UC_GPIO          6
