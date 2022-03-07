@@ -126,6 +126,15 @@ const AP_Param::GroupInfo AP_Scripting::var_info[] = {
     // @User: Advanced
     AP_GROUPINFO("DIR_DISABLE", 9, AP_Scripting, _dir_disable, 0),
 
+    // @Param: THREADS
+    // @DisplayName: Thread count for multiple blocking scripts
+    // @Description: The amount of threads to run in parallel. A single thread can run many Lua scripts which is the typical use. Any blocking scripts, such as a TCP server, will block the rest of the scripts. Running addition threads requires more resources but allows additional threads to run scripts from /scripts/thread2 (and /scripts/thread3 ect..) that only block threads in that folder.
+    // @Range: 1 5
+    // @Increment: 1
+    // @RebootRequired: True
+    // @User: Advanced
+    AP_GROUPINFO("THREADS", 12, AP_Scripting, _thread_count, 1),
+
     AP_GROUPEND
 };
 
@@ -152,11 +161,13 @@ void AP_Scripting::init(void) {
         }
     }
 
-    if (!hal.scheduler->thread_create(FUNCTOR_BIND_MEMBER(&AP_Scripting::thread, void),
-                                      "Scripting", SCRIPTING_STACK_SIZE, AP_HAL::Scheduler::PRIORITY_SCRIPTING, 0)) {
-        gcs().send_text(MAV_SEVERITY_CRITICAL, "Could not create scripting stack (%d)", SCRIPTING_STACK_SIZE);
-        gcs().send_text(MAV_SEVERITY_ERROR, "Scripting failed to start");
-        _init_failed = true;
+    for (uint8_t i=0; i<constrain_int16(_thread_count, 1, 5); i++) {
+        if (!hal.scheduler->thread_create(FUNCTOR_BIND_MEMBER(&AP_Scripting::thread, void),
+                                        "Scripting", SCRIPTING_STACK_SIZE, AP_HAL::Scheduler::PRIORITY_SCRIPTING, 0)) {
+            gcs().send_text(MAV_SEVERITY_CRITICAL, "Could not create scripting instance %d stack (%d)", (int)i, SCRIPTING_STACK_SIZE);
+            gcs().send_text(MAV_SEVERITY_ERROR, "Scripting failed to start instance %d", (int)i);
+            _init_failed = true;
+        }
     }
 }
 
@@ -218,12 +229,13 @@ void AP_Scripting::repl_stop(void) {
 }
 
 void AP_Scripting::thread(void) {
+    const uint8_t instance = _instance++;
     while (true) {
         // reset flags
         _stop = false;
         _restart = false;
 
-        lua_scripts *lua = new lua_scripts(_script_vm_exec_count, _script_heap_size, _debug_options, terminal);
+        lua_scripts *lua = new lua_scripts(_script_vm_exec_count, _script_heap_size, _debug_options, terminal, instance);
         if (lua == nullptr || !lua->heap_allocated()) {
             gcs().send_text(MAV_SEVERITY_CRITICAL, "Unable to allocate scripting memory");
             _init_failed = true;

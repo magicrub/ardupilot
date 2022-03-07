@@ -487,6 +487,10 @@ singleton AP::fwversion() field patch uint8_t read
 singleton AP::fwversion() field fw_hash_str string read
 singleton AP::fwversion() field fw_hash_str alias hash
 
+include AP_KHA/AP_KHA.h
+singleton AP_KHA alias kha
+singleton AP_KHA method get_json_str string
+
 module socket_core opencall luaopen_socket_core include AP_Scripting/luasocket/src/luasocket.h
 
 module mime_core opencall luaopen_mime_core include AP_Scripting/luasocket/src/mime.h

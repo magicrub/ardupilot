@@ -81,8 +81,9 @@ PA12 OTG_FS_DP OTG1
 # order of UARTs (and USB)
 SERIAL_ORDER OTG1 USART1 USART2 USART3 EMPTY UART5 USART6 UART7 UART8
 
-#STDOUT_SERIAL SD8
+#STDOUT_SERIAL SD2
 #STDOUT_BAUDRATE 115200
+
 
 ###########################
 # storage
@@ -112,17 +113,8 @@ PA1  ETH_RMII_REF_CLK   ETH1
 
 define BOARD_PHY_ID MII_KSZ9896C_ID
 define BOARD_PHY_RMII
-#define BOARD_PHY_ADDRESS_MASK 0x0000003C
+define BOARD_PHY_ADDRESS_MASK 0x0000003C
 define STM32_MAC_ETH1_CHANGE_PHY_STATE FALSE
-
-# IP Configuration
-define LWIP_DHCP 1
-
-# static IP for when LWIP_DHCP == 0. 
-# **NOTE** Use commas instead of periods
-define LWIP_IPADDR(p)   IP4_ADDR(p, 172,20,13,93)
-define LWIP_GATEWAY(p)  IP4_ADDR(p, 172,20,1,1)
-define LWIP_NETMASK(p)  IP4_ADDR(p, 255,255,0,0)
 
 ###################
 
@@ -189,15 +181,13 @@ PE10 TIM1_CH2N TIM1 PWM(3) GPIO(13)
 
 #################################
 
-#DMA_NOSHARE SPI4* USART1_RX USART3_TX USART6_TX UART7*
-
 
 # ---------------------------------------------------------------------------------------------
 # AP_Periph - boiler-plate configurations that all HW AP-Periph need
 # ---------------------------------------------------------------------------------------------
 define DISABLE_SERIAL_ESC_COMM TRUE
 define HAL_NO_RCIN_THREAD
-define HAL_NO_GPIO_IRQ
+#define HAL_NO_GPIO_IRQ
 
 
 
@@ -209,16 +199,16 @@ define HAL_NO_GPIO_IRQ
 define HAL_PERIPH_ENABLE_BATTERY
 #define HAL_PERIPH_ENABLE_RC_OUT
 #define HAL_PERIPH_ENABLE_NOTIFY
-#define HAL_PERIPH_ENABLE_GPIO
 
 #define HAL_EXTERNAL_AHRS_ENABLED 1
 
 # listen for reboot command from uploader.py script
 # undefine to disable. Use -1 to allow on all ports, otherwise serial number index defined in SERIAL_ORDER starting at 0
-define HAL_PERIPH_LISTEN_FOR_SERIAL_UART_REBOOT_CMD_PORT 0
+define HAL_PERIPH_LISTEN_FOR_SERIAL_UART_REBOOT_CMD_PORT -1
 #################################
 
 
+DMA_NOSHARE SPI4* USART1* USART3* USART6* UART7* UART8* CAN1*
 
 ##############################################
 ################## Scripting #################
@@ -231,7 +221,7 @@ PC8 SDMMC1_D0 SDMMC1
 PC12 SDMMC1_CK SDMMC1
 #PD2 SDMMC1_CMD SDMMC1
 
-define SCRIPTING_HEAP_SIZE (128*1024)
+define SCRIPTING_HEAP_SIZE 250000
 
 define HAL_OS_FATFS_IO 1
 

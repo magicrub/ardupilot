@@ -73,6 +73,16 @@ const AP_Param::GroupInfo AP_Vehicle::var_info[] = {
     AP_SUBGROUPINFO(airspeed, "ARSPD", 10, AP_Vehicle, AP_Airspeed),
 #endif
 
+#if HAL_ENABLE_NETWORKING
+    // @Group: NET_
+    // @Path: ../AP_Networking/AP_Networking.cpp
+    AP_SUBGROUPINFO(networking, "NET_", 11, AP_Vehicle, AP_Networking),
+#endif
+
+    // @Group: KHA_
+    // @Path: ../AP_KHA/AP_KHA.cpp
+    AP_SUBGROUPINFO(kha, "KHA_", 50, AP_Vehicle, AP_KHA),
+
     AP_GROUPEND
 };
 
@@ -204,6 +214,12 @@ void AP_Vehicle::setup()
     efi.init();
 #endif
 
+#if HAL_ENABLE_NETWORKING
+    networking.init();
+#endif
+
+    kha.init();
+
     gcs().send_text(MAV_SEVERITY_INFO, "ArduPilot Ready");
 }
 
@@ -293,10 +309,14 @@ const AP_Scheduler::Task AP_Vehicle::scheduler_tasks[] = {
 #if HAL_GENERATOR_ENABLED
     SCHED_TASK_CLASS(AP_Generator, &vehicle.generator,      update,                   10,  50, 235),
 #endif
+#if HAL_ENABLE_NETWORKING
+    SCHED_TASK_CLASS(AP_Networking, &vehicle.networking,    update,                 1000,  50, 251),
+#endif
 #if OSD_ENABLED
     SCHED_TASK(publish_osd_info, 1, 10, 240),
 #endif
     SCHED_TASK(accel_cal_update,      10,    100, 245),
+    SCHED_TASK_CLASS(AP_KHA,       &vehicle.kha,            update,                  1000, 50, 250),
 #if HAL_EFI_ENABLED
     SCHED_TASK_CLASS(AP_EFI,       &vehicle.efi,            update,                   10, 200, 250),
 #endif

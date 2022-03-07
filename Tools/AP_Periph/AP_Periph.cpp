@@ -29,11 +29,6 @@
 #include <AP_HAL_ChibiOS/hwdef/common/watchdog.h>
 #endif
 
-#if HAL_ENABLE_NETWORKING
-#include <lwip/ip4_addr.h>
-#include <hal_mii.h>
-#endif
-
 extern const AP_HAL::HAL &hal;
 
 AP_Periph_FW periph;
@@ -106,109 +101,6 @@ void AP_Periph_FW::init()
 
     load_parameters();
 
-    // initialise LWIP
-#if HAL_ENABLE_NETWORKING
-    // set mac address
-    for (uint8_t i = 0; i < ARRAY_SIZE(g.lwip_macaddr); i++) {
-        macaddress[i] = g.lwip_macaddr[i];
-    }
-    lwip_opts.macaddress = macaddress;
-
-    ip4_addr_t ipaddr, gw;
-    IP4_ADDR(&ipaddr, g.lwip_ipaddr[0], g.lwip_ipaddr[1], g.lwip_ipaddr[2], g.lwip_ipaddr[3]);
-    lwip_opts.address = ipaddr.addr;
-    // create a subnet mask based on the configured netmask
-    for (uint8_t i=0; i<g.lwip_netmask; i++) {
-        lwip_opts.netmask = lwip_opts.netmask | (0x10000000UL >> i);
-    }
-    //set gateway
-    IP4_ADDR(&gw, g.lwip_gwaddr[0], g.lwip_gwaddr[1], g.lwip_gwaddr[2], g.lwip_gwaddr[3]);
-    lwip_opts.gateway = gw.addr;
-
-    // set DHCP option
-    if (g.lwip_dhcp) {
-        lwip_opts.addrMode = NET_ADDRESS_DHCP;
-    } else {
-        lwip_opts.addrMode = NET_ADDRESS_STATIC;
-    }
-    lwipInit(NULL);
-
-#if BOARD_PHY_ID == MII_KSZ9896C_ID
-    /// Apply Erratas
-    for (uint8_t phy = 0; phy < 32; phy++) {
-        if (!(ETHD1.phyaddrmask & (1 << phy))) {
-            continue;
-        }
-
-        // Hardware Design Checklist
-        // https://ww1.microchip.com/downloads/en/DeviceDoc/KSZ989x-KSZ956x-KSZ9477-Hardware-Design-Checklist-00004151.pdf
-        // 6.4: 10/100 Mbps Ethernet Only
-        mii_write(&ETHD1, phy, 0x00, mii_read(&ETHD1, phy, 0x00) & ~0x0020); // clear bit 6
-        mii_write(&ETHD1, phy, 0x12, 0x0800);
-        mii_write(&ETHD1, phy, 0x00, 0x3100 | (1 << 9));
-
-
-        // Erratas:
-        // http://ww1.microchip.com/downloads/en/DeviceDoc/80000757A.pdf
-        const uint16_t mmd[22][3] = {
-            //[MMD], [register],[data]
-
-            // module 1: Register settings are needed to improve PHY receive performance
-            {0x01, 0x6F, 0xDD0B},
-            {0x01, 0x8F, 0x6032},
-            {0x01, 0x9D, 0x248C},
-            {0x01, 0x75, 0x0060},
-            {0x01, 0xD3, 0x7777},
-            {0x1C, 0x06, 0x3008},
-            {0x1C, 0x08, 0x2001},
-
-            // module 2: Transmit waveform amplitude can be improved
-            {0x1C, 0x04F, 0x00D0},
-
-            // module 3: Energy Efficient Ethernet (EEE) feature select must be manually disabled
-            {0x07, 0x03C, 0x0000},
-
-            // module 4: Toggling PHY Powerdown can cause errors or link failures in adjacent PHYs
-            #if STM32_MAC_ETH1_CHANGE_PHY_STATE
-            #error "MII_KSZ9896C_ID Errata module 4 requires STM32_MAC_ETH1_CHANGE_PHY_STATE = FALSE"
-            #endif
-
-            // module 6: Register settings are required to meet data sheet supply current specifications
-            {0x1C, 0x013, 0x6EFF},
-            {0x1C, 0x014, 0xE6FF},
-            {0x1C, 0x015, 0x6EFF},
-            {0x1C, 0x016, 0xE6FF},
-            {0x1C, 0x017, 0x00FF},
-            {0x1C, 0x018, 0x43FF},
-            {0x1C, 0x019, 0xC3FF},
-            {0x1C, 0x01A, 0x6FFF},
-            {0x1C, 0x01B, 0x07FF},
-            {0x1C, 0x01C, 0x0FFF},
-            {0x1C, 0x01D, 0xE7FF},
-            {0x1C, 0x01E, 0xEFFF},
-            {0x1C, 0x020, 0xEEEE},
-        };
-
-        
-        for (uint8_t i=0; i<22; i++) {
-            // Write MMD - Device Address 2h, Register 00h = 0010h to enable single-LED mode.
-            // 1. Write the PHY MMD Setup Register with 0002h // Set up register address for MMD – Device Address 2h.
-            // 2. Write the PHY MMD Data Register with 0000h // Select Register 00h of MMD – Device Address 2h.
-            // 3. Write the PHY MMD Setup Register with 4002h // Select register data for MMD – Device Address 2h, Reg. 00h.
-            // 4. Write the PHY MMD Data Register with 0010h // Write value 0010h to MMD – Device Address 2h, Reg. 00h.
-            
-            const uint16_t deviceAddress = (mmd[i][0] & 0x001F);
-            mii_write(&ETHD1, phy, 0x0D, 0x0000 | deviceAddress);
-            mii_write(&ETHD1, phy, 0x0E, mmd[i][1]);
-
-            mii_write(&ETHD1, phy, 0x0D, 0x4000 | deviceAddress);
-            mii_write(&ETHD1, phy, 0x0E, mmd[i][2]);
-        }
-    }
-#endif
-
-//    lwipInit(&lwip_opts);
-#endif
     stm32_watchdog_pat();
 
     can_start();
@@ -249,6 +141,10 @@ void AP_Periph_FW::init()
     if (hal.util->was_watchdog_reset()) {
         printf("Reboot after watchdog reset\n");
     }
+
+#if HAL_ENABLE_NETWORKING
+    networking.init();
+#endif
 
 #ifdef HAL_PERIPH_ENABLE_GPS
     if (gps.get_type(0) != AP_GPS::GPS_Type::GPS_TYPE_NONE && g.gps_port >= 0) {
@@ -325,13 +221,11 @@ void AP_Periph_FW::init()
     notify.init();
 #endif
 
+    kha.init();
+
 #if AP_SCRIPTING_ENABLED
     scripting.init();
 #endif
-
-    printf("\r\n*****************\r\n");
-    printf("ETHD1.phyaddrmask: 0x%08X\r\n", ETHD1.phyaddrmask);
-    printf("*****************\r\n");
 
     start_ms = AP_HAL::native_millis();
 }
@@ -515,6 +409,10 @@ void AP_Periph_FW::update()
 #endif
 
     can_update();
+
+#if HAL_ENABLE_NETWORKING
+    networking.update();
+#endif
 
 #if (defined(HAL_PERIPH_NEOPIXEL_COUNT_WITHOUT_NOTIFY) && HAL_PERIPH_NEOPIXEL_COUNT_WITHOUT_NOTIFY == 8) || defined(HAL_PERIPH_ENABLE_NOTIFY)
     update_rainbow();

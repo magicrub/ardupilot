@@ -583,6 +583,20 @@ static void handle_arming_status(CanardInstance* ins, CanardRxTransfer* transfer
     hal.util->set_soft_armed(req.status == UAVCAN_EQUIPMENT_SAFETY_ARMINGSTATUS_STATUS_FULLY_ARMED);
 }
 
+static void handle_gpio(CanardInstance* ins, CanardRxTransfer* transfer)
+{
+    ardupilot_indication_GPIO msg;
+    if (ardupilot_indication_GPIO_decode(transfer, &msg)) {
+        return;
+    }
+
+    // use relay library for GPIO control
+    for (uint8_t i=0; i<AP_RELAY_NUM_RELAYS; i++) {
+        const bool pin_state = (msg.pin_states & (1UL<<i)) != 0;
+        periph.kha.set_gpio(i, pin_state);
+    }
+}
+
 #ifdef HAL_PERIPH_ENABLE_GPS
 /*
   handle gnss::RTCMStream
@@ -950,6 +964,10 @@ static void onTransferReceived(CanardInstance* ins,
         break;
 #endif
 
+    case ARDUPILOT_INDICATION_GPIO_ID:
+        handle_gpio(ins, transfer);
+        break;
+
 #ifdef HAL_PERIPH_ENABLE_RC_OUT
     case UAVCAN_EQUIPMENT_ESC_RAWCOMMAND_ID:
         handle_esc_rawcommand(ins, transfer);
@@ -1032,6 +1050,9 @@ static bool shouldAcceptTransfer(const CanardInstance* ins,
         *out_data_type_signature = UAVCAN_EQUIPMENT_INDICATION_LIGHTSCOMMAND_SIGNATURE;
         return true;
 #endif
+    case ARDUPILOT_INDICATION_GPIO_ID:
+        *out_data_type_signature = ARDUPILOT_INDICATION_GPIO_SIGNATURE;
+        return true;
 #ifdef HAL_PERIPH_ENABLE_GPS
     case UAVCAN_EQUIPMENT_GNSS_RTCMSTREAM_ID:
         *out_data_type_signature = UAVCAN_EQUIPMENT_GNSS_RTCMSTREAM_SIGNATURE;

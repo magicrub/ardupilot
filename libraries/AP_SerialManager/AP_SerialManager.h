@@ -156,7 +156,12 @@ public:
         SerialProtocol_AIS = 40,
         SerialProtocol_CoDevESC = 41,
         SerialProtocol_MSP_DisplayPort = 42,
-        SerialProtocol_Loopback = 60,
+        SerialProtocol_KHA = 70,
+        SerialProtocol_KHA_MAIM_Avionics = 71,
+        SerialProtocol_KHA_MAIM_Maint = 72,
+        SerialProtocol_KHA_MAIM_AHRS_Sensor = 73,
+        SerialProtocol_KHA_MAIM_Payload_State = 74,
+        SerialProtocol_KHA_MAIM_Payload_Console = 75,
         SerialProtocol_NumProtocols                    // must be the last value
     };
 
