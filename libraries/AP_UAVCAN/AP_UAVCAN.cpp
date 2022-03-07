@@ -318,6 +318,10 @@ void AP_UAVCAN::init(uint8_t driver_index, bool enable_filters)
     arming_status[driver_index]->setTxTimeout(uavcan::MonotonicDuration::fromMSec(20));
     arming_status[driver_index]->setPriority(uavcan::TransferPriority::OneHigherThanLowest);
 
+    gpio_stream[driver_index] = new uavcan::Publisher<ardupilot::indication::GPIO>(*_node);
+    gpio_stream[driver_index]->setTxTimeout(uavcan::MonotonicDuration::fromMSec(20));
+    gpio_stream[driver_index]->setPriority(uavcan::TransferPriority::OneHigherThanLowest);
+
     gnss_fix[driver_index] = new uavcan::Publisher<uavcan::equipment::gnss::Fix>(*_node);
     gnss_fix[driver_index]->setTxTimeout(uavcan::MonotonicDuration::fromMSec(20));
     gnss_fix[driver_index]->setPriority(uavcan::TransferPriority::OneLowerThanHighest);
