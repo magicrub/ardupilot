@@ -40,9 +40,8 @@ CAN_P2_DRIVER           2
 COMPASS_EXTERNAL        1
 COMPASS_ORIENT          4   @READONLY
 COMPASS_ORIENT2         4   @READONLY
-COMPASS_PRIO1_ID        96771.0
-COMPASS_PRIO2_ID        96515.0
-COMPASS_PRIO3_ID        590114.0
+COMPASS_PRIO1_ID        97539
+COMPASS_PRIO3_ID        590114
 COMPASS_USE2            1
 COMPASS_USE3            0
 FENCE_ACTION            0
@@ -50,6 +49,10 @@ FENCE_AUTOENABLE        2
 FENCE_ALT_MAX           3657
 FLTMODE1                10
 FLTMODE2                10
+FLTMODE3                5
+FLTMODE4                5
+FLTMODE5                0
+FLTMODE6                0
 FLTMODE_CH              7
 FS_GCS_ENABL            1
 FS_LONG_ACTN            1
@@ -81,6 +84,7 @@ PTCH_RATE_FLTT          10
 PTCH_RATE_I             0.18
 PTCH_RATE_IMAX          0.888889
 PTCH_RATE_P             0.102102
+Q_ENABLE                0
 RCMAP_PITCH             3
 RCMAP_ROLL              2
 RCMAP_THROTTLE          1
@@ -109,8 +113,8 @@ SERIAL4_PROTOCOL        -1
 SERIAL5_PROTOCOL        -1
 SERIAL6_PROTOCOL        -1
 SERVO10_FUNCTION        36
-SERVO10_MAX             2000
-SERVO10_MIN             1000
+SERVO10_MAX             1940
+SERVO10_MIN             1100
 SERVO1_FUNCTION         70
 SERVO1_MAX              1680
 SERVO1_MIN              1290
@@ -118,9 +122,11 @@ SERVO1_TRIM             1290
 SERVO2_FUNCTION         4
 SERVO2_MAX              2000
 SERVO2_MIN              1000
+SERVO2_REVERSED         0       @READONLY
 SERVO3_FUNCTION         4
 SERVO3_MAX              2000
 SERVO3_MIN              1000
+SERVO3_REVERSED         0       @READONLY
 SERVO4_FUNCTION         19
 SERVO4_MAX              2000
 SERVO4_MIN              1000
@@ -133,14 +139,14 @@ SERVO6_MAX              2000
 SERVO6_MIN              1000
 SERVO6_REVERSED         1
 SERVO7_FUNCTION         33
-SERVO7_MAX              2000
-SERVO7_MIN              1000
+SERVO7_MAX              1940
+SERVO7_MIN              1100
 SERVO8_FUNCTION         34
-SERVO8_MAX              2000
-SERVO8_MIN              1000
+SERVO8_MAX              1940
+SERVO8_MIN              1100
 SERVO9_FUNCTION         35
-SERVO9_MAX              2000
-SERVO9_MIN              1000
+SERVO9_MAX              1940
+SERVO9_MIN              1100
 STAB_PITCH_DOWN         0
 STALL_ALGORITHM1        0
 STALL_ALGORITHM2        0
@@ -187,7 +193,7 @@ TRIM_ARSPD_CM           1500
 TRIM_THROTTLE           51
 USE_REV_THRUST          0
 WP_LOITER_RAD           250
-WP_RADIUS               50  @READONLY
+WP_RADIUS               100  @READONLY
 YAW2SRV_DAMP            0.9
 YAW2SRV_INT             1
 YAW2SRV_RLL             1
