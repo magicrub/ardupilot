@@ -165,6 +165,10 @@ void AP_Periph_FW::init()
     baro.init();
 #endif
 
+#ifdef HAL_PERIPH_ENABLE_GPIO
+    relay.init();
+#endif
+
 #ifdef HAL_PERIPH_ENABLE_BATTERY
     battery.lib.init();
 #endif

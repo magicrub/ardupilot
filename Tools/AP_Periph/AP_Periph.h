@@ -5,6 +5,7 @@
 #include <AP_GPS/AP_GPS.h>
 #include <AP_Compass/AP_Compass.h>
 #include <AP_Baro/AP_Baro.h>
+#include <AP_Relay/AP_Relay.h>
 #include "SRV_Channel/SRV_Channel.h"
 #include <AP_Notify/AP_Notify.h>
 #include <AP_Logger/AP_Logger.h>
@@ -116,6 +117,10 @@ public:
 
 #ifdef HAL_PERIPH_ENABLE_BARO
     AP_Baro baro;
+#endif
+
+#ifdef HAL_PERIPH_ENABLE_GPIO
+    AP_Relay relay;
 #endif
 
 #ifdef HAL_PERIPH_ENABLE_BATTERY

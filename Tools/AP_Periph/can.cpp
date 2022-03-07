@@ -359,6 +359,9 @@ static void handle_param_executeopcode(CanardInstance* ins, CanardRxTransfer* tr
 #ifdef HAL_PERIPH_ENABLE_BARO
         AP_Param::setup_object_defaults(&periph.baro, periph.baro.var_info);
 #endif
+#ifdef HAL_PERIPH_ENABLE_GPIO
+        AP_Param::setup_object_defaults(&periph.relay, periph.relay.var_info);
+#endif
 #ifdef HAL_PERIPH_ENABLE_AIRSPEED
         AP_Param::setup_object_defaults(&periph.airspeed, periph.airspeed.var_info);
 #endif
@@ -582,6 +585,22 @@ static void handle_arming_status(CanardInstance* ins, CanardRxTransfer* transfer
     }
     hal.util->set_soft_armed(req.status == UAVCAN_EQUIPMENT_SAFETY_ARMINGSTATUS_STATUS_FULLY_ARMED);
 }
+
+#ifdef HAL_PERIPH_ENABLE_GPIO
+static void handle_gpio(CanardInstance* ins, CanardRxTransfer* transfer)
+{
+    ardupilot_indication_GPIO msg;
+    if (ardupilot_indication_GPIO_decode(transfer, &msg)) {
+        return;
+    }
+
+    // use relay library for GPIO control
+    for (uint8_t i=0; i<AP_RELAY_NUM_RELAYS; i++) {
+        const bool pin_state = (msg.pin_states & (1UL<<i)) != 0;
+        periph.relay.set(i, pin_state);
+    }
+}
+#endif // HAL_PERIPH_ENABLE_GPIO
 
 #ifdef HAL_PERIPH_ENABLE_GPS
 /*
@@ -950,6 +969,12 @@ static void onTransferReceived(CanardInstance* ins,
         break;
 #endif
 
+#ifdef HAL_PERIPH_ENABLE_GPIO
+    case ARDUPILOT_INDICATION_GPIO_ID:
+        handle_gpio(ins, transfer);
+        break;
+#endif
+
 #ifdef HAL_PERIPH_ENABLE_RC_OUT
     case UAVCAN_EQUIPMENT_ESC_RAWCOMMAND_ID:
         handle_esc_rawcommand(ins, transfer);
@@ -1030,6 +1055,11 @@ static bool shouldAcceptTransfer(const CanardInstance* ins,
 #if defined(AP_PERIPH_HAVE_LED_WITHOUT_NOTIFY) || defined(HAL_PERIPH_ENABLE_NOTIFY)
     case UAVCAN_EQUIPMENT_INDICATION_LIGHTSCOMMAND_ID:
         *out_data_type_signature = UAVCAN_EQUIPMENT_INDICATION_LIGHTSCOMMAND_SIGNATURE;
+        return true;
+#endif
+#ifdef HAL_PERIPH_ENABLE_GPIO
+    case ARDUPILOT_INDICATION_GPIO_ID:
+        *out_data_type_signature = ARDUPILOT_INDICATION_GPIO_SIGNATURE;
         return true;
 #endif
 #ifdef HAL_PERIPH_ENABLE_GPS

@@ -53,6 +53,7 @@ public:
         k_param_esc_telem_port,
         k_param_networking,
         k_param_kha,
+        k_param_relay,
     };
 
     AP_Int16 format_version;
