@@ -119,10 +119,6 @@ public:
     AP_Baro baro;
 #endif
 
-#ifdef HAL_PERIPH_ENABLE_GPIO
-    AP_Relay relay;
-#endif
-
 #ifdef HAL_PERIPH_ENABLE_BATTERY
     struct AP_Periph_Battery {
         void handle_battery_failsafe(const char* type_str, const int8_t action) { }

@@ -187,7 +187,7 @@ PE10 TIM1_CH2N TIM1 PWM(3) GPIO(13)
 # ---------------------------------------------------------------------------------------------
 define DISABLE_SERIAL_ESC_COMM TRUE
 define HAL_NO_RCIN_THREAD
-define HAL_NO_GPIO_IRQ
+#define HAL_NO_GPIO_IRQ
 
 
 
@@ -199,7 +199,6 @@ define HAL_NO_GPIO_IRQ
 define HAL_PERIPH_ENABLE_BATTERY
 #define HAL_PERIPH_ENABLE_RC_OUT
 #define HAL_PERIPH_ENABLE_NOTIFY
-#define HAL_PERIPH_ENABLE_GPIO
 
 #define HAL_EXTERNAL_AHRS_ENABLED 1
 

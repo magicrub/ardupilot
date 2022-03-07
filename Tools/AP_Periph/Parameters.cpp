@@ -204,13 +204,6 @@ const AP_Param::Info AP_Periph_FW::var_info[] = {
     GSCALAR(baro_enable, "BARO_ENABLE", 1),
 #endif
 
-#ifdef HAL_PERIPH_ENABLE_GPIO
-    // Relay driver
-    // @Group: RELAY_
-    // @Path: ../libraries/AP_Relay/AP_Relay.cpp
-    GOBJECT(relay, "RELAY_", AP_Relay),
-#endif
-
 #ifdef AP_PERIPH_HAVE_LED_WITHOUT_NOTIFY
     // @Param: LED_BRIGHTNESS
     // @DisplayName: LED Brightness

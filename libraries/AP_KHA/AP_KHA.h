@@ -52,6 +52,8 @@ public:
 
     char* get_json_str() { return (char*)"This is a test of const string function"; }
     
+    void set_gpio(const uint32_t index, const bool value);
+
     enum class KHA_MAIM_Routing : uint8_t {
         NONE                    = 0,
         PAYLOAD1_STATE          = 1,
@@ -111,28 +113,28 @@ public:
                 bool enabled;
             } eth;
             KHA_Uart uart;
+            AP_Enum<KHA_MAIM_Routing> route;
         } console;
 
         struct {
             KHA_Uart uart;
+            AP_Enum<KHA_MAIM_Routing> route;
         } state;
 
         struct {
+            bool valid;
+            AP_Int8 valid_pin;
+            AP_Int8 enable_pin;
             AP_Int8 enabled_at_boot;
             bool enabled;
             float voltage;
             float current;
         } power;
-
-        struct {
-            AP_Int8 pin;
-            bool active;
-        } zeroize;
     } _payload[AP_KHA_MAIM_PAYLOAD_COUNT_MAX];
 
     struct {
         KHA_Uart uart;
-        AP_Enum<KHA_MAIM_Routing> protocol;
+        AP_Enum<KHA_MAIM_Routing> route; // Who talks to Avionics/Maint? Maint, Avionics, State 1, State2, Console1, or Console2
     } _maint, _avionics;
 
     struct {
@@ -149,6 +151,7 @@ public:
             uint32_t timer_ms;
         } json;
         KHA_Uart uart;
+        AP_Enum<KHA_MAIM_Routing> route; // Who talks to AHRS? Maint, Avionics, State 1 or State2
     } _ahrs;
 
     struct {
@@ -160,17 +163,26 @@ public:
                 AP_Int8 pin;
             } in;
         } pps;
+        
         struct {
             float voltage;
             float current;
         } power;
+
+        struct {
+            AP_Int8 pin;
+            bool active;
+        } zeroize;
     } _system;
+
+    AP_Int8 _ignore_uavcan_gpio_relay_commands;
 
 private:
     static AP_KHA *_singleton;
     
     void service_input_uarts();
-    void service_output_uart(const KHA_MAIM_Routing protocol, AP_HAL::UARTDriver *&port);
+    void service_output_uarts();
+    void service_router();
 
     void pps_pin_irq_handler(uint8_t pin, bool pin_value, uint32_t timestamp_us);
 
