@@ -7,9 +7,7 @@
 
 #include <AP_Param/AP_Param.h>
 #include "lwipthread.h"
-#include <AP_HAL/utility/OwnPtr.h>
-#include <AP_HAL/I2CDevice.h>
-#include "lwipthread.h"
+
 
 #ifndef AP_NETWORKING_HAS_THREAD
 #define AP_NETWORKING_HAS_THREAD 0
@@ -31,9 +29,17 @@ public:
 
     static const struct AP_Param::GroupInfo        var_info[];
 
-    // lwipthread_opts_t lwip_opts;
-    // uint8_t macaddress[6];
+    uint32_t get_ip_param() const { return IP4_ADDR_VALUE(_param.ipaddr[0],_param.ipaddr[1],_param.ipaddr[2],_param.ipaddr[3]); }
+    //uint32_t get_ip() const { return 0; }
 
+    uint8_t get_netmask_param() const { return _param.netmask; }
+    uint32_t get_netmask() const;
+
+    uint32_t get_gateway_param() const {return IP4_ADDR_VALUE(_param.gwaddr[0],_param.gwaddr[1],_param.gwaddr[2],_param.gwaddr[3]); }
+    //uint32_t get_ip() const { return 0; }
+
+    bool get_dhcp_enabled() const { return _param.dhcp; }
+    
 private:
     static AP_Networking *_singleton;
 
@@ -57,7 +63,6 @@ private:
     } _param;
 
     HAL_Semaphore _sem;
-    //AP_HAL::OwnPtr<AP_HAL::Device> _dev;
 };
 
 namespace AP {

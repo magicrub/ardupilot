@@ -2,11 +2,6 @@
 #include "AP_Networking.h"
 
 #if HAL_ENABLE_NETWORKING
-#include <AP_HAL/AP_HAL.h>
-#include <lwip/ip4_addr.h>
-#include <AP_HAL/utility/sparse-endian.h>
-#include <AP_Math/AP_Math.h>
-#include <lwip/ip4_addr.h>
 #include <hal_mii.h>
 #include <GCS_MAVLink/GCS.h>
 
@@ -176,7 +171,6 @@ AP_Networking::AP_Networking(void)
 void AP_Networking::init()
 {
 //     // initialise LWIP
-
     const uint8_t localMACAddress[6] = {(uint8_t)_param.macaddr[0].get(),
                                         (uint8_t)_param.macaddr[1].get(),
                                         (uint8_t)_param.macaddr[2].get(),
@@ -185,22 +179,19 @@ void AP_Networking::init()
                                         (uint8_t)_param.macaddr[5].get() };
 
     uint32_t netmask = 0;
-    uint32_t ip, gateway;
+    uint32_t ip = 0;
+    uint32_t gateway = 0;
     net_addr_mode_t addrMode;
 
 #if LWIP_DHCP
-    if (_param.dhcp) {
-        ip = 0;
-        gateway = 0;
+    if (get_dhcp_enabled()) {
         addrMode = NET_ADDRESS_DHCP;
     } else
 #endif    
     {
-        for (uint32_t i=0; i<_param.netmask; i++) {
-            netmask |= (1UL << i);
-        }
-        ip = IP4_ADDR_VALUE(_param.ipaddr[0], _param.ipaddr[1],_param.ipaddr[2], _param.ipaddr[3]),
-        gateway = IP4_ADDR_VALUE(_param.gwaddr[0], _param.gwaddr[1], _param.gwaddr[2], _param.gwaddr[3]),
+        ip = get_ip_param();
+        netmask = get_netmask();
+        gateway = get_gateway_param();
         addrMode = NET_ADDRESS_STATIC;
     }
 
@@ -219,6 +210,21 @@ void AP_Networking::init()
     const uint32_t interval_ms = 1;
     _dev->register_periodic_callback(interval_ms * AP_USEC_PER_MSEC, FUNCTOR_BIND_MEMBER(&AP_Networking::thread, void));
 #endif
+
+    GCS_SEND_TEXT(MAV_SEVERITY_DEBUG,"NET: Initialized.");
+#if LWIP_DHCP
+    if (get_dhcp_enabled()) {
+        GCS_SEND_TEXT(MAV_SEVERITY_DEBUG,"NET: Waiting for DHCP IP assignment...");
+    } else
+#endif
+    {
+        GCS_SEND_TEXT(MAV_SEVERITY_DEBUG,"NET: IP      %3d.%3d.%3d.%3d",
+            _param.ipaddr[0],_param.ipaddr[1],_param.ipaddr[2],_param.ipaddr[3]);
+        GCS_SEND_TEXT(MAV_SEVERITY_DEBUG,"NET: Mask    %3d.%3d.%3d.%3d",
+            (netmask)&0xFF, (netmask>>8)&0xFF, (netmask>>16)&0xFF, (netmask>>24)&0xFF);
+        GCS_SEND_TEXT(MAV_SEVERITY_DEBUG,"NET: Gateway %3d.%3d.%3d.%3d",
+            _param.gwaddr[0],_param.gwaddr[1],_param.gwaddr[2],_param.gwaddr[3]);
+    }
 
     _init.done = true;
 }
@@ -311,6 +317,15 @@ void AP_Networking::update()
     // TODO: add awesome stuff!
 }
 
+uint32_t AP_Networking::get_netmask() const
+{
+    uint32_t netmask = 0;
+    const uint8_t netmask_param = constrain_int16(get_netmask_param(), 0, 32);
+    for (uint32_t i=0; i<netmask_param; i++) {
+        netmask |= (1UL << i);
+    }
+    return netmask;
+}
 
 // periodic callback in our own networking thread at 1Hz for 
 #if AP_NETWORKING_HAS_THREAD
