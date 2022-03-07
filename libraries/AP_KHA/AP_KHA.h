@@ -52,20 +52,35 @@ public:
 
     char* get_json_str() { return (char*)"This is a test of const string function"; }
     
-    enum class KHA_MAIM_Maint_Serial_Protocol_t : uint8_t {
-        NONE            = 0,
-        PAYLOAD1        = 1,
-        PAYLOAD2        = 2,
-        AIRCRAFT        = 3,
-        AHRS            = 4,
-        SLCAN           = 5,
-    } ;
+    enum class KHA_MAIM_Routing : uint8_t {
+        NONE                    = 0,
+        PAYLOAD1_STATE          = 1,
+        PAYLOAD1_CONSOLE_SERIAL = 2,
+        PAYLOAD1_CONSOLE_IP     = 3,
+        PAYLOAD2_STATE          = 4,
+        PAYLOAD2_CONSOLE_SERIAL = 5,
+        PAYLOAD2_CONSOLE_IP     = 6,
+        PAYLOAD3_STATE          = 7,
+        PAYLOAD3_CONSOLE_SERIAL = 8,
+        PAYLOAD3_CONSOLE_IP     = 9,
+        PAYLOAD4_STATE          = 10,
+        PAYLOAD4_CONSOLE_SERIAL = 11,
+        PAYLOAD4_CONSOLE_IP     = 12,
+        AVIONICS                = 13,
+        MAINT                   = 14,
+        AHRS_Bytes              = 15,
+        AHRS_Packets            = 16,
+        AHRS_JSON               = 17,
+        SLCAN                   = 18,
+        MAVLink                 = 19,
+        LOOPBACK                = 20,
+    };
 
     enum class KHA_Vehicle_Type_t : uint8_t {
         MAIM            = 0,
         Plane           = 1,
         Plane_VTOL      = 2,
-    } ;
+    };
 
 
     struct KHA_IP_t {
@@ -76,58 +91,96 @@ public:
         AP_Int32 port;
     };
 
-    AP_Enum<KHA_Vehicle_Type_t> _type;
+    struct KHA_Uart {
+        struct {
+            uint8_t data[256];
+            uint16_t len;
+        } bytes_in;
+        struct {
+            uint8_t data[256];
+            uint16_t len;
+        } bytes_out;
+        AP_HAL::UARTDriver *port;
+    };
 
-    struct KHA_MAIM_t {
-
-        struct KHA_MAIM_Payload_t {
+    struct {
+        struct {
             struct {
-                KHA_IP_PORT_t eth_out;
-                AP_Int8 eth_out_enabled_at_boot;
-                bool eth_out_enabled;
-                AP_HAL::UARTDriver *port;
-            } console;
-
-            struct {
+                KHA_IP_PORT_t addr;
                 AP_Int8 enabled_at_boot;
                 bool enabled;
-                float voltage;
-                float current;
-            } power;
-
-            AP_HAL::UARTDriver *state_port;
-            bool zeroize;
-            uint32_t pps_start_ms;
-            uint32_t pps_on_ms;
-            uint32_t pps_off_ms;
-        } payload[AP_KHA_MAIM_PAYLOAD_COUNT_MAX];
-
-        struct KHA_MAIM_Maint_t {
-            AP_Enum<KHA_MAIM_Maint_Serial_Protocol_t> protocol;
-            AP_HAL::UARTDriver *port;
-        } maint;
-
-        struct KHA_MAIM_Avionics_t {
-            AP_Enum<KHA_MAIM_Maint_Serial_Protocol_t> protocol;
-            AP_HAL::UARTDriver *port;
-        } avionics;
+            } eth;
+            KHA_Uart uart;
+        } console;
 
         struct {
-            KHA_IP_PORT_t eth_out;
+            KHA_Uart uart;
+        } state;
+
+        struct {
             AP_Int8 enabled_at_boot;
             bool enabled;
+            float voltage;
+            float current;
+        } power;
+
+        struct {
+            AP_Int8 pin;
+            bool active;
+        } zeroize;
+    } _payload[AP_KHA_MAIM_PAYLOAD_COUNT_MAX];
+
+    struct {
+        KHA_Uart uart;
+        AP_Enum<KHA_MAIM_Routing> protocol;
+    } _maint, _avionics;
+
+    struct {
+        struct {
+            struct {
+                KHA_IP_PORT_t addr;
+                AP_Int8 enabled_at_boot;
+                bool enabled;
+            } eth;
+            struct {
+                uint8_t data[256];
+                uint16_t len;
+            } bytes_out;
             uint32_t timer_ms;
-        } state_json;
-    } _maim;
+        } json;
+        KHA_Uart uart;
+    } _ahrs;
+
+    struct {
+        struct {
+            struct {
+                uint32_t timestamp_high_us;
+                uint32_t timestamp_low_us;
+                bool state;
+                AP_Int8 pin;
+            } in;
+        } pps;
+        struct {
+            float voltage;
+            float current;
+        } power;
+    } _system;
 
 private:
     static AP_KHA *_singleton;
+    
+    void service_input_uarts();
+    void service_output_uart(const KHA_MAIM_Routing protocol, AP_HAL::UARTDriver *&port);
+
+    void pps_pin_irq_handler(uint8_t pin, bool pin_value, uint32_t timestamp_us);
 
     struct {
         uint32_t timer_ms;
         bool done;
         uint8_t state;
     } _init;
+
+    AP_Enum<KHA_Vehicle_Type_t> _type;
 
 };
 

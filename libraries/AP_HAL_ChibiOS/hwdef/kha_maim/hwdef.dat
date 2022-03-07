@@ -79,10 +79,11 @@ PA11 OTG_FS_DM OTG1
 PA12 OTG_FS_DP OTG1
 
 # order of UARTs (and USB)
-SERIAL_ORDER UART8 USART2 USART1 USART3 EMPTY UART5 USART6 UART7 OTG1
+SERIAL_ORDER OTG1 USART1 USART2 USART3 EMPTY UART5 USART6 UART7 UART8
 
-STDOUT_SERIAL SD2
-STDOUT_BAUDRATE 115200
+#STDOUT_SERIAL SD2
+#STDOUT_BAUDRATE 115200
+
 
 ###########################
 # storage
@@ -180,8 +181,6 @@ PE10 TIM1_CH2N TIM1 PWM(3) GPIO(13)
 
 #################################
 
-#DMA_NOSHARE SPI4* USART1_RX USART3_TX USART6_TX UART7*
-
 
 # ---------------------------------------------------------------------------------------------
 # AP_Periph - boiler-plate configurations that all HW AP-Periph need
@@ -210,6 +209,7 @@ define HAL_PERIPH_LISTEN_FOR_SERIAL_UART_REBOOT_CMD_PORT -1
 #################################
 
 
+DMA_NOSHARE SPI4* USART1* USART3* USART6* UART7* UART8* CAN1*
 
 ##############################################
 ################## Scripting #################
