@@ -217,6 +217,11 @@ void AP_Periph_FW::init()
     }
 #endif
     
+#if HAL_EXTERNAL_AHRS_ENABLED
+    // call externalAHRS init before init_ardupilot to allow for external sensors
+    externalAHRS.init();
+#endif
+
 #ifdef HAL_PERIPH_ENABLE_NOTIFY
     notify.init();
 #endif

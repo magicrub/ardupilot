@@ -238,6 +238,10 @@ public:
     AP_Scripting scripting;
 #endif
 
+#if HAL_EXTERNAL_AHRS_ENABLED
+    AP_ExternalAHRS externalAHRS;
+#endif
+
 #if HAL_LOGGING_ENABLED
     static const struct LogStructure log_structure[];
     AP_Logger logger;

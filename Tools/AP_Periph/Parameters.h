@@ -54,6 +54,7 @@ public:
         k_param_networking,
         k_param_kha,
         k_param_relay,
+        k_param_externalAHRS,
     };
 
     AP_Int16 format_version;

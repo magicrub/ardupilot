@@ -340,6 +340,12 @@ const AP_Param::Info AP_Periph_FW::var_info[] = {
     GOBJECT(notify, "NTF_",  AP_Notify),
 #endif
 
+#if HAL_EXTERNAL_AHRS_ENABLED
+    // @Group: EAHRS
+    // @Path: ../libraries/AP_ExternalAHRS/AP_ExternalAHRS.cpp
+    GOBJECT(externalAHRS, "EAHRS", AP_ExternalAHRS),
+#endif
+
 #if HAL_LOGGING_ENABLED
     // @Group: LOG
     // @Path: ../libraries/AP_Logger/AP_Logger.cpp
