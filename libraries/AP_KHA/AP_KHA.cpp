@@ -138,9 +138,17 @@ void AP_KHA::init(void)
 
     for (uint8_t p=0; p<AP_KHA_MAIM_PAYLOAD_COUNT_MAX; p++) {
         hal.gpio->pinMode(_payload[p].power.valid_pin, HAL_GPIO_INPUT);
+        
+        bool enabled;
+        if (_payload[p].power.enabled_at_boot == 2) {
+            // keep current enabled state
+            hal.gpio->pinMode(_payload[p].power.enable_pin, HAL_GPIO_INPUT);
+            enabled = hal.gpio->read(_payload[p].power.enable_pin);
+        } else {
+            enabled = _payload[p].power.enabled_at_boot;
+        }
         hal.gpio->pinMode(_payload[p].power.enable_pin, HAL_GPIO_OUTPUT);
-        hal.gpio->write(_payload[p].power.enable_pin, _payload[p].power.enabled_at_boot);
-        _payload[p].power.valid = hal.gpio->read(_payload[p].power.valid_pin);
+        hal.gpio->write(_payload[p].power.enable_pin, enabled);
     }
 
     hal.gpio->pinMode(_system.zeroize.pin, HAL_GPIO_OUTPUT);
