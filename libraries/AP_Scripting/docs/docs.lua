@@ -920,6 +920,14 @@ kha = {}
 function kha:get_json_str() end
 
 -- desc
+---@return string
+function kha:get_json_ip() end
+
+-- desc
+---@return number
+function kha:get_json_port() end
+
+-- desc
 ---@class mission
 ---@field MISSION_COMPLETE number
 ---@field MISSION_RUNNING number

@@ -132,8 +132,6 @@ void AP_KHA::init(void)
     _maint.uart.bytes_in.len = 0;
     _ahrs.uart.bytes_in.len = 0;
 
-
-
     for (uint8_t p=0; p<AP_KHA_MAIM_PAYLOAD_COUNT_MAX; p++) {
         hal.gpio->pinMode(_payload[p].power.valid_pin, HAL_GPIO_INPUT);
         hal.gpio->pinMode(_payload[p].power.enable_pin, HAL_GPIO_OUTPUT);
@@ -141,9 +139,11 @@ void AP_KHA::init(void)
         _payload[p].power.valid = hal.gpio->read(_payload[p].power.valid_pin);
     }
 
-
     hal.gpio->pinMode(_system.zeroize.pin, HAL_GPIO_OUTPUT);
     hal.gpio->write(_system.zeroize.pin, 0);
+
+    _ahrs.json.eth.enabled = _ahrs.json.eth.enabled_at_boot;
+
 
 
     _init.done = true;
@@ -240,12 +240,12 @@ void AP_KHA::service_router()
     // }
 
     switch ((KHA_MAIM_Routing)_ahrs.route.get()) {
-    case KHA_MAIM_Routing::PAYLOAD1_CONSOLE_SERIAL:
+    case KHA_MAIM_Routing::PAYLOAD1_STATE:
         len = MIN(_payload[0].state.uart.bytes_in.len, sizeof(_ahrs.uart.bytes_out.data));
         memcpy(_ahrs.uart.bytes_out.data, _payload[0].state.uart.bytes_in.data, len);
         _ahrs.uart.bytes_out.len += len;
         break;
-    case KHA_MAIM_Routing::PAYLOAD2_CONSOLE_SERIAL:
+    case KHA_MAIM_Routing::PAYLOAD2_STATE:
         len = MIN(_payload[1].state.uart.bytes_in.len, sizeof(_ahrs.uart.bytes_out.data));
         memcpy(_ahrs.uart.bytes_out.data, _payload[1].state.uart.bytes_in.data, len);
         _ahrs.uart.bytes_out.len += len;
@@ -393,6 +393,64 @@ void AP_KHA::set_gpio(const uint32_t index, const bool value)
         hal.gpio->write(_payload[1].power.enable_pin, value);
         break;
     }
+}
+
+char* AP_KHA::get_ip_str(const KHA_IP_PORT_t addr)
+{
+    // KHA_IP_PORT_t addr;
+    // addr.ip[0] = 239;
+    // addr.ip[1] = 2;
+    // addr.ip[2] = 3;
+    // addr.ip[3] = 4;
+    
+//   hal.util->snprintf(text, sizeof(text), "\"%d.%d.%d.%d\"", (int)addr.ip[0].get(),(int)addr.ip[1].get(),(int)addr.ip[2].get(),(int)addr.ip[3].get());
+   hal.util->snprintf(_ip_str, sizeof(_ip_str), "%d.%d.%d.%d", (int)addr.ip[0].get(),(int)addr.ip[1].get(),(int)addr.ip[2].get(),(int)addr.ip[3].get());
+   return _ip_str;
+
+    // return "239.2.5.8";
+}
+
+char* AP_KHA::get_json_str()
+{
+    if (!_ahrs.json.eth.enabled) {
+        return nullptr;
+    }
+
+    const uint32_t now_ms = AP_HAL::millis();
+    for (uint8_t i=0; i<ARRAY_SIZE(_ahrs.json.msgs); i++) {
+        if (now_ms - _ahrs.json.msgs[i].last_ms < _ahrs.json.msgs[i].interval_ms) {
+            continue;
+        }
+        _ahrs.json.msgs[i].last_ms = now_ms;
+
+        switch (_ahrs.json.msgs[i].name) {
+        case KHA_JSON_Msg::MAIM_VER:
+            return (char*)R"({"class":"MAIM_VER","sw":"1.0","dev":"SBG ELLIPSE-N","devhw":"2.4","devsw":"6.5"})";
+
+        case KHA_JSON_Msg::STATUS:
+            return (char*)R"({"class":"STATUS","general":"7F","com":"17FFFFFF","aiding":"3FFF","utc":"64","imu":"17E","mag":"0C5","sol":"1234CC7","vel":"C3","pos":"FFABC","alt":"3"})";
+
+        case KHA_JSON_Msg::IMUNAV:
+            return (char*)R"({"class":"IMUNAV","veln":-175.135,"vele":-22.0,"veld":-4.234})";
+
+        case KHA_JSON_Msg::PRESSURE:
+            return (char*)R"({"class":"PRESSURE","pressure":101325.0,"alt":0.0})";
+
+        case KHA_JSON_Msg::TPV:
+            return (char*)R"({"class":"TPV","time":"2017-05-15T10:30:43.123Z","ept":500, "track":123.45,"lat":12.12345,"lon":-12.12345,"alt":12345.12, "mode":3,"epx":12.12,"epy":12.12,"epv":12.12,"climb":-4.234, "epd":12.345,"epc":12.345})";
+
+        case KHA_JSON_Msg::ATT:
+            return (char*)R"({"class":"ATT","acc_x":3.123,"acc_y":2.123,"acc_z":-1.456,"gyro_x":1.456, "gyro_y":2.789,"gyro_z":3.567,"temp":12.12,"mag_x":123.456,"mag_y":234.789, "mag_z":24.223,"roll":3.001,"pitch":-0.345,"yaw":-2.789,"heading":123.45})";
+
+        case KHA_JSON_Msg::SKY:
+            return (char*)R"({"class":"SKY","time":"2017-05-15T10:30:43.123Z","hdop":6.3})";
+
+        case KHA_JSON_Msg::ADDL:
+            return (char*)R"({"class\":"ADDL\",\"up\":1345786201,\"tow\":375218453,"und":3.7,"gveln":-175.135,"gvele":-22.0,"gveld":-4.234,"epn":4.75,"epe":1.66,"epd":0.37,"nsv":7})";
+        }
+        return nullptr;
+    }
+    return nullptr;
 }
 
 // singleton instance

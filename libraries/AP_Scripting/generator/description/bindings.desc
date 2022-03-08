@@ -490,6 +490,8 @@ singleton AP::fwversion() field fw_hash_str alias hash
 include AP_KHA/AP_KHA.h
 singleton AP_KHA alias kha
 singleton AP_KHA method get_json_str string
+singleton AP_KHA method get_json_ip string
+singleton AP_KHA method get_json_port uint16_t
 
 module socket_core opencall luaopen_socket_core include AP_Scripting/luasocket/src/luasocket.h
 

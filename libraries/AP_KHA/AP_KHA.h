@@ -50,7 +50,11 @@ public:
     AP_KHA(const AP_KHA &other) = delete;
     AP_KHA &operator=(const AP_KHA&) = delete;
 
-    char* get_json_str() { return (char*)"This is a test of const string function"; }
+    char* get_json_str();
+    //const char* get_json_ip() { return "239.2.3.1"; }
+    char* get_json_ip() { return get_ip_str(_ahrs.json.eth.addr); }
+
+    uint16_t get_json_port() { return _ahrs.json.eth.addr.port; };
     
     void set_gpio(const uint32_t index, const bool value);
 
@@ -84,7 +88,6 @@ public:
         Plane_VTOL      = 2,
     };
 
-
     struct KHA_IP_t {
         AP_Int16 ip[4];
     };
@@ -92,6 +95,28 @@ public:
         AP_Int16 ip[4];
         AP_Int32 port;
     };
+
+private:
+
+
+    enum class KHA_JSON_Msg : uint8_t {
+        MAIM_VER,
+        STATUS,
+        IMUNAV,
+        PRESSURE,
+        TPV,
+        ATT,
+        SKY,
+        ADDL,
+    };
+
+    struct KHA_JSON_Msg_Interval {
+        const KHA_JSON_Msg name;
+        const uint32_t interval_ms;
+        uint32_t last_ms;
+    };
+
+    
 
     struct KHA_Uart {
         struct {
@@ -149,6 +174,16 @@ public:
                 uint16_t len;
             } bytes_out;
             uint32_t timer_ms;
+            
+            KHA_JSON_Msg_Interval msgs[8] = {
+                {KHA_JSON_Msg::MAIM_VER, 1000, 0},
+                {KHA_JSON_Msg::STATUS, 1000, 0},
+                {KHA_JSON_Msg::IMUNAV, 100, 0},
+                {KHA_JSON_Msg::PRESSURE, 1000, 0},
+                {KHA_JSON_Msg::TPV, 1000, 0},
+                {KHA_JSON_Msg::ATT, 100, 0},
+                {KHA_JSON_Msg::SKY, 1000, 0},
+                {KHA_JSON_Msg::ADDL, 1000, 0} };
         } json;
         KHA_Uart uart;
         AP_Enum<KHA_MAIM_Routing> route; // Who talks to AHRS? Maint, Avionics, State 1 or State2
@@ -177,12 +212,12 @@ public:
 
     AP_Int8 _ignore_uavcan_gpio_relay_commands;
 
-private:
     static AP_KHA *_singleton;
     
     void service_input_uarts();
     void service_output_uarts();
     void service_router();
+    char* get_ip_str(const KHA_IP_PORT_t addr);
 
     void pps_pin_irq_handler(uint8_t pin, bool pin_value, uint32_t timestamp_us);
 
@@ -194,7 +229,9 @@ private:
 
     AP_Enum<KHA_Vehicle_Type_t> _type;
 
+    char _ip_str[256];
 };
+
 
 namespace AP {
     AP_KHA *kha(void);
