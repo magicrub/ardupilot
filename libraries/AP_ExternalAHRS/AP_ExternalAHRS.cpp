@@ -77,15 +77,24 @@ void AP_ExternalAHRS::init(void)
     case DevType::None:
         // nothing to do
         break;
+
+#if HAL_EXTERNAL_AHRS_VECTORNAV_ENABLED
     case DevType::VecNav:
         backend = new AP_ExternalAHRS_VectorNav(this, state);
         break;
+#endif
+
+#if HAL_EXTERNAL_AHRS_LORD_ENABLED
     case DevType::LORD:
         backend = new AP_ExternalAHRS_LORD(this, state);
         break;
+#endif
+
+#if HAL_EXTERNAL_AHRS_SBG_ENABLED
     case DevType::SBG:
         backend = new AP_ExternalAHRS_SBG(this, state);
         break;
+#endif
     default:
         GCS_SEND_TEXT(MAV_SEVERITY_INFO, "Unsupported ExternalAHRS type %u", unsigned(devtype));
         break;

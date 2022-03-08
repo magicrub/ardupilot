@@ -19,7 +19,7 @@
 #define ALLOW_DOUBLE_MATH_FUNCTIONS
 
 #include "AP_ExternalAHRS_SBG.h"
-#if HAL_EXTERNAL_AHRS_ENABLED
+#if HAL_EXTERNAL_AHRS_SBG_ENABLED
 
 #include <AP_Math/AP_Math.h>
 #include <AP_Math/crc.h>

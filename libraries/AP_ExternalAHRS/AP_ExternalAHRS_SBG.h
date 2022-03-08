@@ -20,7 +20,11 @@
 
 #include "AP_ExternalAHRS_backend.h"
 
-#if HAL_EXTERNAL_AHRS_ENABLED
+#ifndef HAL_EXTERNAL_AHRS_SBG_ENABLED
+#define HAL_EXTERNAL_AHRS_SBG_ENABLED HAL_EXTERNAL_AHRS_ENABLED
+#endif
+
+#if HAL_EXTERNAL_AHRS_SBG_ENABLED
 
 #include <GCS_MAVLink/GCS_MAVLink.h>
 #include "sbgECom/sbgEComIds.h"

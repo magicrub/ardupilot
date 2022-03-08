@@ -200,7 +200,9 @@ define HAL_PERIPH_ENABLE_BATTERY
 #define HAL_PERIPH_ENABLE_RC_OUT
 #define HAL_PERIPH_ENABLE_NOTIFY
 
-#define HAL_EXTERNAL_AHRS_ENABLED 1
+define HAL_EXTERNAL_AHRS_ENABLED 1
+define HAL_EXTERNAL_AHRS_LORD_ENABLED 0
+define HAL_EXTERNAL_AHRS_VECTORNAV_ENABLED 0
 
 # listen for reboot command from uploader.py script
 # undefine to disable. Use -1 to allow on all ports, otherwise serial number index defined in SERIAL_ORDER starting at 0
