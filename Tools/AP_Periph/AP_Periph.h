@@ -59,6 +59,10 @@ void stm32_watchdog_pat();
  */
 extern const struct app_descriptor app_descriptor;
 
+extern "C" {
+void can_printf(const char *fmt, ...) FMT_PRINTF(1,2);
+}
+
 class AP_Periph_FW {
 public:
     AP_Periph_FW();
@@ -263,6 +267,8 @@ public:
 #if HAL_ENABLE_NETWORKING
     AP_Networking networking;
 #endif
+
+    static constexpr auto can_printf = ::can_printf;
 };
 
 namespace AP
@@ -272,7 +278,4 @@ namespace AP
 
 extern AP_Periph_FW periph;
 
-extern "C" {
-void can_printf(const char *fmt, ...) FMT_PRINTF(1,2);
-}
 
