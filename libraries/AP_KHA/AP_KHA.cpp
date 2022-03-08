@@ -149,6 +149,8 @@ void AP_KHA::init(void)
         }
         hal.gpio->pinMode(_payload[p].power.enable_pin, HAL_GPIO_OUTPUT);
         hal.gpio->write(_payload[p].power.enable_pin, enabled);
+
+        _payload[p].console.eth.enabled = _payload[p].console.eth.enabled_at_boot;
     }
 
     hal.gpio->pinMode(_system.zeroize.pin, HAL_GPIO_OUTPUT);
@@ -465,8 +467,8 @@ char* AP_KHA::get_udp_out_data_str(const uint32_t stream_id)
 {
     switch (stream_id) {
         case 0: return get_json_str();
-        case 1: return (char*)"Payload 1 Console payload data";
-        case 2: return (char*)"Payload 2 Console payload data";
+        case 1: return _payload[0].console.eth.enabled ? (char*)"Payload 1 Console payload data" : nullptr;
+        case 2: return _payload[1].console.eth.enabled ? (char*)"Payload 1 Console payload data" : nullptr;
     }
     return nullptr;
 }
