@@ -242,10 +242,9 @@ void AP_Networking::apply_errata_for_mac_KSZ9896C()
         // Hardware Design Checklist
         // https://ww1.microchip.com/downloads/en/DeviceDoc/KSZ989x-KSZ956x-KSZ9477-Hardware-Design-Checklist-00004151.pdf
         // 6.4: 10/100 Mbps Ethernet Only
-        mii_write(&ETHD1, phy, 0x00, mii_read(&ETHD1, phy, 0x00) & ~0x0020); // clear bit 6
-        mii_write(&ETHD1, phy, 0x12, 0x0800);
-        mii_write(&ETHD1, phy, 0x00, 0x3100 | (1 << 9));
-
+        mii_write(&ETHD1, phy, 0x00, 0x3100); // disable 1000Gbps, enable auto-negotiate for 10/100
+        mii_write(&ETHD1, phy, 0x09, 0x0400); // disable 1000Gbps announcements
+        mii_write(&ETHD1, phy, 0x00, 0x3100 | (1 << 9)); // restart auto-negotiate
 
         // Erratas:
         // http://ww1.microchip.com/downloads/en/DeviceDoc/80000757A.pdf
