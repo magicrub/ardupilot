@@ -11,6 +11,16 @@
         "ostream": "cpp",
         "sstream": "cpp",
         "streambuf": "cpp",
-        "shared_mutex": "cpp"
+        "shared_mutex": "cpp",
+        "optional": "cpp",
+        "istream": "cpp",
+        "ratio": "cpp",
+        "system_error": "cpp",
+        "array": "cpp",
+        "functional": "cpp",
+        "regex": "cpp",
+        "tuple": "cpp",
+        "type_traits": "cpp",
+        "utility": "cpp"
     }
 }
