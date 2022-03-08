@@ -50,12 +50,12 @@ public:
     AP_KHA(const AP_KHA &other) = delete;
     AP_KHA &operator=(const AP_KHA&) = delete;
 
-    char* get_json_str();
-    //const char* get_json_ip() { return "239.2.3.1"; }
-    char* get_json_ip() { return get_ip_str(_ahrs.json.eth.addr); }
+    char* get_udp_out_data_str(const uint32_t stream_id);
+    char* get_udp_out_ip(const uint32_t stream_id);
+    char* get_udp_out_name(const uint32_t stream_id);
+    uint16_t get_udp_out_port(const uint32_t stream_id);
+    uint32_t get_udp_out_interval_ms(const uint32_t stream_id);
 
-    uint16_t get_json_port() { return _ahrs.json.eth.addr.port; };
-    
     void set_gpio(const uint32_t index, const bool value);
 
     enum class KHA_MAIM_Routing : uint8_t {
@@ -136,6 +136,7 @@ private:
                 KHA_IP_PORT_t addr;
                 AP_Int8 enabled_at_boot;
                 bool enabled;
+                AP_Int32 interval_ms;
             } eth;
             KHA_Uart uart;
             AP_Enum<KHA_MAIM_Routing> route;
@@ -168,6 +169,7 @@ private:
                 KHA_IP_PORT_t addr;
                 AP_Int8 enabled_at_boot;
                 bool enabled;
+                AP_Int32 interval_ms;
             } eth;
             struct {
                 uint8_t data[256];
@@ -217,7 +219,8 @@ private:
     void service_input_uarts();
     void service_output_uarts();
     void service_router();
-    char* get_ip_str(const KHA_IP_PORT_t addr);
+    char* convert_ip_to_str(const uint32_t stream_id, const KHA_IP_PORT_t addr);
+    char* get_json_str();
 
     void pps_pin_irq_handler(uint8_t pin, bool pin_value, uint32_t timestamp_us);
 
@@ -229,7 +232,8 @@ private:
 
     AP_Enum<KHA_Vehicle_Type_t> _type;
 
-    char _ip_str[256];
+    uint32_t _ip_str_last[10];
+    char _ip_str[10][256];
 };
 
 

@@ -1,7 +1,7 @@
 -- UDP Socket send
 local socket = require("socket")
 
-local stream_id = 0
+local stream_id = 2
 
 local ip
 local port

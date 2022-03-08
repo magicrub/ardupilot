@@ -916,16 +916,30 @@ function RPM:get_rpm(instance) end
 kha = {}
 
 -- desc
+---@param stream_id integer
 ---@return string
-function kha:get_json_str() end
+function kha:get_udp_out_data_str(stream_id) end
 
 -- desc
+---@param stream_id integer
 ---@return string
-function kha:get_json_ip() end
+function kha:get_udp_out_ip(stream_id) end
 
 -- desc
----@return number
-function kha:get_json_port() end
+---@param stream_id integer
+---@return integer
+function kha:get_udp_out_port(stream_id) end
+
+-- desc
+---@param stream_id integer
+---@return string
+function kha:get_udp_out_name(stream_id) end
+
+-- desc
+---@param stream_id integer
+---@return integer
+function kha:get_udp_out_interval_ms(stream_id) end
+
 
 -- desc
 ---@class mission

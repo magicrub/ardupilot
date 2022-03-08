@@ -19,6 +19,7 @@
 #include "AP_KHA.h"
 //#include <stdio.h>
 #include <GCS_MAVLink/GCS.h>
+#include <AP_Networking/AP_Networking.h>
 
 extern const AP_HAL::HAL& hal;
 
@@ -45,35 +46,38 @@ const AP_Param::GroupInfo AP_KHA::var_info[] = {
     AP_GROUPINFO("ROUTE_P2_CON",  7, AP_KHA, _payload[1].console.route, (uint8_t)KHA_MAIM_Routing::PAYLOAD2_CONSOLE_IP),
     AP_GROUPINFO("ROUTE_AHRS"  ,  8, AP_KHA, _ahrs.route, (uint8_t)KHA_MAIM_Routing::PAYLOAD1_CONSOLE_SERIAL),
 
-    AP_GROUPINFO("JSON_IP0"    , 11, AP_KHA, _ahrs.json.eth.addr.ip[0], 239),
-    AP_GROUPINFO("JSON_IP1"    , 12, AP_KHA, _ahrs.json.eth.addr.ip[1], 2),
-    AP_GROUPINFO("JSON_IP2"    , 13, AP_KHA, _ahrs.json.eth.addr.ip[2], 3),
-    AP_GROUPINFO("JSON_IP3"    , 14, AP_KHA, _ahrs.json.eth.addr.ip[3], 1),
+    AP_GROUPINFO("JSON_IP1"    , 11, AP_KHA, _ahrs.json.eth.addr.ip[0], 239),
+    AP_GROUPINFO("JSON_IP2"    , 12, AP_KHA, _ahrs.json.eth.addr.ip[1], 2),
+    AP_GROUPINFO("JSON_IP3"    , 13, AP_KHA, _ahrs.json.eth.addr.ip[2], 3),
+    AP_GROUPINFO("JSON_IP4"    , 14, AP_KHA, _ahrs.json.eth.addr.ip[3], 1),
     AP_GROUPINFO("JSON_PORT"   , 15, AP_KHA, _ahrs.json.eth.addr.port, 6969),
     AP_GROUPINFO("JSON_EN"     , 16, AP_KHA, _ahrs.json.eth.enabled_at_boot, 0),
+    AP_GROUPINFO("JSON_RATE"   , 17, AP_KHA, _ahrs.json.eth.interval_ms, 10),
 
 #if AP_KHA_MAIM_PAYLOAD_COUNT_MAX >= 1
-    AP_GROUPINFO("P1_CON_IP1"  , 20, AP_KHA, _payload[0].console.eth.addr.ip[0], 255),
-    AP_GROUPINFO("P1_CON_IP1"  , 21, AP_KHA, _payload[0].console.eth.addr.ip[1], 255),
-    AP_GROUPINFO("P1_CON_IP2"  , 22, AP_KHA, _payload[0].console.eth.addr.ip[2], 255),
-    AP_GROUPINFO("P1_CON_IP3"  , 23, AP_KHA, _payload[0].console.eth.addr.ip[3], 255),
-    AP_GROUPINFO("P1_CON_PORT" , 24, AP_KHA, _payload[0].console.eth.addr.port, 11222),
+    AP_GROUPINFO("P1_CON_IP1"  , 20, AP_KHA, _payload[0].console.eth.addr.ip[0], 239),
+    AP_GROUPINFO("P1_CON_IP2"  , 21, AP_KHA, _payload[0].console.eth.addr.ip[1], 2),
+    AP_GROUPINFO("P1_CON_IP3"  , 22, AP_KHA, _payload[0].console.eth.addr.ip[2], 3),
+    AP_GROUPINFO("P1_CON_IP4"  , 23, AP_KHA, _payload[0].console.eth.addr.ip[3], 2),
+    AP_GROUPINFO("P1_CON_PORT" , 24, AP_KHA, _payload[0].console.eth.addr.port, 7000),
     AP_GROUPINFO("P1_CON_EN"   , 25, AP_KHA, _payload[0].console.eth.enabled_at_boot, 0),
     AP_GROUPINFO("P1_POW_V_PIN", 26, AP_KHA, _payload[0].power.valid_pin, 1),
     AP_GROUPINFO("P1_POW_E_PIN", 27, AP_KHA, _payload[0].power.enable_pin, 3),
     AP_GROUPINFO("P1_POW_ENABL", 28, AP_KHA, _payload[0].power.enabled_at_boot, 0),
+    AP_GROUPINFO("P1_CON_RATE" , 29, AP_KHA, _payload[0].console.eth.interval_ms, 10),
 #endif
 
 #if AP_KHA_MAIM_PAYLOAD_COUNT_MAX >= 2
-    AP_GROUPINFO("P2_CON_IP1"  , 30, AP_KHA, _payload[1].console.eth.addr.ip[0], 255),
-    AP_GROUPINFO("P2_CON_IP1"  , 31, AP_KHA, _payload[1].console.eth.addr.ip[1], 255),
-    AP_GROUPINFO("P2_CON_IP2"  , 32, AP_KHA, _payload[1].console.eth.addr.ip[2], 255),
-    AP_GROUPINFO("P2_CON_IP3"  , 33, AP_KHA, _payload[1].console.eth.addr.ip[3], 255),
-    AP_GROUPINFO("P2_CON_PORT" , 34, AP_KHA, _payload[1].console.eth.addr.port, 11223),
+    AP_GROUPINFO("P2_CON_IP1"  , 30, AP_KHA, _payload[1].console.eth.addr.ip[0], 239),
+    AP_GROUPINFO("P2_CON_IP2"  , 31, AP_KHA, _payload[1].console.eth.addr.ip[1], 2),
+    AP_GROUPINFO("P2_CON_IP3"  , 32, AP_KHA, _payload[1].console.eth.addr.ip[2], 3),
+    AP_GROUPINFO("P2_CON_IP4"  , 33, AP_KHA, _payload[1].console.eth.addr.ip[3], 3),
+    AP_GROUPINFO("P2_CON_PORT" , 34, AP_KHA, _payload[1].console.eth.addr.port, 7001),
     AP_GROUPINFO("P2_CON_EN"   , 35, AP_KHA, _payload[1].console.eth.enabled_at_boot, 0),
     AP_GROUPINFO("P2_POW_V_PIN", 36, AP_KHA, _payload[1].power.valid_pin, 2),
     AP_GROUPINFO("P2_POW_E_PIN", 37, AP_KHA, _payload[1].power.enable_pin, 4),
     AP_GROUPINFO("P2_POW_ENABL", 38, AP_KHA, _payload[1].power.enabled_at_boot, 0),
+    AP_GROUPINFO("P2_CON_RATE" , 39, AP_KHA, _payload[1].console.eth.interval_ms, 10),
 #endif // AP_KHA_MAIM_PAYLOAD_COUNT_MAX
 
 #if AP_KHA_MAIM_PAYLOAD_COUNT_MAX >= 3
@@ -395,19 +399,68 @@ void AP_KHA::set_gpio(const uint32_t index, const bool value)
     }
 }
 
-char* AP_KHA::get_ip_str(const KHA_IP_PORT_t addr)
+char* AP_KHA::get_udp_out_ip(const uint32_t stream_id)
 {
-    // KHA_IP_PORT_t addr;
-    // addr.ip[0] = 239;
-    // addr.ip[1] = 2;
-    // addr.ip[2] = 3;
-    // addr.ip[3] = 4;
-    
-//   hal.util->snprintf(text, sizeof(text), "\"%d.%d.%d.%d\"", (int)addr.ip[0].get(),(int)addr.ip[1].get(),(int)addr.ip[2].get(),(int)addr.ip[3].get());
-   hal.util->snprintf(_ip_str, sizeof(_ip_str), "%d.%d.%d.%d", (int)addr.ip[0].get(),(int)addr.ip[1].get(),(int)addr.ip[2].get(),(int)addr.ip[3].get());
-   return _ip_str;
+    switch (stream_id) {
+        case 0: return convert_ip_to_str(stream_id, _ahrs.json.eth.addr);
+        case 1: return convert_ip_to_str(stream_id, _payload[0].console.eth.addr);
+        case 2: return convert_ip_to_str(stream_id, _payload[1].console.eth.addr);
+    }
+    return nullptr;
+}
 
-    // return "239.2.5.8";
+uint16_t AP_KHA::get_udp_out_port(const uint32_t stream_id)
+{
+    switch (stream_id) {
+        case 0: return _ahrs.json.eth.addr.port;
+        case 1: return _payload[0].console.eth.addr.port;
+        case 2: return _payload[1].console.eth.addr.port;
+    }
+    return 0;
+}
+
+char* AP_KHA::get_udp_out_name(const uint32_t stream_id)
+{
+    switch (stream_id) {
+        case 0: return (char*)"AHRS JSON";
+        case 1: return (char*)"Payload 1 Console";
+        case 2: return (char*)"Payload 2 Console";
+    }
+    return nullptr;
+}
+
+uint32_t AP_KHA::get_udp_out_interval_ms(const uint32_t stream_id)
+{
+    int32_t interval_ms;
+    switch (stream_id) {
+        case 0: interval_ms =_ahrs.json.eth.interval_ms; break;
+        case 1: interval_ms =_payload[0].console.eth.interval_ms; break;
+        case 2: interval_ms =_payload[1].console.eth.interval_ms; break;
+        default: interval_ms = 1000; break;
+    }
+    return (uint32_t)constrain_int32(interval_ms, 1, 60000);
+}
+
+char* AP_KHA::convert_ip_to_str(const uint32_t stream_id, const KHA_IP_PORT_t addr)
+{
+    const uint32_t ip = IP4_ADDR_VALUE((int)addr.ip[0].get(),(int)addr.ip[1].get(),(int)addr.ip[2].get(),(int)addr.ip[3].get());
+    if (ip == _ip_str_last[stream_id]) {
+        return _ip_str[stream_id];
+    }
+    _ip_str_last[stream_id] = ip;
+
+    hal.util->snprintf(_ip_str[stream_id], sizeof(_ip_str[stream_id]), "%d.%d.%d.%d", (int)addr.ip[0].get(),(int)addr.ip[1].get(),(int)addr.ip[2].get(),(int)addr.ip[3].get());
+    return _ip_str[stream_id];
+}
+
+char* AP_KHA::get_udp_out_data_str(const uint32_t stream_id)
+{
+    switch (stream_id) {
+        case 0: return get_json_str();
+        case 1: return (char*)"Payload 1 Console payload data";
+        case 2: return (char*)"Payload 2 Console payload data";
+    }
+    return nullptr;
 }
 
 char* AP_KHA::get_json_str()
