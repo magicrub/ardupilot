@@ -47,8 +47,8 @@ const AP_Param::GroupInfo AP_KHA::var_info[] = {
     AP_GROUPINFO("ROUTE_AHRS"  ,  8, AP_KHA, _ahrs.route, (uint8_t)KHA_MAIM_Routing::PAYLOAD1_CONSOLE_SERIAL),
 
     AP_GROUPINFO("JSON_IP1"    , 11, AP_KHA, _ahrs.json.eth.addr.ip[0], 239),
-    AP_GROUPINFO("JSON_IP2"    , 12, AP_KHA, _ahrs.json.eth.addr.ip[1], 2),
-    AP_GROUPINFO("JSON_IP3"    , 13, AP_KHA, _ahrs.json.eth.addr.ip[2], 3),
+    AP_GROUPINFO("JSON_IP2"    , 12, AP_KHA, _ahrs.json.eth.addr.ip[1], 255),
+    AP_GROUPINFO("JSON_IP3"    , 13, AP_KHA, _ahrs.json.eth.addr.ip[2], 1),
     AP_GROUPINFO("JSON_IP4"    , 14, AP_KHA, _ahrs.json.eth.addr.ip[3], 1),
     AP_GROUPINFO("JSON_PORT"   , 15, AP_KHA, _ahrs.json.eth.addr.port, 6969),
     AP_GROUPINFO("JSON_EN"     , 16, AP_KHA, _ahrs.json.eth.enabled_at_boot, 0),
@@ -468,7 +468,7 @@ char* AP_KHA::get_udp_out_data_str(const uint32_t stream_id)
     switch (stream_id) {
         case 0: return get_json_str();
         case 1: return _payload[0].console.eth.enabled ? (char*)"Payload 1 Console payload data" : nullptr;
-        case 2: return _payload[1].console.eth.enabled ? (char*)"Payload 1 Console payload data" : nullptr;
+        case 2: return _payload[1].console.eth.enabled ? (char*)"Payload 2 Console payload data" : nullptr;
     }
     return nullptr;
 }
@@ -485,13 +485,35 @@ char* AP_KHA::get_json_str()
             continue;
         }
         _ahrs.json.msgs[i].last_ms = now_ms;
+        //char* text;
 
         switch (_ahrs.json.msgs[i].name) {
         case KHA_JSON_Msg::MAIM_VER:
-            return (char*)R"({"class":"MAIM_VER","sw":"1.0","dev":"SBG ELLIPSE-N","devhw":"2.4","devsw":"6.5"})";
+            //return (char*)R"({"class":"MAIM_VER","sw":"1.0","dev":"SBG ELLIPSE-N","devhw":"2.4","devsw":"6.5"})";
+            _ahrs.json.bytes_out.len = hal.util->snprintf((char*)_ahrs.json.bytes_out.data, sizeof(_ahrs.json.bytes_out.data),
+                "{\"class\":\"MAIM_VER\",\"sw\":\"%.1f\",\"dev\":\"SBG ELLIPSE-N\",\"devhw\":\"%.1f\",\"devsw\":\"%.1f\"}",
+                1.0f,   // sw
+                2.4f,   // devhw
+                6.5f    // devsw
+                );
+            return (char*)_ahrs.json.bytes_out.data;
 
         case KHA_JSON_Msg::STATUS:
-            return (char*)R"({"class":"STATUS","general":"7F","com":"17FFFFFF","aiding":"3FFF","utc":"64","imu":"17E","mag":"0C5","sol":"1234CC7","vel":"C3","pos":"FFABC","alt":"3"})";
+            // return (char*)R"({"class":"STATUS","general":"7F","com":"17FFFFFF","aiding":"3FFF","utc":"64","imu":"17E","mag":"0C5","sol":"1234CC7","vel":"C3","pos":"FFABC","alt":"3"})";
+            _ahrs.json.bytes_out.len = hal.util->snprintf((char*)_ahrs.json.bytes_out.data, sizeof(_ahrs.json.bytes_out.data),
+                "{\"class\":\"STATUS\",\"general\":\"%X\",\"com\":\"%X\",\"aiding\":\"%X\",\"utc\":\"%X\",\"imu\":\"%X\",\"mag\":\"%X\",\"sol\":\"%X\",\"vel\":\"%X\",\"pos\":\"%X\",\"alt\":\"%X\"}",
+                    0x7F,           // general
+                    0x17FFFFFF,     // com
+                    0x3FFF,         // aiding
+                    0x64,           // utc
+                    0x17E,          // imu
+                    0x0C5,          // mag
+                    0x1234CC7,      // sol
+                    0xC3,           // vel
+                    0xFFABC,        // pos
+                    0x3            // alt 
+                );
+            return (char*)_ahrs.json.bytes_out.data;
 
         case KHA_JSON_Msg::IMUNAV:
             return (char*)R"({"class":"IMUNAV","veln":-175.135,"vele":-22.0,"veld":-4.234})";
@@ -511,8 +533,10 @@ char* AP_KHA::get_json_str()
         case KHA_JSON_Msg::ADDL:
             return (char*)R"({"class\":"ADDL\",\"up\":1345786201,\"tow\":375218453,"und":3.7,"gveln":-175.135,"gvele":-22.0,"gveld":-4.234,"epn":4.75,"epe":1.66,"epd":0.37,"nsv":7})";
         }
+        _ahrs.json.bytes_out.len = 0;
         return nullptr;
     }
+    _ahrs.json.bytes_out.len = 0;
     return nullptr;
 }
 

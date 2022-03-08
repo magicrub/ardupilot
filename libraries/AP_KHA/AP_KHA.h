@@ -172,7 +172,7 @@ private:
                 AP_Int32 interval_ms;
             } eth;
             struct {
-                uint8_t data[256];
+                uint8_t data[1500]; // Ethernet MTU
                 uint16_t len;
             } bytes_out;
             uint32_t timer_ms;

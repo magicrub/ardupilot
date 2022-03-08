@@ -16,6 +16,7 @@ function update_ip_port()
     ip = kha:get_udp_out_ip(stream_id)
     port = kha:get_udp_out_port(stream_id)
     assert(ip, port)
+    --assert(udp:setoption("ip-add-membership", {multiaddr = ip, interface = "*"}))
     if (not ip_last) or (not port_last) or (ip ~= ip_last) or (port ~= port_last) then
         ip_last = ip
         port_last = port
