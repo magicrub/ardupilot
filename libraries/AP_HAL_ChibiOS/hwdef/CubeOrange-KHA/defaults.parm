@@ -151,6 +151,9 @@ SERVO8_MIN              1100
 SERVO9_FUNCTION         35
 SERVO9_MAX              1940
 SERVO9_MIN              1100
+SR2_EXT_STAT            2
+SR2_EXTRA1              10
+SR2_POSITION            10
 STAB_PITCH_DOWN         0
 STALL_ALGORITHM1        0
 STALL_ALGORITHM2        0
