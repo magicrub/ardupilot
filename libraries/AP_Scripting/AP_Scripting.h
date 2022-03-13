@@ -85,6 +85,19 @@ public:
     };
     ObjectBuffer<struct scripting_mission_cmd> * mission_data;
 
+    void write_buf(const uint8_t id, const uint8_t *buf, const uint32_t len);
+    uint32_t read_buf(const uint8_t id, uint8_t *buf, const uint32_t len_max);
+
+    static const int buffer_data_len_size = 1500;
+
+    // AP_KHA needs 3: json + p1 + p2
+    static const int buffer_data_id_max = 3;
+    struct buffer_data_t {
+        ByteBuffer queue_out{1500}; // Ethernet MTU
+        ByteBuffer queue_in{1500}; // Ethernet MTU
+        HAL_Semaphore sem;
+        } _buffer_data[buffer_data_id_max];
+
 private:
 
     bool repl_start(void);

@@ -195,6 +195,8 @@ void AP_KHA::update(void)
     service_router();
 
     service_output_uarts();
+
+    service_json_out();
 }
 
 
@@ -338,6 +340,11 @@ void AP_KHA::service_router()
         _payload[0].console.uart.bytes_out.len += len;
         break;
     case KHA_MAIM_Routing::PAYLOAD1_CONSOLE_IP:
+        // len = MIN(_payload[0].console.eth.buf_in.available(), sizeof(_payload[0].console.uart.bytes_out.data));
+        // _payload[0].console.uart.bytes_out.len = _payload[0].console.eth.buf_in.read(_payload[0].console.uart.bytes_out.data, len);
+
+        // len = MIN(_payload[0].console.uart.bytes_in.len, _payload[0].console.eth.buf_in.space());
+        // _payload[0].console.eth.buf_out.write(_payload[0].console.uart.bytes_in.data, len);
         break;
     default:
         break;
@@ -350,13 +357,17 @@ void AP_KHA::service_router()
         _payload[1].console.uart.bytes_out.len += len;
         break;
     case KHA_MAIM_Routing::PAYLOAD2_CONSOLE_IP:
+        // len = MIN(_payload[1].console.eth.buf_in.available(), sizeof(_payload[1].console.uart.bytes_out.data));
+        // _payload[1].console.uart.bytes_out.len = _payload[1].console.eth.buf_in.read(_payload[1].console.uart.bytes_out.data, len);
+
+        // len = MIN(_payload[1].console.uart.bytes_in.len, _payload[1].console.eth.buf_in.space());
+        // _payload[1].console.eth.buf_out.write(_payload[1].console.uart.bytes_in.data, len);
         break;
     default:
         break;
     }
 
 }
-
 
 void AP_KHA::service_output_uarts()
 {
@@ -463,20 +474,80 @@ char* AP_KHA::convert_ip_to_str(const uint32_t stream_id, const KHA_IP_PORT_t ad
     return _ip_str[stream_id];
 }
 
-char* AP_KHA::get_udp_out_data_str(const uint32_t stream_id)
-{
-    switch (stream_id) {
-        case 0: return get_json_str();
-        case 1: return _payload[0].console.eth.enabled ? (char*)"Payload 1 Console payload data" : nullptr;
-        case 2: return _payload[1].console.eth.enabled ? (char*)"Payload 2 Console payload data" : nullptr;
-    }
-    return nullptr;
-}
+// char* AP_KHA::get_udp_out_data_str(const uint32_t stream_id)
+// {
+//     uint32_t len;
+//     switch (stream_id) {
+//         case 0:
+//             return get_json_str();
 
-char* AP_KHA::get_json_str()
+//      // case 1: return _payload[0].console.eth.enabled ? (char*)"Payload 1 Console payload data" : nullptr;
+//         case 1:
+//             if ((KHA_MAIM_Routing)_payload[0].console.route.get() != KHA_MAIM_Routing::PAYLOAD1_CONSOLE_IP) {
+//                 break;
+//             }
+//             len = _payload[0].console.eth.buf_out.available();
+//             if (len == 0) {
+//                 return nullptr;
+//             }
+//             // TODO: copy _payload[0].console.eth.buf_out somewhere
+//             return nullptr;
+
+//      // case 2: return _payload[1].console.eth.enabled ? (char*)"Payload 2 Console payload data" : nullptr;
+//         case 2:
+//             if ((KHA_MAIM_Routing)_payload[1].console.route.get() != KHA_MAIM_Routing::PAYLOAD2_CONSOLE_IP) {
+//                 break;
+//             }
+//             len = _payload[1].console.eth.buf_out.available();
+//             if (len == 0) {
+//                 return nullptr;
+//             }
+//             // TODO: copy _payload[1].console.eth.buf_out somewhere
+//             return nullptr;
+//     }
+//     return nullptr;
+// }
+
+// uint32_t AP_KHA::get_udp_out_data(const uint32_t stream_id, uint8_t* data, const uint32_t data_len_max)
+// {
+//     uint32_t len;
+//     switch (stream_id) {
+//         case 0:
+//             len = MIN(get_next_json_str(),data_len_max);
+//             memcpy(data, _ahrs.json.bytes_out.data, len);
+//             return len;
+
+//      // case 1: return _payload[0].console.eth.enabled ? (char*)"Payload 1 Console payload data" : nullptr;
+//         case 1:
+//             // if ((KHA_MAIM_Routing)_payload[0].console.route.get() != KHA_MAIM_Routing::PAYLOAD1_CONSOLE_IP) {
+//             //     break;
+//             // }
+//             // len = _payload[0].console.eth.buf_out.available();
+//             // if (len == 0) {
+//             //     return nullptr;
+//             // }
+//             // TODO: copy _payload[0].console.eth.buf_out somewhere
+//             return 0;
+
+//      // case 2: return _payload[1].console.eth.enabled ? (char*)"Payload 2 Console payload data" : nullptr;
+//         case 2:
+//             // if ((KHA_MAIM_Routing)_payload[1].console.route.get() != KHA_MAIM_Routing::PAYLOAD2_CONSOLE_IP) {
+//             //     break;
+//             // }
+//             // len = _payload[1].console.eth.buf_out.available();
+//             // if (len == 0) {
+//             //     return nullptr;
+//             // }
+//             // TODO: copy _payload[1].console.eth.buf_out somewhere
+//             return 0;
+//     }
+//     return 0;
+// }
+
+void AP_KHA::service_json_out()
 {
     if (!_ahrs.json.eth.enabled) {
-        return nullptr;
+        return;
     }
 
     const uint32_t now_ms = AP_HAL::millis();
@@ -485,60 +556,85 @@ char* AP_KHA::get_json_str()
             continue;
         }
         _ahrs.json.msgs[i].last_ms = now_ms;
-        //char* text;
+        generate_and_send_json(_ahrs.json.msgs[i].name);
 
-        switch (_ahrs.json.msgs[i].name) {
-        case KHA_JSON_Msg::MAIM_VER:
-            //return (char*)R"({"class":"MAIM_VER","sw":"1.0","dev":"SBG ELLIPSE-N","devhw":"2.4","devsw":"6.5"})";
-            _ahrs.json.bytes_out.len = hal.util->snprintf((char*)_ahrs.json.bytes_out.data, sizeof(_ahrs.json.bytes_out.data),
-                "{\"class\":\"MAIM_VER\",\"sw\":\"%.1f\",\"dev\":\"SBG ELLIPSE-N\",\"devhw\":\"%.1f\",\"devsw\":\"%.1f\"}",
-                1.0f,   // sw
-                2.4f,   // devhw
-                6.5f    // devsw
-                );
-            return (char*)_ahrs.json.bytes_out.data;
-
-        case KHA_JSON_Msg::STATUS:
-            // return (char*)R"({"class":"STATUS","general":"7F","com":"17FFFFFF","aiding":"3FFF","utc":"64","imu":"17E","mag":"0C5","sol":"1234CC7","vel":"C3","pos":"FFABC","alt":"3"})";
-            _ahrs.json.bytes_out.len = hal.util->snprintf((char*)_ahrs.json.bytes_out.data, sizeof(_ahrs.json.bytes_out.data),
-                "{\"class\":\"STATUS\",\"general\":\"%X\",\"com\":\"%X\",\"aiding\":\"%X\",\"utc\":\"%X\",\"imu\":\"%X\",\"mag\":\"%X\",\"sol\":\"%X\",\"vel\":\"%X\",\"pos\":\"%X\",\"alt\":\"%X\"}",
-                    0x7F,           // general
-                    0x17FFFFFF,     // com
-                    0x3FFF,         // aiding
-                    0x64,           // utc
-                    0x17E,          // imu
-                    0x0C5,          // mag
-                    0x1234CC7,      // sol
-                    0xC3,           // vel
-                    0xFFABC,        // pos
-                    0x3            // alt 
-                );
-            return (char*)_ahrs.json.bytes_out.data;
-
-        case KHA_JSON_Msg::IMUNAV:
-            return (char*)R"({"class":"IMUNAV","veln":-175.135,"vele":-22.0,"veld":-4.234})";
-
-        case KHA_JSON_Msg::PRESSURE:
-            return (char*)R"({"class":"PRESSURE","pressure":101325.0,"alt":0.0})";
-
-        case KHA_JSON_Msg::TPV:
-            return (char*)R"({"class":"TPV","time":"2017-05-15T10:30:43.123Z","ept":500, "track":123.45,"lat":12.12345,"lon":-12.12345,"alt":12345.12, "mode":3,"epx":12.12,"epy":12.12,"epv":12.12,"climb":-4.234, "epd":12.345,"epc":12.345})";
-
-        case KHA_JSON_Msg::ATT:
-            return (char*)R"({"class":"ATT","acc_x":3.123,"acc_y":2.123,"acc_z":-1.456,"gyro_x":1.456, "gyro_y":2.789,"gyro_z":3.567,"temp":12.12,"mag_x":123.456,"mag_y":234.789, "mag_z":24.223,"roll":3.001,"pitch":-0.345,"yaw":-2.789,"heading":123.45})";
-
-        case KHA_JSON_Msg::SKY:
-            return (char*)R"({"class":"SKY","time":"2017-05-15T10:30:43.123Z","hdop":6.3})";
-
-        case KHA_JSON_Msg::ADDL:
-            return (char*)R"({"class\":"ADDL\",\"up\":1345786201,\"tow\":375218453,"und":3.7,"gveln":-175.135,"gvele":-22.0,"gveld":-4.234,"epn":4.75,"epe":1.66,"epd":0.37,"nsv":7})";
-        }
-        _ahrs.json.bytes_out.len = 0;
-        return nullptr;
+        // only send one message at a time.
+        return;
     }
-    _ahrs.json.bytes_out.len = 0;
-    return nullptr;
 }
+
+#pragma GCC diagnostic push
+#pragma GCC diagnostic error "-Wframe-larger-than=1700"
+void AP_KHA::generate_and_send_json(const KHA_JSON_Msg msg_name)
+{
+    uint8_t buf[1500]; // Ethernet MTU
+    int32_t len = 0;
+
+    switch (msg_name) {
+    case KHA_JSON_Msg::MAIM_VER:
+        //return (char*)R"({"class":"MAIM_VER","sw":"1.0","dev":"SBG ELLIPSE-N","devhw":"2.4","devsw":"6.5"})";
+        len = hal.util->snprintf((char*)buf, sizeof(buf),
+            "{\"class\":\"MAIM_VER\",\"sw\":\"%.1f\",\"dev\":\"SBG ELLIPSE-N\",\"devhw\":\"%.1f\",\"devsw\":\"%.1f\"}",
+            1.0f,   // sw
+            2.4f,   // devhw
+            6.5f    // devsw
+            );
+        break;
+
+    case KHA_JSON_Msg::STATUS:
+        // return (char*)R"({"class":"STATUS","general":"7F","com":"17FFFFFF","aiding":"3FFF","utc":"64","imu":"17E","mag":"0C5","sol":"1234CC7","vel":"C3","pos":"FFABC","alt":"3"})";
+        len = hal.util->snprintf((char*)buf, sizeof(buf),
+            "{\"class\":\"STATUS\",\"general\":\"%X\",\"com\":\"%X\",\"aiding\":\"%X\",\"utc\":\"%X\",\"imu\":\"%X\",\"mag\":\"%X\",\"sol\":\"%X\",\"vel\":\"%X\",\"pos\":\"%X\",\"alt\":\"%X\"}",
+                0x7F,           // general
+                0x17FFFFFF,     // com
+                0x3FFF,         // aiding
+                0x64,           // utc
+                0x17E,          // imu
+                0x0C5,          // mag
+                0x1234CC7,      // sol
+                0xC3,           // vel
+                0xFFABC,        // pos
+                0x3            // alt 
+            );
+        break;
+
+    case KHA_JSON_Msg::IMUNAV:
+    //     return (char*)R"({"class":"IMUNAV","veln":-175.135,"vele":-22.0,"veld":-4.234})";
+        len = hal.util->snprintf((char*)buf, sizeof(buf), "%s",
+        R"({"class":"IMUNAV","veln":-175.135,"vele":-22.0,"veld":-4.234})");
+        break;
+
+    case KHA_JSON_Msg::PRESSURE:
+    //     return (char*)R"({"class":"PRESSURE","pressure":101325.0,"alt":0.0})";
+        len = hal.util->snprintf((char*)buf, sizeof(buf), "KHA_JSON_Msg::PRESSURE");
+        break;
+
+    case KHA_JSON_Msg::TPV:
+    //     return (char*)R"({"class":"TPV","time":"2017-05-15T10:30:43.123Z","ept":500, "track":123.45,"lat":12.12345,"lon":-12.12345,"alt":12345.12, "mode":3,"epx":12.12,"epy":12.12,"epv":12.12,"climb":-4.234, "epd":12.345,"epc":12.345})";
+        len = hal.util->snprintf((char*)buf, sizeof(buf), "KHA_JSON_Msg::ATPVDDL");
+        break;
+
+    case KHA_JSON_Msg::ATT:
+    //     return (char*)R"({"class":"ATT","acc_x":3.123,"acc_y":2.123,"acc_z":-1.456,"gyro_x":1.456, "gyro_y":2.789,"gyro_z":3.567,"temp":12.12,"mag_x":123.456,"mag_y":234.789, "mag_z":24.223,"roll":3.001,"pitch":-0.345,"yaw":-2.789,"heading":123.45})";
+        len = hal.util->snprintf((char*)buf, sizeof(buf), "KHA_JSON_Msg::ATT");
+        break;
+
+    case KHA_JSON_Msg::SKY:
+    //     return (char*)R"({"class":"SKY","time":"2017-05-15T10:30:43.123Z","hdop":6.3})";
+        len = hal.util->snprintf((char*)buf, sizeof(buf), "KHA_JSON_Msg::SKY");
+        break;
+
+    case KHA_JSON_Msg::ADDL:
+    //     return (char*)R"({"class\":"ADDL\",\"up\":1345786201,\"tow\":375218453,"und":3.7,"gveln":-175.135,"gvele":-22.0,"gveld":-4.234,"epn":4.75,"epe":1.66,"epd":0.37,"nsv":7})";
+        len = hal.util->snprintf((char*)buf, sizeof(buf), "KHA_JSON_Msg::ADDL");
+        break;
+    } // switch
+
+    if (len <= 0) {
+        return;
+    }
+}
+#pragma GCC diagnostic pop
 
 // singleton instance
 AP_KHA *AP_KHA::_singleton;

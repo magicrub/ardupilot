@@ -293,6 +293,28 @@ void AP_Scripting::handle_mission_command(const AP_Mission::Mission_Command& cmd
     mission_data->push(cmd);
 }
 
+void AP_Scripting::write_buf(const uint8_t id, const uint8_t *buf, const uint32_t len)
+{
+    if (id >= buffer_data_id_max) {
+        return;
+    }
+
+    WITH_SEMAPHORE(_buffer_data[id].sem);
+    _buffer_data[id].queue_out.write(buf, len);
+}
+
+uint32_t AP_Scripting::read_buf(const uint8_t id, uint8_t *buf, const uint32_t len_max)
+{
+    if (id >= buffer_data_id_max) {
+        return 0;
+    }
+
+    WITH_SEMAPHORE(_buffer_data[id].sem);
+    return _buffer_data[id].queue_in.read(buf, len_max);
+}
+
+
+
 AP_Scripting *AP_Scripting::_singleton = nullptr;
 
 namespace AP {

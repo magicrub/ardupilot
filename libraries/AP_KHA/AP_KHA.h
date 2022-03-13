@@ -50,7 +50,6 @@ public:
     AP_KHA(const AP_KHA &other) = delete;
     AP_KHA &operator=(const AP_KHA&) = delete;
 
-    char* get_udp_out_data_str(const uint32_t stream_id);
     char* get_udp_out_ip(const uint32_t stream_id);
     char* get_udp_out_name(const uint32_t stream_id);
     uint16_t get_udp_out_port(const uint32_t stream_id);
@@ -171,10 +170,10 @@ private:
                 bool enabled;
                 AP_Int32 interval_ms;
             } eth;
-            struct {
-                uint8_t data[1500]; // Ethernet MTU
-                uint16_t len;
-            } bytes_out;
+            // struct {
+            //     uint8_t data[1500]; // Ethernet MTU
+            //     uint16_t len;
+            // } bytes_out;
             uint32_t timer_ms;
             
             KHA_JSON_Msg_Interval msgs[8] = {
@@ -220,7 +219,11 @@ private:
     void service_output_uarts();
     void service_router();
     char* convert_ip_to_str(const uint32_t stream_id, const KHA_IP_PORT_t addr);
-    char* get_json_str();
+
+    void service_json_out();
+    void generate_and_send_json(const KHA_JSON_Msg msg_name);
+
+    uint32_t get_udp_out_data(const uint32_t stream_id, uint8_t* data, const uint32_t data_len_max);
 
     void pps_pin_irq_handler(uint8_t pin, bool pin_value, uint32_t timestamp_us);
 

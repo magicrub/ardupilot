@@ -347,6 +347,62 @@ const luaL_Reg i2c_functions[] = {
     {NULL, NULL}
 };
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic error "-Wframe-larger-than=2500"
+static int lua_buffer_data_in(lua_State *L)
+{
+ // check_arguments(L, 0, "receive");
+    check_arguments(L, 1, "buffer_data_to_send");
+    
+    const uint32_t id = coerce_to_uint32_t(L, 1);
+    luaL_argcheck(L, (id < AP_Scripting::buffer_data_id_max), 1, "id out of range");
+
+    if (id >= AP_Scripting::buffer_data_id_max) {
+        return 0;
+    }
+
+    uint8_t data[AP_Scripting::buffer_data_len_size];
+    const uint32_t len = AP::scripting()->_buffer_data[id].queue_out.read(data, sizeof(data));
+    if (len == 0) {
+        return 0;
+    }
+
+    luaL_Buffer b;
+    luaL_buffinit(L, &b);
+    luaL_addlstring(&b, (char *)&data, len);
+    luaL_pushresult(&b);
+    lua_pushinteger(L, len);
+
+    return 2;
+}
+#pragma GCC diagnostic pop
+
+static int lua_buffer_data_out(lua_State *L)
+{
+    const uint32_t id = coerce_to_uint32_t(L, 1);
+    luaL_argcheck(L, (id < AP_Scripting::buffer_data_id_max), 1, "id out of range");
+
+    if (id >= AP_Scripting::buffer_data_id_max) {
+        return 0;
+    }
+
+    const char *packet = luaL_checkstring(L, 2);
+    const uint32_t len = lua_rawlen(L, 2);
+
+    const uint32_t len_written = AP::scripting()->_buffer_data[id].queue_in.write((uint8_t*)packet, len);
+    // const bool success = (len_written > 0);
+    const bool success = (len_written > 0) && (len_written == len);
+    
+    lua_pushboolean(L, success);
+
+    return 1;
+}
+static const luaL_Reg buffer_functions[] =
+{
+    {"receive", lua_buffer_data_out},
+    {"send", lua_buffer_data_in},
+    {NULL, NULL}
+};
 #if HAL_MAX_CAN_PROTOCOL_DRIVERS
 static int lua_get_CAN_device(lua_State *L) {
 
@@ -382,6 +438,10 @@ void load_lua_bindings(lua_State *L) {
 
     lua_pushstring(L, "i2c");
     luaL_newlib(L, i2c_functions);
+    lua_settable(L, -3);
+
+    lua_pushstring(L, "buffer");
+    luaL_newlib(L, buffer_functions);
     lua_settable(L, -3);
 
 #if HAL_MAX_CAN_PROTOCOL_DRIVERS

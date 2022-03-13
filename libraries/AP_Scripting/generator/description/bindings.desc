@@ -490,7 +490,6 @@ singleton AP::fwversion() field fw_hash_str alias hash
 
 include AP_KHA/AP_KHA.h
 singleton AP_KHA alias kha
-singleton AP_KHA method get_udp_out_data_str string uint8_t 0 3
 singleton AP_KHA method get_udp_out_ip string uint8_t 0 3
 singleton AP_KHA method get_udp_out_port uint16_t uint8_t 0 3
 singleton AP_KHA method get_udp_out_name string uint8_t 0 3

@@ -918,11 +918,6 @@ kha = {}
 -- desc
 ---@param stream_id integer
 ---@return string
-function kha:get_udp_out_data_str(stream_id) end
-
--- desc
----@param stream_id integer
----@return string
 function kha:get_udp_out_ip(stream_id) end
 
 -- desc
