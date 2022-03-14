@@ -12,9 +12,44 @@ assert(ip, port)
 gcs:send_text(0, "Waiting connection from talker on " .. ip .. ":" .. port .. "...")
 gcs:send_text(0, "Connected. Here is the stuff:")
 
+local function urldecode(str)
+    str = string.gsub(str, '+', ' ')
+    str = string.gsub(str, '%%(%x%x)', function(h)
+        return string.char(tonumber(h, 16))
+    end)
+    str = string.gsub(str, '\r\n', '\n')
+    return str
+end
+
+-- parse querystring
+local function parse(str)
+    local vars = {}
+    for pair in string.gmatch(tostring(str), '[^&]+') do
+        if not string.find(pair, '=') then
+            vars[urldecode(pair)] = ''
+        else
+            local key, value = string.match(pair, '([^=]*)=(.*)')
+            if key then
+                key = urldecode(key)
+                value = urldecode(value)
+                local type = type(vars[key])
+                if type == 'nil' then
+                    vars[key] = value
+                elseif type == 'table' then
+                    table.insert(vars[key], value)
+                else
+                    vars[key] = {vars[key], value}
+                end
+            end
+        end
+    end
+    return vars
+end
+
 local configuration = {
     system = {
         consoleForward = {
+            enabled = true,
             ip = "127.0.0.1",
             port = 1234
         },
@@ -97,15 +132,46 @@ local function update() -- this is the loop which periodically runs
                 local payload1 = configuration.payload1
                 local payload2 = configuration.payload2
 
+                if query then
+                    local updates = parse(string.sub(query, 2))
+                    if updates["system.consoleForward.enabled"] == "true" then
+                        system.consoleForward.enabled = true
+                    elseif updates["system.consoleForward.enabled"] == "false" then
+                        system.consoleForward.enabled = false;
+                    end
+                    system.consoleForward.ip = updates["system.consoleForward.ip"] or system.consoleForward.ip
+                    system.consoleForward.port = tostring(updates["system.consoleForward.port"]) or
+                                                     system.consoleForward.port
+                    system.maintenancePort = updates["system.maintenancePort"] or system.maintenancePort
+                    if updates["payload1.enabled"] == "true" then
+                        payload1.enabled = true
+                    elseif updates["payload1.enabled"] == "false" then
+                        payload1.enabled = false;
+                    end
+                    payload1.ip = updates["payload1.ip"] or payload1.ip
+                    payload1.netmask = updates["payload1.netmask"] or payload1.netmask
+                    payload1.gateway = updates["payload1.gateway"] or payload1.gateway
+                    if updates["payload2.enabled"] == "true" then
+                        payload2.enabled = true
+                    elseif updates["payload2.enabled"] == "false" then
+                        payload2.enabled = false;
+                    end
+                    payload2.ip = updates["payload2.ip"] or payload2.ip
+                    payload2.netmask = updates["payload2.netmask"] or payload2.netmask
+                    payload2.gateway = updates["payload2.gateway"] or payload2.gateway
+                end
+
                 connection:send("HTTP/1.0 200 OK\r\nContent-Type: application/json\r\nConnection: close\r\n\r\n")
-                connection:send(
-                    '{ "system": { "consoleForward": { "ip": "' .. system.consoleForward.ip .. '", "port": ' ..
-                        system.consoleForward.port .. ' }, "maintenancePort": "' .. system.maintenancePort ..
-                        '" }, "payload1": { "enabled": ' .. (payload1.enabled and 'true' or 'false') .. ', "ip": "' ..
-                        payload1.ip .. '", "netmask": "' .. payload1.netmask .. '", "gateway": "' .. payload1.gateway ..
-                        '" }, "payload2": { "enabled": ' .. (payload2.enabled and 'true' or 'false') .. ', "ip": "' ..
-                        payload2.ip .. '", "netmask": "' .. payload2.netmask .. '", "gateway": "' .. payload2.gateway ..
-                        '" } }')
+                connection:send('{ "system": { "consoleForward": { "enabled": ' ..
+                                    (system.consoleForward.enabled and 'true' or 'false') .. ', "ip": "' ..
+                                    system.consoleForward.ip .. '", "port": ' .. system.consoleForward.port ..
+                                    ' }, "maintenancePort": "' .. system.maintenancePort ..
+                                    '" }, "payload1": { "enabled": ' .. (payload1.enabled and 'true' or 'false') ..
+                                    ', "ip": "' .. payload1.ip .. '", "netmask": "' .. payload1.netmask ..
+                                    '", "gateway": "' .. payload1.gateway .. '" }, "payload2": { "enabled": ' ..
+                                    (payload2.enabled and 'true' or 'false') .. ', "ip": "' .. payload2.ip ..
+                                    '", "netmask": "' .. payload2.netmask .. '", "gateway": "' .. payload2.gateway ..
+                                    '" } }')
 
             else
                 -- send 404 if file not found
