@@ -107,6 +107,7 @@ local function update() -- this is the loop which periodically runs
                 end
 
             elseif path == "/state" then
+                -- TODO: Tom, set these values below to something other than random
                 local state = {
                     system = {
                         voltage = math.random(),
@@ -159,6 +160,8 @@ local function update() -- this is the loop which periodically runs
                     payload2.ip = updates["payload2.ip"] or payload2.ip
                     payload2.netmask = updates["payload2.netmask"] or payload2.netmask
                     payload2.gateway = updates["payload2.gateway"] or payload2.gateway
+
+                    -- TODO: Tom, configuration has been updated. Use it
                 end
 
                 connection:send("HTTP/1.0 200 OK\r\nContent-Type: application/json\r\nConnection: close\r\n\r\n")
