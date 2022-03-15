@@ -275,6 +275,7 @@
                 system: {
                     maintenancePort: "none",
                     consoleForward: {
+                        enabled: true,
                         ip: "0.0.0.0",
                         port: 0,
                     },
@@ -298,28 +299,28 @@
             initializePayload2();
 
             function initializeSystem() {
-                const { system } = configuration;
-
                 const form = document.querySelector("#system form");
 
                 form.consoleForward.onchange = (event) => {
-                    system.consoleForward = event.target.checked
-                        ? { ip: "0.0.0.0", port: 0 }
-                        : undefined;
+                    configuration.system.consoleForward.enabled =
+                        event.target.checked;
                     update();
                 };
                 form.consoleForwardIp.onchange = (event) => {
-                    system.consoleForward.ip = event.target.value;
+                    configuration.system.consoleForward.ip = event.target.value;
                     update();
                 };
                 form.consoleForwardPort.onchange = (event) => {
-                    system.consoleForward.port = parseInt(event.target.value);
+                    configuration.system.consoleForward.port = parseInt(
+                        event.target.value
+                    );
                     update();
                 };
                 form.maintenancePort.forEach(
                     (_) =>
                         (_.onchange = (event) => {
-                            if (_.checked) system.maintenancePort = _.value;
+                            if (_.checked)
+                                configuration.system.maintenancePort = _.value;
                             update();
                         })
                 );
@@ -330,24 +331,22 @@
             }
 
             function initializePayload1() {
-                const { payload1 } = configuration;
-
                 const form = document.querySelector("#payload1 form");
 
                 form.enabled.onchange = (event) => {
-                    payload1.enabled = event.target.checked;
+                    configuration.payload1.enabled = event.target.checked;
                     update();
                 };
                 form.ip.onchange = (event) => {
-                    payload1.ip = event.target.value;
+                    configuration.payload1.ip = event.target.value;
                     update();
                 };
                 form.netmask.onchange = (event) => {
-                    payload1.netmask = event.target.value;
+                    configuration.payload1.netmask = event.target.value;
                     update();
                 };
                 form.gateway.onchange = (event) => {
-                    payload1.gateway = event.target.value;
+                    configuration.payload1.gateway = event.target.value;
                     update();
                 };
                 form.onsubmit = (event) => {
@@ -357,24 +356,22 @@
             }
 
             function initializePayload2() {
-                const { payload2 } = configuration;
-
                 const form = document.querySelector("#payload2 form");
 
                 form.enabled.onchange = (event) => {
-                    payload2.enabled = event.target.checked;
+                    configuration.payload2.enabled = event.target.checked;
                     update();
                 };
                 form.ip.onchange = (event) => {
-                    payload2.ip = event.target.value;
+                    configuration.payload2.ip = event.target.value;
                     update();
                 };
                 form.netmask.onchange = (event) => {
-                    payload2.netmask = event.target.value;
+                    configuration.payload2.netmask = event.target.value;
                     update();
                 };
                 form.gateway.onchange = (event) => {
-                    payload2.gateway = event.target.value;
+                    configuration.payload2.gateway = event.target.value;
                     update();
                 };
                 form.onsubmit = (event) => {
@@ -390,10 +387,19 @@
             }
 
             async function save() {
-                await fetch("configuration", {
-                    method: "POST",
-                    json: configuration,
-                });
+                const params = new URLSearchParams();
+
+                const step = (value, key) => {
+                    if (typeof value === "object")
+                        Object.keys(value).forEach((k) =>
+                            step(value[k], key ? `${key}.${k}` : k)
+                        );
+                    else params.append(key, value);
+                };
+
+                step(configuration);
+
+                await fetch("configuration?" + params);
             }
 
             async function refresh() {
@@ -432,14 +438,12 @@
             function updateSystem() {
                 const { consoleForward, maintenancePort } =
                     configuration.system;
-                const form = system.querySelector("form");
-                form.consoleForward.checked = !!consoleForward;
-                form.consoleForwardIp.disabled = !consoleForward;
-                form.consoleForwardPort.disabled = !consoleForward;
-                if (consoleForward) {
-                    form.consoleForwardIp.value = consoleForward.ip;
-                    form.consoleForwardPort.value = consoleForward.port;
-                }
+                const form = document.querySelector("#system form");
+                form.consoleForward.checked = consoleForward.enabled;
+                form.consoleForwardIp.disabled = !consoleForward.enabled;
+                form.consoleForwardPort.disabled = !consoleForward.enabled;
+                form.consoleForwardIp.value = consoleForward.ip;
+                form.consoleForwardPort.value = consoleForward.port;
                 form.maintenancePort.forEach((_) => {
                     _.checked = maintenancePort === _.value;
                 });
@@ -448,23 +452,22 @@
             function updatePayload1State() {
                 const { voltage, current } = state.payload1;
                 const power = voltage * current;
-                const system = document.querySelector("#payload1");
-                system.querySelector(
+                const payload1 = document.querySelector("#payload1");
+                payload1.querySelector(
                     ".voltage"
                 ).textContent = `${voltage.toFixed(1)}V`;
-                system.querySelector(
+                payload1.querySelector(
                     ".current"
                 ).textContent = `${current.toFixed(1)}A`;
-                system.querySelector(".power").textContent = `${power.toFixed(
+                payload1.querySelector(".power").textContent = `${power.toFixed(
                     1
                 )}W`;
             }
 
             function updatePayload1() {
-                const system = document.querySelector("#payload1");
                 const { enabled, ip, netmask, gateway } =
                     configuration.payload1;
-                const form = system.querySelector("form");
+                const form = payload1.querySelector("#payload1 form");
                 form.enabled.checked = enabled;
                 form.ip.disabled = !enabled;
                 form.netmask.disabled = !enabled;
@@ -477,23 +480,22 @@
             function updatePayload2State() {
                 const { voltage, current } = state.payload2;
                 const power = voltage * current;
-                const system = document.querySelector("#payload2");
-                system.querySelector(
+                const payload2 = document.querySelector("#payload2");
+                payload2.querySelector(
                     ".voltage"
                 ).textContent = `${voltage.toFixed(1)}V`;
-                system.querySelector(
+                payload2.querySelector(
                     ".current"
                 ).textContent = `${current.toFixed(1)}A`;
-                system.querySelector(".power").textContent = `${power.toFixed(
+                payload2.querySelector(".power").textContent = `${power.toFixed(
                     1
                 )}W`;
             }
 
             function updatePayload2() {
-                const system = document.querySelector("#payload2");
                 const { enabled, ip, netmask, gateway } =
                     configuration.payload2;
-                const form = system.querySelector("form");
+                const form = payload2.querySelector("#payload2 form");
                 form.enabled.checked = enabled;
                 form.ip.disabled = !enabled;
                 form.netmask.disabled = !enabled;
