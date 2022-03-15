@@ -145,6 +145,7 @@ public:
         DNA_CLEAR_DATABASE        = (1U<<0),
         DNA_IGNORE_DUPLICATE_NODE = (1U<<1),
         SEND_GNSS                 = (1U<<2),
+        ESC_IDX_MATCHES_MOTOR_NAME= (1U<<3),
     };
 
     // check if a option is set
@@ -201,9 +202,8 @@ private:
     ///// SRV output /////
     struct {
         uint16_t pulse;
-        bool esc_pending;
-        bool servo_pending;
-    } _SRV_conf[UAVCAN_SRV_NUMBER];
+        bool pending;
+    } _SRV_conf[UAVCAN_SRV_NUMBER], _ESC_conf[UAVCAN_SRV_NUMBER];
 
     uint8_t _SRV_armed;
     uint32_t _SRV_last_send_us;
@@ -224,6 +224,14 @@ private:
     } _led_conf;
 
     HAL_Semaphore _led_out_sem;
+
+    struct {
+        AP_Int32 param_bm;
+        uint32_t last_send_ms;
+        uint32_t last_update_ms;
+        uint16_t last_pin_values;
+    } _gpio;
+    void gpio_send();
 
     // buzzer
     struct {

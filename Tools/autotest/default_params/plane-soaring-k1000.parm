@@ -9,7 +9,7 @@ BATT3_MONITOR           21
 BATT4_MONITOR           21
 BATT5_MONITOR           21
 BATT_CAPACITY           56800
-BATT_MONITOR            8
+BATT_MONITOR            4
 BATT_OPTIONS            1
 FBWB_CLIMB_RATE         1.75
 FENCE_ACTION            0
@@ -60,6 +60,7 @@ RNGFND1_TYPE            1
 RNGFND_LANDING          1
 RTL_AUTOLAND            2
 RTL_RADIUS              200
+SCR_ENABLE              1
 SIM_THML_SCENARI        4.00
 SIM_BATT_VOLTAGE        25.2
 STAB_PITCH_DOWN         0

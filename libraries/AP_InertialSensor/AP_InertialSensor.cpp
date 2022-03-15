@@ -55,7 +55,11 @@ extern const AP_HAL::HAL& hal;
 #else
 #define DEFAULT_GYRO_FILTER  20
 #define DEFAULT_ACCEL_FILTER 20
-#define DEFAULT_STILL_THRESH 0.1f
+    #if APM_BUILD_TYPE(APM_BUILD_ArduPlane) && CONFIG_HAL_BOARD == HAL_BOARD_SITL
+    #define DEFAULT_STILL_THRESH 0.05f // steady-state Plane SITL flying is about 0.07. Using 0.05 ensures is_still() is false in flight
+    #else
+    #define DEFAULT_STILL_THRESH 0.1f
+    #endif
 #endif
 
 #if defined(STM32H7) || defined(STM32F7)

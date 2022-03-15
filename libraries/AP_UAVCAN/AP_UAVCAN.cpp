@@ -40,6 +40,7 @@
 #include <uavcan/equipment/safety/ArmingStatus.hpp>
 #include <ardupilot/indication/SafetyState.hpp>
 #include <ardupilot/indication/Button.hpp>
+#include <ardupilot/indication/GPIO.hpp>
 #include <ardupilot/equipment/trafficmonitor/TrafficReport.hpp>
 #include <uavcan/equipment/gnss/Fix.hpp>
 #include <uavcan/equipment/gnss/Fix2.hpp>
@@ -56,6 +57,7 @@
 #include <AP_GPS/AP_GPS.h>
 #include <AP_BattMonitor/AP_BattMonitor_UAVCAN.h>
 #include <AP_Compass/AP_Compass_UAVCAN.h>
+#include <AP_Relay/AP_Relay.h>
 #include <AP_Airspeed/AP_Airspeed_UAVCAN.h>
 #include <SRV_Channel/SRV_Channel.h>
 #include <AP_OpticalFlow/AP_OpticalFlow_HereFlow.h>
@@ -108,10 +110,17 @@ const AP_Param::GroupInfo AP_UAVCAN::var_info[] = {
     // @Param: OPTION
     // @DisplayName: UAVCAN options
     // @Description: Option flags
-    // @Bitmask: 0:ClearDNADatabase,1:IgnoreDNANodeConflicts,2:SendGNSS
+    // @Bitmask: 0:ClearDNADatabase,1:IgnoreDNANodeConflicts,2:SendGNSS,3:ESC Index matches Motor name instead of Servo Index (ESC 3 is Motor3 regardless of what servo it's on)
     // @User: Advanced
     AP_GROUPINFO("OPTION", 5, AP_UAVCAN, _options, 0),
-    
+
+    // @Param: GPIO
+    // @DisplayName: GPIO Out channels to be transmitted over UAVCAN
+    // @Description: Bitmask with one set for channel to be transmitted as a GPIO command over UAVCAN
+    // @Bitmask: 0: Pin 1, 1: Pin 2, 2: Pin 3, 3: Pin 4, 4: Pin 5, 5: Pin 6, 6: Pin 7, 7: Pin 8, 8: Pin 9, 9: Pin 10, 10: Pin 11, 11: Pin 12, 12: Pin 13, 13: Pin 14, 14: Pin 15, 15: Pin 16
+    // @User: Advanced
+    AP_GROUPINFO("GPIO", 6, AP_UAVCAN, _gpio.param_bm, 0),
+
     AP_GROUPEND
 };
 
@@ -120,6 +129,7 @@ const AP_Param::GroupInfo AP_UAVCAN::var_info[] = {
 #define CAN_PERIODIC_TX_TIMEOUT_MS 2
 
 // publisher interfaces
+static uavcan::Publisher<ardupilot::indication::GPIO>* gpio_stream[HAL_MAX_CAN_PROTOCOL_DRIVERS];
 static uavcan::Publisher<uavcan::equipment::actuator::ArrayCommand>* act_out_array[HAL_MAX_CAN_PROTOCOL_DRIVERS];
 static uavcan::Publisher<uavcan::equipment::esc::RawCommand>* esc_raw[HAL_MAX_CAN_PROTOCOL_DRIVERS];
 static uavcan::Publisher<uavcan::equipment::indication::LightsCommand>* rgb_led[HAL_MAX_CAN_PROTOCOL_DRIVERS];
@@ -162,8 +172,8 @@ AP_UAVCAN::AP_UAVCAN() :
     AP_Param::setup_object_defaults(this, var_info);
 
     for (uint8_t i = 0; i < UAVCAN_SRV_NUMBER; i++) {
-        _SRV_conf[i].esc_pending = false;
-        _SRV_conf[i].servo_pending = false;
+        _ESC_conf[i].pending = false;
+        _SRV_conf[i].pending = false;
     }
 
     debug_uavcan(AP_CANManager::LOG_INFO, "AP_UAVCAN constructed\n\r");
@@ -201,7 +211,7 @@ bool AP_UAVCAN::add_interface(AP_HAL::CANIface* can_iface) {
 }
 
 #pragma GCC diagnostic push
-#pragma GCC diagnostic error "-Wframe-larger-than=1400"
+#pragma GCC diagnostic error "-Wframe-larger-than=1500"
 void AP_UAVCAN::init(uint8_t driver_index, bool enable_filters)
 {
     _driver_index = driver_index;
@@ -308,6 +318,10 @@ void AP_UAVCAN::init(uint8_t driver_index, bool enable_filters)
     arming_status[driver_index]->setTxTimeout(uavcan::MonotonicDuration::fromMSec(20));
     arming_status[driver_index]->setPriority(uavcan::TransferPriority::OneHigherThanLowest);
 
+    gpio_stream[driver_index] = new uavcan::Publisher<ardupilot::indication::GPIO>(*_node);
+    gpio_stream[driver_index]->setTxTimeout(uavcan::MonotonicDuration::fromMSec(20));
+    gpio_stream[driver_index]->setPriority(uavcan::TransferPriority::OneHigherThanLowest);
+
     gnss_fix[driver_index] = new uavcan::Publisher<uavcan::equipment::gnss::Fix>(*_node);
     gnss_fix[driver_index]->setTxTimeout(uavcan::MonotonicDuration::fromMSec(20));
     gnss_fix[driver_index]->setPriority(uavcan::TransferPriority::OneLowerThanHighest);
@@ -411,7 +425,7 @@ void AP_UAVCAN::loop(void)
                     SRV_send_actuator();
                     sent_servos = true;
                     for (uint8_t i = 0; i < UAVCAN_SRV_NUMBER; i++) {
-                        _SRV_conf[i].servo_pending = false;
+                        _SRV_conf[i].pending = false;
                     }
                 }
             }
@@ -422,10 +436,11 @@ void AP_UAVCAN::loop(void)
             }
 
             for (uint8_t i = 0; i < UAVCAN_SRV_NUMBER; i++) {
-                _SRV_conf[i].esc_pending = false;
+                _ESC_conf[i].pending = false;
             }
         }
 
+        gpio_send();
         led_out_send();
         buzzer_send();
         gnss_send();
@@ -463,7 +478,7 @@ void AP_UAVCAN::SRV_send_actuator(void)
              * physically possible throws at [-1:1] limits.
              */
 
-            if (_SRV_conf[starting_servo].servo_pending && ((((uint32_t) 1) << starting_servo) & _servo_bm)) {
+            if (_SRV_conf[starting_servo].pending && ((((uint32_t) 1) << starting_servo) & _servo_bm)) {
                 cmd.actuator_id = starting_servo + 1;
 
                 // TODO: other types
@@ -502,7 +517,7 @@ void AP_UAVCAN::SRV_send_esc(void)
     for (uint8_t i = 0; i < UAVCAN_SRV_NUMBER; i++) {
         if ((((uint32_t) 1) << i) & _esc_bm) {
             max_esc_num = i + 1;
-            if (_SRV_conf[i].esc_pending) {
+            if (_ESC_conf[i].pending) {
                 active_esc_num++;
             }
         }
@@ -515,7 +530,7 @@ void AP_UAVCAN::SRV_send_esc(void)
         for (uint8_t i = 0; i < max_esc_num && k < 20; i++) {
             if ((((uint32_t) 1) << i) & _esc_bm) {
                 // TODO: ESC negative scaling for reverse thrust and reverse rotation
-                float scaled = cmd_max * (hal.rcout->scale_esc_to_unity(_SRV_conf[i].pulse) + 1.0) / 2.0;
+                float scaled = cmd_max * (hal.rcout->scale_esc_to_unity(_ESC_conf[i].pulse) + 1.0) / 2.0;
 
                 scaled = constrain_float(scaled, 0, cmd_max);
 
@@ -539,14 +554,64 @@ void AP_UAVCAN::SRV_push_servos()
         // Check if this channels has any function assigned
         if (SRV_Channels::channel_function(i)) {
             _SRV_conf[i].pulse = SRV_Channels::srv_channel(i)->get_output_pwm();
-            _SRV_conf[i].esc_pending = true;
-            _SRV_conf[i].servo_pending = true;
+            _SRV_conf[i].pending = true;
         }
+    }
+
+    if (option_is_set(AP_UAVCAN::Options::ESC_IDX_MATCHES_MOTOR_NAME)) {
+        for (uint8_t motor = 0; motor < 12; motor++) {
+            // search all SRV channels for a motor_X
+            for (uint8_t srv = 0; srv < NUM_SERVO_CHANNELS; srv++) {
+                if (SRV_Channels::channel_function(srv) != SRV_Channels::get_motor_function(motor)) {
+                    continue;
+                }
+                _ESC_conf[motor].pulse = SRV_Channels::srv_channel(srv)->get_output_pwm();
+                _ESC_conf[motor].pending = true;
+                break;
+            }
+        }
+    } else {
+        // ESC index matches SRV index
+        memcpy(_ESC_conf, _SRV_conf, sizeof(_ESC_conf));
     }
 
     _SRV_armed = hal.util->safety_switch_state() != AP_HAL::Util::SAFETY_DISARMED;
 }
 
+void AP_UAVCAN::gpio_send()
+{
+    if (_gpio.param_bm == 0) {
+        // send is disable. Nothing to do.
+        return;
+    }
+
+    // throttle back the cpu usage by only polling pins at 100Hz
+    const uint32_t now_ms = AP_HAL::native_millis();
+    if ((now_ms - _gpio.last_update_ms) < 10) {
+        return;
+    }
+    _gpio.last_update_ms = now_ms;
+
+    // for now, we only understands pins from RELAY since it's the only mechanism in ArduPilot where we can easily control GPIO pins
+    AP_Relay *relay = AP::relay();
+    if (relay == nullptr || !relay->enabled()) {
+        return;
+    }
+    const uint32_t current_gpio_values = (relay->get_pin_values() & _gpio.param_bm);
+    const bool force_send = (_gpio.last_pin_values != current_gpio_values);
+    _gpio.last_pin_values = current_gpio_values;
+
+    // send at 1Hz or on any pin change
+    if (!force_send && (now_ms - _gpio.last_send_ms) < 1000) {
+        return;
+    }
+    _gpio.last_send_ms = now_ms;
+
+    // create, populate and send the packet
+    ardupilot::indication::GPIO msg;
+    msg.pin_states = current_gpio_values;
+    gpio_stream[_driver_index]->broadcast(msg);
+}
 
 ///// LED /////
 
