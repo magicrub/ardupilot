@@ -9,7 +9,7 @@ function update() -- this is the loop which periodically runs
   if auth_id then
     local cmd_id = mission:get_current_nav_id()
 
-    if not cmd_id then
+    if cmd_id == 0 then
       arming:set_aux_auth_failed(auth_id, "Could not retrieve mission")
     elseif ((cmd_id ~= MAV_CMD_NAV_TAKEOFF) and (cmd_id ~= MAV_CMD_NAV_VTOL_TAKEOFF)) then
       arming:set_aux_auth_failed(auth_id, "Mission is not ready to takeoff")
