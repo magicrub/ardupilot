@@ -3,10 +3,34 @@
 
 #include <AP_HAL/AP_HAL.h>
 
+
+#ifndef HAL_ENABLE_NETWORKING
+#define HAL_ENABLE_NETWORKING 1
+#endif
+
 #if HAL_ENABLE_NETWORKING
 
 #include <AP_Param/AP_Param.h>
+
+
+#if CONFIG_HAL_BOARD == HAL_BOARD_CHIBIOS
 #include "lwipthread.h"
+#else
+
+#if BYTE_ORDER == LITTLE_ENDIAN
+#define IP4_ADDR_VALUE(a,b,c,d)        \
+        (((uint32_t)((d) & 0xff) << 24) | \
+         ((uint32_t)((c) & 0xff) << 16) | \
+         ((uint32_t)((b) & 0xff) << 8)  | \
+          (uint32_t)((a) & 0xff))
+#else
+#define IP4_ADDR_VALUE(a,b,c,d)        \
+        (((uint32_t)((a) & 0xff) << 24) | \
+         ((uint32_t)((b) & 0xff) << 16) | \
+         ((uint32_t)((c) & 0xff) << 8)  | \
+          (uint32_t)((d) & 0xff))
+#endif
+#endif
 
 
 #ifndef AP_NETWORKING_HAS_THREAD

@@ -17,7 +17,6 @@
  */
 
 #include "AP_KHA.h"
-//#include <stdio.h>
 #include <GCS_MAVLink/GCS.h>
 #include <AP_Networking/AP_Networking.h>
 
@@ -88,7 +87,6 @@ const AP_Param::GroupInfo AP_KHA::var_info[] = {
     // 50-59
 #endif
 
-
     AP_GROUPEND
 };
 
@@ -127,7 +125,7 @@ void AP_KHA::init(void)
                                     bool,
                                     uint32_t),
                 AP_HAL::GPIO::INTERRUPT_BOTH)) {
-            GCS_SEND_TEXT(MAV_SEVERITY_WARNING, "KHA: Failed to attach to pin %u", _system.pps.in.pin);
+            GCS_SEND_TEXT(MAV_SEVERITY_WARNING, "KHA: Failed to attach to pin %u", (unsigned)_system.pps.in.pin);
         }
         _system.pps.in.state = hal.gpio->read(_system.pps.in.pin);
     }
@@ -464,6 +462,7 @@ uint32_t AP_KHA::get_udp_out_interval_ms(const uint32_t stream_id)
 
 char* AP_KHA::convert_ip_to_str(const uint32_t stream_id, const KHA_IP_PORT_t addr)
 {
+#if HAL_ENABLE_NETWORKING
     const uint32_t ip = IP4_ADDR_VALUE((int)addr.ip[0].get(),(int)addr.ip[1].get(),(int)addr.ip[2].get(),(int)addr.ip[3].get());
     if (ip == _ip_str_last[stream_id]) {
         return _ip_str[stream_id];
@@ -472,6 +471,9 @@ char* AP_KHA::convert_ip_to_str(const uint32_t stream_id, const KHA_IP_PORT_t ad
 
     hal.util->snprintf(_ip_str[stream_id], sizeof(_ip_str[stream_id]), "%d.%d.%d.%d", (int)addr.ip[0].get(),(int)addr.ip[1].get(),(int)addr.ip[2].get(),(int)addr.ip[3].get());
     return _ip_str[stream_id];
+#else
+    return nullptr;
+#endif
 }
 
 // char* AP_KHA::get_udp_out_data_str(const uint32_t stream_id)

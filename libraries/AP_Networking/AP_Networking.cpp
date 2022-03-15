@@ -2,7 +2,11 @@
 #include "AP_Networking.h"
 
 #if HAL_ENABLE_NETWORKING
+
+#if CONFIG_HAL_BOARD == HAL_BOARD_CHIBIOS
 #include <hal_mii.h>
+#endif
+
 #include <GCS_MAVLink/GCS.h>
 
 
@@ -29,12 +33,26 @@
 #endif
 
 #ifndef AP_NETWORKING_DEFAULT_MAC_ADDR0
-#define AP_NETWORKING_DEFAULT_MAC_ADDR0   LWIP_ETHADDR_0
-#define AP_NETWORKING_DEFAULT_MAC_ADDR1   LWIP_ETHADDR_1
-#define AP_NETWORKING_DEFAULT_MAC_ADDR2   LWIP_ETHADDR_2
-#define AP_NETWORKING_DEFAULT_MAC_ADDR3   LWIP_ETHADDR_3
-#define AP_NETWORKING_DEFAULT_MAC_ADDR4   LWIP_ETHADDR_4
-#define AP_NETWORKING_DEFAULT_MAC_ADDR5   LWIP_ETHADDR_5
+#if CONFIG_HAL_BOARD == HAL_BOARD_CHIBIOS
+    #define AP_NETWORKING_DEFAULT_MAC_ADDR0   LWIP_ETHADDR_0
+    #define AP_NETWORKING_DEFAULT_MAC_ADDR1   LWIP_ETHADDR_1
+    #define AP_NETWORKING_DEFAULT_MAC_ADDR2   LWIP_ETHADDR_2
+    #define AP_NETWORKING_DEFAULT_MAC_ADDR3   LWIP_ETHADDR_3
+    #define AP_NETWORKING_DEFAULT_MAC_ADDR4   LWIP_ETHADDR_4
+    #define AP_NETWORKING_DEFAULT_MAC_ADDR5   LWIP_ETHADDR_5
+#else
+    #define AP_NETWORKING_DEFAULT_MAC_ADDR0   1
+    #define AP_NETWORKING_DEFAULT_MAC_ADDR1   2
+    #define AP_NETWORKING_DEFAULT_MAC_ADDR2   3
+    #define AP_NETWORKING_DEFAULT_MAC_ADDR3   4
+    #define AP_NETWORKING_DEFAULT_MAC_ADDR4   5
+    #define AP_NETWORKING_DEFAULT_MAC_ADDR5   6
+#endif
+#endif
+
+#ifndef LWIP_DHCP
+#define LWIP_DHCP 0
+//#define NET_ADDRESS_STATIC 222
 #endif
 
 const AP_Param::GroupInfo AP_Networking::var_info[] = {
@@ -170,7 +188,13 @@ AP_Networking::AP_Networking(void)
 
 void AP_Networking::init()
 {
-//     // initialise LWIP
+    uint32_t netmask = get_netmask();
+
+#if CONFIG_HAL_BOARD == HAL_BOARD_CHIBIOS
+    uint32_t ip = get_ip_param();
+    uint32_t gateway = get_gateway_param();
+    net_addr_mode_t addrMode = NET_ADDRESS_STATIC;
+
     const uint8_t localMACAddress[6] = {(uint8_t)_param.macaddr[0].get(),
                                         (uint8_t)_param.macaddr[1].get(),
                                         (uint8_t)_param.macaddr[2].get(),
@@ -178,22 +202,14 @@ void AP_Networking::init()
                                         (uint8_t)_param.macaddr[4].get(),
                                         (uint8_t)_param.macaddr[5].get() };
 
-    uint32_t netmask = 0;
-    uint32_t ip = 0;
-    uint32_t gateway = 0;
-    net_addr_mode_t addrMode;
-
 #if LWIP_DHCP
     if (get_dhcp_enabled()) {
+        ip = 0;
+        gateway = 0;
+        netmask = 0;
         addrMode = NET_ADDRESS_DHCP;
-    } else
-#endif    
-    {
-        ip = get_ip_param();
-        netmask = get_netmask();
-        gateway = get_gateway_param();
-        addrMode = NET_ADDRESS_STATIC;
     }
+#endif
 
     struct lwipthread_opts netOptions = { (uint8_t *) localMACAddress,
                                         ip,
@@ -204,6 +220,7 @@ void AP_Networking::init()
     lwipInit(&netOptions);
 
     apply_errata_for_mac_KSZ9896C();
+#endif
 
 
 #if AP_NETWORKING_HAS_THREAD
@@ -219,11 +236,11 @@ void AP_Networking::init()
 #endif
     {
         GCS_SEND_TEXT(MAV_SEVERITY_DEBUG,"NET: IP      %3d.%3d.%3d.%3d",
-            _param.ipaddr[0],_param.ipaddr[1],_param.ipaddr[2],_param.ipaddr[3]);
+            (int)_param.ipaddr[0], (int)_param.ipaddr[1], (int)_param.ipaddr[2], (int)_param.ipaddr[3]);
         GCS_SEND_TEXT(MAV_SEVERITY_DEBUG,"NET: Mask    %3d.%3d.%3d.%3d",
-            (netmask)&0xFF, (netmask>>8)&0xFF, (netmask>>16)&0xFF, (netmask>>24)&0xFF);
+            (int)(netmask&0xFF), (int)((netmask>>8)&0xFF), (int)((netmask>>16)&0xFF), (int)((netmask>>24)&0xFF));
         GCS_SEND_TEXT(MAV_SEVERITY_DEBUG,"NET: Gateway %3d.%3d.%3d.%3d",
-            _param.gwaddr[0],_param.gwaddr[1],_param.gwaddr[2],_param.gwaddr[3]);
+            (int)_param.gwaddr[0], (int)_param.gwaddr[1], (int)_param.gwaddr[2], (int)_param.gwaddr[3]);
     }
 
     _init.done = true;

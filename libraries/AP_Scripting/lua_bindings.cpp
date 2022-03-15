@@ -348,7 +348,7 @@ const luaL_Reg i2c_functions[] = {
 };
 
 #pragma GCC diagnostic push
-#pragma GCC diagnostic error "-Wframe-larger-than=2500"
+#pragma GCC diagnostic error "-Wframe-larger-than=3000"
 static int lua_buffer_data_in(lua_State *L)
 {
  // check_arguments(L, 0, "receive");
