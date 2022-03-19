@@ -10,6 +10,7 @@ ARSPD_SKIP_CAL          1
 ARSPD_OPTIONS           3
 ARSPD_TYPE              8
 ARSPD_USE               1
+BARO_GND_TEMP           15
 BATT2_CAPACITY          0
 BATT2_MONITOR           8
 BATT2_OPTIONS           29
@@ -219,4 +220,3 @@ BATT7_CAPACITY          0
 BATT8_MONITOR           8
 BATT8_SERIAL_NUM        72
 BATT8_CAPACITY          0
-
