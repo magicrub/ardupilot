@@ -34,9 +34,6 @@
 #include <AP_Logger/AP_Logger.h>
 #endif
 #include <AP_Vehicle/AP_Vehicle_Type.h>
-#if HAL_ENABLE_NETWORKING
-#include "lwipthread.h"
-#endif
 #include <hwdef.h>
 
 #ifndef HAL_NO_UARTDRIVER

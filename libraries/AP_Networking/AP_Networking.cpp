@@ -4,11 +4,28 @@
 #if HAL_ENABLE_NETWORKING
 
 #if CONFIG_HAL_BOARD == HAL_BOARD_CHIBIOS
-#include <hal_mii.h>
+    #include <hal_mii.h>
+    #include <AP_Scripting/luasocket/src/inet.h>
+
+#else
+    #include <arpa/inet.h>
+    // #include <sys/ioctl.h>
+    // #include <sys/types.h>
+    #include <sys/socket.h>
+    // #include <netinet/in.h>
+    // #include <netinet/tcp.h>
+    // #include <sys/select.h>
+    // #include <termios.h>
+    // #include <sys/time.h>
+
 #endif
 
 #include <GCS_MAVLink/GCS.h>
 
+#ifndef LWIP_DHCP
+#define LWIP_DHCP 0
+//#define NET_ADDRESS_STATIC 222
+#endif
 
 #ifndef AP_NETWORKING_DEFAULT_IP_ADDR0
 #define AP_NETWORKING_DEFAULT_IP_ADDR0     192
@@ -25,34 +42,29 @@
 #endif
 
 #ifndef AP_NETWORKING_DEFAULT_NM_ADDR
-#define AP_NETWORKING_DEFAULT_NM_ADDR     24
+#define AP_NETWORKING_DEFAULT_NM_ADDR       24
 #endif
 
 #ifndef AP_NETWORKING_DEFAULT_DHCP_ENABLE
-#define AP_NETWORKING_DEFAULT_DHCP_ENABLE 1
+#define AP_NETWORKING_DEFAULT_DHCP_ENABLE   LWIP_DHCP
 #endif
 
 #ifndef AP_NETWORKING_DEFAULT_MAC_ADDR0
-#if CONFIG_HAL_BOARD == HAL_BOARD_CHIBIOS
-    #define AP_NETWORKING_DEFAULT_MAC_ADDR0   LWIP_ETHADDR_0
-    #define AP_NETWORKING_DEFAULT_MAC_ADDR1   LWIP_ETHADDR_1
-    #define AP_NETWORKING_DEFAULT_MAC_ADDR2   LWIP_ETHADDR_2
-    #define AP_NETWORKING_DEFAULT_MAC_ADDR3   LWIP_ETHADDR_3
-    #define AP_NETWORKING_DEFAULT_MAC_ADDR4   LWIP_ETHADDR_4
-    #define AP_NETWORKING_DEFAULT_MAC_ADDR5   LWIP_ETHADDR_5
-#else
-    #define AP_NETWORKING_DEFAULT_MAC_ADDR0   1
-    #define AP_NETWORKING_DEFAULT_MAC_ADDR1   2
-    #define AP_NETWORKING_DEFAULT_MAC_ADDR2   3
-    #define AP_NETWORKING_DEFAULT_MAC_ADDR3   4
-    #define AP_NETWORKING_DEFAULT_MAC_ADDR4   5
-    #define AP_NETWORKING_DEFAULT_MAC_ADDR5   6
-#endif
-#endif
-
-#ifndef LWIP_DHCP
-#define LWIP_DHCP 0
-//#define NET_ADDRESS_STATIC 222
+    #if CONFIG_HAL_BOARD == HAL_BOARD_CHIBIOS
+        #define AP_NETWORKING_DEFAULT_MAC_ADDR0   LWIP_ETHADDR_0
+        #define AP_NETWORKING_DEFAULT_MAC_ADDR1   LWIP_ETHADDR_1
+        #define AP_NETWORKING_DEFAULT_MAC_ADDR2   LWIP_ETHADDR_2
+        #define AP_NETWORKING_DEFAULT_MAC_ADDR3   LWIP_ETHADDR_3
+        #define AP_NETWORKING_DEFAULT_MAC_ADDR4   LWIP_ETHADDR_4
+        #define AP_NETWORKING_DEFAULT_MAC_ADDR5   LWIP_ETHADDR_5
+    #else
+        #define AP_NETWORKING_DEFAULT_MAC_ADDR0   1
+        #define AP_NETWORKING_DEFAULT_MAC_ADDR1   2
+        #define AP_NETWORKING_DEFAULT_MAC_ADDR2   3
+        #define AP_NETWORKING_DEFAULT_MAC_ADDR3   4
+        #define AP_NETWORKING_DEFAULT_MAC_ADDR4   5
+        #define AP_NETWORKING_DEFAULT_MAC_ADDR5   6
+    #endif
 #endif
 
 const AP_Param::GroupInfo AP_Networking::var_info[] = {
@@ -188,10 +200,9 @@ AP_Networking::AP_Networking(void)
 
 void AP_Networking::init()
 {
-    uint32_t netmask = get_netmask();
-
 #if CONFIG_HAL_BOARD == HAL_BOARD_CHIBIOS
     uint32_t ip = get_ip_param();
+    uint32_t netmask = get_netmask_param();
     uint32_t gateway = get_gateway_param();
     net_addr_mode_t addrMode = NET_ADDRESS_STATIC;
 
@@ -209,6 +220,8 @@ void AP_Networking::init()
         netmask = 0;
         addrMode = NET_ADDRESS_DHCP;
     }
+#else
+    set_dhcp_enable(false);
 #endif
 
     struct lwipthread_opts netOptions = { (uint8_t *) localMACAddress,
@@ -235,12 +248,9 @@ void AP_Networking::init()
     } else
 #endif
     {
-        GCS_SEND_TEXT(MAV_SEVERITY_DEBUG,"NET: IP      %3d.%3d.%3d.%3d",
-            (int)_param.ipaddr[0], (int)_param.ipaddr[1], (int)_param.ipaddr[2], (int)_param.ipaddr[3]);
-        GCS_SEND_TEXT(MAV_SEVERITY_DEBUG,"NET: Mask    %3d.%3d.%3d.%3d",
-            (int)(netmask&0xFF), (int)((netmask>>8)&0xFF), (int)((netmask>>16)&0xFF), (int)((netmask>>24)&0xFF));
-        GCS_SEND_TEXT(MAV_SEVERITY_DEBUG,"NET: Gateway %3d.%3d.%3d.%3d",
-            (int)_param.gwaddr[0], (int)_param.gwaddr[1], (int)_param.gwaddr[2], (int)_param.gwaddr[3]);
+        GCS_SEND_TEXT(MAV_SEVERITY_DEBUG,"NET: IP      %s", get_ip_active_str());
+        GCS_SEND_TEXT(MAV_SEVERITY_DEBUG,"NET: Mask    %s", get_netmask_active_str());
+        GCS_SEND_TEXT(MAV_SEVERITY_DEBUG,"NET: Gateway %s",  get_gateway_active_str());
     }
 
     _init.done = true;
@@ -333,21 +343,67 @@ void AP_Networking::update()
     // TODO: add awesome stuff!
 }
 
-uint32_t AP_Networking::get_netmask() const
+uint32_t AP_Networking::convert_netmask_bitcount_to_ip(const uint32_t netmask_bitcount)
 {
-    uint32_t netmask = 0;
-    const uint8_t netmask_param = constrain_int16(get_netmask_param(), 0, 32);
-    for (uint32_t i=0; i<netmask_param; i++) {
-        netmask |= (1UL << i);
+    if (netmask_bitcount > 32) {
+        return 0;
     }
-    return netmask;
+
+    uint32_t netmask_ip = 0;
+    for (uint32_t i=0; i<netmask_bitcount; i++) {
+        netmask_ip |= (1UL << i);
+    }
+    return netmask_ip;
 }
 
-// periodic callback in our own networking thread at 1Hz for 
+uint8_t AP_Networking::convert_netmask_ip_to_bitcount(const uint32_t netmask_ip)
+{
+    uint32_t netmask_bitcount = 0;
+    for (uint32_t i=0; i<32; i++) {
+        // note, netmask LSB is IP MSB
+        if ((netmask_ip & (1UL<<i)) == 0) {
+            break;
+        }
+        netmask_bitcount++;
+    }
+    return netmask_bitcount;
+}
+
+uint32_t AP_Networking::convert_str_to_ip(char* ip_str)
+{
+    // struct sockaddr_in antelope[2];
+    // inet_pton(AF_INET, "10.0.0.2", &(antelope[0].sin_addr));
+    // return inet_addr(ip_str);
+
+    uint32_t ip = 0;
+    inet_pton(AF_INET, ip_str, &ip);
+    return ip;
+}
+
+char* AP_Networking::convert_ip_to_str(const uint8_t ip[4])
+{
+    static char _str_buffer[20];
+    if (hal.util->snprintf(_str_buffer, sizeof(_str_buffer), "%u.%u.%u.%u", (unsigned)ip[0], (unsigned)ip[1], (unsigned)ip[2], (unsigned)ip[3]) == 0) {
+        _str_buffer[0] = '\0';
+    }
+    return _str_buffer;
+}
+char* AP_Networking::convert_ip_to_str(const uint32_t ip)
+{
+    uint8_t ip_array[4];
+        ip_array[0] = ((ip >> 24) & 0xff);
+        ip_array[1] = ((ip >> 16) & 0xff);
+        ip_array[2] = ((ip >> 8) & 0xff);
+        ip_array[3] = (ip & 0xff);
+
+    return convert_ip_to_str(ip_array);
+}
+
+// periodic callback in our own networking thread at 1000 Hz
 #if AP_NETWORKING_HAS_THREAD
 void AP_Networking::thread()
 {
-
+    // TODO: do awesome stuff at 1kHz in our own dedicated thread!
 }
 #endif
 

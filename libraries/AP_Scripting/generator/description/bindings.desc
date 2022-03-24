@@ -395,6 +395,44 @@ singleton AP_MotorsMatrix_6DoF_Scripting alias Motors_6DoF
 singleton AP_MotorsMatrix_6DoF_Scripting method init boolean uint8_t 0 AP_MOTORS_MAX_NUM_MOTORS
 singleton AP_MotorsMatrix_6DoF_Scripting method add_motor void int8_t 0 (AP_MOTORS_MAX_NUM_MOTORS-1) float'skip_check float'skip_check float'skip_check float'skip_check float'skip_check float'skip_check boolean uint8_t 0 AP_MOTORS_MAX_NUM_MOTORS
 
+-- ----------------------
+-- ----------------------
+-- ----------------------
+-- ----------------------
+include AP_Networking/AP_Networking.h
+singleton AP_Networking depends HAL_ENABLE_NETWORKING
+singleton AP_Networking alias network
+singleton AP_Networking method is_healthy boolean
+
+singleton AP_Networking method get_dhcp_enabled boolean
+singleton AP_Networking method set_dhcp_enable void boolean
+
+singleton AP_Networking method get_ip_active uint32_t
+singleton AP_Networking method get_ip_param uint32_t
+singleton AP_Networking method get_ip_active_str string
+singleton AP_Networking method get_ip_param_str string
+singleton AP_Networking method set_ip_param void uint32_t 0U UINT32_MAX
+singleton AP_Networking method set_ip_param_str void string
+
+singleton AP_Networking method get_netmask_active uint32_t
+singleton AP_Networking method get_netmask_param uint32_t
+singleton AP_Networking method get_netmask_active_str string
+singleton AP_Networking method get_netmask_param_str string
+singleton AP_Networking method set_netmask_param void uint32_t 0U UINT32_MAX
+singleton AP_Networking method set_netmask_param_str void string
+
+singleton AP_Networking method get_gateway_active uint32_t
+singleton AP_Networking method get_gateway_param uint32_t
+singleton AP_Networking method get_gateway_active_str string
+singleton AP_Networking method get_gateway_param_str string
+singleton AP_Networking method set_gateway_param void uint32_t 0U UINT32_MAX
+singleton AP_Networking method set_gateway_param_str void string
+-- ----------------------
+-- ----------------------
+-- ----------------------
+-- ----------------------
+-- ----------------------
+
 include AP_HAL/I2CDevice.h
 ap_object AP_HAL::I2CDevice semaphore-pointer
 ap_object AP_HAL::I2CDevice method set_retries void uint8_t 0 20

@@ -420,11 +420,11 @@ void AP_KHA::set_gpio(const uint32_t index, const bool value)
 
 char* AP_KHA::get_udp_out_ip(const uint32_t stream_id)
 {
-    switch (stream_id) {
-        case 0: return convert_ip_to_str(stream_id, _ahrs.json.eth.addr);
-        case 1: return convert_ip_to_str(stream_id, _payload[0].console.eth.addr);
-        case 2: return convert_ip_to_str(stream_id, _payload[1].console.eth.addr);
-    }
+    // switch (stream_id) {
+    //     case 0: return convert_ip_to_str(stream_id, _ahrs.json.eth.addr);
+    //     case 1: return convert_ip_to_str(stream_id, _payload[0].console.eth.addr);
+    //     case 2: return convert_ip_to_str(stream_id, _payload[1].console.eth.addr);
+    // }
     return nullptr;
 }
 
@@ -460,21 +460,21 @@ uint32_t AP_KHA::get_udp_out_interval_ms(const uint32_t stream_id)
     return (uint32_t)constrain_int32(interval_ms, 1, 60000);
 }
 
-char* AP_KHA::convert_ip_to_str(const uint32_t stream_id, const KHA_IP_PORT_t addr)
-{
-#if HAL_ENABLE_NETWORKING
-    const uint32_t ip = IP4_ADDR_VALUE((int)addr.ip[0].get(),(int)addr.ip[1].get(),(int)addr.ip[2].get(),(int)addr.ip[3].get());
-    if (ip == _ip_str_last[stream_id]) {
-        return _ip_str[stream_id];
-    }
-    _ip_str_last[stream_id] = ip;
+// char* AP_KHA::convert_ip_to_str(const uint32_t stream_id)
+// {
+// #if HAL_ENABLE_NETWORKING
+//     const uint32_t ip = IP4_ADDR_VALUE((int)addr.ip[0].get(),(int)addr.ip[1].get(),(int)addr.ip[2].get(),(int)addr.ip[3].get());
+//     if (ip == _ip_str_last[stream_id]) {
+//         return _ip_str[stream_id];
+//     }
+//     _ip_str_last[stream_id] = ip;
 
-    hal.util->snprintf(_ip_str[stream_id], sizeof(_ip_str[stream_id]), "%d.%d.%d.%d", (int)addr.ip[0].get(),(int)addr.ip[1].get(),(int)addr.ip[2].get(),(int)addr.ip[3].get());
-    return _ip_str[stream_id];
-#else
-    return nullptr;
-#endif
-}
+//     hal.util->snprintf(_ip_str[stream_id], sizeof(_ip_str[stream_id]), "%d.%d.%d.%d", (int)addr.ip[0].get(),(int)addr.ip[1].get(),(int)addr.ip[2].get(),(int)addr.ip[3].get());
+//     return _ip_str[stream_id];
+// #else
+//     return nullptr;
+// #endif
+// }
 
 // char* AP_KHA::get_udp_out_data_str(const uint32_t stream_id)
 // {

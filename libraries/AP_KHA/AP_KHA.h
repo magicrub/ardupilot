@@ -218,7 +218,7 @@ private:
     void service_input_uarts();
     void service_output_uarts();
     void service_router();
-    char* convert_ip_to_str(const uint32_t stream_id, const KHA_IP_PORT_t addr);
+    // char* convert_ip_to_str(const uint32_t stream_id, const KHA_IP_PORT_t addr);
 
     void service_json_out();
     void generate_and_send_json(const KHA_JSON_Msg msg_name);

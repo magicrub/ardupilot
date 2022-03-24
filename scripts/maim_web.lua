@@ -3,6 +3,10 @@ local socket = require("socket")
 local host = "*"
 local port = 80
 
+local batt_instance_system = 0
+local batt_instance_payload1 = 1
+local batt_instance_payload2 = 2
+
 gcs:send_text(0, "Binding to host '" .. host .. "' and port " .. port .. "...")
 
 local socket = assert(socket.bind(host, port))
@@ -107,19 +111,18 @@ local function update() -- this is the loop which periodically runs
                 end
 
             elseif path == "/state" then
-                -- TODO: Tom, set these values below to something other than random
                 local state = {
                     system = {
-                        voltage = math.random(),
-                        current = math.random()
+                        voltage = battery:voltage(batt_instance_system),
+                        current = battery:current_amps(batt_instance_system)
                     },
                     payload1 = {
-                        voltage = math.random(),
-                        current = math.random()
+                        voltage = battery:voltage(batt_instance_payload1),
+                        current = battery:current_amps(batt_instance_payload1)
                     },
                     payload2 = {
-                        voltage = math.random(),
-                        current = math.random()
+                        voltage = battery:voltage(batt_instance_payload2),
+                        current = battery:current_amps(batt_instance_payload2)
                     }
                 }
                 connection:send("HTTP/1.0 200 OK\r\nContent-Type: application/json\r\nConnection: close\r\n\r\n")
@@ -161,6 +164,7 @@ local function update() -- this is the loop which periodically runs
                     payload2.netmask = updates["payload2.netmask"] or payload2.netmask
                     payload2.gateway = updates["payload2.gateway"] or payload2.gateway
 
+                    
                     -- TODO: Tom, configuration has been updated. Use it
                 end
 
