@@ -19,6 +19,7 @@
 #include "AP_KHA.h"
 #include <GCS_MAVLink/GCS.h>
 #include <AP_Networking/AP_Networking.h>
+#include <AP_BattMonitor/AP_BattMonitor.h>
 
 extern const AP_HAL::HAL& hal;
 
@@ -36,7 +37,7 @@ const AP_Param::GroupInfo AP_KHA::var_info[] = {
   //             "XX_TWELVE_XX"
   //AP_GROUPINFO("XXXXXXXXXXXX", XX, AP_KHA, _type, 0), // max name char length: KHA_ + 4
 
-    AP_GROUPINFO("TYPE"        ,  1, AP_KHA, _type, (uint8_t)KHA_Vehicle_Type_t::MAIM),
+    AP_GROUPINFO_FLAGS("TYPE"  ,  0, AP_KHA, _type, (uint8_t)KHA_Vehicle_Type_t::DISABLED, AP_PARAM_FLAG_ENABLE),
     AP_GROUPINFO("ZERO_PIN"    ,  2, AP_KHA, _system.zeroize.pin, 20),
     AP_GROUPINFO("NO_EXT_GPIO" ,  3, AP_KHA, _ignore_uavcan_gpio_relay_commands, 0),
     AP_GROUPINFO("ROUTE_MAINT" ,  4, AP_KHA, _maint.route, (uint8_t)KHA_MAIM_Routing::NONE),
@@ -100,7 +101,7 @@ AP_KHA::AP_KHA(void)
 
 void AP_KHA::init(void)
 {
-    if (_init.done) {
+    if (_init.done || !is_enabled()) {
         return;
     }
 
@@ -161,17 +162,33 @@ void AP_KHA::init(void)
     _init.done = true;
 }
 
+bool AP_KHA::is_enabled()
+{
+    switch ((KHA_Vehicle_Type_t)_type.get()) {
+        case KHA_Vehicle_Type_t::MAIM:
+            // this is the only support vehicle
+            return true;
+
+        case KHA_Vehicle_Type_t::DISABLED:
+        case KHA_Vehicle_Type_t::Plane:
+        case KHA_Vehicle_Type_t::Plane_VTOL:
+        default:
+            // not supported, do nothing
+            break;
+    }
+    return false;
+}
+
 void AP_KHA::update(void)
 {
+    if (!is_enabled()) {
+        return;
+    }
     if (!_init.done) {
         init();
         return;
     }
 
-    // switch (_type.get()) {
-    //     default:
-    //     break;
-    // }
 
 
     for (uint8_t p=0; p<AP_KHA_MAIM_PAYLOAD_COUNT_MAX; p++) {
@@ -637,6 +654,40 @@ void AP_KHA::generate_and_send_json(const KHA_JSON_Msg msg_name)
     }
 }
 #pragma GCC diagnostic pop
+
+uint8_t AP_KHA::get_battery_instance(const KHA_MAIM_POWER_TARGET power_target)
+{
+    // uint8_t instance = AP::battery().get_instance_with_serial_number(70);
+    // if (instance == 0) {
+    //     return 0;
+    // }
+
+    // return MIN(instance+(uint8_t)power_target, AP::battery().num_instances());
+
+    return 0;
+}
+
+float AP_KHA::get_voltage(const uint8_t power_target)
+{
+    const uint8_t instance = get_battery_instance((KHA_MAIM_POWER_TARGET)power_target);
+    if (!AP::battery().healthy(instance)) {
+        return 0;
+    }
+    return AP::battery().voltage(instance);
+}
+
+float AP_KHA::get_current(const uint8_t power_target)
+{
+    const uint8_t instance = get_battery_instance((KHA_MAIM_POWER_TARGET)power_target);
+    if (!AP::battery().healthy(instance)) {
+        return 0;
+    }
+    float current;
+    if (AP::battery().current_amps(current, instance)) {
+        return current;
+    }
+    return 0;
+}
 
 // singleton instance
 AP_KHA *AP_KHA::_singleton;

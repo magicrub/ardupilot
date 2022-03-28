@@ -45,7 +45,21 @@ public:
     void update(void);
 
     void init();
+    bool is_enabled();
 
+    enum class KHA_MAIM_POWER_TARGET : uint8_t {
+        SYSTEM      = 0,
+        PAYLOAD1    = 1,
+        PAYLOAD2    = 2,
+        PAYLOAD3    = 3,
+        PAYLOAD4    = 4,
+    };
+
+    // gets converted to KHA_MAIM_POWER_TARGET but to keep things
+    // simple for scripts, lets just use stdint for the public accessor
+    static float get_voltage(const uint8_t power_target);
+    static float get_current(const uint8_t power_target);
+    
     /* Do not allow copies */
     AP_KHA(const AP_KHA &other) = delete;
     AP_KHA &operator=(const AP_KHA&) = delete;
@@ -82,9 +96,10 @@ public:
     };
 
     enum class KHA_Vehicle_Type_t : uint8_t {
-        MAIM            = 0,
-        Plane           = 1,
-        Plane_VTOL      = 2,
+        DISABLED        = 0,
+        MAIM            = 1,
+        Plane           = 2,
+        Plane_VTOL      = 3,
     };
 
     struct KHA_IP_t {
@@ -226,6 +241,8 @@ private:
     uint32_t get_udp_out_data(const uint32_t stream_id, uint8_t* data, const uint32_t data_len_max);
 
     void pps_pin_irq_handler(uint8_t pin, bool pin_value, uint32_t timestamp_us);
+
+    static uint8_t get_battery_instance(const KHA_MAIM_POWER_TARGET power_target);
 
     struct {
         uint32_t timer_ms;

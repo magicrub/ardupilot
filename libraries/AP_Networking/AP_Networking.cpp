@@ -68,6 +68,9 @@
 #endif
 
 const AP_Param::GroupInfo AP_Networking::var_info[] = {
+
+    AP_GROUPINFO_FLAGS("ENABLED"  ,  0, AP_Networking, _param.enabled, 0, AP_PARAM_FLAG_ENABLE),
+
       // @Group: IPADDR0
     // @DisplayName: IP Address MSB
     // @Description: Allows setting static IP address
@@ -200,6 +203,10 @@ AP_Networking::AP_Networking(void)
 
 void AP_Networking::init()
 {
+    if (!_param.enabled) {
+        return;
+    }
+
 #if CONFIG_HAL_BOARD == HAL_BOARD_CHIBIOS
     uint32_t ip = get_ip_param();
     uint32_t netmask = get_netmask_param();
@@ -336,6 +343,9 @@ void AP_Networking::apply_errata_for_mac_KSZ9896C()
 
 void AP_Networking::update()
 {
+    if (!_param.enabled) {
+        return;
+    }
     if (!_init.done) {
         return;
     }

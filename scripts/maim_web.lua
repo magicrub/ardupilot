@@ -1,11 +1,11 @@
 local socket = require("socket")
 
 local host = "*"
-local port = 80
+local port = 1313
 
 local batt_instance_system = 0
-local batt_instance_payload1 = 1
-local batt_instance_payload2 = 2
+local batt_instance_payload1 = 0
+local batt_instance_payload2 = 0
 
 gcs:send_text(0, "Binding to host '" .. host .. "' and port " .. port .. "...")
 
@@ -125,6 +125,25 @@ local function update() -- this is the loop which periodically runs
                         current = battery:current_amps(batt_instance_payload2)
                     }
                 }
+                if state.system.voltage == nil then
+                    state.system.voltage = 25.23
+                end
+                if state.system.current == nil then
+                    state.system.current = 0.1
+                end
+                if state.payload1.voltage == nil then
+                    state.payload1.voltage = 28
+                end
+                if state.payload1.current == nil then
+                    state.payload1.current = 0
+                end
+                if state.payload2.voltage == nil then
+                    state.payload2.voltage = 28
+                end
+                if state.payload2.current == nil then
+                    state.payload2.current = 0
+                end
+
                 connection:send("HTTP/1.0 200 OK\r\nContent-Type: application/json\r\nConnection: close\r\n\r\n")
                 connection:send('{ "system": { "voltage": ' .. state.system.voltage .. ', "current": ' ..
                                     state.system.current .. ' }, "payload1": { "voltage": ' .. state.payload1.voltage ..

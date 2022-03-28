@@ -116,6 +116,7 @@ private:
 
         AP_Int8 dhcp;
         AP_Int16 macaddr[6];
+        AP_Int8 enabled;
     } _param;
 
     HAL_Semaphore _sem;

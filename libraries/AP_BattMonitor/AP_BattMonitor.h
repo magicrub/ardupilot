@@ -204,6 +204,13 @@ public:
     int32_t get_serial_number(uint8_t instance) const {
         return _params[instance]._serial_number;
     }
+    // uint8_t get_instance_with_serial_number(const uint32_t serial_number) const {
+    //     for (uint8_t instance=0; instance<num_instances(); instance++) {
+    //         if (serial_number == _params[instance]._serial_number) {
+    //             return instance;
+    //         }
+    //     return 0;
+    //     };
 
     /// true when (voltage * current) > watt_max
     bool overpower_detected() const;
