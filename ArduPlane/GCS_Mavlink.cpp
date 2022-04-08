@@ -587,7 +587,6 @@ bool GCS_MAVLINK_Plane::handle_guided_request(AP_Mission::Mission_Command &cmd)
         // only accept position updates when in GUIDED mode
         return false;
     }
-    plane.guided_state.radius_m = cmd.p1;
     plane.guided_WP_loc = cmd.content.location;
     
     // add home alt if needed
@@ -710,6 +709,11 @@ MAV_RESULT GCS_MAVLINK_Plane::handle_command_int_do_reposition(const mavlink_com
         if (plane.guided_WP_loc.relative_alt) {
             plane.guided_WP_loc.alt += plane.home.alt;
             plane.guided_WP_loc.relative_alt = 0;
+        }
+
+        if (!isnan(packet.param3) && packet.param3 >= 0) {
+            // a value of 0 means to use the value param WP_LOITER_RAD
+            plane.mode_guided.active_radius_m = constrain_int32(packet.param3, 0, UINT16_MAX);
         }
 
         plane.set_guided_WP();

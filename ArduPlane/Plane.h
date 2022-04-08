@@ -535,9 +535,6 @@ private:
         float forced_throttle;
         uint32_t last_forced_throttle_ms;
 
-        // adjustable radius for guided
-        uint16_t radius_m;
-
 #if OFFBOARD_GUIDED == ENABLED
         // airspeed adjustments
         float target_airspeed_cm = -1;  // don't default to zero here, as zero is a valid speed.
