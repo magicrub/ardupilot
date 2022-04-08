@@ -3,6 +3,8 @@
 
 bool ModeGuided::_enter()
 {
+    active_radius_m = 0;
+
     plane.guided_throttle_passthru = false;
     /*
       when entering guided mode we set the target as the current
@@ -35,5 +37,5 @@ void ModeGuided::update()
 void ModeGuided::navigate()
 {
     // Zero indicates to use WP_LOITER_RAD
-    plane.update_loiter(0);
+    plane.update_loiter(active_radius_m);
 }

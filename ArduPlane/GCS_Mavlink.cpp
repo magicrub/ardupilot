@@ -711,6 +711,11 @@ MAV_RESULT GCS_MAVLINK_Plane::handle_command_int_do_reposition(const mavlink_com
             plane.guided_WP_loc.relative_alt = 0;
         }
 
+        if (!isnan(packet.param3) && packet.param3 >= 0) {
+            // a value of 0 means to use the value param WP_LOITER_RAD
+            plane.mode_guided.active_radius_m = constrain_int32(packet.param3, 0, UINT16_MAX);
+        }
+
         plane.set_guided_WP();
 
         return MAV_RESULT_ACCEPTED;

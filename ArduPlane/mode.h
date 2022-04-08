@@ -201,6 +201,9 @@ public:
 
     bool does_auto_throttle() const override { return true; }
 
+    // adjustable radius for guided. A radius of Zero indicates to use WP_LOITER_RAD
+    uint16_t active_radius_m;
+
 protected:
 
     bool _enter() override;
