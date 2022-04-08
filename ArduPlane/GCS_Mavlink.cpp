@@ -587,7 +587,6 @@ bool GCS_MAVLINK_Plane::handle_guided_request(AP_Mission::Mission_Command &cmd)
         // only accept position updates when in GUIDED mode
         return false;
     }
-    plane.guided_state.radius_m = cmd.p1;
     plane.guided_WP_loc = cmd.content.location;
     
     // add home alt if needed

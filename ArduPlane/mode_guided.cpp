@@ -35,5 +35,5 @@ void ModeGuided::update()
 void ModeGuided::navigate()
 {
     // Zero indicates to use WP_LOITER_RAD
-    plane.update_loiter(plane.guided_state.radius_m);
+    plane.update_loiter(0);
 }
