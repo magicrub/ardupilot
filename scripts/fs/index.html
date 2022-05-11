@@ -30,8 +30,9 @@
                     <dd class="power"></dd>
                 </dl>
 
-                <button>Zeroize</button>
-                <button>Calibrate INS</button>
+                <button id="zeroize">Zeroize</button>
+                <button id="calibrate">Calibrate INS</button>
+
                 <form>
                     <dl>
                         <dt>Console Forward</dt>
@@ -302,6 +303,18 @@
             initializePayload2();
 
             function initializeSystem() {
+                document.querySelector("#zeroize").addEventListener("click", async event => {
+                    event.preventDefault();
+                    await fetch("zeroize");
+                    update();
+                });
+
+                document.querySelector("#calibrate").addEventListener("click", async event => {
+                    event.preventDefault();
+                    await fetch("calibrate");
+                    update();
+                });
+
                 const form = document.querySelector("#system form");
 
                 form.consoleForward.onchange = (event) => {

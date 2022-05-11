@@ -199,6 +199,14 @@ local function update() -- this is the loop which periodically runs
                                     '", "netmask": "' .. payload2.netmask .. '", "gateway": "' .. payload2.gateway ..
                                     '" } }')
 
+            elseif path == "/zeroize" then
+                -- TODO
+                gcs:send_text(0, "Zeroize") 
+
+            elseif path == "/calibrate" then
+                -- TODO
+                gcs:send_text(0, "Calibrate INS") 
+
             else
                 -- send 404 if file not found
                 connection:send("HTTP/1.0 404 Not Found\r\nContent-Type: text/html\r\nConnection: close\r\n\r\n")
