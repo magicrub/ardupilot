@@ -517,7 +517,6 @@ void AP_TECS::_update_height_demand(void)
     {
         _hgt_dem = _hgt_dem_prev - max_sink_rate * 0.1f;
     }
-    _hgt_dem_prev = _hgt_dem;
 
     // Apply first order lag to height demand
     if (!_flags.is_doing_auto_land) {
