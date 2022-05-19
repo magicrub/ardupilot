@@ -30,6 +30,7 @@
 #include <uavcan/equipment/actuator/ArrayCommand.hpp>
 #include <uavcan/equipment/actuator/Command.hpp>
 #include <uavcan/equipment/actuator/Status.hpp>
+#include <com/volz/servo/ActuatorStatus.hpp>
 
 #include <uavcan/equipment/esc/RawCommand.hpp>
 #include <uavcan/equipment/esc/Status.hpp>
@@ -156,6 +157,9 @@ static uavcan::Subscriber<ardupilot::equipment::trafficmonitor::TrafficReport, T
 // handler actuator status
 UC_REGISTRY_BINDER(ActuatorStatusCb, uavcan::equipment::actuator::Status);
 static uavcan::Subscriber<uavcan::equipment::actuator::Status, ActuatorStatusCb> *actuator_status_listener[HAL_MAX_CAN_PROTOCOL_DRIVERS];
+
+UC_REGISTRY_BINDER(ActuatorStatusVolzCb, com::volz::servo::ActuatorStatus);
+static uavcan::Subscriber<com::volz::servo::ActuatorStatus, ActuatorStatusVolzCb> *actuator_status_Volz_listener[HAL_MAX_CAN_PROTOCOL_DRIVERS];
 
 // handler ESC status
 UC_REGISTRY_BINDER(ESCStatusCb, uavcan::equipment::esc::Status);
@@ -360,6 +364,12 @@ void AP_UAVCAN::init(uint8_t driver_index, bool enable_filters)
     if (actuator_status_listener[driver_index]) {
         actuator_status_listener[driver_index]->start(ActuatorStatusCb(this, &handle_actuator_status));
     }
+
+    actuator_status_Volz_listener[driver_index] = new uavcan::Subscriber<com::volz::servo::ActuatorStatus, ActuatorStatusVolzCb>(*_node);
+    if (actuator_status_Volz_listener[driver_index]) {
+        actuator_status_Volz_listener[driver_index]->start(ActuatorStatusVolzCb(this, &handle_actuator_status_Volz));
+    }
+   
 
     esc_status_listener[driver_index] = new uavcan::Subscriber<uavcan::equipment::esc::Status, ESCStatusCb>(*_node);
     if (esc_status_listener[driver_index]) {
@@ -1112,6 +1122,23 @@ void AP_UAVCAN::handle_actuator_status(AP_UAVCAN* ap_uavcan, uint8_t node_id, co
                                    cb.msg->force,
                                    cb.msg->speed,
                                    cb.msg->power_rating_pct);
+}
+
+void AP_UAVCAN::handle_actuator_status_Volz(AP_UAVCAN* ap_uavcan, uint8_t node_id, const ActuatorStatusVolzCb &cb)
+{
+    AP::logger().Write(
+        "CVOL",
+        "TimeUS,Id,Pos,Cur,V,Pow,T",
+        "s#dAv%O",
+        "F-00000",
+        "QBfffBh",
+        AP_HAL::native_micros64(),
+        cb.msg->actuator_id,
+        ToDeg(cb.msg->actual_position),
+        cb.msg->current * 0.025f,
+        cb.msg->voltage * 0.2f,
+        cb.msg->motor_pwm * (100.0/255.0),
+        int16_t(cb.msg->motor_temperature) - 50);
 }
 
 /*
