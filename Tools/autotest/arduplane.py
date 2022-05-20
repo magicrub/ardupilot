@@ -3007,7 +3007,7 @@ class AutoTestPlane(AutoTest):
             new_alt,    # alt
             frame=mavutil.mavlink.MAV_FRAME_GLOBAL_RELATIVE_ALT_INT,
         )
-        self.wait_altitude(new_alt-10, new_alt, timeout=120, relative=True)
+        self.wait_altitude(new_alt-10, new_alt, timeout=200, relative=True)
 
         # Now override RC to send out of control.
         self.set_rc(1, 1100)
