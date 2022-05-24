@@ -27,13 +27,15 @@
 #if HAL_EXTERNAL_AHRS_SBG_ENABLED
 
 #include <GCS_MAVLink/GCS_MAVLink.h>
-#include "sbgECom/sbgEComIds.h"
-#include "sbgECom/commands/sbgEComCmd.h"
+#include "sbgECom/src/sbgEComIds.h"
+#include "sbgECom/src/commands/sbgEComCmd.h"
 
 class AP_ExternalAHRS_SBG : public AP_ExternalAHRS_backend {
 
 public:
     AP_ExternalAHRS_SBG(AP_ExternalAHRS *frontend, AP_ExternalAHRS::state_t &state);
+
+    static AP_ExternalAHRS_SBG *get_singleton(void) { return _singleton; }
 
     // get serial port number, -1 for not enabled
     int8_t get_port(void) const override;
@@ -45,20 +47,50 @@ public:
     void get_filter_status(nav_filter_status &status) const override;
     void send_status_report(mavlink_channel_t chan) const override;
 
+    void calibrate_mag_start() const;
+    void calibrate_mag_stop() const;
+    void calibrate_mag_set() const;
+    bool calibration_ok(const Vector3f &mag) const;
+    bool calibration_ok() const { return calibration_ok(Vector3f(1,1,1)); }
+
+    void configure_sensor();
+
+    SbgEComDeviceInfo get_version() const { return _version; };
+
     // periodic update
     void update() override;
 
 private:
+    static AP_ExternalAHRS_SBG *_singleton;
+
     static constexpr uint8_t SBG_PACKET_SYNC1 = 0xFF;
     static constexpr uint8_t SBG_PACKET_SYNC2 = 0x5A;
     static constexpr uint8_t SBG_PACKET_ETX = 0x33;
-    static constexpr uint16_t SBG_PACKET_PAYLOAD_SIZE_MAX = 4086;
+    static constexpr uint16_t SBG_PACKET_PAYLOAD_SIZE_MAX = 4086; // largest packet we care about is 72
+    static constexpr uint16_t SBG_PACKET_OVERHEAD = 9; // sync1, sync2, id, class, lenLSB, lenMSB, crcLSB, crcMSB, etx
 
     struct PACKED sbgMessage {
+
         uint8_t msgid;
         uint8_t msgclass;
         uint16_t len;
         uint8_t data[SBG_PACKET_PAYLOAD_SIZE_MAX];
+
+        sbgMessage() {};
+
+        sbgMessage(const uint8_t msgId_, const uint8_t msgClass_) {
+            msgid = msgId_;
+            msgclass = msgClass_;
+            len = 0;
+        };
+
+        sbgMessage(const uint8_t msgId_, const uint8_t msgClass_, const uint16_t len_, const uint8_t &data_) {
+            msgid = msgId_;
+            msgclass = msgClass_;
+            len = MIN(sizeof(data), len_);
+            memcpy(data, &data_, len);
+        };
+
     };
 
     enum class SBG_PACKET_PARSE_STATE : uint8_t {
@@ -79,23 +111,27 @@ private:
         SBG_PACKET_PARSE_STATE parser;
         uint16_t data_count;
         uint16_t crc;
+        sbgMessage msg;
     } _inbound_state;
 
-    sbgMessage _inbound_msg;
 
     void handle_msg(const sbgMessage &msg);
     static uint16_t calcCRC(const void *pBuffer, const uint16_t bufferSize);
 
     static bool parse_byte(const uint8_t data, sbgMessage &msg, SBG_PACKET_INBOUND_STATE &state);
     static void send_msg(AP_HAL::UARTDriver& uart_driver, const sbgMessage &msg);
+    // static void send_msg(AP_HAL::UARTDriver &uart_driver, const uint8_t msgId, const uint8_t msgClass, const uint16_t len, const uint8_t &data);
     static void send_msg(AP_HAL::UARTDriver &uart_driver, const uint8_t msgId, const uint8_t msgClass, const uint16_t len, const uint8_t &data);
+    static uint16_t create_packet(const sbgMessage &msg, const uint16_t len_max, uint8_t *data);
 
 
-    AP_HAL::UARTDriver *uart;
-    int8_t port_num;
-    bool port_opened;
-    uint32_t baudrate;
-    uint16_t rate;
+    AP_HAL::UARTDriver *_uart;
+    int8_t _port_num;
+    bool _port_opened;
+    uint32_t _baudrate;
+    uint16_t _rate;
+
+    SbgEComDeviceInfo _version;
 
     void update_thread();
 
@@ -103,6 +139,10 @@ private:
 
     void handle_msg(const SbgEComMagCalibResults &msg);
 
+};
+
+namespace AP {
+    AP_ExternalAHRS_SBG *sbg();
 };
 
 #endif  // HAL_EXTERNAL_AHRS_ENABLED

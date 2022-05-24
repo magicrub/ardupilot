@@ -33,7 +33,7 @@
 #define SBG_ECOM_CMD_DVL_H
 
 /* sbgCommonLib headers */
-//#include <sbgCommon.h>
+//#include "../../common/sbgCommon.h"/sbgCommon.h"/sbgCommon.h"
 
 /* Local headers */
 #include "sbgEComCmdCommon.h"

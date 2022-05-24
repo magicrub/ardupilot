@@ -32,7 +32,7 @@
 #define SBG_ECOM_CMD_OUTPUT_H
 
 // sbgCommonLib heaaders
-//#include <sbgCommon.h>
+//#include "../../common/sbgCommon.h"
 
 // Project headers
 //#include "../sbgECanId.h"

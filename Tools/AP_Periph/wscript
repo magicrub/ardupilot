@@ -72,6 +72,8 @@ def build(bld):
         ]
     )
 
+    
+
     # build external libcanard library
     bld.stlib(source=['../../modules/DroneCAN/libcanard/canard.c'] +
                      bld.bldnode.ant_glob('modules/DroneCAN/libcanard/dsdlc_generated/src/**.c'),

@@ -32,7 +32,7 @@
 #ifndef __SBG_ECOM_CMD_H__
 #define __SBG_ECOM_CMD_H__
 
-//#include <sbgCommon.h>
+//#include "../../common/sbgCommon.h"/sbgCommon.h"
 #include "sbgEComCmdAdvanced.h"
 #include "sbgEComCmdAirData.h"
 #include "sbgEComCmdDvl.h"

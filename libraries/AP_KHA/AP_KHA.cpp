@@ -20,6 +20,8 @@
 #include <GCS_MAVLink/GCS.h>
 #include <AP_Networking/AP_Networking.h>
 #include <AP_BattMonitor/AP_BattMonitor.h>
+#include "AP_ExternalAHRS/AP_ExternalAHRS_SBG.h"
+#include <AP_Common/AP_FWVersion.h>
 
 extern const AP_HAL::HAL& hal;
 
@@ -307,7 +309,7 @@ void AP_KHA::service_router()
         memcpy(_maint.uart.bytes_out.data, _payload[1].state.uart.bytes_in.data, len);
         _maint.uart.bytes_out.len += len;
         break;
-    case KHA_MAIM_Routing::AHRS_Bytes:
+    case KHA_MAIM_Routing::AHRS_Byte_Passthrough:
         len = MIN(_ahrs.uart.bytes_in.len, sizeof(_maint.uart.bytes_out.data));
         memcpy(_maint.uart.bytes_out.data, _ahrs.uart.bytes_in.data, len);
         _maint.uart.bytes_out.len += len;
@@ -332,7 +334,7 @@ void AP_KHA::service_router()
         memcpy(_avionics.uart.bytes_out.data, _payload[1].state.uart.bytes_in.data, len);
         _avionics.uart.bytes_out.len += len;
         break;
-    case KHA_MAIM_Routing::AHRS_Bytes:
+    case KHA_MAIM_Routing::AHRS_Byte_Passthrough:
         len = MIN(_ahrs.uart.bytes_in.len, sizeof(_avionics.uart.bytes_out.data));
         memcpy(_avionics.uart.bytes_out.data, _ahrs.uart.bytes_in.data, len);
         _maint.uart.bytes_out.len += len;
@@ -586,18 +588,27 @@ void AP_KHA::service_json_out()
 #pragma GCC diagnostic error "-Wframe-larger-than=1700"
 void AP_KHA::generate_and_send_json(const KHA_JSON_Msg msg_name)
 {
-    uint8_t buf[1500]; // Ethernet MTU
+#if HAL_EXTERNAL_AHRS_SBG_ENABLED
+    const auto *sbg = AP::sbg();
+    if (sbg == nullptr) {
+        return;
+    }
+
+    uint8_t buf[1500]; // Ethernet MTU. See MOD spec 1.1.4.2.1
     int32_t len = 0;
 
     switch (msg_name) {
-    case KHA_JSON_Msg::MAIM_VER:
+    case KHA_JSON_Msg::MAIM_VER: {
         //return (char*)R"({"class":"MAIM_VER","sw":"1.0","dev":"SBG ELLIPSE-N","devhw":"2.4","devsw":"6.5"})";
+        const unsigned hw = sbg->get_version().hardwareRev;
+        const unsigned fw = sbg->get_version().firmwareRev;
         len = hal.util->snprintf((char*)buf, sizeof(buf),
-            "{\"class\":\"MAIM_VER\",\"sw\":\"%.1f\",\"dev\":\"SBG ELLIPSE-N\",\"devhw\":\"%.1f\",\"devsw\":\"%.1f\"}",
-            1.0f,   // sw
-            2.4f,   // devhw
-            6.5f    // devsw
+            "{\"class\":\"MAIM_VER\",\"sw\":\"%s\",\"dev\":\"SBG ELLIPSE-N\",\"devhw\":\"%u.%u.%u.%u.%u\",\"devsw\":\"%u.%u.%u.%u.%u\"}",
+            AP::fwversion().fw_string,   // sw
+            (hw>>31) & 0x1, (hw>>24) & 0x7F, (hw>>16) & 0xFF, (hw>>8)  & 0xFF, hw & 0x00FF,   // devhw
+            (fw>>31) & 0x1, (fw>>28) & 0x07, (fw>>22) & 0x3F, (fw>>16) & 0x3F, fw & 0xFFFF    // devsw
             );
+        }
         break;
 
     case KHA_JSON_Msg::STATUS:
@@ -652,7 +663,9 @@ void AP_KHA::generate_and_send_json(const KHA_JSON_Msg msg_name)
     if (len <= 0) {
         return;
     }
+#endif // HAL_EXTERNAL_AHRS_SBG_ENABLED
 }
+
 #pragma GCC diagnostic pop
 
 uint8_t AP_KHA::get_battery_instance(const KHA_MAIM_POWER_TARGET power_target)

@@ -40,52 +40,54 @@ AP_ExternalAHRS_SBG::AP_ExternalAHRS_SBG(AP_ExternalAHRS *_frontend,
                                                      AP_ExternalAHRS::state_t &_state) :
     AP_ExternalAHRS_backend(_frontend, _state)
 {
+    if (_singleton != nullptr) {
+        AP_HAL::panic("Can only be one AP_ExternalAHRS_SBG");
+    }
+    _singleton = this;
+
     auto &sm = AP::serialmanager();
-    uart = sm.find_serial(AP_SerialManager::SerialProtocol_AHRS, 0);
-    if (uart == nullptr) {
+    _uart = sm.find_serial(AP_SerialManager::SerialProtocol_AHRS, 0);
+    if (_uart == nullptr) {
         GCS_SEND_TEXT(MAV_SEVERITY_INFO, "ExternalAHRS no UART");
         return;
     }
-    baudrate = sm.find_baudrate(AP_SerialManager::SerialProtocol_AHRS, 0);
-    port_num = sm.find_portnum(AP_SerialManager::SerialProtocol_AHRS, 0);
+    _baudrate = sm.find_baudrate(AP_SerialManager::SerialProtocol_AHRS, 0);
+    _port_num = sm.find_portnum(AP_SerialManager::SerialProtocol_AHRS, 0);
 
     if (!hal.scheduler->thread_create(FUNCTOR_BIND_MEMBER(&AP_ExternalAHRS_SBG::update_thread, void), "AHRS", 2048, AP_HAL::Scheduler::PRIORITY_SPI, 0)) {
         AP_HAL::panic("Failed to start ExternalAHRS update thread");
+    } else {
+        GCS_SEND_TEXT(MAV_SEVERITY_INFO, "ExternalAHRS initialised");
     }
-    GCS_SEND_TEXT(MAV_SEVERITY_INFO, "ExternalAHRS initialised");
 }
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic error "-Wframe-larger-than=4200"
 void AP_ExternalAHRS_SBG::send_config(void)
 {
-    sbgMessage pkt_out {};
-    send_msg(*uart, pkt_out);
+    // sbgMessage pkt_out {};
+    // send_msg(*uart, pkt_out);
 }
 #pragma GCC diagnostic pop
 
-void AP_ExternalAHRS_SBG::send_msg(AP_HAL::UARTDriver &uart_driver, const uint8_t msgId, const uint8_t msgClass, const uint16_t len, const uint8_t &data)
+uint16_t AP_ExternalAHRS_SBG::create_packet(const sbgMessage &msg, const uint16_t len_max, uint8_t *buffer)
 {
-    sbgMessage msg {};
+    if (msg.len > sizeof(msg.data)) {
+        // msg.len is out of range
+        return 0;
+    }
 
-    msg.msgid = msgId;
-    msg.msgclass = msgClass;
-    msg.len = len;
-    memcpy(msg.data, &data, MIN(sizeof(msg.data), len));
+    const uint16_t packet_len = (SBG_PACKET_OVERHEAD + msg.len);
+    if (len_max < packet_len) {
+        // msg.len is out of range OR len_max is not big enough for this packet (we just protected from a buffer overrun)
+        return 0;
+    }
 
-    send_msg(uart_driver, msg);
-}
-
-void AP_ExternalAHRS_SBG::send_msg(AP_HAL::UARTDriver &uart_driver, const sbgMessage &msg)
-{
-    const uint16_t buffer_size = MIN(msg.len,sizeof(msg.data)) + 9;
-    uint8_t buffer[buffer_size];
-    
     buffer[0] = SBG_PACKET_SYNC1;
     buffer[1] = SBG_PACKET_SYNC2;
     buffer[2] = msg.msgid;
     buffer[3] = msg.msgclass;
-    buffer[4] = msg.len & 0xFF;
+    buffer[4] = msg.len & 0xFF; // LSB first
     buffer[5] = msg.len >> 8;
 
     for (uint16_t i=0; i<msg.len; i++) {
@@ -94,11 +96,11 @@ void AP_ExternalAHRS_SBG::send_msg(AP_HAL::UARTDriver &uart_driver, const sbgMes
 
     const uint16_t crc = calcCRC(&msg, msg.len+4);
 
-    buffer[buffer_size-3] = crc & 0xFF;
-    buffer[buffer_size-2] = crc >> 8;
-    buffer[buffer_size-1] = SBG_PACKET_ETX;
+    buffer[packet_len-3] = crc & 0xFF; // LSB First
+    buffer[packet_len-2] = crc >> 8;
+    buffer[packet_len-1] = SBG_PACKET_ETX;
 
-    uart_driver.write(buffer, buffer_size);
+    return packet_len;
 }
 
 bool AP_ExternalAHRS_SBG::parse_byte(const uint8_t data, sbgMessage &msg, SBG_PACKET_INBOUND_STATE &state)
@@ -328,11 +330,6 @@ void AP_ExternalAHRS_SBG::handle_msg(const sbgMessage &msg)
     }
 }
 
-void AP_ExternalAHRS_SBG::handle_msg(const SbgEComMagCalibResults &msg)
-{
-
-}
-
 void AP_ExternalAHRS_SBG::update(void)
 {
 
@@ -340,30 +337,30 @@ void AP_ExternalAHRS_SBG::update(void)
 
 void AP_ExternalAHRS_SBG::update_thread()
 {
-    if (uart == nullptr) {
+    if (_uart == nullptr) {
         return;
     }
 
-    if (!port_opened) {
+    if (!_port_opened) {
         // open port in the thread
-        uart->begin(baudrate, 1024, 512);
-        port_opened = true;
+        _uart->begin(_baudrate, 1024, 512);
+        _port_opened = true;
         send_config();
     }
 
     while (true) {
-        uint32_t n = uart->available();
+        uint32_t n = _uart->available();
         if (n == 0) {
             hal.scheduler->delay(1);
             continue;
         }
         while (n--) {
-            const int16_t data_byte = uart->read();
+            const int16_t data_byte = _uart->read();
             if (data_byte < 0) {
                 continue;
             }
-            if (parse_byte((uint8_t)data_byte, _inbound_msg, _inbound_state)) {
-                handle_msg(_inbound_msg);
+            if (parse_byte((uint8_t)data_byte, _inbound_state.msg, _inbound_state)) {
+                handle_msg(_inbound_state.msg);
             }
         }
     }
@@ -372,18 +369,18 @@ void AP_ExternalAHRS_SBG::update_thread()
 // get serial port number for the uart
 int8_t AP_ExternalAHRS_SBG::get_port(void) const
 {
-    return (uart == nullptr) ? -1 : port_num;
+    return (_uart == nullptr) ? -1 : _port_num;
 };
 
 // accessors for AP_AHRS
 bool AP_ExternalAHRS_SBG::healthy(void) const
 {
-    return uart != nullptr;
+    return _uart != nullptr;
 }
 
 bool AP_ExternalAHRS_SBG::initialised(void) const
 {
-    return uart != nullptr;
+    return _uart != nullptr;
 }
 
 bool AP_ExternalAHRS_SBG::pre_arm_check(char *failure_msg, uint8_t failure_msg_len) const
@@ -404,6 +401,70 @@ void AP_ExternalAHRS_SBG::get_filter_status(nav_filter_status &status) const
 void AP_ExternalAHRS_SBG::send_status_report(mavlink_channel_t chan) const
 {
 }
+
+void AP_ExternalAHRS_SBG::calibrate_mag_start() const
+{
+    // sbgEComCmdMagStartCalib
+}
+
+void AP_ExternalAHRS_SBG::calibrate_mag_stop() const
+{
+    // bgEComCmdMagComputeCalib
+}
+
+void AP_ExternalAHRS_SBG::calibrate_mag_set() const
+{
+    // bgEComCmdMagComputeCalib
+}
+
+bool AP_ExternalAHRS_SBG::calibration_ok(const Vector3f &mag) const
+{
+    const float AHRS_norm = sqrtf(mag.x*mag.x + mag.y*mag.y + mag.z*mag.z);
+
+    const float threshold_HIGH = 1.02f;
+    const float threshold_LOW = 0.98f;
+
+    return (AHRS_norm <= threshold_HIGH && AHRS_norm >= threshold_LOW);
+
+}
+
+void AP_ExternalAHRS_SBG::configure_sensor()
+{
+    // page 12, section 2.2.2
+
+    // sbgEComCmdGnss1SetLeverArmAlignment
+    // (platform-dependent)
+    // sbgEComCmdSensorSetAlignmentAndLeverArm
+    // (platform-dependent)
+    // sbgEComCmdSensorSetMotionProfileId
+    // SBG_ECOM_MOTION_PROFILE_AIRPLANE
+    // sbgEComCmdMagSetRejection
+    // SBG_ECOM_AUTOMATIC_MODE
+    // sbgEComCmdMagSetModelId
+    // SBG_ECOM_MAG_MODEL_NORMAL
+    // sbgEComCmdGnss1SetRejection
+    // SBG_ECOM_ALWAYS_ACCEPT_MODE,
+    // SBG_ECOM_ALWAYS_ACCEPT_MODE,
+    // SBG_ECOM_NEVER_ACCEPT_MODE,
+    // SBG_ECOM_AUTOMATIC_MODE
+    // sbgEComCmdGnssSetModelId
+    // SBG_ECOM_GNSS_MODEL_UBLOX_GPS_GLONASS
+    // sbgEComCmdSyncOutSetConf
+    // SBG_ECOM_SYNC_OUT_A, SBG_ECOM_SYNC_OUT_MODE_DIRECT_PPS
+}
+
+void AP_ExternalAHRS_SBG::handle_msg(const SbgEComMagCalibResults &msg)
+{
+
+}
+
+// singleton instance
+AP_ExternalAHRS_SBG *AP_ExternalAHRS_SBG::_singleton;
+namespace AP {
+AP_ExternalAHRS_SBG *sbg() {
+    return AP_ExternalAHRS_SBG::get_singleton();
+}
+};
 
 #endif  // HAL_EXTERNAL_AHRS_ENABLED
 

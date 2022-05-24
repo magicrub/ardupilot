@@ -32,7 +32,7 @@
 #define SBG_ECOM_CMD_SENSOR_H
 
 // sbgCommonLib headers
-//#include <sbgCommon.h>
+//#include "../../common/sbgCommon.h"
 
 // Local headers
 #include "sbgEComCmdCommon.h"

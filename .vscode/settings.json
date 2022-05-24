@@ -23,6 +23,8 @@
         "type_traits": "cpp",
         "utility": "cpp",
         "string": "cpp",
-        "memory": "cpp"
+        "memory": "cpp",
+        "string_view": "cpp",
+        "ranges": "cpp"
     }
 }
