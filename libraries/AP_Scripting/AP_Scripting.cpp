@@ -120,15 +120,22 @@ const AP_Param::GroupInfo AP_Scripting::var_info[] = {
     // @User: Advanced
     AP_GROUPINFO("DIR_DISABLE", 9, AP_Scripting, _dir_disable, 0),
 
-
-
-    // consider motor stopped when vibe is low and RPM low for more than 4s
+    // @Param: MTR_STOP_MS
+    // @DisplayName: Motor Stop Miliseconds
+    // @Description: consider motor stopped when vibe is low and RPM low for more than x sec
+    // @User: Advanced
     AP_GROUPINFO("MTR_STOP_MS", 30, AP_Scripting, _mtr_stop_ms, 4000.0f),
 
-    // vibration threshold below which motor may be stopped
+    // @Param: VIBE_LOW
+    // @DisplayName: Low Vibration Threshold
+    // @Description: vibration threshold below which motor may be stopped
+    // @User: Advanced
     AP_GROUPINFO("VIBE_LOW", 31, AP_Scripting, _vibe_low, SCRIPTING_PARAM_VIBE_LOW),
 
-    // Throttle Threshold above which motor should be considered valid to check vibes
+    // @Param: THR_THRESH
+    // @DisplayName: High Throttle Threshold
+    // @Description: Throttle Threshold above which motor should be considered valid to check vibes
+    // @User: Advanced
     AP_GROUPINFO("THR_THRESH", 32, AP_Scripting, _thr_thresh, 90.0f),
 
     AP_GROUPEND
