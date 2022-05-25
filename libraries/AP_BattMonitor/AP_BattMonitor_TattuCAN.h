@@ -34,6 +34,8 @@ public:
     /// Constructor
     AP_BattMonitor_TattuCAN(AP_BattMonitor &mon, AP_BattMonitor::BattMonitor_State &mon_state, AP_BattMonitor_Params &params);
 
+    static const struct AP_Param::GroupInfo var_info[];
+
     /// Read the battery voltage and current.  Should be called at 10hz
     void read() override;
 
@@ -52,6 +54,13 @@ public:
 
     bool get_cycle_count(uint16_t &cycles) const override;
 
+    bool match_port() const {
+        if (_port_must_match <= 0) {
+            return true;
+        }
+        return _port_must_match == (get_driver_index() + 1);
+    }
+
     // return mavlink fault bitmask (see MAV_BATTERY_FAULT enum)
     uint32_t get_mavlink_fault_bitmask() const override;
 
@@ -66,6 +75,8 @@ private:
     static constexpr uint8_t TATTUCAN_CELL_COUNT_12S = 12;
 
     HAL_Semaphore _sem_battmon;
+
+    AP_Int8 _port_must_match;
 
     struct PACKED {
         uint16_t    crc;

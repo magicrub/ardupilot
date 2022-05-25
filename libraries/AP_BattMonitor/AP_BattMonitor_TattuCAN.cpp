@@ -22,11 +22,28 @@
 
 extern const AP_HAL::HAL& hal;
 
+const AP_Param::GroupInfo AP_BattMonitor_TattuCAN::var_info[] = {
+
+    // @Param: PORT_LOCK
+    // @DisplayName: DroneCAN Port is battery ID
+    // @Description: Use the DroneCAN physical port number to distinguish between multiple CAN batteries. Example: BATT2_PORT_LOCK = 1 and BATT2_PORT_LOCK = 2 means BATT1 will only listen to batteries on CAN1 and BATT2 will only listen to batteries on CAN2. Param BATTx_SERIAL_NUM is still in effect. Use a value of 0 to disable.
+    // @Range: 0 3
+    // @User: Advanced
+    AP_GROUPINFO("PORT_LOCK", 30, AP_BattMonitor_TattuCAN, _port_must_match, 0),
+
+    // Param indexes must be between 30 and 39 to avoid conflict with other battery monitor param tables loaded by pointer
+
+    AP_GROUPEND
+};
+
 /// Constructor
 AP_BattMonitor_TattuCAN::AP_BattMonitor_TattuCAN(AP_BattMonitor &mon, AP_BattMonitor::BattMonitor_State &mon_state, AP_BattMonitor_Params &params) :
     CANSensor("Tattu"),
     AP_BattMonitor_Backend(mon, mon_state, params)
 {
+    AP_Param::setup_object_defaults(this,var_info);
+    _state.var_info = var_info;
+
     // starts with not healthy
     _state.healthy = false;
     register_driver(AP_CANManager::Driver_Type_Tattu);
@@ -36,6 +53,10 @@ void AP_BattMonitor_TattuCAN::handle_frame(AP_HAL::CANFrame &frame)
 {
     if (frame.dlc == 0) {
         // sanity check for if there's no payload
+        return;
+    }
+    if (!match_port()) {
+        // this packet came from a port that we want to ignore (multi-battery system)
         return;
     }
 
