@@ -30,6 +30,13 @@ const AP_Param::GroupInfo AP_BattMonitor_UAVCAN::var_info[] = {
     // @User: Advanced
     AP_GROUPINFO("CURR_MULT", 30, AP_BattMonitor_UAVCAN, _curr_mult, 1.0),
 
+    // @Param: PORT_LOCK
+    // @DisplayName: DroneCAN Port is battery ID
+    // @Description: Use the DroneCAN physical port number to distinguish between multiple CAN batteries. Example: BATT2_PORT_IS_ID = 1 and BATT2_PORT_IS_ID = 2 means BATT1 will only listen to batteries on CAN1 and BATT2 will only listen to batteries on CAN2. Param BATTx_SERIAL_NUM is still in effect.
+    // @Range: 0 3
+    // @User: Advanced
+    AP_GROUPINFO("PORT_LOCK", 31, AP_BattMonitor_UAVCAN, _port_must_match, 0),
+
     // Param indexes must be between 30 and 39 to avoid conflict with other battery monitor param tables loaded by pointer
 
     AP_GROUPEND
@@ -98,7 +105,7 @@ AP_BattMonitor_UAVCAN* AP_BattMonitor_UAVCAN::get_uavcan_backend(AP_UAVCAN* ap_u
             continue;
         }
         AP_BattMonitor_UAVCAN* driver = (AP_BattMonitor_UAVCAN*)AP::battery().drivers[i];
-        if (driver->_ap_uavcan == ap_uavcan && driver->_node_id == node_id && match_battery_id(i, battery_id)) {
+        if (driver->_ap_uavcan == ap_uavcan && driver->_node_id == node_id && match_battery_id(i, battery_id) && driver->match_port()) {
             return driver;
         }
     }
@@ -109,7 +116,7 @@ AP_BattMonitor_UAVCAN* AP_BattMonitor_UAVCAN::get_uavcan_backend(AP_UAVCAN* ap_u
             match_battery_id(i, battery_id)) {
 
             AP_BattMonitor_UAVCAN* batmon = (AP_BattMonitor_UAVCAN*)AP::battery().drivers[i];
-            if(batmon->_ap_uavcan != nullptr || batmon->_node_id != 0) {
+            if(batmon->_ap_uavcan != nullptr || batmon->_node_id != 0 || !batmon->match_port()) {
                 continue;
             }
             batmon->_ap_uavcan = ap_uavcan;
