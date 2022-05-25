@@ -33,6 +33,8 @@ public:
     void init(uint8_t driver_index, bool enable_filters) override;
     bool add_interface(AP_HAL::CANIface* can_iface) override;
 
+    uint8_t get_driver_index() const { return _driver_index; }
+
     // handler for incoming frames
     virtual void handle_frame(AP_HAL::CANFrame &frame) = 0;
 
