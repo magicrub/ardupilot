@@ -63,6 +63,13 @@ private:
         return (AP::battery().get_serial_number(instance) < 0) || (AP::battery().get_serial_number(instance) == (int32_t)battery_id);
     }
 
+    bool match_port() const {
+        if (_port_must_match <= 0 || _port_must_match > HAL_MAX_CAN_PROTOCOL_DRIVERS || _ap_uavcan == nullptr) {
+            return true;
+        }
+        return _port_must_match == (_ap_uavcan->get_driver_index() + 1);
+    }
+
     // MPPT related enums and methods
     enum class MPPT_FaultFlags : uint8_t {
         OVER_VOLTAGE        = (1U<<0),
@@ -96,6 +103,7 @@ private:
     uint8_t _instance;                  // instance of this battery monitor
     uavcan::Node<0> *_node;             // UAVCAN node id
     AP_Float _curr_mult;                 // scaling multiplier applied to current reports for adjustment
+    AP_Int8 _port_must_match;
     // MPPT variables
     struct {
         bool is_detected;               // true if this UAVCAN device is a Packet Digital MPPT
