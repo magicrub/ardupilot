@@ -46,7 +46,7 @@
   #if CONFIG_HAL_BOARD == HAL_BOARD_SITL
     #define SCRIPTING_PARAM_VIBE_LOW 0.3f
   #else
-    #define SCRIPTING_PARAM_VIBE_LOW 2
+    #define SCRIPTING_PARAM_VIBE_LOW 1.25f
   #endif
 #endif // !defined(SCRIPTING_PARAM_VIBE_LOW)
 
