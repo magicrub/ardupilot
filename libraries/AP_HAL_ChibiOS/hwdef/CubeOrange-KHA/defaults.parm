@@ -87,6 +87,8 @@ RCMAP_PITCH             3
 RCMAP_ROLL              2
 RCMAP_THROTTLE          1
 RC_OPTIONS              0
+RLL2SRV_RMAX            40
+RLL2SRV_TCONST          0.8
 RLL_RATE_D              0.0083
 RLL_RATE_FF             1.3252
 RLL_RATE_FLTD           10
