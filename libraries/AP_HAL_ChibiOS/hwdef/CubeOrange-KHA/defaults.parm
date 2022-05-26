@@ -189,7 +189,7 @@ TECS_TCONST_STE         0
 TECS_VERT_ACC           15
 THROTTLE_NUDGE          0
 THR_FAILSAFE            0
-TKOFF_GND_PITCH         -6.5
+TKOFF_GND_PITCH         -7.0
 TKOFF_LVL_ALT           15
 TKOFF_LVL_PITCH         4
 TKOFF_ROTATE_SPD        13.5
