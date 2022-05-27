@@ -24,12 +24,19 @@ extern const AP_HAL::HAL& hal;
 
 const AP_Param::GroupInfo AP_BattMonitor_TattuCAN::var_info[] = {
 
+    // @Param: CURR_MULT
+    // @DisplayName: Scales reported power monitor current
+    // @Description: Multiplier applied to all current related reports to allow for adjustment if no UAVCAN param access or current splitting applications
+    // @Range: .1 10
+    // @User: Advanced
+    AP_GROUPINFO("CURR_MULT", 30, AP_BattMonitor_TattuCAN, _curr_mult, 1.0),
+
     // @Param: PORT_LOCK
     // @DisplayName: DroneCAN Port is battery ID
     // @Description: Use the DroneCAN physical port number to distinguish between multiple CAN batteries. Example: BATT2_PORT_LOCK = 1 and BATT2_PORT_LOCK = 2 means BATT1 will only listen to batteries on CAN1 and BATT2 will only listen to batteries on CAN2. Param BATTx_SERIAL_NUM is still in effect. Use a value of 0 to disable.
     // @Range: 0 3
     // @User: Advanced
-    AP_GROUPINFO("PORT_LOCK", 30, AP_BattMonitor_TattuCAN, _port_must_match, 0),
+    AP_GROUPINFO("PORT_LOCK", 31, AP_BattMonitor_TattuCAN, _port_must_match, 0),
 
     // Param indexes must be between 30 and 39 to avoid conflict with other battery monitor param tables loaded by pointer
 
@@ -101,13 +108,13 @@ void AP_BattMonitor_TattuCAN::handle_frame(AP_HAL::CANFrame &frame)
 
     _interim_state.last_time_micros = AP_HAL::micros();
     _interim_state.voltage = _message.voltage_mV * 0.001f;
-    _interim_state.current_amps = _message.current_mA * -0.01f;
+    _interim_state.current_amps = _curr_mult * _message.current_mA * -0.01f;
 
     _interim_state.temperature_time = AP_HAL::millis();
     _interim_state.temperature = _message.temperature_C;
 
-    _interim_state.consumed_mah = MIN(_message.standard_capacity_mAh, _message.standard_capacity_mAh - _message.remaining_capacity_mAh) * 0.001f;
-    
+    _interim_state.consumed_mah = (_message.standard_capacity_mAh - _message.remaining_capacity_mAh) * _curr_mult;
+
     _interim_state.healthy = true; // _message.health_status
 
     for (uint8_t i=0; i<TATTUCAN_CELL_COUNT_12S; i++) {

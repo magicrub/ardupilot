@@ -76,6 +76,7 @@ private:
 
     HAL_Semaphore _sem_battmon;
 
+    AP_Float _curr_mult;                 // scaling multiplier applied to current reports for adjustment
     AP_Int8 _port_must_match;
 
     struct PACKED {
