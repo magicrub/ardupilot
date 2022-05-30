@@ -113,7 +113,11 @@ void AP_BattMonitor_TattuCAN::handle_frame(AP_HAL::CANFrame &frame)
     _interim_state.temperature_time = AP_HAL::millis();
     _interim_state.temperature = _message.temperature_C;
 
-    _interim_state.consumed_mah = (_message.standard_capacity_mAh - _message.remaining_capacity_mAh) * _curr_mult;
+    // A fully charged battery has been known to report a remaining capacity
+    // slightly larger (~90mAh) than it's standard capacity, so lets constrain that
+    // so we don't start off reporting consumed_mah as negative.
+    const int32_t reported_consumed = _message.standard_capacity_mAh - _message.remaining_capacity_mAh;
+    _interim_state.consumed_mah = constrain_int32(reported_consumed, 0,  _message.standard_capacity_mAh) * _curr_mult;
 
     _interim_state.healthy = true; // _message.health_status
 
