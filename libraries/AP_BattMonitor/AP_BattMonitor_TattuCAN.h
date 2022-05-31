@@ -46,7 +46,7 @@ public:
 
     bool has_current() const override { return _have_received_a_msg; }
 
-    bool has_consumed_energy() const override { return _have_received_a_msg && (_message.remaining_capacity_mAh < _message.standard_capacity_mAh); }
+    bool has_consumed_energy() const override { return _have_received_a_msg; }
 
     bool has_time_remaining() const override { return false; }
 
@@ -79,7 +79,7 @@ private:
     AP_Float _curr_mult;                 // scaling multiplier applied to current reports for adjustment
     AP_Int8 _port_must_match;
 
-    struct PACKED {
+    struct PACKED TATTUCAN_PACKET_12S {
         uint16_t    crc;
         int16_t     manufacturer;
         int16_t     sku;
@@ -93,13 +93,18 @@ private:
         uint16_t    standard_capacity_mAh;
         uint16_t    remaining_capacity_mAh;
         uint32_t    error_info;
-    } _message;
+    };
+    
+    union PACKED {
+        TATTUCAN_PACKET_12S pkt;
+        uint8_t data[sizeof(TATTUCAN_PACKET_12S)];
+    } _buffer;
 
-    uint8_t data[sizeof(_message)];
-
-    uint32_t _message_offset;
-    bool _message_toggle_expected;
-
+    uint32_t _buffer_offset;
+    bool     _message_toggle_expected;
+    uint16_t _remaining_percent;
+    uint16_t _cycle_life;
+    uint16_t _crc;
     uint32_t _frame_count_good;
     uint32_t _frame_count_bad;
     uint32_t _message_count_good;

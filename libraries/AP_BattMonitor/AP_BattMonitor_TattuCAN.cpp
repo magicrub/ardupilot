@@ -19,6 +19,7 @@
 
 #if AP_BATT_MONITOR_TATTU_ENABLED
 #include <AP_HAL/AP_HAL.h>
+#include <AP_Math/crc.h>
 
 extern const AP_HAL::HAL& hal;
 
@@ -75,26 +76,30 @@ void AP_BattMonitor_TattuCAN::handle_frame(AP_HAL::CANFrame &frame)
     //const bool id = (tail_byte & TAIL_BYTE_TRANSFER_ID_MASK);
 
 
-    if ((start && end) || (_message_offset == 0 && !start)) {
+    if ((start && end) || (_buffer_offset == 0 && !start)) {
         // invalid or we're expecting a start and did't get one (re-sync)
         _message_resync++;
         return;
 
     } else if (start) {
         // start of a frame
-        _message_offset = 0;
+        _buffer_offset = 0;
         _message_toggle_expected = 0;
+        _crc = 0xFFFF;
         
-    } else if ((_message_offset + frame.dlc - 1) > sizeof(_message)) {
+    } else if ((_buffer_offset + frame.dlc) >= sizeof(_buffer)) {
         // buffer overflow, reset
-        // TODO: this only supports 12S batteries. If a 14S is connected, 4 more bytes come in the middle of the packet
-        _message_offset = 0;
+        _buffer_offset = 0;
         _message_resync++;
         return;
     }
 
-    memcpy(&data[_message_offset], frame.data, payload_len);
-    _message_offset += payload_len;
+    for (uint8_t i=0; i<frame.dlc; i++) {
+        _crc = crc_xmodem_update(_crc, frame.data[i]);
+    }
+
+    memcpy(&_buffer.data[_buffer_offset], frame.data, payload_len);
+    _buffer_offset += payload_len;
     _message_toggle_expected = !_message_toggle_expected;
 
     if (!end) {
@@ -102,31 +107,52 @@ void AP_BattMonitor_TattuCAN::handle_frame(AP_HAL::CANFrame &frame)
     }
 
     // message complete!
-    memcpy((uint8_t*)&_message, data, _message_offset);
+    _buffer_offset = 0;
+
+//  ********************
+//  ********************
+// debug to test crc check
+//  ********************
+//  ********************
+    if (_params._serial_number == 12345) {
+        // force crc to pass
+        _crc = _buffer.pkt.crc;
+    }
+//  ********************
+//  ********************
+//  ********************
+//  ********************
+
+    if (_crc != _buffer.pkt.crc) {
+        // CRC fail
+        return;
+    }
 
     WITH_SEMAPHORE(_sem_battmon);
 
     _interim_state.last_time_micros = AP_HAL::micros();
-    _interim_state.voltage = _message.voltage_mV * 0.001f;
-    _interim_state.current_amps = _curr_mult * _message.current_mA * -0.01f;
+    _interim_state.voltage = _buffer.pkt.voltage_mV * 0.001f;
+    _interim_state.current_amps = _curr_mult * _buffer.pkt.current_mA * -0.01f;
 
     _interim_state.temperature_time = AP_HAL::millis();
-    _interim_state.temperature = _message.temperature_C;
+    _interim_state.temperature = _buffer.pkt.temperature_C;
 
     // A fully charged battery has been known to report a remaining capacity
     // slightly larger (~90mAh) than it's standard capacity, so lets constrain that
     // so we don't start off reporting consumed_mah as negative.
-    const int32_t reported_consumed = _message.standard_capacity_mAh - _message.remaining_capacity_mAh;
-    _interim_state.consumed_mah = constrain_int32(reported_consumed, 0,  _message.standard_capacity_mAh) * _curr_mult;
+    const int32_t reported_consumed = _buffer.pkt.standard_capacity_mAh - _buffer.pkt.remaining_capacity_mAh;
+    _interim_state.consumed_mah = constrain_int32(reported_consumed, 0,  _buffer.pkt.standard_capacity_mAh) * _curr_mult;
 
-    _interim_state.healthy = true; // _message.health_status
-
-    for (uint8_t i=0; i<TATTUCAN_CELL_COUNT_12S; i++) {
-        _interim_state.cell_voltages.cells[i] = _message.cell_voltage_mV[i];
+    for (uint8_t i=0; i<ARRAY_SIZE(_buffer.pkt.cell_voltage_mV); i++) {
+        _interim_state.cell_voltages.cells[i] = _buffer.pkt.cell_voltage_mV[i];
     }
 
+    _remaining_percent = _buffer.pkt.remaining_percent;
+    _cycle_life = _buffer.pkt.cycle_life;
+
+    _interim_state.healthy = true; // _buffer.pkt.health_status
+
     _have_received_a_msg = true;
-    _message_offset = 0;
     _message_count_good++;
 }
 
@@ -165,7 +191,7 @@ bool AP_BattMonitor_TattuCAN::capacity_remaining_pct(uint8_t &percentage) const
         return false;
     }
 
-    percentage = _message.remaining_percent;
+    percentage = _remaining_percent;
     return true;
 }
 
@@ -176,7 +202,7 @@ bool AP_BattMonitor_TattuCAN::get_cycle_count(uint16_t &cycles) const
         return false;
     }
 
-    cycles = _message.cycle_life;
+    cycles = _cycle_life;
     return true;
 }
 
