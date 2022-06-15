@@ -87,6 +87,8 @@ RCMAP_PITCH             3
 RCMAP_ROLL              2
 RCMAP_THROTTLE          1
 RC_OPTIONS              0
+RLL2SRV_RMAX            40
+RLL2SRV_TCONST          0.8
 RLL_RATE_D              0.0083
 RLL_RATE_FF             1.3252
 RLL_RATE_FLTD           10
@@ -125,11 +127,11 @@ SERVO1_TRIM             1290
 SERVO2_FUNCTION         4
 SERVO2_MAX              2000
 SERVO2_MIN              1000
-SERVO2_REVERSED         0       @READONLY
+SERVO2_REVERSED         0
 SERVO3_FUNCTION         4
 SERVO3_MAX              2000
 SERVO3_MIN              1000
-SERVO3_REVERSED         0       @READONLY
+SERVO3_REVERSED         0
 SERVO4_FUNCTION         19
 SERVO4_MAX              2000
 SERVO4_MIN              1000
