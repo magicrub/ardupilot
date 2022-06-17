@@ -92,6 +92,7 @@ protected:
     } coefficient;
 
     float thrust_scale;
+    bool use_k1000_thrust_model;
     bool reverse_thrust;
     bool elevons;
     bool vtail;
