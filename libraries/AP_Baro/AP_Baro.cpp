@@ -927,7 +927,7 @@ void AP_Baro::update(void)
     }
     if (new_field_elev && !AP::arming().is_armed()) {
         _field_elevation_last_ms = now_ms;
-        AP::ahrs().resetHeightDatum();
+        IGNORE_RETURN(AP::ahrs().resetHeightDatum());
         update_calibration();
         BARO_SEND_TEXT(MAV_SEVERITY_INFO, "Field Elevation Set: %.0fm", _field_elevation_active);
     }
