@@ -157,7 +157,7 @@ void Plane::takeoff_calc_pitch(void)
         nav_pitch_cd = int32_t(100.0f * g.takeoff_ground_pitch);
 
         // Set the pitch integrator to give a specified percentage trim.
-        float trim_percent = -50.0;
+        float trim_percent = g2.takeoff_rotate_elev;
         pitchController.set_I(trim_percent * radians(45) / 100);
         return;
     }
