@@ -344,6 +344,12 @@ void AP_PitchController::reset_I()
     rate_pid.reset_I();
 }
 
+void AP_PitchController::set_I(float i)
+{
+    _pid_info.I = i;
+    rate_pid.set_integrator(i);
+}
+
 /*
   convert from old to new PIDs
   this is a temporary conversion function during development
