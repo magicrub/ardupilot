@@ -219,7 +219,7 @@ const AP_Param::GroupInfo AP_Baro::var_info[] = {
 #ifndef HAL_BUILD_AP_PERIPH
     // @Param: _FIELD_ELV
     // @DisplayName: field elevation
-    // @Description: User provided field elevation in meters. This is used to improve the calculation of the altitude the vehicle is at. This parameter is not persistent and will be reset to 0 every time the vehicle is rebooted. A value of 0 means no correction for takeoff height above sea level is performed.
+    // @Description: User provided field elevation in meters. This is used to improve the calculation of the altitude the vehicle is at. This parameter is not persistent and will be reset to 0 every time the vehicle is rebooted. Changes to this parameter will only be used when disarmed. A value of 0 means the EKF origin height is used for for takeoff height above sea level.
     // @Units: m
     // @Increment: 0.1
     // @Volatile: True
@@ -902,19 +902,34 @@ void AP_Baro::update(void)
     }
 #ifndef HAL_BUILD_AP_PERIPH
     const uint32_t now_ms = AP_HAL::millis();
-    if (now_ms - _field_elevation_last_ms >= 1000 && fabsf(_field_elevation_active-_field_elevation) > 1.0) {
-      if (!AP::arming().is_armed()) {
+    bool new_field_elev = false;
+    if (now_ms - _field_elevation_last_ms >= 1000) {
+        if (is_zero(_field_elevation_active) &&
+            is_zero(_field_elevation)) {
+            // auto-set based on origin
+            Location origin;
+            if (AP::ahrs().get_origin(origin)) {
+                _field_elevation_active = origin.alt * 0.01;
+                new_field_elev = true;
+            }
+        } else if (fabsf(_field_elevation_active-_field_elevation) > 1.0 &&
+                   !is_zero(_field_elevation)) {
+            // user has set field elevation
+            if (!AP::arming().is_armed()) {
+                _field_elevation_active = _field_elevation;
+                new_field_elev = true;
+            } else {
+                _field_elevation.set(_field_elevation_active);
+                _field_elevation.notify();
+                BARO_SEND_TEXT(MAV_SEVERITY_ALERT, "Failed to Set Field Elevation: Armed");
+            }
+        }
+    }
+    if (new_field_elev && !AP::arming().is_armed()) {
         _field_elevation_last_ms = now_ms;
-        _field_elevation_active = _field_elevation;
-        IGNORE_RETURN(AP::ahrs().resetHeightDatum());
+        AP::ahrs().resetHeightDatum();
         update_calibration();
-        BARO_SEND_TEXT(MAV_SEVERITY_INFO, "Barometer Field Elevation Set: %.0fm",_field_elevation_active);
-      }
-      else {
-        _field_elevation.set(_field_elevation_active);
-        _field_elevation.notify();
-        BARO_SEND_TEXT(MAV_SEVERITY_ALERT, "Failed to Set Field Elevation: Armed");
-      }
+        BARO_SEND_TEXT(MAV_SEVERITY_INFO, "Field Elevation Set: %.0fm", _field_elevation_active);
     }
 #endif
 
