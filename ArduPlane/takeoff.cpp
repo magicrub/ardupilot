@@ -155,7 +155,10 @@ void Plane::takeoff_calc_pitch(void)
         // we have not reached rotate speed, use the specified
         // takeoff run target pitch angle and stop the integrator from winding up
         nav_pitch_cd = int32_t(100.0f * g.takeoff_ground_pitch);
-        pitchController.reset_I();
+
+        // Set the pitch integrator to give a specified percentage trim.
+        float trim_percent = g2.takeoff_rotate_elev;
+        pitchController.set_I(trim_percent * radians(45) / 100);
         return;
     }
 

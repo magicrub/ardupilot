@@ -576,6 +576,8 @@ public:
     AP_Int8         man_expo_rudder;
 
     AP_Int32        oneshot_mask;
+    
+    AP_Int8         takeoff_rotate_elev;
 };
 
 extern const AP_Param::Info var_info[];

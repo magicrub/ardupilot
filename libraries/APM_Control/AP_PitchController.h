@@ -21,6 +21,9 @@ public:
 
 	void reset_I();
 
+    void set_I(float i);
+
+
     /*
       reduce the integrator, used when we have a low scale factor in a quadplane hover
     */
