@@ -11,6 +11,7 @@
 #include "AP_Mount_SToRM32.h"
 #include "AP_Mount_SToRM32_serial.h"
 #include "AP_Mount_Gremsy.h"
+#include "AP_Mount_Trillium.h"
 #include <AP_Math/location.h>
 #include <SRV_Channel/SRV_Channel.h>
 
@@ -468,6 +469,13 @@ void AP_Mount::init()
         // check for SToRM32 mounts using MAVLink protocol
         } else if (mount_type == Mount_Type_SToRM32) {
             _backends[instance] = new AP_Mount_SToRM32(*this, state[instance], instance);
+            _num_instances++;
+#endif
+
+#if AP_MOUNT_TRILLIUM_ENABLED
+        // check for Trillium mounts
+        } else if (mount_type == Mount_Type_Trillium) {
+            _backends[instance] = new AP_Mount_Trillium(*this, state[instance], instance);
             _num_instances++;
 #endif
 
