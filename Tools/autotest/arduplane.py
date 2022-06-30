@@ -1683,7 +1683,7 @@ class AutoTestPlane(AutoTest):
         home = self.home_position_as_mav_location()
         distance = self.get_distance(home, self.mav.location())
 
-        self.wait_altitude(expected_alt - 10, expected_alt + 10, relative=True)
+        self.wait_altitude(expected_alt - 10, expected_alt + 10, relative=True, timeout=80)
 
         new_distance = self.get_distance(home, self.mav.location())
         # We should be closer to home.
@@ -1708,7 +1708,7 @@ class AutoTestPlane(AutoTest):
         home = self.home_position_as_mav_location()
         distance = self.get_distance(home, self.mav.location())
 
-        self.wait_altitude(expected_alt - 10, expected_alt + 10, relative=True)
+        self.wait_altitude(expected_alt - 10, expected_alt + 10, relative=True, timeout=80)
 
         new_distance = self.get_distance(home, self.mav.location())
         # We should be farther from to home.
@@ -1738,7 +1738,7 @@ class AutoTestPlane(AutoTest):
         self.wait_distance_to_nav_target(
             0,
             500,
-            timeout=120,
+            timeout=240,
         )
         alt = self.get_altitude(relative=True)
         expected_halfway_alt = expected_alt + (post_cruise_alt + rtl_climb_min - expected_alt)/2.0
@@ -2182,7 +2182,7 @@ class AutoTestPlane(AutoTest):
         self.set_rc(rc_chan, 1500)
 
         # Make sure this causes throttle down.
-        self.wait_servo_channel_value(3, 1200, timeout=2, comparator=operator.lt)
+        self.wait_servo_channel_value(3, 1200, timeout=3, comparator=operator.lt)
 
         self.progress("Waiting for next WP with no thermalling")
         self.wait_waypoint(4, 4, timeout=1200, max_dist=120)
