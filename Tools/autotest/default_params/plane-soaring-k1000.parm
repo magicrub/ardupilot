@@ -61,7 +61,7 @@ RNGFND_LANDING          1
 RTL_AUTOLAND            2
 RTL_RADIUS              200
 SCR_ENABLE              1
-SIM_THML_SCENARI        4.00
+SIM_THML_SCENARI        0.00
 SIM_BATT_VOLTAGE        25.2
 STAB_PITCH_DOWN         0
 STICK_MIXING            0
@@ -98,3 +98,4 @@ WP_RADIUS               50
 YAW2SRV_DAMP            2
 YAW2SRV_INT             1
 YAW2SRV_SLIP            6
+SERVO7_FUNCTION         70

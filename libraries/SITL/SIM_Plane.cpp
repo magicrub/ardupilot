@@ -99,7 +99,7 @@ Plane::Plane(const char *frame_str) :
         coefficient.oswald = 0.66;
         thrust_scale = 1;
         have_launcher = true;
-        launch_accel = 1;
+        launch_accel = 2;
         launch_time = 13;
         use_k1000_thrust_model = true;
     }
