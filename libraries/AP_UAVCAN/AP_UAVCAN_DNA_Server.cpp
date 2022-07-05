@@ -555,7 +555,7 @@ void AP_UAVCAN_DNA_Server::handleNodeInfo(uint8_t node_id, uint8_t unique_id[], 
                 nodeInfo_resp_rcvd = true;
             }
             setVerificationMask(node_id);
-        } else if (!_ap_uavcan->option_is_set(AP_UAVCAN::Options::DNA_IGNORE_DUPLICATE_NODE)) {
+        } else if (!_ap_uavcan->option_is_set(AP_UAVCAN::Options::DNA_IGNORE_DUPLICATE_NODE) && !strncmp(name, "GBMS", 4)) {
             /* This is a device with node_id already registered
             for another device */
             server_state = DUPLICATE_NODES;
