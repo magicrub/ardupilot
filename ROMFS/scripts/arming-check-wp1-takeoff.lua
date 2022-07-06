@@ -4,12 +4,16 @@ local auth_id = arming:get_aux_auth_id()
 
 local MAV_CMD_NAV_TAKEOFF = 22
 local MAV_CMD_NAV_VTOL_TAKEOFF = 84
+local AP_MISSION_CMD_ID_NONE = 0
 
 function update() -- this is the loop which periodically runs
   if auth_id then
     local cmd_id = mission:get_current_nav_id()
 
-    if cmd_id == 0 then
+    if mission:num_commands() <= 1 then
+      -- no mission
+      arming:set_aux_auth_failed(auth_id, "No Mission loaded")
+    elseif cmd_id == AP_MISSION_CMD_ID_NONE then
       -- invalid waypoint index
       if mission:get_current_nav_index() == 0 and mission:set_current_cmd(1) then
         -- at boot, we're executing wp index 0, which is invalid. When switching to AUTO
