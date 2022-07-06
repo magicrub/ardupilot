@@ -159,7 +159,24 @@ void AP_NMEA_Output::update()
     char rmc_end[6];
     snprintf(rmc_end, sizeof(rmc_end), "*%02X\r\n", (unsigned) _nmea_checksum(rmc));
 
-    const uint32_t space_required = strlen(gga) + strlen(gga_end) + strlen(rmc) + strlen(rmc_end);
+    // get yaw
+    const float yaw_deg = wrap_360(degrees(ahrs.get_yaw()));
+
+    // format HDT message
+    char* hdt = nullptr;
+    int16_t hdt_res = asprintf(&hdt,
+                              "$GPHDT,%.2f,T",
+                              yaw_deg);
+    if (hdt_res == -1) {
+        free(gga);
+        free(rmc);
+        return;
+    }
+
+    char hdt_end[6];
+    snprintf(hdt_end, sizeof(hdt_end), "*%02X\r\n", (unsigned) _nmea_checksum(hdt));
+
+    const uint32_t space_required = strlen(gga) + strlen(gga_end) + strlen(rmc) + strlen(rmc_end) + strlen(hdt) + strlen(hdt_end);
 
     // send to all NMEA output ports
     for (uint8_t i = 0; i < _num_outputs; i++) {
@@ -176,6 +193,11 @@ void AP_NMEA_Output::update()
             _uart[i]->write(rmc);
             _uart[i]->write(rmc_end);
         }
+
+        if (hdt_res != -1) {
+            _uart[i]->write(hdt);
+            _uart[i]->write(hdt_end);
+        }
     }
 
     if (gga_res != -1) {
@@ -184,6 +206,10 @@ void AP_NMEA_Output::update()
 
     if (rmc_res != -1) {
         free(rmc);
+    }
+
+    if (hdt_res != -1) {
+        free(hdt);
     }
 }
 
