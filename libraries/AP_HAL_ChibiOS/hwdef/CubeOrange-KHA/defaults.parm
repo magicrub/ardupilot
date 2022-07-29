@@ -161,6 +161,13 @@ SERVO8_MIN              1100
 SERVO9_FUNCTION         35
 SERVO9_MAX              1940
 SERVO9_MIN              1100
+SR0_EXTRA1              10
+SR0_EXTRA2              10
+SR0_EXTRA3              10
+SR0_EXT_STAT            2
+SR0_POSITION            10
+SR0_RAW_SENS            10
+SR0_RC_CHAN             10
 SR2_EXT_STAT            2
 SR2_EXTRA1              10
 SR2_POSITION            10
