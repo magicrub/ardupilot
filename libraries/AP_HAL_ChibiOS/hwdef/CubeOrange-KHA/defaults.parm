@@ -2,7 +2,7 @@ AHRS_ORIENTATION        4   @READONLY
 ALT_HOLD_RTL            20000
 ARMING_MIS_ITEMS        13
 ARMING_RUDDER           0
-ARSPD_FBW_MAX           22
+ARSPD_FBW_MAX           25
 ARSPD_FBW_MIN           13
 ARSPD_WIND_MAX          20
 AHRS_WIND_MAX           20
@@ -191,7 +191,7 @@ TECS_APPR_SMAX          1
 TECS_CLMB_MAX           3.0
 TECS_CLMB_OPER          1.5
 TECS_INTEG_GAIN         0.6
-TECS_LAND_ARSPD         18
+TECS_LAND_ARSPD         17
 TECS_LAND_PDAMP         0.5
 TECS_LAND_SINK          0.3
 TECS_LAND_TCONST        4
@@ -215,7 +215,7 @@ TKOFF_ALT               5
 TKOFF_LVL_ALT           5
 TKOFF_LVL_PITCH         4
 TKOFF_ROTATE_SPD        13.5
-TKOFF_THR_MAX           70
+TKOFF_THR_MAX           48
 TKOFF_THR_SLEW          50
 TRIM_ARSPD_CM           1700
 TRIM_THROTTLE           35
