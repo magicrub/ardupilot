@@ -197,6 +197,7 @@ TECS_LAND_SINK          0.3
 TECS_LAND_TCONST        4
 TECS_PITCH_MAX          10
 TECS_PTCH_DAMP          0.8
+TECS_PTCH_FF_K          -0.05
 TECS_PTCH_FF_V0         17
 TECS_RLL2THR            10
 TECS_SINK_MAX           3.0
@@ -204,11 +205,13 @@ TECS_SINK_MIN           0.5
 TECS_SINK_OPER          0.7
 TECS_SPDWEIGHT          1.5
 TECS_TCONST_STE         0
+TECS_TIME_CONST         5
 TECS_VERT_ACC           15
 THROTTLE_NUDGE          0
 THR_FAILSAFE            0
 THR_MAX                 80
 TKOFF_GND_PITCH         -7.0
+TKOFF_ALT               5
 TKOFF_LVL_ALT           5
 TKOFF_LVL_PITCH         4
 TKOFF_ROTATE_SPD        13.5
