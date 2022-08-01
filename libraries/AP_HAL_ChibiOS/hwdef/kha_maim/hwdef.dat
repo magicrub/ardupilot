@@ -1,6 +1,9 @@
 # hw definition file for processing by chibios_hwdef.py
 # for H743
 
+# ./waf configure --board kha_maim --enable-socket
+# ./waf AP_Periph
+
 # MCU class and specific type
 MCU STM32H7xx STM32H743xx
 
@@ -238,3 +241,6 @@ ROMFS lua_modules/socket/smtp.lua libraries/AP_Scripting/modules/socket/smtp.lua
 ROMFS lua_modules/socket/tp.lua libraries/AP_Scripting/modules/socket/tp.lua
 ROMFS lua_modules/socket/url.lua libraries/AP_Scripting/modules/socket/url.lua
 ROMFS lua_modules/socket/headers.lua libraries/AP_Scripting/modules/socket/headers.lua
+
+
+define HAL_EXTERNAL_AHRS_SBG_ENABLED 1
