@@ -27,8 +27,6 @@
 #if HAL_EXTERNAL_AHRS_SBG_ENABLED
 
 #include <GCS_MAVLink/GCS_MAVLink.h>
-#include "sbgECom/src/sbgEComIds.h"
-#include "sbgECom/src/commands/sbgEComCmd.h"
 
 class AP_ExternalAHRS_SBG : public AP_ExternalAHRS_backend {
 
@@ -55,7 +53,9 @@ public:
 
     void configure_sensor();
 
-    SbgEComDeviceInfo get_version() const { return _version; };
+    //SbgEComDeviceInfo get_version() const { return _version; };
+    uint32_t get_version_hardwareRev() const { return 0; };
+    uint32_t get_version_firmwareRev() const { return 0; };
 
     // periodic update
     void update() override;
@@ -131,13 +131,13 @@ private:
     uint32_t _baudrate;
     uint16_t _rate;
 
-    SbgEComDeviceInfo _version;
+    //SbgEComDeviceInfo _version;
 
     void update_thread();
 
     void send_config(void);
 
-    void handle_msg(const SbgEComMagCalibResults &msg);
+    //void handle_msg(const SbgEComMagCalibResults &msg);
 
 };
 

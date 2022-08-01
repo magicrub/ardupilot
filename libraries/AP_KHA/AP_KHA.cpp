@@ -600,8 +600,8 @@ void AP_KHA::generate_and_send_json(const KHA_JSON_Msg msg_name)
     switch (msg_name) {
     case KHA_JSON_Msg::MAIM_VER: {
         //return (char*)R"({"class":"MAIM_VER","sw":"1.0","dev":"SBG ELLIPSE-N","devhw":"2.4","devsw":"6.5"})";
-        const unsigned hw = sbg->get_version().hardwareRev;
-        const unsigned fw = sbg->get_version().firmwareRev;
+        const unsigned hw = sbg->get_version_hardwareRev();
+        const unsigned fw = sbg->get_version_firmwareRev();
         len = hal.util->snprintf((char*)buf, sizeof(buf),
             "{\"class\":\"MAIM_VER\",\"sw\":\"%s\",\"dev\":\"SBG ELLIPSE-N\",\"devhw\":\"%u.%u.%u.%u.%u\",\"devsw\":\"%u.%u.%u.%u.%u\"}",
             AP::fwversion().fw_string,   // sw

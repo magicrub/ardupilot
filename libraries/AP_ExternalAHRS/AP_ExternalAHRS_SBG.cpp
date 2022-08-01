@@ -13,7 +13,7 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 /*
-  suppport for serial connected AHRS systems
+  support for serial connected AHRS systems
  */
 
 #define ALLOW_DOUBLE_MATH_FUNCTIONS
@@ -203,131 +203,131 @@ void AP_ExternalAHRS_SBG::handle_msg(const sbgMessage &msg)
 
     GCS_SEND_TEXT(MAV_SEVERITY_INFO, "SBG: ID=%u, CLASS=%u, LEN=%u", (unsigned)msg.msgid, (unsigned)msg.msgclass, (unsigned)msg.len);
 
-    if ((_SbgEComClass)msg.msgclass == SBG_ECOM_CLASS_LOG_ECOM_0 || msg.msgclass == (_SbgEComClass)SBG_ECOM_CLASS_LOG_ECOM_1) {
-        // SBG_ECOM_CLASS_LOG_ECOM_0 Class that contains sbgECom output log messages
-        // SBG_ECOM_CLASS_LOG_ECOM_1 Class that contains sbgECom messages that handle high frequency output
+    // if ((_SbgEComClass)msg.msgclass == SBG_ECOM_CLASS_LOG_ECOM_0 || msg.msgclass == (_SbgEComClass)SBG_ECOM_CLASS_LOG_ECOM_1) {
+    //     // SBG_ECOM_CLASS_LOG_ECOM_0 Class that contains sbgECom output log messages
+    //     // SBG_ECOM_CLASS_LOG_ECOM_1 Class that contains sbgECom messages that handle high frequency output
 
-        switch ((_SbgEComLog)msg.msgid) {
-            // case SBG_ECOM_LOG_MAG:
-            //     if (sizeof(SbgEComMagCalibResults) == msg.len) {
-            //         SbgEComMagCalibResults pkt;
-            //         memcpy(&pkt, msg.data, sizeof(pkt));
-            //         handle_msg(pkt);
-            //     }
-            //     break;
+    //     switch ((_SbgEComLog)msg.msgid) {
+    //         // case SBG_ECOM_LOG_MAG:
+    //         //     if (sizeof(SbgEComMagCalibResults) == msg.len) {
+    //         //         SbgEComMagCalibResults pkt;
+    //         //         memcpy(&pkt, msg.data, sizeof(pkt));
+    //         //         handle_msg(pkt);
+    //         //     }
+    //         //     break;
 
-            case SBG_ECOM_LOG_STATUS: /*!< Status general, clock, com aiding, solution, heave */
-            case SBG_ECOM_LOG_UTC_TIME: /*!< Provides UTC time reference */
-            case SBG_ECOM_LOG_IMU_DATA: /*!< Includes IMU status, acc., gyro, temp delta speeds and delta angles values */
-            case SBG_ECOM_LOG_MAG: /*!< Magnetic data with associated accelerometer on each axis */
-            case SBG_ECOM_LOG_MAG_CALIB: /*!< Magnetometer calibration data (raw buffer) */
-            case SBG_ECOM_LOG_EKF_EULER: /*!< Includes roll, pitch, yaw and their accuracies on each axis */
-            case SBG_ECOM_LOG_EKF_QUAT: /*!< Includes the 4 quaternions values */
-            case SBG_ECOM_LOG_EKF_NAV: /*!< Position and velocities in NED coordinates with the accuracies on each axis */
-            case SBG_ECOM_LOG_GPS1_VEL: /*!< GPS velocities from primary or secondary GPS receiver */
-            case SBG_ECOM_LOG_GPS1_POS: /*!< GPS positions from primary or secondary GPS receiver */
-            case SBG_ECOM_LOG_GPS1_HDT: /*!< GPS true heading from dual antenna system */
-            case SBG_ECOM_LOG_GPS1_RAW: /*!< GPS 1 raw data for post processing. */
+    //         case SBG_ECOM_LOG_STATUS: /*!< Status general, clock, com aiding, solution, heave */
+    //         case SBG_ECOM_LOG_UTC_TIME: /*!< Provides UTC time reference */
+    //         case SBG_ECOM_LOG_IMU_DATA: /*!< Includes IMU status, acc., gyro, temp delta speeds and delta angles values */
+    //         case SBG_ECOM_LOG_MAG: /*!< Magnetic data with associated accelerometer on each axis */
+    //         case SBG_ECOM_LOG_MAG_CALIB: /*!< Magnetometer calibration data (raw buffer) */
+    //         case SBG_ECOM_LOG_EKF_EULER: /*!< Includes roll, pitch, yaw and their accuracies on each axis */
+    //         case SBG_ECOM_LOG_EKF_QUAT: /*!< Includes the 4 quaternions values */
+    //         case SBG_ECOM_LOG_EKF_NAV: /*!< Position and velocities in NED coordinates with the accuracies on each axis */
+    //         case SBG_ECOM_LOG_GPS1_VEL: /*!< GPS velocities from primary or secondary GPS receiver */
+    //         case SBG_ECOM_LOG_GPS1_POS: /*!< GPS positions from primary or secondary GPS receiver */
+    //         case SBG_ECOM_LOG_GPS1_HDT: /*!< GPS true heading from dual antenna system */
+    //         case SBG_ECOM_LOG_GPS1_RAW: /*!< GPS 1 raw data for post processing. */
 
-            case SBG_ECOM_LOG_AIR_DATA: /*!< Air Data aiding such as barometric altimeter and true air speed. */
+    //         case SBG_ECOM_LOG_AIR_DATA: /*!< Air Data aiding such as barometric altimeter and true air speed. */
 
-            case SBG_ECOM_LOG_IMU_RAW_DATA: /*!< DEPRECATED: Private only log. */
+    //         case SBG_ECOM_LOG_IMU_RAW_DATA: /*!< DEPRECATED: Private only log. */
 
-            case SBG_ECOM_LOG_IMU_SHORT: /*!< Short IMU message recommended for post processing usages. */
-                break;
+    //         case SBG_ECOM_LOG_IMU_SHORT: /*!< Short IMU message recommended for post processing usages. */
+    //             break;
 
-            default:
-                return;
-            } // switch log
+    //         default:
+    //             return;
+    //         } // switch log
 
-    } else if ((_SbgEComClass)msg.msgclass == SBG_ECOM_CLASS_LOG_CMD_0) {
-        switch ((_SbgEComCmd)msg.msgid) {
-            case SBG_ECOM_CMD_ACK: /*!< Acknowledge */
-            case SBG_ECOM_CMD_SETTINGS_ACTION: /*!< Performs various settings actions */
-            case SBG_ECOM_CMD_IMPORT_SETTINGS: /*!< Imports a new settings structure to the sensor */
-            case SBG_ECOM_CMD_EXPORT_SETTINGS: /*!< Export the whole configuration from the sensor */
+    // } else if ((_SbgEComClass)msg.msgclass == SBG_ECOM_CLASS_LOG_CMD_0) {
+    //     switch ((_SbgEComCmd)msg.msgid) {
+    //         case SBG_ECOM_CMD_ACK: /*!< Acknowledge */
+    //         case SBG_ECOM_CMD_SETTINGS_ACTION: /*!< Performs various settings actions */
+    //         case SBG_ECOM_CMD_IMPORT_SETTINGS: /*!< Imports a new settings structure to the sensor */
+    //         case SBG_ECOM_CMD_EXPORT_SETTINGS: /*!< Export the whole configuration from the sensor */
 
-            /* Device info */
-            case SBG_ECOM_CMD_INFO: /*!< Get basic device information */
+    //         /* Device info */
+    //         case SBG_ECOM_CMD_INFO: /*!< Get basic device information */
 
-            /* Sensor parameters */
-            case SBG_ECOM_CMD_INIT_PARAMETERS: /*!< Initial configuration */
-            case SBG_ECOM_CMD_MOTION_PROFILE_ID: /*!< Set/get motion profile information */
-            case SBG_ECOM_CMD_IMU_ALIGNMENT_LEVER_ARM: /*!< Sensor alignment and lever arm on vehicle configuration */
-            case SBG_ECOM_CMD_AIDING_ASSIGNMENT: /*!< Aiding assignments such as RTCM / GPS / Odometer configuration */
+    //         /* Sensor parameters */
+    //         case SBG_ECOM_CMD_INIT_PARAMETERS: /*!< Initial configuration */
+    //         case SBG_ECOM_CMD_MOTION_PROFILE_ID: /*!< Set/get motion profile information */
+    //         case SBG_ECOM_CMD_IMU_ALIGNMENT_LEVER_ARM: /*!< Sensor alignment and lever arm on vehicle configuration */
+    //         case SBG_ECOM_CMD_AIDING_ASSIGNMENT: /*!< Aiding assignments such as RTCM / GPS / Odometer configuration */
 
-            /* Magnetometer configuration */
-            case SBG_ECOM_CMD_MAGNETOMETER_MODEL_ID: //	 	= 11,		/*!< Set/get magnetometer error model information */
-            case SBG_ECOM_CMD_MAGNETOMETER_REJECT_MODE: // 	= 12,		/*!< Magnetometer aiding rejection mode */
-            case SBG_ECOM_CMD_SET_MAG_CALIB: // 				= 13,		/*!< Set magnetic soft and hard Iron calibration data */
+    //         /* Magnetometer configuration */
+    //         case SBG_ECOM_CMD_MAGNETOMETER_MODEL_ID: //	 	= 11,		/*!< Set/get magnetometer error model information */
+    //         case SBG_ECOM_CMD_MAGNETOMETER_REJECT_MODE: // 	= 12,		/*!< Magnetometer aiding rejection mode */
+    //         case SBG_ECOM_CMD_SET_MAG_CALIB: // 				= 13,		/*!< Set magnetic soft and hard Iron calibration data */
 
-            /* Magnetometer on-board calibration */
-            case SBG_ECOM_CMD_START_MAG_CALIB: //			= 14,		/*!< Start / reset internal magnetic field logging for calibration. */
-            case SBG_ECOM_CMD_COMPUTE_MAG_CALIB: //			= 15,		/*!< Compute a magnetic calibration based on previously logged data. */
+    //         /* Magnetometer on-board calibration */
+    //         case SBG_ECOM_CMD_START_MAG_CALIB: //			= 14,		/*!< Start / reset internal magnetic field logging for calibration. */
+    //         case SBG_ECOM_CMD_COMPUTE_MAG_CALIB: //			= 15,		/*!< Compute a magnetic calibration based on previously logged data. */
 
-            /* GNSS configuration */
-            case SBG_ECOM_CMD_GNSS_1_MODEL_ID: // 			= 17,		/*!< Set/get GNSS model information */
-            case SBG_ECOM_CMD_GNSS_1_LEVER_ARM_ALIGNMENT: // = 18,		/*!< DEPRECATED: GNSS installation configuration (lever arm, antenna alignments) */
-            case SBG_ECOM_CMD_GNSS_1_INSTALLATION: //		= 46,		/*!< Define or retrieve the GNSS 1 main and secondary lever arms configuration. */
-            case SBG_ECOM_CMD_GNSS_1_REJECT_MODES: // 		= 19,		/*!< GNSS aiding rejection modes configuration. */
+    //         /* GNSS configuration */
+    //         case SBG_ECOM_CMD_GNSS_1_MODEL_ID: // 			= 17,		/*!< Set/get GNSS model information */
+    //         case SBG_ECOM_CMD_GNSS_1_LEVER_ARM_ALIGNMENT: // = 18,		/*!< DEPRECATED: GNSS installation configuration (lever arm, antenna alignments) */
+    //         case SBG_ECOM_CMD_GNSS_1_INSTALLATION: //		= 46,		/*!< Define or retrieve the GNSS 1 main and secondary lever arms configuration. */
+    //         case SBG_ECOM_CMD_GNSS_1_REJECT_MODES: // 		= 19,		/*!< GNSS aiding rejection modes configuration. */
 
-            /* Odometer configuration */
-            case SBG_ECOM_CMD_ODO_CONF: // 					= 20,		/*!< Odometer gain, direction configuration */
-            case SBG_ECOM_CMD_ODO_LEVER_ARM: // 				= 21,		/*!< Odometer installation configuration (lever arm) */
-            case SBG_ECOM_CMD_ODO_REJECT_MODE: // 			= 22,		/*!< Odometer aiding rejection mode configuration. */
+    //         /* Odometer configuration */
+    //         case SBG_ECOM_CMD_ODO_CONF: // 					= 20,		/*!< Odometer gain, direction configuration */
+    //         case SBG_ECOM_CMD_ODO_LEVER_ARM: // 				= 21,		/*!< Odometer installation configuration (lever arm) */
+    //         case SBG_ECOM_CMD_ODO_REJECT_MODE: // 			= 22,		/*!< Odometer aiding rejection mode configuration. */
 
-            /* Interfaces configuration */
-            case SBG_ECOM_CMD_UART_CONF: // 					= 23,		/*!< UART interfaces configuration */
-            case SBG_ECOM_CMD_CAN_BUS_CONF: // 				= 24,		/*!< CAN bus interface configuration */
-            case SBG_ECOM_CMD_CAN_OUTPUT_CONF: //			= 25,		/*!< CAN identifiers configuration */
+    //         /* Interfaces configuration */
+    //         case SBG_ECOM_CMD_UART_CONF: // 					= 23,		/*!< UART interfaces configuration */
+    //         case SBG_ECOM_CMD_CAN_BUS_CONF: // 				= 24,		/*!< CAN bus interface configuration */
+    //         case SBG_ECOM_CMD_CAN_OUTPUT_CONF: //			= 25,		/*!< CAN identifiers configuration */
 
-            /* Events configuration */
-            case SBG_ECOM_CMD_SYNC_IN_CONF: // 				= 26,		/*!< Synchronization inputs configuration */
-            case SBG_ECOM_CMD_SYNC_OUT_CONF: // 				= 27,		/*!< Synchronization outputs configuration */
+    //         /* Events configuration */
+    //         case SBG_ECOM_CMD_SYNC_IN_CONF: // 				= 26,		/*!< Synchronization inputs configuration */
+    //         case SBG_ECOM_CMD_SYNC_OUT_CONF: // 				= 27,		/*!< Synchronization outputs configuration */
 
-            /* Output configuration */
-            case SBG_ECOM_CMD_NMEA_TALKER_ID: // 			= 29,		/*!< NMEA talker ID configuration */
-            case SBG_ECOM_CMD_OUTPUT_CONF: // 				= 30,		/*!< Output configuration */
+    //         /* Output configuration */
+    //         case SBG_ECOM_CMD_NMEA_TALKER_ID: // 			= 29,		/*!< NMEA talker ID configuration */
+    //         case SBG_ECOM_CMD_OUTPUT_CONF: // 				= 30,		/*!< Output configuration */
 
-            /* Advanced configuration */
-            case SBG_ECOM_CMD_ADVANCED_CONF: // 				= 32,		/*!< Advanced settings configuration */
+    //         /* Advanced configuration */
+    //         case SBG_ECOM_CMD_ADVANCED_CONF: // 				= 32,		/*!< Advanced settings configuration */
 
-            /* Features related commands */
-            case SBG_ECOM_CMD_FEATURES: //					= 33,		/*!< Retrieve device features */
+    //         /* Features related commands */
+    //         case SBG_ECOM_CMD_FEATURES: //					= 33,		/*!< Retrieve device features */
 
-            /* Licenses related commands */
-            case SBG_ECOM_CMD_LICENSE_APPLY: //				= 34,		/*!< Upload and apply a new license */
+    //         /* Licenses related commands */
+    //         case SBG_ECOM_CMD_LICENSE_APPLY: //				= 34,		/*!< Upload and apply a new license */
 
-            /* Message class output switch */
-            case SBG_ECOM_CMD_OUTPUT_CLASS_ENABLE: //		= 35,		/*!< Enable/disable the output of an entire class */
+    //         /* Message class output switch */
+    //         case SBG_ECOM_CMD_OUTPUT_CLASS_ENABLE: //		= 35,		/*!< Enable/disable the output of an entire class */
 
-            /* Ethernet configuration */
-            case SBG_ECOM_CMD_ETHERNET_CONF: //				= 36,		/*!< Set/get Ethernet configuration such as DHCP mode and IP address. */
-            case SBG_ECOM_CMD_ETHERNET_INFO: //				= 37,		/*!< Return the current IP used by the device. */
+    //         /* Ethernet configuration */
+    //         case SBG_ECOM_CMD_ETHERNET_CONF: //				= 36,		/*!< Set/get Ethernet configuration such as DHCP mode and IP address. */
+    //         case SBG_ECOM_CMD_ETHERNET_INFO: //				= 37,		/*!< Return the current IP used by the device. */
 
-            /* Validity thresholds */
-            case SBG_ECOM_CMD_VALIDITY_THRESHOLDS: //		= 38,		/*!< Set/get Validity flag thresholds for position, velocity, attitude and heading */
+    //         /* Validity thresholds */
+    //         case SBG_ECOM_CMD_VALIDITY_THRESHOLDS: //		= 38,		/*!< Set/get Validity flag thresholds for position, velocity, attitude and heading */
 
-            /* DVL configuration */
-            case SBG_ECOM_CMD_DVL_MODEL_ID: //				= 39,		/*!< Set/get DVL model id to use */
-            case SBG_ECOM_CMD_DVL_INSTALLATION: //			= 40,		/*!< DVL installation configuration (lever arm, alignments) */
-            case SBG_ECOM_CMD_DVL_REJECT_MODES: //			= 41,		/*!< DVL aiding rejection modes configuration. */
+    //         /* DVL configuration */
+    //         case SBG_ECOM_CMD_DVL_MODEL_ID: //				= 39,		/*!< Set/get DVL model id to use */
+    //         case SBG_ECOM_CMD_DVL_INSTALLATION: //			= 40,		/*!< DVL installation configuration (lever arm, alignments) */
+    //         case SBG_ECOM_CMD_DVL_REJECT_MODES: //			= 41,		/*!< DVL aiding rejection modes configuration. */
 
-            /* AirData configuration */
-            case SBG_ECOM_CMD_AIRDATA_MODEL_ID: //			= 42,		/*!< Set/get AirData model id and protocol to use. */
-            case SBG_ECOM_CMD_AIRDATA_LEVER_ARM: //			= 43,		/*!< AirData installation configuration (lever arm, offsets) */
-            case SBG_ECOM_CMD_AIRDATA_REJECT_MODES: //		= 44,		/*!< AirData aiding rejection modes configuration. */
+    //         /* AirData configuration */
+    //         case SBG_ECOM_CMD_AIRDATA_MODEL_ID: //			= 42,		/*!< Set/get AirData model id and protocol to use. */
+    //         case SBG_ECOM_CMD_AIRDATA_LEVER_ARM: //			= 43,		/*!< AirData installation configuration (lever arm, offsets) */
+    //         case SBG_ECOM_CMD_AIRDATA_REJECT_MODES: //		= 44,		/*!< AirData aiding rejection modes configuration. */
 
-            /* Odometer configuration (using CAN) */
-            case SBG_ECOM_CMD_ODO_CAN_CONF: // 				= 45,		/*!< Configuration for CAN based odometer (CAN ID & DBC) */
-            default:
-                break;
+    //         /* Odometer configuration (using CAN) */
+    //         case SBG_ECOM_CMD_ODO_CAN_CONF: // 				= 45,		/*!< Configuration for CAN based odometer (CAN ID & DBC) */
+    //         default:
+    //             break;
 
-        } // switch cmd
-    } else {
-        // unhandled class type
-        return;
-    }
+    //     } // switch cmd
+    // } else {
+    //     // unhandled class type
+    //     return;
+    // }
 }
 
 void AP_ExternalAHRS_SBG::update(void)
@@ -453,10 +453,10 @@ void AP_ExternalAHRS_SBG::configure_sensor()
     // SBG_ECOM_SYNC_OUT_A, SBG_ECOM_SYNC_OUT_MODE_DIRECT_PPS
 }
 
-void AP_ExternalAHRS_SBG::handle_msg(const SbgEComMagCalibResults &msg)
-{
+// void AP_ExternalAHRS_SBG::handle_msg(const SbgEComMagCalibResults &msg)
+// {
 
-}
+// }
 
 // singleton instance
 AP_ExternalAHRS_SBG *AP_ExternalAHRS_SBG::_singleton;
