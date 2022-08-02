@@ -53,20 +53,20 @@ end
 local configuration = {
     system = {
         consoleForward = {
-            enabled = true,
+            enabled = false,
             ip = "127.0.0.1",
             port = 1234
         },
         maintenancePort = "none"
     },
     payload1 = {
-        enabled = true,
-        ip = "127.0.0.1",
+        enabled = false,
+        ip = "127.0.0.1", -- tostring(kha::get_udp_out_ip(1)),
         netmask = "255.0.0.0",
         gateway = "1.1.1.1"
     },
     payload2 = {
-        enabled = true,
+        enabled = false,
         ip = "127.0.0.1",
         netmask = "255.0.0.0",
         gateway = "1.1.1.1"

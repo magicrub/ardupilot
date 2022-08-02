@@ -39,7 +39,7 @@ const AP_Param::GroupInfo AP_KHA::var_info[] = {
   //             "XX_TWELVE_XX"
   //AP_GROUPINFO("XXXXXXXXXXXX", XX, AP_KHA, _type, 0), // max name char length: KHA_ + 4
 
-    AP_GROUPINFO_FLAGS("TYPE"  ,  0, AP_KHA, _type, (uint8_t)KHA_Vehicle_Type_t::DISABLED, AP_PARAM_FLAG_ENABLE),
+    AP_GROUPINFO_FLAGS("TYPE"  ,  0, AP_KHA, _type, (uint8_t)KHA_Vehicle_Type_t::MAIM, AP_PARAM_FLAG_ENABLE),
     AP_GROUPINFO("ZERO_PIN"    ,  2, AP_KHA, _system.zeroize.pin, 20),
     AP_GROUPINFO("NO_EXT_GPIO" ,  3, AP_KHA, _ignore_uavcan_gpio_relay_commands, 0),
     AP_GROUPINFO("ROUTE_MAINT" ,  4, AP_KHA, _maint.route, (uint8_t)KHA_MAIM_Routing::NONE),
@@ -54,7 +54,7 @@ const AP_Param::GroupInfo AP_KHA::var_info[] = {
     AP_GROUPINFO("JSON_IP4"    , 14, AP_KHA, _ahrs.json.eth.addr.ip[3], 1),
     AP_GROUPINFO("JSON_PORT"   , 15, AP_KHA, _ahrs.json.eth.addr.port, 6969),
     AP_GROUPINFO("JSON_EN"     , 16, AP_KHA, _ahrs.json.eth.enabled_at_boot, 0),
-    AP_GROUPINFO("JSON_RATE"   , 17, AP_KHA, _ahrs.json.eth.interval_ms, 10),
+    AP_GROUPINFO("JSON_RATE"   , 17, AP_KHA, _ahrs.json.eth.interval_ms, 100),
 
 #if AP_KHA_MAIM_PAYLOAD_COUNT_MAX >= 1
     AP_GROUPINFO("P1_CON_IP1"  , 20, AP_KHA, _payload[0].console.eth.addr.ip[0], 239),
@@ -65,8 +65,8 @@ const AP_Param::GroupInfo AP_KHA::var_info[] = {
     AP_GROUPINFO("P1_CON_EN"   , 25, AP_KHA, _payload[0].console.eth.enabled_at_boot, 0),
     AP_GROUPINFO("P1_POW_V_PIN", 26, AP_KHA, _payload[0].power.valid_pin, 1),
     AP_GROUPINFO("P1_POW_E_PIN", 27, AP_KHA, _payload[0].power.enable_pin, 3),
-    AP_GROUPINFO("P1_POW_ENABL", 28, AP_KHA, _payload[0].power.enabled_at_boot, 0),
-    AP_GROUPINFO("P1_CON_RATE" , 29, AP_KHA, _payload[0].console.eth.interval_ms, 10),
+    AP_GROUPINFO("P1_POW_ENABL", 28, AP_KHA, _payload[0].power.enabled_at_boot, 1),
+    AP_GROUPINFO("P1_CON_RATE" , 29, AP_KHA, _payload[0].console.eth.interval_ms, 100),
 #endif
 
 #if AP_KHA_MAIM_PAYLOAD_COUNT_MAX >= 2
@@ -78,8 +78,8 @@ const AP_Param::GroupInfo AP_KHA::var_info[] = {
     AP_GROUPINFO("P2_CON_EN"   , 35, AP_KHA, _payload[1].console.eth.enabled_at_boot, 0),
     AP_GROUPINFO("P2_POW_V_PIN", 36, AP_KHA, _payload[1].power.valid_pin, 2),
     AP_GROUPINFO("P2_POW_E_PIN", 37, AP_KHA, _payload[1].power.enable_pin, 4),
-    AP_GROUPINFO("P2_POW_ENABL", 38, AP_KHA, _payload[1].power.enabled_at_boot, 0),
-    AP_GROUPINFO("P2_CON_RATE" , 39, AP_KHA, _payload[1].console.eth.interval_ms, 10),
+    AP_GROUPINFO("P2_POW_ENABL", 38, AP_KHA, _payload[1].power.enabled_at_boot, 1),
+    AP_GROUPINFO("P2_CON_RATE" , 39, AP_KHA, _payload[1].console.eth.interval_ms, 100),
 #endif // AP_KHA_MAIM_PAYLOAD_COUNT_MAX
 
 #if AP_KHA_MAIM_PAYLOAD_COUNT_MAX >= 3
@@ -444,7 +444,7 @@ char* AP_KHA::get_udp_out_ip(const uint32_t stream_id)
     //     case 1: return convert_ip_to_str(stream_id, _payload[0].console.eth.addr);
     //     case 2: return convert_ip_to_str(stream_id, _payload[1].console.eth.addr);
     // }
-    return nullptr;
+    return (char*)"1.2.3.4";
 }
 
 uint16_t AP_KHA::get_udp_out_port(const uint32_t stream_id)
@@ -454,7 +454,7 @@ uint16_t AP_KHA::get_udp_out_port(const uint32_t stream_id)
         case 1: return _payload[0].console.eth.addr.port;
         case 2: return _payload[1].console.eth.addr.port;
     }
-    return 0;
+    return 1234;
 }
 
 char* AP_KHA::get_udp_out_name(const uint32_t stream_id)
@@ -464,7 +464,7 @@ char* AP_KHA::get_udp_out_name(const uint32_t stream_id)
         case 1: return (char*)"Payload 1 Console";
         case 2: return (char*)"Payload 2 Console";
     }
-    return nullptr;
+    return (char*)"Unknown Name";
 }
 
 uint32_t AP_KHA::get_udp_out_interval_ms(const uint32_t stream_id)

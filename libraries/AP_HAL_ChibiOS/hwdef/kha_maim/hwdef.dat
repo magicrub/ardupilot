@@ -237,7 +237,7 @@ ROMFS lua_modules/mime.lua libraries/AP_Scripting/modules/mime.lua
 ROMFS lua_modules/socket.lua libraries/AP_Scripting/modules/socket.lua
 ROMFS lua_modules/socket/ftp.lua libraries/AP_Scripting/modules/socket/ftp.lua
 ROMFS lua_modules/socket/http.lua libraries/AP_Scripting/modules/socket/http.lua
-ROMFS lua_modules/socket/smtp.lua libraries/AP_Scripting/modules/socket/smtp.lua
+# ROMFS lua_modules/socket/smtp.lua libraries/AP_Scripting/modules/socket/smtp.lua
 ROMFS lua_modules/socket/tp.lua libraries/AP_Scripting/modules/socket/tp.lua
 ROMFS lua_modules/socket/url.lua libraries/AP_Scripting/modules/socket/url.lua
 ROMFS lua_modules/socket/headers.lua libraries/AP_Scripting/modules/socket/headers.lua

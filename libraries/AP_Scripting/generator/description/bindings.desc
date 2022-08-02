@@ -433,6 +433,21 @@ singleton AP_Networking method set_gateway_param_str void string
 -- ----------------------
 -- ----------------------
 
+include AP_KHA/AP_KHA.h
+singleton AP_KHA alias kha
+singleton AP_KHA method get_udp_out_ip string uint8_t 0 3
+singleton AP_KHA method get_udp_out_port uint16_t uint8_t 0 3
+singleton AP_KHA method get_udp_out_name string uint8_t 0 3
+singleton AP_KHA method get_udp_out_interval_ms uint16_t uint8_t 0 3
+singleton AP_KHA method set_gpio void uint8_t 0 3 boolean
+
+-- ----------------------
+-- ----------------------
+-- ----------------------
+-- ----------------------
+-- ----------------------
+
+
 include AP_HAL/I2CDevice.h
 ap_object AP_HAL::I2CDevice semaphore-pointer
 ap_object AP_HAL::I2CDevice method set_retries void uint8_t 0 20
@@ -525,15 +540,6 @@ singleton AP::fwversion() field minor uint8_t read
 singleton AP::fwversion() field patch uint8_t read
 singleton AP::fwversion() field fw_hash_str string read
 singleton AP::fwversion() field fw_hash_str alias hash
-
-include AP_KHA/AP_KHA.h
-singleton AP_KHA alias kha
-singleton AP_KHA method get_udp_out_ip string uint8_t 0 3
-singleton AP_KHA method get_udp_out_port uint16_t uint8_t 0 3
-singleton AP_KHA method get_udp_out_name string uint8_t 0 3
-singleton AP_KHA method get_udp_out_interval_ms uint16_t uint8_t 0 3
-singleton AP_KHA method set_gpio void uint8_t 0 3 boolean
-
 
 module socket_core opencall luaopen_socket_core include AP_Scripting/luasocket/src/luasocket.h
 
