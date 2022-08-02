@@ -2340,20 +2340,33 @@ void AP_Periph_FW::can_send_ADSB(struct __mavlink_adsb_vehicle_t &msg)
 // printf to CAN LogMessage for debugging
 void can_printf(const char *fmt, ...)
 {
-    uavcan_protocol_debug_LogMessage pkt {};
-    uint8_t buffer[UAVCAN_PROTOCOL_DEBUG_LOGMESSAGE_MAX_SIZE] {};
+    const uint8_t packet_count_max = 4; // how many packets we're willing to break an over-sized string into
+    const uint8_t packet_data_max = 90; // sizeof(uavcan_protocol_debug_LogMessage.text.data)
+    uint8_t buffer_data[packet_count_max*packet_data_max] {};
+
     va_list ap;
     va_start(ap, fmt);
-    uint32_t n = vsnprintf((char*)pkt.text.data, sizeof(pkt.text.data), fmt, ap);
+    int32_t char_count = vsnprintf((char*)buffer_data, sizeof(buffer_data), fmt, ap);
     va_end(ap);
-    pkt.text.len = MIN(n, sizeof(pkt.text.data));
 
-    uint32_t len = uavcan_protocol_debug_LogMessage_encode(&pkt, buffer);
+    // send multiple debug_logmessage packets if the fmt string is too long.
+    uint16_t buffer_offset = 0;
+    for (uint8_t i=0; i<packet_count_max && char_count > 0; i++) {
 
-    canard_broadcast(UAVCAN_PROTOCOL_DEBUG_LOGMESSAGE_SIGNATURE,
-                    UAVCAN_PROTOCOL_DEBUG_LOGMESSAGE_ID,
-                    CANARD_TRANSFER_PRIORITY_LOW,
-                    buffer,
-                    len);
+        uavcan_protocol_debug_LogMessage pkt {};
+        pkt.text.len = MIN(char_count, sizeof(pkt.text.data));
+        char_count -= pkt.text.len;
 
+        memcpy(pkt.text.data, &buffer_data[buffer_offset], pkt.text.len);
+        buffer_offset += pkt.text.len;
+
+        uint8_t buffer_packet[UAVCAN_PROTOCOL_DEBUG_LOGMESSAGE_MAX_SIZE] {};
+        const uint32_t len = uavcan_protocol_debug_LogMessage_encode(&pkt, buffer_packet);
+
+        canard_broadcast(UAVCAN_PROTOCOL_DEBUG_LOGMESSAGE_SIGNATURE,
+                        UAVCAN_PROTOCOL_DEBUG_LOGMESSAGE_ID,
+                        CANARD_TRANSFER_PRIORITY_LOW,
+                        buffer_packet,
+                        len);
+    }
 }
