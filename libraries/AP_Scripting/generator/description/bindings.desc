@@ -532,6 +532,7 @@ singleton AP_KHA method get_udp_out_ip string uint8_t 0 3
 singleton AP_KHA method get_udp_out_port uint16_t uint8_t 0 3
 singleton AP_KHA method get_udp_out_name string uint8_t 0 3
 singleton AP_KHA method get_udp_out_interval_ms uint16_t uint8_t 0 3
+singleton AP_KHA method set_gpio void uint8_t 0 3 boolean
 
 
 module socket_core opencall luaopen_socket_core include AP_Scripting/luasocket/src/luasocket.h

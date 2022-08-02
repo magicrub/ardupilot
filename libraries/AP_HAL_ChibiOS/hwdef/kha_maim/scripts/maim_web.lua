@@ -164,7 +164,9 @@ local function update() -- this is the loop which periodically runs
                     payload2.netmask = updates["payload2.netmask"] or payload2.netmask
                     payload2.gateway = updates["payload2.gateway"] or payload2.gateway
 
-                    
+                    kha:set_gpio(1, payload1.enabled)
+                    kha:set_gpio(2, payload2.enabled)
+
                     -- TODO: Tom, configuration has been updated. Use it
                 end
 
