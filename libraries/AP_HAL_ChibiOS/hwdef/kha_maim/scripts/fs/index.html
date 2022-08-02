@@ -426,13 +426,11 @@
                 const system = document.querySelector("#system");
                 system.querySelector(
                     ".voltage"
-                ).textContent = `${voltage.toFixed(1)}V`;
+                ).textContent = `${voltage.toFixed(3)}V`;
                 system.querySelector(
                     ".current"
-                ).textContent = `${current.toFixed(1)}A`;
-                system.querySelector(".power").textContent = `${power.toFixed(
-                    1
-                )}W`;
+                ).textContent = `${current.toFixed(3)}A`;
+                system.querySelector(".power").textContent = `${power.toFixed(3)}W`;
             }
 
             function updateSystem() {
@@ -455,13 +453,11 @@
                 const payload1 = document.querySelector("#payload1");
                 payload1.querySelector(
                     ".voltage"
-                ).textContent = `${voltage.toFixed(1)}V`;
+                ).textContent = `${voltage.toFixed(3)}V`;
                 payload1.querySelector(
                     ".current"
-                ).textContent = `${current.toFixed(1)}A`;
-                payload1.querySelector(".power").textContent = `${power.toFixed(
-                    1
-                )}W`;
+                ).textContent = `${current.toFixed(3)}A`;
+                payload1.querySelector(".power").textContent = `${power.toFixed(3)}W`;
             }
 
             function updatePayload1() {
@@ -483,13 +479,11 @@
                 const payload2 = document.querySelector("#payload2");
                 payload2.querySelector(
                     ".voltage"
-                ).textContent = `${voltage.toFixed(1)}V`;
+                ).textContent = `${voltage.toFixed(3)}V`;
                 payload2.querySelector(
                     ".current"
-                ).textContent = `${current.toFixed(1)}A`;
-                payload2.querySelector(".power").textContent = `${power.toFixed(
-                    1
-                )}W`;
+                ).textContent = `${current.toFixed(3)}A`;
+                payload2.querySelector(".power").textContent = `${power.toFixed(3)}W`;
             }
 
             function updatePayload2() {
@@ -505,7 +499,7 @@
                 form.gateway.value = gateway;
             }
 
-            setInterval(refresh, 100);
+            setInterval(refresh, 200);
 
             load();
         </script>

@@ -1,8 +1,8 @@
 # hw definition file for processing by chibios_hwdef.py
 # for H743
 
-# ./waf configure --board kha_maim --enable-socket
-# ./waf AP_Periph
+# ./waf configure --board kha_maim --enable-socket --disable-watchdog
+# ./waf AP_Periph --upload
 
 # MCU class and specific type
 MCU STM32H7xx STM32H743xx
@@ -226,7 +226,7 @@ PC8 SDMMC1_D0 SDMMC1
 PC12 SDMMC1_CK SDMMC1
 #PD2 SDMMC1_CMD SDMMC1
 
-define SCRIPTING_HEAP_SIZE 250000
+define SCRIPTING_HEAP_SIZE 350000
 
 define HAL_OS_FATFS_IO 1
 
@@ -242,5 +242,3 @@ ROMFS lua_modules/socket/tp.lua libraries/AP_Scripting/modules/socket/tp.lua
 ROMFS lua_modules/socket/url.lua libraries/AP_Scripting/modules/socket/url.lua
 ROMFS lua_modules/socket/headers.lua libraries/AP_Scripting/modules/socket/headers.lua
 
-
-define HAL_EXTERNAL_AHRS_SBG_ENABLED 1
