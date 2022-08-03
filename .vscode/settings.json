@@ -25,6 +25,7 @@
         "string": "cpp",
         "memory": "cpp",
         "string_view": "cpp",
-        "ranges": "cpp"
+        "ranges": "cpp",
+        "cstdio": "cpp"
     }
 }
