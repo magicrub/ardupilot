@@ -210,9 +210,9 @@ void AP_Networking::init()
     // }
 
 #if CONFIG_HAL_BOARD == HAL_BOARD_CHIBIOS
-    uint32_t ip = get_ip_param();
-    uint32_t netmask = get_netmask_param();
-    uint32_t gateway = get_gateway_param();
+    _activeSettings.ip = get_ip_param();
+    _activeSettings.nm = get_netmask_param();
+    _activeSettings.gw = get_gateway_param();
     net_addr_mode_t addrMode = NET_ADDRESS_STATIC;
 
     const uint8_t localMACAddress[6] = {(uint8_t)_param.macaddr[0].get(),
@@ -224,9 +224,9 @@ void AP_Networking::init()
 
 #if LWIP_DHCP
     if (get_dhcp_enabled()) {
-        ip = 0;
-        gateway = 0;
-        netmask = 0;
+        _activeSettings.ip = 0;
+        _activeSettings.nm = 0;
+        _activeSettings.gw = 0;
         addrMode = NET_ADDRESS_DHCP;
     }
 #else
@@ -234,9 +234,9 @@ void AP_Networking::init()
 #endif
 
     struct lwipthread_opts netOptions = { (uint8_t *) localMACAddress,
-                                        ip,
-                                        netmask,
-                                        gateway,
+                                        _activeSettings.ip,
+                                        _activeSettings.nm,
+                                        _activeSettings.gw,
                                         addrMode };
 
     lwipInit(&netOptions);
@@ -251,20 +251,49 @@ void AP_Networking::init()
 #endif
 
     GCS_SEND_TEXT(MAV_SEVERITY_DEBUG,"NET: Initialized.");
-#if LWIP_DHCP
-    if (get_dhcp_enabled()) {
-        GCS_SEND_TEXT(MAV_SEVERITY_DEBUG,"NET: Waiting for DHCP IP assignment...");
-    } else
-#endif
-    {
-        GCS_SEND_TEXT(MAV_SEVERITY_DEBUG,"NET: IP      %s", get_ip_active_str());
-        GCS_SEND_TEXT(MAV_SEVERITY_DEBUG,"NET: Mask    %s", get_netmask_active_str());
-        GCS_SEND_TEXT(MAV_SEVERITY_DEBUG,"NET: Gateway %s", get_gateway_active_str());
+    _init.done = true;
+}
 
-        can_printf("NET: IP      %s", get_ip_active_str());
+void AP_Networking::check_for_config_changes()
+{
+    const uint32_t now_ms = AP_HAL::millis();
+    if (_activeSettings.announce_ms == 0) {
+        // do nothing on the first run so we print on update() running once already
+        _activeSettings.announce_ms = now_ms;
+        return;
+    }
+    if (now_ms - _activeSettings.announce_ms < 1000) {
+        // Never announce changes any faster than 1 sec
+        return;
     }
 
-    _init.done = true;
+    const uint32_t ip = lwipGetIp();
+    const uint32_t nm = lwipGetNetmask();
+    const uint32_t gw = lwipGetGateway();
+
+    if (_activeSettings.once && 
+        ip == _activeSettings.ip &&
+        nm == _activeSettings.nm &&
+        gw == _activeSettings.gw)
+    {
+        // nothing changed and we're already printed at least once. Nothing to do.
+        return;
+    }
+
+    _activeSettings.ip = ip;
+    _activeSettings.nm = nm;
+    _activeSettings.gw = gw;
+    _activeSettings.once = true;
+    _activeSettings.announce_ms = now_ms;
+
+
+    // GCS_SEND_TEXT(MAV_SEVERITY_DEBUG,"NET: IP      %s", get_ip_active_str());
+    // GCS_SEND_TEXT(MAV_SEVERITY_DEBUG,"NET: Mask    %s", get_netmask_active_str());
+    // GCS_SEND_TEXT(MAV_SEVERITY_DEBUG,"NET: Gateway %s", get_gateway_active_str());
+
+    can_printf("NET: IP %s", get_ip_active_str());
+    can_printf("NET: Mask %s", get_netmask_active_str());
+    can_printf("NET: Gateway %s", get_gateway_active_str());
 }
 
 
@@ -353,6 +382,7 @@ void AP_Networking::update()
     if (!_init.done) {
         return;
     }
+    check_for_config_changes();
 
     // TODO: add awesome stuff!
 }
@@ -405,10 +435,10 @@ char* AP_Networking::convert_ip_to_str(const uint8_t ip[4])
 char* AP_Networking::convert_ip_to_str(const uint32_t ip)
 {
     uint8_t ip_array[4];
-        ip_array[0] = ((ip >> 24) & 0xff);
-        ip_array[1] = ((ip >> 16) & 0xff);
-        ip_array[2] = ((ip >> 8) & 0xff);
-        ip_array[3] = (ip & 0xff);
+        ip_array[3] = ((ip >> 24) & 0xff);
+        ip_array[2] = ((ip >> 16) & 0xff);
+        ip_array[1] = ((ip >> 8) & 0xff);
+        ip_array[0] = (ip & 0xff);
 
     return convert_ip_to_str(ip_array);
 }
