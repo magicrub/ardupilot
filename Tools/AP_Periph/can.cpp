@@ -2346,7 +2346,8 @@ void can_printf(const char *fmt, ...)
 
     va_list ap;
     va_start(ap, fmt);
-    int32_t char_count = vsnprintf((char*)buffer_data, sizeof(buffer_data), fmt, ap);
+    // strip off any negative return errors by treating result as 0
+    uint32_t char_count = MAX(vsnprintf((char*)buffer_data, sizeof(buffer_data), fmt, ap), 0);
     va_end(ap);
 
     // send multiple debug_logmessage packets if the fmt string is too long.
