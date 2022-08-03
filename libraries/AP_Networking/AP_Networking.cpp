@@ -203,9 +203,11 @@ AP_Networking::AP_Networking(void)
 
 void AP_Networking::init()
 {
-    if (!_param.enabled) {
-        return;
-    }
+    // If we skip this init, everything locks up. Sooo.. for
+    // now we need to run init() regardless of enable param
+    // if (!_param.enabled) {
+    //     return;
+    // }
 
 #if CONFIG_HAL_BOARD == HAL_BOARD_CHIBIOS
     uint32_t ip = get_ip_param();
