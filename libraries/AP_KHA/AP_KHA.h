@@ -69,7 +69,9 @@ public:
     uint16_t get_udp_out_port(const uint32_t stream_id);
     uint32_t get_udp_out_interval_ms(const uint32_t stream_id);
 
-    void set_gpio(const uint32_t index, const bool value);
+    void set_enable(const uint32_t index, const bool value);
+    bool get_enable(const uint32_t index) const;
+
 
     enum class KHA_MAIM_Routing : uint8_t {
         NONE                    = 0,

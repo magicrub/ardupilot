@@ -39,7 +39,7 @@ const AP_Param::GroupInfo AP_KHA::var_info[] = {
   //             "XX_TWELVE_XX"
   //AP_GROUPINFO("XXXXXXXXXXXX", XX, AP_KHA, _type, 0), // max name char length: KHA_ + 4
 
-    AP_GROUPINFO_FLAGS("TYPE"  ,  0, AP_KHA, _type, (uint8_t)KHA_Vehicle_Type_t::MAIM, AP_PARAM_FLAG_ENABLE),
+    AP_GROUPINFO_FLAGS("TYPE"  ,  0, AP_KHA, _type, (uint8_t)KHA_Vehicle_Type_t::DISABLED, AP_PARAM_FLAG_ENABLE),
     AP_GROUPINFO("ZERO_PIN"    ,  2, AP_KHA, _system.zeroize.pin, 20),
     AP_GROUPINFO("NO_EXT_GPIO" ,  3, AP_KHA, _ignore_uavcan_gpio_relay_commands, 0),
     AP_GROUPINFO("ROUTE_MAINT" ,  4, AP_KHA, _maint.route, (uint8_t)KHA_MAIM_Routing::NONE),
@@ -421,7 +421,7 @@ void AP_KHA::pps_pin_irq_handler(uint8_t pin, bool pin_value, uint32_t timestamp
 }
 
 
-void AP_KHA::set_gpio(const uint32_t index, const bool value)
+void AP_KHA::set_enable(const uint32_t index, const bool value)
 {
     if (_ignore_uavcan_gpio_relay_commands) {
         return;
@@ -435,6 +435,20 @@ void AP_KHA::set_gpio(const uint32_t index, const bool value)
         hal.gpio->write(_payload[1].power.enable_pin, value);
         break;
     }
+}
+
+bool AP_KHA::get_enable(const uint32_t index) const
+{
+    bool result = false;
+    switch (index) {
+    case 1:
+        result = hal.gpio->read(_payload[0].power.enable_pin);
+        break;
+    case 2:
+        result = hal.gpio->read(_payload[1].power.enable_pin);
+        break;
+    }
+    return result;
 }
 
 char* AP_KHA::get_udp_out_ip(const uint32_t stream_id)

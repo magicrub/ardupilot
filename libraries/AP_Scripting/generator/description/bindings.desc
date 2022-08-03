@@ -439,7 +439,8 @@ singleton AP_KHA method get_udp_out_ip string uint8_t 0 3
 singleton AP_KHA method get_udp_out_port uint16_t uint8_t 0 3
 singleton AP_KHA method get_udp_out_name string uint8_t 0 3
 singleton AP_KHA method get_udp_out_interval_ms uint16_t uint8_t 0 3
-singleton AP_KHA method set_gpio void uint8_t 0 3 boolean
+singleton AP_KHA method set_enable void uint8_t 0 4 boolean
+singleton AP_KHA method get_enable boolean uint8_t 0 4
 
 -- ----------------------
 -- ----------------------

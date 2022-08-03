@@ -226,8 +226,6 @@ PC8 SDMMC1_D0 SDMMC1
 PC12 SDMMC1_CK SDMMC1
 #PD2 SDMMC1_CMD SDMMC1
 
-define SCRIPTING_HEAP_SIZE 350000
-
 define HAL_OS_FATFS_IO 1
 
 ROMFS lua_modules/headers.lua libraries/AP_Scripting/modules/headers.lua

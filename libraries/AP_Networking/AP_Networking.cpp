@@ -31,7 +31,7 @@
 #define AP_NETWORKING_DEFAULT_IP_ADDR0     192
 #define AP_NETWORKING_DEFAULT_IP_ADDR1     168
 #define AP_NETWORKING_DEFAULT_IP_ADDR2       0
-#define AP_NETWORKING_DEFAULT_IP_ADDR3     193
+#define AP_NETWORKING_DEFAULT_IP_ADDR3      34
 #endif
 
 #ifndef AP_NETWORKING_DEFAULT_GW_ADDR0
@@ -257,7 +257,9 @@ void AP_Networking::init()
     {
         GCS_SEND_TEXT(MAV_SEVERITY_DEBUG,"NET: IP      %s", get_ip_active_str());
         GCS_SEND_TEXT(MAV_SEVERITY_DEBUG,"NET: Mask    %s", get_netmask_active_str());
-        GCS_SEND_TEXT(MAV_SEVERITY_DEBUG,"NET: Gateway %s",  get_gateway_active_str());
+        GCS_SEND_TEXT(MAV_SEVERITY_DEBUG,"NET: Gateway %s", get_gateway_active_str());
+
+        can_printf("NET: IP      %s", get_ip_active_str());
     }
 
     _init.done = true;
