@@ -108,6 +108,7 @@ float AP_BattMonitor_Backend::voltage_resting_estimate() const
 
 AP_BattMonitor::Failsafe AP_BattMonitor_Backend::update_failsafes(void)
 {
+#ifndef HAL_BUILD_AP_PERIPH
     const uint32_t now = AP_HAL::millis();
 
     bool low_voltage, low_capacity, critical_voltage, critical_capacity;
@@ -146,6 +147,7 @@ AP_BattMonitor::Failsafe AP_BattMonitor_Backend::update_failsafes(void)
     if (low_capacity) {
         return AP_BattMonitor::Failsafe::Low;
     }
+#endif
 
     // if we've gotten this far then battery is ok
     return AP_BattMonitor::Failsafe::None;
