@@ -271,7 +271,7 @@ void AP_Networking::check_for_config_changes()
     const uint32_t nm = lwipGetNetmask();
     const uint32_t gw = lwipGetGateway();
 
-    if (_activeSettings.once && 
+    if (_activeSettings.once &&
         ip == _activeSettings.ip &&
         nm == _activeSettings.nm &&
         gw == _activeSettings.gw)

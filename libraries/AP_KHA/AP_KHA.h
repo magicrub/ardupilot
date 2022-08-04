@@ -37,6 +37,10 @@ public:
     // to initialise
     AP_KHA();
 
+    /* Do not allow copies */
+    AP_KHA(const AP_KHA &other) = delete;
+    AP_KHA &operator=(const AP_KHA&) = delete;
+
     // settable parameters
     static const struct AP_Param::GroupInfo var_info[];
 
@@ -55,14 +59,9 @@ public:
         PAYLOAD4    = 4,
     };
 
-    // gets converted to KHA_MAIM_POWER_TARGET but to keep things
-    // simple for scripts, lets just use stdint for the public accessor
-    static float get_voltage(const uint8_t power_target);
-    static float get_current(const uint8_t power_target);
+    float get_voltage(const uint8_t instance);
+    float get_current(const uint8_t instance);
     
-    /* Do not allow copies */
-    AP_KHA(const AP_KHA &other) = delete;
-    AP_KHA &operator=(const AP_KHA&) = delete;
 
     char* get_udp_out_ip(const uint32_t stream_id);
     char* get_udp_out_name(const uint32_t stream_id);
@@ -71,7 +70,6 @@ public:
 
     void set_enable(const uint32_t index, const bool value);
     bool get_enable(const uint32_t index) const;
-
 
     enum class KHA_MAIM_Routing : uint8_t {
         NONE                    = 0,
@@ -146,6 +144,14 @@ private:
         AP_HAL::UARTDriver *port;
     };
 
+    struct KHA_Power_t {
+        float voltage;
+        float current;
+        float voltage_smoothed;
+        float current_smoothed;
+        uint32_t last_ms;
+    };
+
     struct {
         struct {
             struct {
@@ -169,8 +175,7 @@ private:
             AP_Int8 enable_pin;
             AP_Int8 enabled_at_boot;
             bool enabled;
-            float voltage;
-            float current;
+            KHA_Power_t data;
         } power;
     } _payload[AP_KHA_MAIM_PAYLOAD_COUNT_MAX];
 
@@ -218,8 +223,7 @@ private:
         } pps;
         
         struct {
-            float voltage;
-            float current;
+            KHA_Power_t data;
         } power;
 
         struct {
@@ -232,19 +236,21 @@ private:
 
     static AP_KHA *_singleton;
     
-    void service_input_uarts();
-    void service_output_uarts();
-    void service_router();
+    void service_input_uarts(const uint32_t now_ms);
+    void service_output_uarts(const uint32_t now_ms);
+    void service_router(const uint32_t now_ms);
     // char* convert_ip_to_str(const uint32_t stream_id, const KHA_IP_PORT_t addr);
 
-    void service_json_out();
+    void service_json_out(const uint32_t now_ms);
     void generate_and_send_json(const KHA_JSON_Msg msg_name);
+
+    void housekeeping_system(const uint32_t now_ms);
+    static void update_power(const uint32_t now_ms, KHA_Power_t &power_data, const uint8_t battery_instance);
+    void housekeeping_payload(const uint32_t now_ms, const uint8_t index);
 
     uint32_t get_udp_out_data(const uint32_t stream_id, uint8_t* data, const uint32_t data_len_max);
 
     void pps_pin_irq_handler(uint8_t pin, bool pin_value, uint32_t timestamp_us);
-
-    static uint8_t get_battery_instance(const KHA_MAIM_POWER_TARGET power_target);
 
     struct {
         uint32_t timer_ms;

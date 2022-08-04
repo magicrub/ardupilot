@@ -113,18 +113,19 @@ local function update() -- this is the loop which periodically runs
             elseif path == "/state" then
                 local state = {
                     system = {
-                        voltage = battery:voltage(batt_instance_system),
-                        current = battery:current_amps(batt_instance_system)
+                        voltage = kha:get_voltage(batt_instance_system),
+                        current = kha:get_current(batt_instance_system)
                     },
                     payload1 = {
-                        voltage = battery:voltage(batt_instance_payload1),
-                        current = battery:current_amps(batt_instance_payload1)
+                        voltage = kha:get_voltage(batt_instance_payload1),
+                        current = kha:get_current(batt_instance_payload1)
                     },
                     payload2 = {
-                        voltage = battery:voltage(batt_instance_payload2),
-                        current = battery:current_amps(batt_instance_payload2)
+                        voltage = kha:get_voltage(batt_instance_payload2),
+                        current = kha:get_current(batt_instance_payload2)
                     }
                 }
+
                 connection:send("HTTP/1.0 200 OK\r\nContent-Type: application/json\r\nConnection: close\r\n\r\n")
                 connection:send('{ "system": { "voltage": ' .. state.system.voltage .. ', "current": ' ..
                                     state.system.current .. ' }, "payload1": { "voltage": ' .. state.payload1.voltage ..

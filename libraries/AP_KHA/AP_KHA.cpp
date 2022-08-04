@@ -159,8 +159,6 @@ void AP_KHA::init(void)
 
     _ahrs.json.eth.enabled = _ahrs.json.eth.enabled_at_boot;
 
-
-
     _init.done = true;
 }
 
@@ -191,33 +189,75 @@ void AP_KHA::update(void)
         return;
     }
 
+    const uint32_t now_ms = AP_HAL::millis();
 
+    housekeeping_system(now_ms);
 
     for (uint8_t p=0; p<AP_KHA_MAIM_PAYLOAD_COUNT_MAX; p++) {
-        _payload[p].power.valid = hal.gpio->read(_payload[p].power.valid_pin);
+        housekeeping_payload(now_ms, p);
     }
 
 
-    // clear memory buffers by setting all lengths to zero
+    service_input_uarts(now_ms);
+
+    service_router(now_ms);
+
+    service_output_uarts(now_ms);
+
+    service_json_out(now_ms);
+}
+
+void AP_KHA::housekeeping_system(const uint32_t now_ms)
+{
     _avionics.uart.bytes_in.len = _avionics.uart.bytes_out.len = 0;
     _maint.uart.bytes_in.len = _maint.uart.bytes_out.len = 0;
     _ahrs.uart.bytes_in.len = _ahrs.uart.bytes_out.len = 0;
-    for (uint8_t p=0; p<AP_KHA_MAIM_PAYLOAD_COUNT_MAX; p++) {
-        _payload[p].state.uart.bytes_in.len = _payload[p].state.uart.bytes_out.len = 0;
-        _payload[p].console.uart.bytes_in.len = _payload[p].console.uart.bytes_out.len = 0;
-    }
 
-    service_input_uarts();
-
-    service_router();
-
-    service_output_uarts();
-
-    service_json_out();
+    update_power(now_ms, _system.power.data, (uint8_t)KHA_MAIM_POWER_TARGET::SYSTEM);
 }
 
+void AP_KHA::update_power(const uint32_t now_ms, KHA_Power_t &power_data, const uint8_t battery_instance)
+{
+    if (now_ms - power_data.last_ms < 100) {
+        return;
+    }
+    power_data.last_ms = now_ms;
 
-void AP_KHA::service_input_uarts()
+    if (!AP::battery().healthy(battery_instance)) {
+        power_data.voltage =  power_data.voltage_smoothed = 0;
+        power_data.current =  power_data.current_smoothed = 0;
+    } else {
+        const float LPF_coef = 0.80;
+
+        const float voltage = AP::battery().voltage(battery_instance);
+        power_data.voltage = MAX(0,voltage);
+        power_data.voltage_smoothed = (LPF_coef*power_data.voltage_smoothed) + ((1.0f-LPF_coef)*power_data.voltage);
+
+        float current;
+        if (!AP::battery().current_amps(current, battery_instance)) {
+            power_data.current = power_data.current_smoothed = 0;
+        } else {
+            power_data.current = MAX(0,current);
+            power_data.current_smoothed = (LPF_coef*power_data.current_smoothed) + ((1.0f-LPF_coef)*power_data.current);
+        }
+    }
+}
+
+void AP_KHA::housekeeping_payload(const uint32_t now_ms, const uint8_t index)
+{
+    if (index >= AP_KHA_MAIM_PAYLOAD_COUNT_MAX) {
+        return;
+    }
+    _payload[index].power.valid = hal.gpio->read(_payload[index].power.valid_pin);
+
+    // clear memory buffers by setting all lengths to zero
+    _payload[index].state.uart.bytes_in.len = _payload[index].state.uart.bytes_out.len = 0;
+    _payload[index].console.uart.bytes_in.len = _payload[index].console.uart.bytes_out.len = 0;
+
+    update_power(now_ms, _payload[index].power.data, (uint8_t)(KHA_MAIM_POWER_TARGET::PAYLOAD1)+index);
+}
+
+void AP_KHA::service_input_uarts(const uint32_t now_ms)
 {
     if (_avionics.uart.port != nullptr) {
         _avionics.uart.bytes_in.len = _avionics.uart.port->read(_avionics.uart.bytes_in.data, sizeof(_avionics.uart.bytes_in.data));
@@ -243,7 +283,7 @@ void AP_KHA::service_input_uarts()
 }
 
 
-void AP_KHA::service_router()
+void AP_KHA::service_router(const uint32_t now_ms)
 {
     uint16_t len = 0;
 
@@ -386,7 +426,7 @@ void AP_KHA::service_router()
 
 }
 
-void AP_KHA::service_output_uarts()
+void AP_KHA::service_output_uarts(const uint32_t now_ms)
 {
     if (_avionics.uart.port != nullptr && _avionics.uart.bytes_out.len > 0) {
         _avionics.uart.port->write(_avionics.uart.bytes_out.data, _avionics.uart.bytes_out.len);
@@ -412,6 +452,10 @@ void AP_KHA::service_output_uarts()
 
 void AP_KHA::pps_pin_irq_handler(uint8_t pin, bool pin_value, uint32_t timestamp_us)
 {
+    if (pin != _system.pps.in.pin) {
+        return;
+    }
+
     _system.pps.in.state = pin_value;
     if (pin_value) {
         _system.pps.in.timestamp_high_us = timestamp_us;
@@ -579,13 +623,12 @@ uint32_t AP_KHA::get_udp_out_interval_ms(const uint32_t stream_id)
 //     return 0;
 // }
 
-void AP_KHA::service_json_out()
+void AP_KHA::service_json_out(const uint32_t now_ms)
 {
     if (!_ahrs.json.eth.enabled) {
         return;
     }
 
-    const uint32_t now_ms = AP_HAL::millis();
     for (uint8_t i=0; i<ARRAY_SIZE(_ahrs.json.msgs); i++) {
         if (now_ms - _ahrs.json.msgs[i].last_ms < _ahrs.json.msgs[i].interval_ms) {
             continue;
@@ -682,36 +725,26 @@ void AP_KHA::generate_and_send_json(const KHA_JSON_Msg msg_name)
 
 #pragma GCC diagnostic pop
 
-uint8_t AP_KHA::get_battery_instance(const KHA_MAIM_POWER_TARGET power_target)
+float AP_KHA::get_voltage(const uint8_t instance)
 {
-    // uint8_t instance = AP::battery().get_instance_with_serial_number(70);
-    // if (instance == 0) {
-    //     return 0;
-    // }
-
-    // return MIN(instance+(uint8_t)power_target, AP::battery().num_instances());
-
+    switch (instance) {
+        case 0:
+            return _system.power.data.voltage_smoothed;
+        case 1:
+        case 2:
+            return _payload[instance-1].power.data.voltage_smoothed;
+    }
     return 0;
 }
 
-float AP_KHA::get_voltage(const uint8_t power_target)
+float AP_KHA::get_current(const uint8_t instance)
 {
-    const uint8_t instance = get_battery_instance((KHA_MAIM_POWER_TARGET)power_target);
-    if (!AP::battery().healthy(instance)) {
-        return 0;
-    }
-    return AP::battery().voltage(instance);
-}
-
-float AP_KHA::get_current(const uint8_t power_target)
-{
-    const uint8_t instance = get_battery_instance((KHA_MAIM_POWER_TARGET)power_target);
-    if (!AP::battery().healthy(instance)) {
-        return 0;
-    }
-    float current;
-    if (AP::battery().current_amps(current, instance)) {
-        return current;
+    switch (instance) {
+        case 0:
+            return _system.power.data.current_smoothed;
+        case 1:
+        case 2:
+            return _payload[instance-1].power.data.current_smoothed;
     }
     return 0;
 }
