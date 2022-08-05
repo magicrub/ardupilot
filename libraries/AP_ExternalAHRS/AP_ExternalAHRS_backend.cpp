@@ -19,6 +19,10 @@
 #include "AP_ExternalAHRS_backend.h"
 
 #if HAL_EXTERNAL_AHRS_ENABLED
+#include <AP_InertialSensor/AP_InertialSensor.h>
+#include <AP_Compass/AP_Compass.h>
+#include <AP_Baro/AP_Baro.h>
+#include <AP_GPS/AP_GPS.h>
 
 AP_ExternalAHRS_backend::AP_ExternalAHRS_backend(AP_ExternalAHRS *_frontend,
                                                  AP_ExternalAHRS::state_t &_state) :
@@ -31,6 +35,31 @@ uint16_t AP_ExternalAHRS_backend::get_rate(void) const
 {
     return frontend.get_IMU_rate();
 }
+
+void AP_ExternalAHRS_backend::publish_ins(const AP_ExternalAHRS::ins_data_message_t &ins) const
+{
+#if HAL_INS_ENABLED
+    AP::ins().handle_external(ins);
+#endif
+}
+
+void AP_ExternalAHRS_backend::publish_gps(const AP_ExternalAHRS::gps_data_message_t &gps) const
+{
+#if !defined(HAL_BUILD_AP_PERIPH) || defined(HAL_PERIPH_ENABLE_GPS)
+    AP::gps().handle_external(gps);
+#endif
+}
+
+void AP_ExternalAHRS_backend::publish_baro(const AP_ExternalAHRS::baro_data_message_t &baro) const
+{
+    AP::baro().handle_external(baro);
+}
+
+void AP_ExternalAHRS_backend::publish_mag(const AP_ExternalAHRS::mag_data_message_t &mag) const
+{
+    AP::compass().handle_external(mag);
+}
+
 
 #endif  // HAL_EXTERNAL_AHRS_ENABLED
 

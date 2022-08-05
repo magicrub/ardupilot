@@ -18,10 +18,6 @@
 
 #include "AP_ExternalAHRS_LORD.h"
 #if HAL_EXTERNAL_AHRS_LORD_ENABLED
-#include <AP_Baro/AP_Baro.h>
-#include <AP_Compass/AP_Compass.h>
-#include <AP_GPS/AP_GPS.h>
-#include <AP_InertialSensor/AP_InertialSensor.h>
 #include <GCS_MAVLink/GCS.h>
 #include <AP_Logger/AP_Logger.h>
 #include <AP_HAL/utility/sparse-endian.h>
@@ -259,14 +255,14 @@ void AP_ExternalAHRS_LORD::post_imu() const
             gyro: imu_data.gyro,
             temperature: -300
         };
-        AP::ins().handle_external(ins);
+        publish_ins(ins);
     }
 
     {
         AP_ExternalAHRS::mag_data_message_t mag {
             field: imu_data.mag
         };
-        AP::compass().handle_external(mag);
+        publish_mag(mag);
     }
 
     {
@@ -276,7 +272,7 @@ void AP_ExternalAHRS_LORD::post_imu() const
             // setting temp to 25 effectively disables barometer temperature calibrations - these are already performed by lord
             temperature: 25,
         };        
-        AP::baro().handle_external(baro);
+        publish_baro(baro);
     }
 }
 
@@ -427,7 +423,7 @@ void AP_ExternalAHRS_LORD::post_filter() const
         state.have_origin = true;
     }
 
-    AP::gps().handle_external(gps);
+    publish_gps(gps);
 }
 
 int8_t AP_ExternalAHRS_LORD::get_port(void) const

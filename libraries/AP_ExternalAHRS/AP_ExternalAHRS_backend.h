@@ -42,6 +42,11 @@ public:
 protected:
     AP_ExternalAHRS::state_t &state;
     uint16_t get_rate(void) const;
+    
+    void publish_ins(const AP_ExternalAHRS::ins_data_message_t &ins) const;
+    void publish_gps(const AP_ExternalAHRS::gps_data_message_t &gps) const;
+    void publish_baro(const AP_ExternalAHRS::baro_data_message_t &baro) const;
+    void publish_mag(const AP_ExternalAHRS::mag_data_message_t &mag) const;
 
 private:
     AP_ExternalAHRS &frontend;

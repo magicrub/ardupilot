@@ -24,10 +24,6 @@
 
 #include <AP_Math/AP_Math.h>
 #include <AP_Math/crc.h>
-#include <AP_Baro/AP_Baro.h>
-#include <AP_Compass/AP_Compass.h>
-#include <AP_GPS/AP_GPS.h>
-#include <AP_InertialSensor/AP_InertialSensor.h>
 #include <GCS_MAVLink/GCS.h>
 #include <AP_Logger/AP_Logger.h>
 #include <AP_Common/NMEA.h>
@@ -252,7 +248,7 @@ void AP_ExternalAHRS_VectorNav::process_packet1(const uint8_t *b)
         baro.pressure_pa = pkt1.pressure*1e3;
         baro.temperature = pkt2.temp;
 
-        AP::baro().handle_external(baro);
+        publish_baro(baro);
     }
 
     {
@@ -260,7 +256,7 @@ void AP_ExternalAHRS_VectorNav::process_packet1(const uint8_t *b)
         mag.field = Vector3f{pkt1.mag[0], pkt1.mag[1], pkt1.mag[2]};
         mag.field *= 1000; // to mGauss
 
-        AP::compass().handle_external(mag);
+        publish_mag(mag);
     }
 
     {
@@ -270,7 +266,7 @@ void AP_ExternalAHRS_VectorNav::process_packet1(const uint8_t *b)
         ins.gyro = state.gyro;
         ins.temperature = pkt2.temp;
 
-        AP::ins().handle_external(ins);
+        publish_ins(ins);
     }
 
 
@@ -347,7 +343,7 @@ void AP_ExternalAHRS_VectorNav::process_packet2(const uint8_t *b)
         state.have_origin = true;
     }
 
-    AP::gps().handle_external(gps);
+    publish_gps(gps);
 }
 
 // get serial port number for the uart
