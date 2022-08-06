@@ -192,10 +192,10 @@ private:
                 bool enabled;
                 AP_Int32 interval_ms;
             } eth;
-            // struct {
-            //     uint8_t data[1500]; // Ethernet MTU
-            //     uint16_t len;
-            // } bytes_out;
+            struct {
+                uint8_t data[1500]; // Ethernet MTU. See MOD spec 1.1.4.2.1
+                uint16_t len;
+            } bytes_out;
             uint32_t timer_ms;
             
             KHA_JSON_Msg_Interval msgs[8] = {

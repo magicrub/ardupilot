@@ -858,8 +858,9 @@ void AP_GPS::update_instance(uint8_t instance)
             state[instance].vdop = GPS_UNKNOWN_DOP;
             timing[instance].last_message_time_ms = tnow;
             timing[instance].delta_time_ms = GPS_TIMEOUT_MS;
-            // do not try to detect again if type is MAV or UAVCAN
+            // do not try to detect again if type is MAV or UAVCAN or ExternalAHRS
             if (_type[instance] == GPS_TYPE_MAV ||
+                _type[instance] == GPS_TYPE_EXTERNAL_AHRS ||
                 _type[instance] == GPS_TYPE_UAVCAN ||
                 _type[instance] == GPS_TYPE_UAVCAN_RTK_BASE ||
                 _type[instance] == GPS_TYPE_UAVCAN_RTK_ROVER) {
