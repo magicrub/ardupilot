@@ -1,4 +1,4 @@
-name: test replay
+name: Build Targets
 
 on: [push, pull_request, workflow_dispatch]
 # paths:
@@ -11,21 +11,20 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-20.04
-    container: ardupilot/ardupilot-dev-${{ matrix.toolchain }}:latest
+    container: ardupilot/ardupilot-dev-chibios:latest
     strategy:
       fail-fast: false  # don't cancel if a job from the matrix fails
       matrix:
         toolchain: [
             base,  # GCC
-            clang,
         ]
         config: [
-            replay
+            kha_maim
         ]
     steps:
-      # git checkout the PR
       - uses: actions/checkout@v2
         with:
+          path: 'target'
           submodules: 'recursive'
       # Put ccache into github cache for faster build
       - name: Prepare ccache timestamp
@@ -48,22 +47,35 @@ jobs:
           echo "max_size = 400M" >> ~/.ccache/ccache.conf
           ccache -s
           ccache -z
-      - name: test ${{matrix.config}} ${{ matrix.toolchain }}
+      - name: Build ArduPlane ${{matrix.config}} ${{ matrix.toolchain }}
+        if: ${{matrix.config != 'kha_maim'}}
         env:
           CI_BUILD_TARGET: ${{matrix.config}}
         shell: bash
         run: |
-          if [[ ${{ matrix.toolchain }} == "clang" ]]; then
-            export CC=clang
-            export CXX=clang++
-          fi
           PATH="/github/home/.local/bin:$PATH"
-          Tools/scripts/build_ci.sh
+          cd target
+          ./waf configure --board ${{matrix.config}}
+          ./waf plane
 
-      - name: Archive buildlog artifacts
+      - name: Build AP_Periph ${{matrix.config}} ${{ matrix.toolchain }}
+        if: ${{matrix.config == 'kha_maim'}}
+        env:
+          CI_BUILD_TARGET: ${{matrix.config}}
+        shell: bash
+        run: |
+          PATH="/github/home/.local/bin:$PATH"
+          cd target
+          ./waf configure --board ${{matrix.config}}
+          ./waf AP_Periph
+
+      - name: Get short SHA
+        id: sha
+        run: echo "::set-output name=sha8::$(echo ${GITHUB_SHA} | cut -c1-8)"
+
+      - name: Upload build target artifacts
         uses: actions/upload-artifact@v2
-        if: failure()
         with:
-           name: fail-${{ matrix.toolchain }}-${{matrix.config}}
-           path: /tmp/buildlogs
-           retention-days: 14
+            name: ${{matrix.config}}-${{steps.sha.outputs.sha8}}
+            path: ${{github.workspace}}/target/build/${{matrix.config}}/bin/*.*
+            retention-days: 14
