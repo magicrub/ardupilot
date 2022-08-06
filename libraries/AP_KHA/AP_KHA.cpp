@@ -29,6 +29,7 @@
 #include <AP_Compass/AP_Compass.h>
 #include <AP_Baro/AP_Baro.h>
 #include <AP_GPS/AP_GPS.h>
+#include <AP_RTC/AP_RTC.h>
 
 extern const AP_HAL::HAL& hal;
 
@@ -652,26 +653,52 @@ void AP_KHA::service_json_out(const uint32_t now_ms)
 #pragma GCC diagnostic error "-Wframe-larger-than=1700"
 void AP_KHA::generate_and_send_json(const KHA_JSON_Msg msg_name)
 {
-    if (!AP::ahrs().initialised()) {
+    auto &ahrs = AP::ahrs();
+    if (!ahrs.initialised()) {
         return;
     }
 
     Vector3f mag = Vector3f();
-    if (!AP::ahrs().get_mag_field_NED(mag)) {
+    if (!ahrs.get_mag_field_NED(mag)) {
         mag = AP::compass().get_field();
     }
 
+    const Vector3f accel = AP::ins().get_accel();
+    const Vector3f gyro = ahrs.get_gyro();
+
+    const float temperature = AP::baro().healthy() ? AP::baro().get_temperature() : 0;
+    //const float temperature = AP::ins().get_temperature(0);
+    //const float temperature = AP::sbg().get_temperature(0);
+
+    unsigned hw = 0;
+    unsigned fw = 0;
+#if HAL_EXTERNAL_AHRS_SBG_ENABLED
+    if (AP::sbg() != nullptr) {
+        hw = AP::sbg()->get_version_hardwareRev();
+        fw = AP::sbg()->get_version_firmwareRev();
+    }
+#endif
+
+    char utc_str[50] {};
+    const uint16_t utc_str_len = AP::rtc().get_system_clock_utc_string(utc_str, sizeof(utc_str), true);
+    (void)utc_str_len;
+
+    float vert_pos_rate = 0;
+    UNUSED_RESULT(ahrs.get_vert_pos_rate(vert_pos_rate));
+
+    Location loc = Location();
+    UNUSED_RESULT(ahrs.get_location(loc));
+
+    float UNKNOWN_VALUE = 0.0f;
+
+    const Vector3f gps_velocity = AP::gps().velocity();
+    Vector3f gps_velocity_error = Vector3f();
+    UNUSED_RESULT(AP::gps().horizontal_accuracy(gps_velocity_error.x));
+    UNUSED_RESULT(AP::gps().horizontal_accuracy(gps_velocity_error.y));
+    UNUSED_RESULT(AP::gps().vertical_accuracy(gps_velocity_error.z));
+
     switch (msg_name) {
     case KHA_JSON_Msg::MAIM_VER: {
-        unsigned hw = 0;
-        unsigned fw = 0;
-#if HAL_EXTERNAL_AHRS_SBG_ENABLED
-        const auto *sbg = AP::sbg();
-        if (sbg != nullptr) {
-            hw = sbg->get_version_hardwareRev();
-            fw = sbg->get_version_firmwareRev();
-        }
-#endif
         //return (char*)R"({"class":"MAIM_VER","sw":"1.0","dev":"SBG ELLIPSE-N","devhw":"2.4","devsw":"6.5"})";
         _ahrs.json.bytes_out.len = hal.util->snprintf((char*)_ahrs.json.bytes_out.data, sizeof(_ahrs.json.bytes_out.data),
             "{\"class\":\"MAIM_VER\",\"sw\":\"%s\",\"dev\":\"SBG ELLIPSE-N\",\"devhw\":\"%u.%u.%u.%u.%u\",\"devsw\":\"%u.%u.%u.%u.%u\"}",
@@ -704,8 +731,7 @@ void AP_KHA::generate_and_send_json(const KHA_JSON_Msg msg_name)
         AP::ahrs().get_velocity_NED(vel);
     //     return (char*)R"({"class":"IMUNAV","veln":-175.135,"vele":-22.0,"veld":-4.234})";
         _ahrs.json.bytes_out.len = hal.util->snprintf((char*)_ahrs.json.bytes_out.data, sizeof(_ahrs.json.bytes_out.data), 
-            // R"({"class":"IMUNAV","veln":-175.135,"vele":-22.0,"veld":-4.234})");
-            "{\"class\":\"IMUNAV\",\"veln\":\"%.3f\",\"vele\":\"%.3f\",\"veld\":\"%.3f\"}",
+           "{\"class\":\"IMUNAV\",\"veln\":\"%.3f\",\"vele\":\"%.3f\",\"veld\":\"%.3f\"}",
             (double)vel.x,
             (double)vel.y,
             (double)vel.z);
@@ -714,40 +740,81 @@ void AP_KHA::generate_and_send_json(const KHA_JSON_Msg msg_name)
 
     case KHA_JSON_Msg::PRESSURE:
     //     return (char*)R"({"class":"PRESSURE","pressure":101325.0,"alt":0.0})";
-        //len = hal.util->snprintf((char*)buf, sizeof(buf), "KHA_JSON_Msg::PRESSURE");
         _ahrs.json.bytes_out.len = hal.util->snprintf((char*)_ahrs.json.bytes_out.data, sizeof(_ahrs.json.bytes_out.data),
             "{\"class\":\"PRESSURE\",\"pressure\":\"%.1f\",\"alt\":\"%.3f\"}",
             (double)AP::baro().get_pressure(),
             (double)AP::baro().get_altitude());
-            break;
+        break;
 
     case KHA_JSON_Msg::TPV:
     //     return (char*)R"({"class":"TPV","time":"2017-05-15T10:30:43.123Z","ept":500, "track":123.45,"lat":12.12345,"lon":-12.12345,"alt":12345.12, "mode":3,"epx":12.12,"epy":12.12,"epv":12.12,"climb":-4.234, "epd":12.345,"epc":12.345})";
-        _ahrs.json.bytes_out.len = hal.util->snprintf((char*)_ahrs.json.bytes_out.data, sizeof(_ahrs.json.bytes_out.data), "KHA_JSON_Msg::ATPVDDL");
+        _ahrs.json.bytes_out.len = hal.util->snprintf((char*)_ahrs.json.bytes_out.data, sizeof(_ahrs.json.bytes_out.data),
+            "{\"class\":\"TPV\",\"time\":\"%s\",\"ept\":%u,\"track\":%.2f,\"lat\":%.7f,\"lon\":%.7f,\"alt\":%.2f,\"mode\":%u,\"epx\":%.2f,\"epy\":%.2f,\"epv\":%.2f,\"climb\":%.3f,\"epd\":%.3f,\"epc\":%.3f}",
+            utc_str,
+            (unsigned)UNKNOWN_VALUE, // ept - Estimated Timestamp Error, nanoseconds
+            (double)wrap_360(degrees(ahrs.groundspeed_vector().angle())),
+            (double)(loc.lat*1.0e-7), // lat
+            (double)(loc.lng*1.0e-7), // lng
+            (double)(loc.alt*1.0e-2), // alt
+            (unsigned)constrain_int16(AP::gps().status(), 0, 3), // mode
+            (double)AP::gps().get_hdop()*0.01f, // epx
+            (double)AP::gps().get_hdop()*0.01f, // epy
+            (double)AP::gps().get_vdop()*0.01f, // epv
+            (double)vert_pos_rate, // climb
+            (double)UNKNOWN_VALUE, // epd - Direction Error Estimate, Degrees (0 - 360)
+            (double)UNKNOWN_VALUE); // epc - Climb/Sink Error Estimate, meters per second (Down - Positive)
         break;
 
     case KHA_JSON_Msg::ATT:
-    //     return (char*)R"({"class":"ATT","acc_x":3.123,"acc_y":2.123,"acc_z":-1.456,"gyro_x":1.456, "gyro_y":2.789,"gyro_z":3.567,"temp":12.12,"mag_x":123.456,"mag_y":234.789, "mag_z":24.223,"roll":3.001,"pitch":-0.345,"yaw":-2.789,"heading":123.45})";
-        _ahrs.json.bytes_out.len = hal.util->snprintf((char*)_ahrs.json.bytes_out.data, sizeof(_ahrs.json.bytes_out.data), "KHA_JSON_Msg::ATT");
+    //     return (char*)R"({"class":"ATT","acc_x":3.123,"acc_y":2.123,"acc_z":-1.456,"gyro_x":1.456,"gyro_y":2.789,"gyro_z":3.567,"temp":12.12,"mag_x":123.456,"mag_y":234.789,"mag_z":24.223,"roll":3.001,"pitch":-0.345,"yaw":-2.789,"heading":123.45})";
+        _ahrs.json.bytes_out.len = hal.util->snprintf((char*)_ahrs.json.bytes_out.data, sizeof(_ahrs.json.bytes_out.data),
+            "{\"class\":\"ATT\",\"acc_x\":%.3f,\"acc_y\":%.3f,\"acc_z\":%.3f,\"gyro_x\":%.3f,\"gyro_y\":%.3f,\"gyro_z\":%.3f,\"temp\":%.2f,\"mag_x\":%.3f,\"mag_y\":%.3f,\"mag_z\":%.3f,\"roll\":%.3f,\"pitch\":%.3f,\"yaw\":%.3f,\"heading\":%.2f}",
+            (double)accel.x,
+            (double)accel.y,
+            (double)accel.z,
+            (double)gyro.x,
+            (double)gyro.y,
+            (double)gyro.z,
+            (double)temperature,
+            (double)mag.x,
+            (double)mag.y,
+            (double)mag.z,
+            (double)degrees(ahrs.roll),
+            (double)degrees(ahrs.pitch),
+            (double)degrees(ahrs.yaw),
+            (double)degrees(ahrs.groundspeed_vector().angle()));
         break;
 
     case KHA_JSON_Msg::SKY:
     //     return (char*)R"({"class":"SKY","time":"2017-05-15T10:30:43.123Z","hdop":6.3})";
-        _ahrs.json.bytes_out.len = hal.util->snprintf((char*)_ahrs.json.bytes_out.data, sizeof(_ahrs.json.bytes_out.data), "KHA_JSON_Msg::SKY");
+        _ahrs.json.bytes_out.len = hal.util->snprintf((char*)_ahrs.json.bytes_out.data, sizeof(_ahrs.json.bytes_out.data), 
+            "{\"class\":\"SKY\",\"time\":\"%s\",\"hdop\":%.1f}",
+            utc_str,
+            (double)AP::gps().get_hdop()*0.01f);
         break;
 
     case KHA_JSON_Msg::ADDL:
     //     return (char*)R"({"class\":"ADDL\",\"up\":1345786201,\"tow\":375218453,"und":3.7,"gveln":-175.135,"gvele":-22.0,"gveld":-4.234,"epn":4.75,"epe":1.66,"epd":0.37,"nsv":7})";
-        _ahrs.json.bytes_out.len = hal.util->snprintf((char*)_ahrs.json.bytes_out.data, sizeof(_ahrs.json.bytes_out.data), "KHA_JSON_Msg::ADDL");
+        _ahrs.json.bytes_out.len = hal.util->snprintf((char*)_ahrs.json.bytes_out.data, sizeof(_ahrs.json.bytes_out.data),
+            "{\"class\":\"ADDL\",\"up\":%u,\"tow\":%u,\"und\":%.1f,\"gveln\":%.3f,\"gvele\":%.1f,\"gveld\":%.3f,\"epn\":%.2f,\"epe\":%.2f,\"epd\":%.2f,\"nsv\":%u}",
+            (unsigned)AP_HAL::micros64(), // up
+            (unsigned)AP::gps().time_week_ms(), // tow
+            (double)UNKNOWN_VALUE, // und - Undulation - Altitude difference between the geoid and the Ellipsoid, Meters (WGS-84 Altitude - MSL Altitude)
+            (double)gps_velocity.x, // gveln
+            (double)gps_velocity.y, // gvele
+            (double)gps_velocity.z, // gveld
+            (double)gps_velocity_error.x, // epn
+            (double)gps_velocity_error.y, // epe
+            (double)gps_velocity_error.y, // epd
+            (unsigned)AP::gps().num_sats());// nsv
         break;
     } // switch
 
-
-    if (_ahrs.json.bytes_out.len <= 0) {
+    if (_ahrs.json.bytes_out.len == 0) {
         return;
     }
 
-    // TODO: send buf
+    // TODO: send _ahrs.json.bytes_out.data
 }
 
 #pragma GCC diagnostic pop

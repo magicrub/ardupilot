@@ -3,6 +3,7 @@
 #include <AP_Param/AP_Param.h>
 
 #include <stdint.h>
+#include <time.h>
 
 class AP_RTC {
 
@@ -39,6 +40,8 @@ public:
       get time in UTC hours, minutes, seconds and milliseconds
      */
     bool get_system_clock_utc(uint8_t &hour, uint8_t &min, uint8_t &sec, uint16_t &ms) const;
+    bool get_system_clock_utc(tm &utc_tm, uint32_t &usec) const;
+    uint16_t get_system_clock_utc_string(char* buf, uint16_t max_len, const bool show_msec = false) const;
     
     bool get_local_time(uint8_t &hour, uint8_t &min, uint8_t &sec, uint16_t &ms) const;
 

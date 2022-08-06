@@ -3,7 +3,6 @@
 #include <AP_HAL/AP_HAL.h>
 #include <AP_Math/AP_Math.h>
 #include <GCS_MAVLink/GCS.h>
-#include <time.h>
 
 extern const AP_HAL::HAL& hal;
 
@@ -87,6 +86,48 @@ bool AP_RTC::get_utc_usec(uint64_t &usec) const
         return false;
     }
     usec = AP_HAL::micros64() + rtc_shift;
+    return true;
+}
+
+// generates a string, either UTC or 8601 which is UTC but also shows milisec at the end:
+// "UTC"   : 2022-08-06T18:50:27Z
+// ISO-8601: 2022-08-06T18:50:27.497Z
+uint16_t AP_RTC::get_system_clock_utc_string(char* buf, uint16_t max_len, const bool show_msec) const
+{
+    tm utc {};
+    uint32_t usec = 0;
+    uint16_t year = 0;
+    uint16_t month = 0;
+    if (get_system_clock_utc(utc, usec)) {
+        year = utc.tm_year + 1900;
+        month = utc.tm_mon + 1;
+    }
+
+    char msec_str[6] {}; // ".000"
+    if (show_msec) {
+        const uint16_t msec = ((uint32_t)(usec * 0.001f)) % 1000;
+        hal.util->snprintf((char*)msec_str, sizeof(msec_str),".%3u", (unsigned)msec);
+    }
+
+    return hal.util->snprintf((char*)buf, max_len,"%u-%2u-%2uT%2u:%2u:%2u%sZ",
+        (unsigned)year,
+        (unsigned)month,
+        (unsigned)utc.tm_mday,
+        (unsigned)utc.tm_hour,
+        (unsigned)utc.tm_min,
+        (unsigned)utc.tm_sec,
+        msec_str); // this msec_str may be all zeros and this not shown at all
+}
+
+bool AP_RTC::get_system_clock_utc(tm &utc_tm, uint32_t &usec) const
+{
+    uint64_t time_usec = 0;
+    if (!AP::rtc().get_utc_usec(time_usec)) { // may fail, leaving time_unix at 0
+        return false;
+    }
+    const time_t time_sec = time_usec * 0.001f * 0.001f;
+    usec = time_usec % 1000000;
+    utc_tm = *gmtime(&time_sec);
     return true;
 }
 
