@@ -434,6 +434,7 @@ singleton AP_Networking method set_gateway_param_str void string
 -- ----------------------
 
 include AP_KHA/AP_KHA.h
+singleton AP_KHA depends KHA_MAIM_ENABLED
 singleton AP_KHA alias kha
 singleton AP_KHA method get_udp_out_ip string uint8_t 0 3
 singleton AP_KHA method get_udp_out_port uint16_t uint8_t 0 3

@@ -24,7 +24,6 @@ env AP_PERIPH 1
 env AP_PERIPH_HEAVY 1
 
 define HAL_BUILD_AP_PERIPH
-define HAL_GCS_ENABLED 1
 
 # bootloader is installed at zero offset
 FLASH_RESERVE_START_KB 128
@@ -225,6 +224,10 @@ define HAL_EXTERNAL_AHRS_ENABLED 1
 define HAL_EXTERNAL_AHRS_LORD_ENABLED 1
 define HAL_EXTERNAL_AHRS_VECTORNAV_ENABLED 1
 define HAL_EXTERNAL_AHRS_SBG_ENABLED 1
+
+define HAL_GCS_ENABLED 1
+
+define KHA_MAIM_ENABLED 1
 
 # listen for reboot command from uploader.py script
 # undefine to disable. Use -1 to allow on all ports, otherwise serial number index defined in SERIAL_ORDER starting at 0

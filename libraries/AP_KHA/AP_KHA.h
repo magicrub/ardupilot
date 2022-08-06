@@ -19,6 +19,12 @@
  */
 
 #include <AP_HAL/AP_HAL.h>
+
+#ifndef KHA_MAIM_ENABLED
+#define KHA_MAIM_ENABLED 0
+#endif
+
+#if KHA_MAIM_ENABLED
 #include <AP_Common/AP_Common.h>
 #include <AP_Param/AP_Param.h>
 #include <AP_SerialManager/AP_SerialManager.h>
@@ -268,3 +274,4 @@ private:
 namespace AP {
     AP_KHA *kha(void);
 };
+#endif // #if KHA_MAIM_ENABLED

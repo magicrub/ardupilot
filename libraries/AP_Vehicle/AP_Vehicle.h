@@ -380,7 +380,9 @@ protected:
     AP_Airspeed airspeed;
 #endif
 
+#if KHA_MAIM_ENABLED
     AP_KHA kha;
+#endif
 
     static const struct AP_Param::GroupInfo var_info[];
     static const struct AP_Scheduler::Task scheduler_tasks[];

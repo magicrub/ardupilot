@@ -17,6 +17,8 @@
  */
 
 #include "AP_KHA.h"
+#if KHA_MAIM_ENABLED
+
 #include <GCS_MAVLink/GCS.h>
 #include <AP_Networking/AP_Networking.h>
 #include <AP_BattMonitor/AP_BattMonitor.h>
@@ -855,3 +857,5 @@ AP_KHA *kha()
 }
 
 }
+#endif // #if KHA_MAIM_ENABLED
+

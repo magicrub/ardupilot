@@ -194,7 +194,9 @@ public:
     void hwesc_telem_update();
 #endif
 
+#if KHA_MAIM_ENABLED
     AP_KHA kha;
+#endif
     
 #ifdef HAL_PERIPH_ENABLE_RC_OUT
 #if HAL_WITH_ESC_TELEM

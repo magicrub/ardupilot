@@ -293,9 +293,11 @@ const AP_Param::Info AP_Periph_FW::var_info[] = {
     GSCALAR(esc_number, "ESC_NUMBER", 0),
 #endif
 
+#if KHA_MAIM_ENABLED
     // @Group: KHA
     // @Path: ../libraries/AP_KHA/AP_KHA.cpp
     GOBJECT(kha, "KHA_", AP_KHA),
+#endif
 
 #ifdef HAL_PERIPH_ENABLE_RC_OUT
     // Servo driver
