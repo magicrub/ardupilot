@@ -361,7 +361,7 @@ void GCS_MAVLINK::send_rangefinder() const
     }
     mavlink_msg_rangefinder_send(
             chan,
-            s->distance_cm() * 0.01f,
+            s->distance_cm() * 0.01f * AP::ahrs().get_rotation_body_to_ned().c.z,
             s->voltage_mv() * 0.001f);
 }
 
