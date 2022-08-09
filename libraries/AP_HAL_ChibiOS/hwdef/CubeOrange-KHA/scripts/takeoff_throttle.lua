@@ -12,7 +12,7 @@ local TAKEOFF = 22
 local throttle_scale = throttle_max_pwm - throttle_min_pwm
 
 if takeoff_throttle_max == 0 then
-        takeoff_throttle_max = param:get("THR_MAX")
+        takeoff_throttle_max = assert(param:get("THR_MAX"),"Lua: Could not read THR_MAX"
 end
 
 takeoff_throttle_max = takeoff_throttle_max/100
