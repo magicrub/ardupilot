@@ -12,9 +12,6 @@ local throttle_srv_chan = assert(SRV_Channels:find_channel(K_THROTTLE), "Could n
 local throttle_max_pwm = assert(param:get("SERVO" .. throttle_srv_chan + 1 .. "_MIN"), "Could not read param SERVO" .. throttle_srv_chan + 1 .. "_MIN")
 local throttle_min_pwm = assert(param:get("SERVO" .. throttle_srv_chan + 1 .. "_MAX"), "Could not read param SERVO" .. throttle_srv_chan + 1 .. "_MAX")
 
-local auth_id = arming:get_aux_auth_id()
-
-
 local throttle_scale = throttle_max_pwm - throttle_min_pwm
 
 if takeoff_throttle_max == 0 then
@@ -31,24 +28,16 @@ function update()
 
     -- This scripts only applies to auto-takeoff
     if (vehicle:get_mode() ~= FLIGHT_MODE_PLANE_AUTO) or (mission:get_current_nav_id() ~= MAV_CMD_NAV_TAKEOFF) or not arming:is_armed() then
-        if auth_id then
-            arming:set_aux_auth_passed(auth_id)
-        end
-        return update, 1000
+        return update, 500
     end
 
-        -- sanity check airspeed sensor
+    -- sanity check airspeed sensor
     local airspeed = ahrs:airspeed_estimate()
     if (airspeed == nil) then
-        if auth_id then
-            arming:set_aux_auth_failed(auth_id, "Airspeed not available, can not accurately constrain takeoff throttle")
-        end
+        gcs:send_text(0, "Airspeed not available, can not constrain takeoff throttle")
         return update, 1000
     end
-    arming:set_aux_auth_passed(auth_id)
 
-
-    local airspeed = ahrs:airspeed_estimate()
     local throttle_max = takeoff_throttle_max*math.sqrt((airspeed/rotate_speed)*(1-takeoff_throttle_min)*(1-takeoff_throttle_min))+takeoff_throttle_min
 
     throttle_max = math.max(throttle_max, takeoff_throttle_min) -- saturate to max of 1.0
