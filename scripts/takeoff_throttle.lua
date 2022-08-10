@@ -12,9 +12,6 @@ local throttle_srv_chan = assert(SRV_Channels:find_channel(K_THROTTLE), "Could n
 local throttle_max_pwm = assert(param:get("SERVO" .. throttle_srv_chan + 1 .. "_MIN"), "Could not read param SERVO" .. throttle_srv_chan + 1 .. "_MIN")
 local throttle_min_pwm = assert(param:get("SERVO" .. throttle_srv_chan + 1 .. "_MAX"), "Could not read param SERVO" .. throttle_srv_chan + 1 .. "_MAX")
 
-local auth_id = arming:get_aux_auth_id()
-
-
 local throttle_scale = throttle_max_pwm - throttle_min_pwm
 
 if takeoff_throttle_max == 0 then
@@ -27,39 +24,33 @@ local takeoff_throttle_min = 0.2*takeoff_throttle_max
 -- max throttle is unrestricted when airspeed is 90% of rotate speed
 rotate_speed = rotate_speed*0.9
 
+gcs:send_text(0,"K1000: Takeoff Thrust Limiter Enabled")
+
 function update()
-
-    -- This scripts only applies to auto-takeoff
-    if (vehicle:get_mode() ~= FLIGHT_MODE_PLANE_AUTO) or (mission:get_current_nav_id() ~= MAV_CMD_NAV_TAKEOFF) or not arming:is_armed() then
-        if auth_id then
-            arming:set_aux_auth_passed(auth_id)
-        end
-        return update, 1000
-    end
-
+    if (vehicle:get_mode() == FLIGHT_MODE_PLANE_AUTO) and (mission:get_current_nav_id() == MAV_CMD_NAV_TAKEOFF) and arming:is_armed() then
         -- sanity check airspeed sensor
-    local airspeed = ahrs:airspeed_estimate()
-    if (airspeed == nil) then
-        if auth_id then
-            arming:set_aux_auth_failed(auth_id, "Airspeed not available, can not accurately constrain takeoff throttle")
+        local airspeed = ahrs:airspeed_estimate()
+        if (airspeed == nil) then
+            gcs:send_text(0, "Takeoff Thrust Limiting failure: no Airspeed")
+            return update, 10
         end
-        return update, 1000
+        -- calculate throttle limiter based on airspeed as a function of a square root law
+        local throttle_max = takeoff_throttle_max*math.sqrt((airspeed/rotate_speed)*(1-takeoff_throttle_min)*(1-takeoff_throttle_min))+takeoff_throttle_min
+
+        throttle_max = math.max(throttle_max, takeoff_throttle_min) -- saturate to max of 1.0
+        throttle_max = math.min(throttle_max, takeoff_throttle_max) -- saturate to a min of 0.0
+
+        throttle_max = (throttle_scale*throttle_max) + throttle_min_pwm -- scale back to pwm values
+        throttle_max = math.floor(throttle_max + 0.5) -- turn into an integer value
+
+        -- override throttle channel, if lua doesn't return faster
+        -- than 15us then normal throttle will take back over
+        SRV_Channels:set_output_pwm_chan_timeout(throttle_srv_chan,throttle_max,15)
+        return update, 10
+
+    else
+        return update,100
     end
-    arming:set_aux_auth_passed(auth_id)
-
-
-    local airspeed = ahrs:airspeed_estimate()
-    local throttle_max = takeoff_throttle_max*math.sqrt((airspeed/rotate_speed)*(1-takeoff_throttle_min)*(1-takeoff_throttle_min))+takeoff_throttle_min
-
-    throttle_max = math.max(throttle_max, takeoff_throttle_min) -- saturate to max of 1.0
-    throttle_max = math.min(throttle_max, takeoff_throttle_max) -- saturate to a min of 0.0
-
-    throttle_max = (throttle_scale*throttle_max) + throttle_min_pwm -- scale back to pwm values
-    throttle_max = math.floor(throttle_max + 0.5) -- turn into an integer value
-
-    SRV_Channels:set_output_pwm_chan_timeout(throttle_srv_chan,throttle_max,15) -- override throttle channel
-
-    return update, 10
 end
 
 return update()
