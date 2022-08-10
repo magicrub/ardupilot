@@ -1,21 +1,24 @@
 -- This script is designed to fade in throttle command during takeoff
 -- to prevent prop stall at low airspeed_estimate
--- Ryan Beall 9AUG22
-
-local rotate_speed = assert(param:get("TKOFF_ROTATE_SPD"),"Lua: Could not read TKOFF_ROTATE_SPD")
-local takeoff_throttle_max = assert(param:get("TKOFF_THR_MAX"),"Lua: Could not read TKOFF_THR_MAX")
-local throttle_max_pwm = assert(param:get("SERVO1_MAX"),"Lua: Could not read SERVO1_MAX")
-local throttle_min_pwm = assert(param:get("SERVO1_MIN"),"Lua: Could not read SERVO1_MIN")
-local auth_id = arming:get_aux_auth_id()
+-- Ryan Beall and Tom Pittenger 9AUG22
 
 local FLIGHT_MODE_PLANE_AUTO = 10
 local MAV_CMD_NAV_TAKEOFF = 22
 local K_THROTTLE = 70
 
+local rotate_speed = assert(param:get("TKOFF_ROTATE_SPD"), "Could not read param TKOFF_ROTATE_SPD")
+local takeoff_throttle_max = assert(param:get("TKOFF_THR_MAX"), "Could not read param TKOFF_THR_MAX")
+local throttle_srv_chan = assert(SRV_Channels:find_channel(K_THROTTLE), "Could not find Servo channel K_THROTTLE " .. K_THROTTLE)
+local throttle_max_pwm = assert(param:get("SERVO" .. throttle_srv_chan + 1 .. "_MIN"), "Could not read param SERVO" .. throttle_srv_chan + 1 .. "_MIN")
+local throttle_min_pwm = assert(param:get("SERVO" .. throttle_srv_chan + 1 .. "_MAX"), "Could not read param SERVO" .. throttle_srv_chan + 1 .. "_MAX")
+
+local auth_id = arming:get_aux_auth_id()
+
+
 local throttle_scale = throttle_max_pwm - throttle_min_pwm
 
 if takeoff_throttle_max == 0 then
-    takeoff_throttle_max = assert(param:get("THR_MAX"),"Lua: Could not read THR_MAX")
+    takeoff_throttle_max = assert(param:get("THR_MAX"), "Could not read THR_MAX")
 end
 
 takeoff_throttle_max = takeoff_throttle_max*0.01
@@ -54,7 +57,7 @@ function update()
     throttle_max = (throttle_scale*throttle_max) + throttle_min_pwm -- scale back to pwm values
     throttle_max = math.floor(throttle_max + 0.5) -- turn into an integer value
 
-    SRV_Channels:set_output_pwm_chan_timeout(SRV_Channels:find_channel(K_THROTTLE),throttle_max,15) -- override throttle channel
+    SRV_Channels:set_output_pwm_chan_timeout(throttle_srv_chan,throttle_max,15) -- override throttle channel
 
     return update, 10
 end
