@@ -24,31 +24,33 @@ local takeoff_throttle_min = 0.2*takeoff_throttle_max
 -- max throttle is unrestricted when airspeed is 90% of rotate speed
 rotate_speed = rotate_speed*0.9
 
+gcs:send_text(0,"K1000: Takeoff Thrust Limiter Enabled")
+
 function update()
+    if (vehicle:get_mode() == FLIGHT_MODE_PLANE_AUTO) and (mission:get_current_nav_id() == MAV_CMD_NAV_TAKEOFF) and arming:is_armed() then
+        -- sanity check airspeed sensor
+        local airspeed = ahrs:airspeed_estimate()
+        if (airspeed == nil) then
+            gcs:send_text(0, "Takeoff Thrust Limiting failure: no Airspeed")
+            return update, 10
+        end
+        -- calculate throttle limiter based on airspeed as a function of a square root law
+        local throttle_max = takeoff_throttle_max*math.sqrt((airspeed/rotate_speed)*(1-takeoff_throttle_min)*(1-takeoff_throttle_min))+takeoff_throttle_min
 
-    -- This scripts only applies to auto-takeoff
-    if (vehicle:get_mode() ~= FLIGHT_MODE_PLANE_AUTO) or (mission:get_current_nav_id() ~= MAV_CMD_NAV_TAKEOFF) or not arming:is_armed() then
-        return update, 500
+        throttle_max = math.max(throttle_max, takeoff_throttle_min) -- saturate to max of 1.0
+        throttle_max = math.min(throttle_max, takeoff_throttle_max) -- saturate to a min of 0.0
+
+        throttle_max = (throttle_scale*throttle_max) + throttle_min_pwm -- scale back to pwm values
+        throttle_max = math.floor(throttle_max + 0.5) -- turn into an integer value
+
+        -- override throttle channel, if lua doesn't return faster
+        -- than 15us then normal throttle will take back over
+        SRV_Channels:set_output_pwm_chan_timeout(throttle_srv_chan,throttle_max,15)
+        return update, 10
+
+    else
+        return update,100
     end
-
-    -- sanity check airspeed sensor
-    local airspeed = ahrs:airspeed_estimate()
-    if (airspeed == nil) then
-        gcs:send_text(0, "Airspeed not available, can not constrain takeoff throttle")
-        return update, 1000
-    end
-
-    local throttle_max = takeoff_throttle_max*math.sqrt((airspeed/rotate_speed)*(1-takeoff_throttle_min)*(1-takeoff_throttle_min))+takeoff_throttle_min
-
-    throttle_max = math.max(throttle_max, takeoff_throttle_min) -- saturate to max of 1.0
-    throttle_max = math.min(throttle_max, takeoff_throttle_max) -- saturate to a min of 0.0
-
-    throttle_max = (throttle_scale*throttle_max) + throttle_min_pwm -- scale back to pwm values
-    throttle_max = math.floor(throttle_max + 0.5) -- turn into an integer value
-
-    SRV_Channels:set_output_pwm_chan_timeout(throttle_srv_chan,throttle_max,15) -- override throttle channel
-
-    return update, 10
 end
 
 return update()
