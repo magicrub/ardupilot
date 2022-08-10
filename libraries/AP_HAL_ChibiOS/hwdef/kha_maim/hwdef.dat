@@ -1,8 +1,10 @@
 # hw definition file for processing by chibios_hwdef.py
 # for H743
 
-# ./waf configure --board kha_maim --enable-socket --disable-watchdog
+# ./waf configure --board kha_maim --enable-luasocket --disable-watchdog
 # ./waf AP_Periph --upload
+# << or >>
+# ./waf distclean; ./waf configure --board kha_maim --enable-luasocket --disable-watchdog; ./waf AP_Periph --upload
 
 # MCU class and specific type
 MCU STM32H7xx STM32H743xx
