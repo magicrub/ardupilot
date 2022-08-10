@@ -30,7 +30,7 @@ rotate_speed = rotate_speed*0.9
 function update()
 
     -- This scripts only applies to auto-takeoff
-    if (vehicle:get_mode() ~= FLIGHT_MODE_PLANE_AUTO) or (mission:get_current_nav_id() ~= MAV_CMD_NAV_TAKEOFF) then
+    if (vehicle:get_mode() ~= FLIGHT_MODE_PLANE_AUTO) or (mission:get_current_nav_id() ~= MAV_CMD_NAV_TAKEOFF) or not arming:is_armed() then
         if auth_id then
             arming:set_aux_auth_passed(auth_id)
         end
