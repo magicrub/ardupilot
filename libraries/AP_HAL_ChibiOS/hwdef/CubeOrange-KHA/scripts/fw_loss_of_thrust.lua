@@ -3,6 +3,7 @@
 
 local motor_stop_ms = -1
 local motor_stopped = false
+gcs:send_text(4, "K1000: Deadstick Monitoring Enabled")
 
 -- update motor running status
 function check_motor()
