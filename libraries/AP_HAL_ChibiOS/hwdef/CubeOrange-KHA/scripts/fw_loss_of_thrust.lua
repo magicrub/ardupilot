@@ -57,9 +57,9 @@ function check_motor()
     -- vibration threshold below which motor may be stopped
     local VIBE_LOW_THRESH = param:get('SCR_VIBE_LOW')
     -- Throttle Threshold above which motor should be considered valid to check vibes
-    local THROTTLE_ON_THRESH = param:get('SCR_THR_THRESH')
+    local THROTTLE_ON_THRESH = param:get('SCR_THR_THRESH')*0.01*param:get('THR_MAX')
   end
-  
+
   param_and_alerts_ms = param_and_alerts_ms + loop_ms
 
   return motor_stopped
