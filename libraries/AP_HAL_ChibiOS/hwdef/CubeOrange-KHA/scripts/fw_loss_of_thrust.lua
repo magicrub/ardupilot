@@ -3,6 +3,8 @@
 
 local motor_stop_ms = -1
 local motor_stopped = false
+local param_and_alerts_ms = 0
+local loop_ms = 200
 gcs:send_text(4, "K1000: Deadstick Monitoring Enabled")
 
 -- update motor running status
@@ -15,15 +17,6 @@ function check_motor()
   local throttle = SRV_Channels:get_output_scaled(70)
   local vibe = ahrs:get_vibration():length()
 
-
-  -- consider motor stopped when vibe is low and RPM low for more than 4s
-  local MOTOR_STOPPED_MS = param:get('SCR_MTR_STOP_MS')
-  -- vibration threshold below which motor may be stopped
-  local VIBE_LOW_THRESH = param:get('SCR_VIBE_LOW')
-  -- Throttle Threshold above which motor should be considered valid to check vibes
-  local THROTTLE_ON_THRESH = param:get('SCR_THR_THRESH')
-  -- time when motor stopped
-  
   -- if Throttle is above 90% and vibe is high then assume motor is running
   if  (vibe > VIBE_LOW_THRESH) then
      -- motor is definately running
@@ -52,13 +45,31 @@ function check_motor()
        gcs:send_text(0, "WARNING: Loss of Thrust Possible")
     end
   end
+
+  -- Check for parameter changes and send updated Motor out alert every 5 seconds
+  if param_and_alerts_ms > 5000 then
+    param_and_alerts_ms = 0
+    if motor_stopped == true then
+        gcs:send_text(0, "WARNING: Loss of Thrust Possible")
+    end
+    -- consider motor stopped when vibe is low and RPM low for more than 4s
+    local MOTOR_STOPPED_MS = param:get('SCR_MTR_STOP_MS')
+    -- vibration threshold below which motor may be stopped
+    local VIBE_LOW_THRESH = param:get('SCR_VIBE_LOW')
+    -- Throttle Threshold above which motor should be considered valid to check vibes
+    local THROTTLE_ON_THRESH = param:get('SCR_THR_THRESH')
+  end
+  
+  param_and_alerts_ms = param_and_alerts_ms + loop_ms
+
   return motor_stopped
 end
+
 function update()
   -- check motor status
   check_motor()
   -- run at 5Hz
-  return update, 200
+  return update, loop_ms
 end
 -- start running update loop
 return update()
