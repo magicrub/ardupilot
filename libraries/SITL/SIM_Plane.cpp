@@ -97,10 +97,11 @@ Plane::Plane(const char *frame_str) :
         coefficient.b = 5.0;
         coefficient.c = 0.36;
         coefficient.oswald = 0.66;
-        thrust_scale = 100;
+        thrust_scale = 1;
         have_launcher = true;
         launch_accel = 2;
-        launch_time = 15;
+        launch_time = 13;
+        use_k1000_thrust_model = true;
     }
 }
 
@@ -322,6 +323,22 @@ void Plane::calculate_forces(const struct sitl_input &input, Vector3f &rot_accel
     
     float thrust     = throttle;
 
+    if (use_k1000_thrust_model) {
+        float alt = -position.z;
+        float tas = constrain_float(velocity_air_bf.length(), 0.1f, 1000.0f);
+
+        float tas2 = powf(tas,2);
+        float tas3 = powf(tas,3);
+        float tas4 = powf(tas,4);
+        float thrust0km = -1.25581130289897e-05*tas4 +0.00144167801605513*tas3 -0.0491373275652327*tas2 +0.0960447520307390*tas +33.7669646895820;
+        float thrust6km = +9.93003228389611e-06*tas4 -0.000612883203432232*tas3 +0.00722876439812497*tas2 -0.263513534238490*tas +33.2714972859288;
+
+        float interpVal = (alt-0) / (6000-0);
+        thrust = thrust0km + interpVal*(thrust6km-thrust0km);
+
+        thrust *= throttle;
+    }
+
     battery_voltage = sitl->batt_voltage - 0.7*throttle;
     battery_current = 50.0f*throttle;
 
@@ -365,7 +382,7 @@ void Plane::calculate_forces(const struct sitl_input &input, Vector3f &rot_accel
     }
     
     // simulate engine RPM
-    rpm[0] = thrust * 7000;
+    rpm[0] = throttle * 3500;
     
     // scale thrust to newtons
     thrust *= thrust_scale;

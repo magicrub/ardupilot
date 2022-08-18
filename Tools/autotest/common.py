@@ -10171,7 +10171,7 @@ switch value'''
             if not self.arm_vehicle():
                 raise NotAchievedException("Failed to ARM")
             self.set_rc(3, 1050)
-            self.wait_rpm1(timeout=10, min_rpm=200)
+            self.wait_rpm1(timeout=10, min_rpm=100)
 
         self.drain_mav_unparsed()
         # anything with a lambda in here needs a proper test written.
