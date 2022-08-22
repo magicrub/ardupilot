@@ -3692,6 +3692,13 @@ void GCS_MAVLINK::handle_common_message(const mavlink_message_t &msg)
         handle_send_autopilot_version(msg);
         break;
 
+#if !defined(HAL_BUILD_AP_PERIPH) || defined(HAL_PERIPH_ENABLE_BATTERY)
+    case MAVLINK_MSG_ID_BATTERY_STATUS:
+    case MAVLINK_MSG_ID_SMART_BATTERY_INFO:
+        AP::battery().handle_message(msg);
+        break;
+#endif
+
     case MAVLINK_MSG_ID_MISSION_WRITE_PARTIAL_LIST:
     case MAVLINK_MSG_ID_MISSION_REQUEST_LIST:
     case MAVLINK_MSG_ID_MISSION_COUNT:
