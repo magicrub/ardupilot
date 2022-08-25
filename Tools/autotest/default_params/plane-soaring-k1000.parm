@@ -62,6 +62,8 @@ RTL_AUTOLAND            2
 RTL_RADIUS              200
 SCR_ENABLE              1
 SIM_THML_SCENARI        0.00
+SERVO6_FUNCTION         70
+SERVO7_FUNCTION         70
 SIM_BATT_VOLTAGE        25.2
 STAB_PITCH_DOWN         0
 STICK_MIXING            0
