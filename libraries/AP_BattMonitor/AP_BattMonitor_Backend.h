@@ -56,6 +56,9 @@ public:
     /// this will always be greater than or equal to the raw voltage
     float voltage_resting_estimate() const;
 
+    // update temperature
+    void set_temperature_externally(const float temperature, const uint32_t timestamp_ms = 0);
+
     // returns true if battery monitor provides temperature or if it was updated externally
     bool has_temperature() const;
 

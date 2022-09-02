@@ -143,6 +143,7 @@ public:
         uint32_t    critical_voltage_start_ms; // critical voltage failsafe start timer in milliseconds
         float       temperature;               // battery temperature in degrees Celsius
         uint32_t    temperature_time;          // timestamp of the last received temperature message
+        bool        temperature_set_externally;// true when TempSensor library set the temperature for this device
         float       voltage_resting_estimate;  // voltage with sag removed based on current and resistance estimate in Volt
         float       resistance;                // resistance, in Ohms, calculated by comparing resting voltage vs in flight voltage
         Failsafe failsafe;                     // stage failsafe the battery is in
@@ -235,6 +236,8 @@ public:
     // temperature
     bool get_temperature(float &temperature) const { return get_temperature(temperature, AP_BATT_PRIMARY_INSTANCE); }
     bool get_temperature(float &temperature, const uint8_t instance) const;
+    void set_temperature(const float temperature, const uint8_t instance = AP_BATT_PRIMARY_INSTANCE);
+    void set_temperature_by_serial_number(const float temperature, const int32_t serial_number);
 
     // cycle count
     bool get_cycle_count(uint8_t instance, uint16_t &cycles) const;
