@@ -652,6 +652,23 @@ bool AP_BattMonitor::get_temperature(float &temperature, const uint8_t instance)
 }
 
 // returns true if successfully set the temperature
+void AP_BattMonitor::set_temperature(const float temperature, const uint8_t instance)
+{
+    if (instance >= AP_BATT_MONITOR_MAX_INSTANCES || drivers[instance] == nullptr) {
+        return;
+    }
+
+    drivers[instance]->set_temperature_externally(temperature);
+}
+// returns true if successfully set the temperature
+void AP_BattMonitor::set_temperature_by_serial_number(const float temperature, const int32_t serial_number)
+{
+    for (uint8_t i = 0; i < _num_instances; i++) {
+        if (drivers[i] == nullptr || get_serial_number(i) != serial_number) {
+            continue;
+        }
+        drivers[i]->set_temperature_externally(temperature);
+    }
 }
 
 // return true if cycle count can be provided and fills in cycles argument

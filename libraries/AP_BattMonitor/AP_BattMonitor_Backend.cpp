@@ -30,10 +30,21 @@ AP_BattMonitor_Backend::AP_BattMonitor_Backend(AP_BattMonitor &mon, AP_BattMonit
 {
 }
 
+// set_temperature - assigns the temperature to the battery and timestamps it from an external source, usually AP_TemperatureSensor library
+void AP_BattMonitor_Backend::set_temperature_externally(const float temperature, const uint32_t timestamp_ms)
+{
+    _state.temperature_set_externally = true;
+    _state.temperature = temperature;
+    _state.temperature_time = (timestamp_ms != 0) ? timestamp_ms : AP_HAL::millis();
+}
+
 // set_temperature - assigns the temperature to the battery and timestamps it. If teh timestamp argument is
 // zero, then it uses the current time
 void AP_BattMonitor_Backend::set_temperature(const float temperature, const uint32_t timestamp_ms)
 {
+    if (_state.temperature_set_externally) {
+        return;
+    }
     _state.temperature = temperature;
     _state.temperature_time = (timestamp_ms != 0) ? timestamp_ms : AP_HAL::millis();
 }
