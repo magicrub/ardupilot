@@ -76,15 +76,11 @@ void AP_BattMonitor_ESC::read(void)
         _state.healthy = false;
     }
     if (temperature_escs > 0) {
-        _state.temperature = temperature_sum / temperature_escs;
-        have_temperature = true;
-    } else {
-        _state.temperature = 0;
+        set_temperature(temperature_sum / temperature_escs);
     }
 
     _state.current_amps = current_sum;
     _state.last_time_micros = highest_ms * 1000;
-    _state.temperature_time = highest_ms;
 
     if (current_sum > 0) {
         // if we have ever got a current value then we know we have a

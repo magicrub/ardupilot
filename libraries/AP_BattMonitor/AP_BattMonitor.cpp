@@ -644,9 +644,14 @@ bool AP_BattMonitor::get_temperature(float &temperature, const uint8_t instance)
         return false;
     } 
     
-    temperature = state[instance].temperature;
+    if (drivers[instance]->has_temperature()) {
+        temperature = state[instance].temperature;
+        return true;
+    }
+    return false;
+}
 
-    return drivers[instance]->has_temperature();
+// returns true if successfully set the temperature
 }
 
 // return true if cycle count can be provided and fills in cycles argument

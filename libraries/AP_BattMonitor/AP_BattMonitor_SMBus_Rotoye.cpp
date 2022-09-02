@@ -15,8 +15,7 @@ void AP_BattMonitor_SMBus_Rotoye::read_temp(void) {
     if (read_word(BATTMONITOR_SMBUS_TEMP, t_int) && 
         read_word(BATTMONITOR_SMBUS_TEMP_EXT, t_ext)) {
         uint16_t t;
-        _state.temperature_time = AP_HAL::millis();
         t = ((t_ext > t_int) ? t_ext : t_int);
-        _state.temperature = KELVIN_TO_C(0.1f * (float)t);
+        set_temperature(KELVIN_TO_C(0.1f * (float)t));
     }
 }

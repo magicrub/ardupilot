@@ -30,6 +30,21 @@ AP_BattMonitor_Backend::AP_BattMonitor_Backend(AP_BattMonitor &mon, AP_BattMonit
 {
 }
 
+// set_temperature - assigns the temperature to the battery and timestamps it. If teh timestamp argument is
+// zero, then it uses the current time
+void AP_BattMonitor_Backend::set_temperature(const float temperature, const uint32_t timestamp_ms)
+{
+    _state.temperature = temperature;
+    _state.temperature_time = (timestamp_ms != 0) ? timestamp_ms : AP_HAL::millis();
+}
+
+// has_temperature - returns true if the battery has a temperature that has recently been updated
+// return false if the battery timestamp is zero or expired
+bool AP_BattMonitor_Backend::has_temperature() const
+{
+    return (_state.temperature_time != 0) && (AP_HAL::millis() - _state.temperature_time < AP_BATT_MONITOR_TIMEOUT);
+}
+
 // capacity_remaining_pct - returns true if the battery % is available and writes to the percentage argument
 // return false if the battery is unhealthy, does not have current monitoring, or the pack_capacity is too small
 bool AP_BattMonitor_Backend::capacity_remaining_pct(uint8_t &percentage) const

@@ -45,9 +45,6 @@ public:
     // returns true if battery monitor provides individual cell voltages
     virtual bool has_cell_voltages() const { return false; }
 
-    // returns true if battery monitor provides temperature
-    virtual bool has_temperature() const { return false; }
-
     // capacity_remaining_pct - returns true if the battery % is available and writes to the percentage argument
     // returns false if the battery is unhealthy, does not have current monitoring, or the pack_capacity is too small
     virtual bool capacity_remaining_pct(uint8_t &percentage) const WARN_IF_UNUSED;
@@ -58,6 +55,9 @@ public:
     /// get voltage with sag removed (based on battery current draw and resistance)
     /// this will always be greater than or equal to the raw voltage
     float voltage_resting_estimate() const;
+
+    // returns true if battery monitor provides temperature or if it was updated externally
+    bool has_temperature() const;
 
     // update battery resistance estimate and voltage_resting_estimate
     void update_resistance_estimate();
@@ -86,6 +86,9 @@ protected:
     AP_BattMonitor                      &_mon;      // reference to front-end
     AP_BattMonitor::BattMonitor_State   &_state;    // reference to this instances state (held in the front-end)
     AP_BattMonitor_Params               &_params;   // reference to this instances parameters (held in the front-end)
+
+    // sets the temperature reported by the battery driver. This is disabled/ignored if a temp has been set by an external source
+    void set_temperature(const float temperature, const uint32_t timestamp_ms = 0);
 
     // checks what failsafes could be triggered
     void check_failsafe_types(bool &low_voltage, bool &low_capacity, bool &critical_voltage, bool &critical_capacity) const;

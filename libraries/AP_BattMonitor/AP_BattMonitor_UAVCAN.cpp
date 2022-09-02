@@ -250,8 +250,7 @@ void AP_BattMonitor_UAVCAN::read()
     }
     // Copy over relevant states over to main state
     WITH_SEMAPHORE(_sem_battmon);
-    _state.temperature = _interim_state.temperature;
-    _state.temperature_time = _interim_state.temperature_time;
+    set_temperature(_interim_state.temperature, _interim_state.temperature_time);
     _state.voltage = _interim_state.voltage;
     _state.current_amps = _interim_state.current_amps;
     _state.consumed_mah = _interim_state.consumed_mah;
@@ -262,8 +261,6 @@ void AP_BattMonitor_UAVCAN::read()
     _state.has_time_remaining = _interim_state.has_time_remaining;
     _state.is_powering_off = _interim_state.is_powering_off;
     memcpy(_state.cell_voltages.cells, _interim_state.cell_voltages.cells, sizeof(_state.cell_voltages));
-
-    _has_temperature = (AP_HAL::millis() - _state.temperature_time) <= AP_BATT_MONITOR_TIMEOUT;
 
     // check if MPPT should be powered on/off depending upon arming state
     if (_mppt.is_detected) {

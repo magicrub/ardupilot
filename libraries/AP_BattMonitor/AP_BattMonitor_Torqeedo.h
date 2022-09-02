@@ -34,9 +34,6 @@ public:
     /// returns true if battery monitor instance provides current info
     bool has_current() const override { return have_info; };
 
-    // returns true if battery monitor provides temperature
-    bool has_temperature() const override { return have_info; };
-
     // capacity_remaining_pct - returns true if the battery % is available and writes to the percentage argument
     bool capacity_remaining_pct(uint8_t &percentage) const override WARN_IF_UNUSED;
 
