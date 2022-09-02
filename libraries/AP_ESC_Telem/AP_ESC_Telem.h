@@ -104,6 +104,9 @@ private:
     // telemetry data
     volatile AP_ESC_Telem_Backend::TelemetryData _telem_data[ESC_TELEM_MAX_ESCS];
 
+    bool _temperature_is_external[ESC_TELEM_MAX_ESCS];
+    bool _motor_temp_is_external[ESC_TELEM_MAX_ESCS];
+
     uint32_t _last_telem_log_ms[ESC_TELEM_MAX_ESCS];
     uint32_t _last_rpm_log_us[ESC_TELEM_MAX_ESCS];
     uint8_t next_idx;
