@@ -41,9 +41,9 @@ const AP_Param::GroupInfo AP_TemperatureSensor::var_info[] = {
 
     // SKIP Index 2-9 to be for parameters that apply to every sensor
 
-    // @Group: _
+    // @Group: 1_
     // @Path: AP_TemperatureSensor_Params.cpp
-    AP_SUBGROUPINFO(_params[0], "_", 10, AP_TemperatureSensor, AP_TemperatureSensor_Params),
+    AP_SUBGROUPINFO(_params[0], "1_", 10, AP_TemperatureSensor, AP_TemperatureSensor_Params),
 
 #if AP_TEMPERATURE_SENSOR_MAX_INSTANCES > 1
     // @Group: 2_
@@ -80,9 +80,9 @@ void AP_TemperatureSensor::init()
     }
 
  // For Sub set the Default: Type to TSYS01 and I2C_ADDR of 0x77
- #if APM_BUILD_TYPE(APM_BUILD_ArduSub)
-    AP_Param::set_default_by_name("TEMP_TYPE", 1);
-    AP_Param::set_default_by_name("TEMP_I2C_ADDR", TSYS01_ADDR_CSB0);
+#if APM_BUILD_TYPE(APM_BUILD_ArduSub)
+    AP_Param::set_default_by_name("TEMP1_TYPE", (int8_t)AP_TemperatureSensor::Type::TSYS01);
+    AP_Param::set_default_by_name("TEMP1_ADDR", TSYS01_ADDR_CSB0);
 #endif
 
     // create each instance
