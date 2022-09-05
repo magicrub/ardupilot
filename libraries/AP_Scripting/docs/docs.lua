@@ -912,28 +912,28 @@ function RPM:get_rpm(instance) end
 
 
 -- desc
----@class kha
-kha = {}
+---@class mod_payload
+mod_payload = {}
 
 -- desc
 ---@param stream_id integer
 ---@return string
-function kha:get_udp_out_ip(stream_id) end
+function mod_payload:get_udp_out_ip(stream_id) end
 
 -- desc
 ---@param stream_id integer
 ---@return integer
-function kha:get_udp_out_port(stream_id) end
+function mod_payload:get_udp_out_port(stream_id) end
 
 -- desc
 ---@param stream_id integer
 ---@return string
-function kha:get_udp_out_name(stream_id) end
+function mod_payload:get_udp_out_name(stream_id) end
 
 -- desc
 ---@param stream_id integer
 ---@return integer
-function kha:get_udp_out_interval_ms(stream_id) end
+function mod_payload:get_udp_out_interval_ms(stream_id) end
 
 
 -- desc

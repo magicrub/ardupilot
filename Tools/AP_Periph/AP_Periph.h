@@ -16,7 +16,7 @@
 #include <AP_MSP/msp.h>
 #include "../AP_Bootloader/app_comms.h"
 #include "hwing_esc.h"
-#include <AP_KHA/AP_KHA.h>
+#include <AP_ModPayload/AP_ModPayload.h>
 #include <AP_CANManager/AP_CANManager.h>
 #include <AP_Scripting/AP_Scripting.h>
 #include <AP_Networking/AP_Networking.h>
@@ -194,8 +194,8 @@ public:
     void hwesc_telem_update();
 #endif
 
-#if KHA_MAIM_ENABLED
-    AP_KHA kha;
+#if AP_MODPAYLOAD_ENABLED
+    AP_ModPayload mod_payload;
 #endif
     
 #ifdef HAL_PERIPH_ENABLE_RC_OUT

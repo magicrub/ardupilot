@@ -16,8 +16,8 @@
   temperature calibration library
  */
 
-#include "AP_KHA.h"
-#if KHA_MAIM_ENABLED
+#include "AP_ModPayload.h"
+#if AP_MODPAYLOAD_ENABLED
 
 #include <GCS_MAVLink/GCS.h>
 #include <AP_Networking/AP_Networking.h>
@@ -35,110 +35,116 @@
 
 extern const AP_HAL::HAL& hal;
 
-#define KHA_DEBUG 0
+// singleton instance
+AP_ModPayload *AP_ModPayload::_singleton;
 
-#if KHA_DEBUG
+#define ModPayload_DEBUG 0
+
+#if ModPayload_DEBUG
 # define debug(fmt, args ...)  do {printf("%s:%d: " fmt "\r\n", __FUNCTION__, __LINE__, ## args); } while(0)
 #else
 # define debug(fmt, args ...)
 #endif
 
 // table of user settable and learned parameters
-const AP_Param::GroupInfo AP_KHA::var_info[] = {
+const AP_Param::GroupInfo AP_ModPayload::var_info[] = {
 
   //             "XX_TWELVE_XX"
-  //AP_GROUPINFO("XXXXXXXXXXXX", XX, AP_KHA, _type, 0), // max name char length: KHA_ + 4
+  //AP_GROUPINFO("XXXXXXXXXXXX", XX, AP_ModPayload, _type, 0), // max name char length: MP_ + 5
 
-    AP_GROUPINFO_FLAGS("TYPE"  ,  0, AP_KHA, _type, (uint8_t)KHA_Vehicle_Type_t::DISABLED, AP_PARAM_FLAG_ENABLE),
-    AP_GROUPINFO("ZERO_PIN"    ,  2, AP_KHA, _system.zeroize.pin, 20),
-    AP_GROUPINFO("NO_EXT_GPIO" ,  3, AP_KHA, _ignore_uavcan_gpio_relay_commands, 0),
-    AP_GROUPINFO("ROUTE_MAINT" ,  4, AP_KHA, _maint.route, (uint8_t)KHA_MAIM_Routing::NONE),
-    AP_GROUPINFO("ROUTE_AVION" ,  5, AP_KHA, _avionics.route, (uint8_t)KHA_MAIM_Routing::NONE),
-    AP_GROUPINFO("ROUTE_P1_CON",  6, AP_KHA, _payload[0].console.route, (uint8_t)KHA_MAIM_Routing::PAYLOAD1_CONSOLE_IP),
-    AP_GROUPINFO("ROUTE_P2_CON",  7, AP_KHA, _payload[1].console.route, (uint8_t)KHA_MAIM_Routing::PAYLOAD2_CONSOLE_IP),
-    AP_GROUPINFO("ROUTE_AHRS"  ,  8, AP_KHA, _ahrs.route, (uint8_t)KHA_MAIM_Routing::PAYLOAD1_CONSOLE_SERIAL),
+    AP_GROUPINFO_FLAGS("TYPE"  ,  0, AP_ModPayload, _type, (uint8_t)ModPayload_Vehicle_Type_t::DISABLED, AP_PARAM_FLAG_ENABLE),
+    AP_GROUPINFO("ZERO_PIN"    ,  2, AP_ModPayload, _system.zeroize.pin, 20),
+    AP_GROUPINFO("NO_EXT_GPIO" ,  3, AP_ModPayload, _ignore_uavcan_gpio_relay_commands, 0),
+    AP_GROUPINFO("ROUTE_MAINT" ,  4, AP_ModPayload, _maint.route, (uint8_t)ModPayload_Routing::NONE),
+    AP_GROUPINFO("ROUTE_AVION" ,  5, AP_ModPayload, _avionics.route, (uint8_t)ModPayload_Routing::NONE),
+    AP_GROUPINFO("ROUTE_P1_CON",  6, AP_ModPayload, _payload[0].console.route, (uint8_t)ModPayload_Routing::PAYLOAD1_CONSOLE_IP),
+    AP_GROUPINFO("ROUTE_P2_CON",  7, AP_ModPayload, _payload[1].console.route, (uint8_t)ModPayload_Routing::PAYLOAD2_CONSOLE_IP),
+    AP_GROUPINFO("ROUTE_AHRS"  ,  8, AP_ModPayload, _ahrs.route, (uint8_t)ModPayload_Routing::PAYLOAD1_CONSOLE_SERIAL),
 
-    AP_GROUPINFO("JSON_IP1"    , 11, AP_KHA, _ahrs.json.eth.addr.ip[0], 239),
-    AP_GROUPINFO("JSON_IP2"    , 12, AP_KHA, _ahrs.json.eth.addr.ip[1], 255),
-    AP_GROUPINFO("JSON_IP3"    , 13, AP_KHA, _ahrs.json.eth.addr.ip[2], 1),
-    AP_GROUPINFO("JSON_IP4"    , 14, AP_KHA, _ahrs.json.eth.addr.ip[3], 1),
-    AP_GROUPINFO("JSON_PORT"   , 15, AP_KHA, _ahrs.json.eth.addr.port, 6969),
-    AP_GROUPINFO("JSON_EN"     , 16, AP_KHA, _ahrs.json.eth.enabled_at_boot, 0),
-    AP_GROUPINFO("JSON_RATE"   , 17, AP_KHA, _ahrs.json.eth.interval_ms, 100),
+    AP_GROUPINFO("JSON_IP1"    , 11, AP_ModPayload, _ahrs.json.eth.addr.ip[0], 239),
+    AP_GROUPINFO("JSON_IP2"    , 12, AP_ModPayload, _ahrs.json.eth.addr.ip[1], 255),
+    AP_GROUPINFO("JSON_IP3"    , 13, AP_ModPayload, _ahrs.json.eth.addr.ip[2], 1),
+    AP_GROUPINFO("JSON_IP4"    , 14, AP_ModPayload, _ahrs.json.eth.addr.ip[3], 1),
+    AP_GROUPINFO("JSON_PORT"   , 15, AP_ModPayload, _ahrs.json.eth.addr.port, 6969),
+    AP_GROUPINFO("JSON_EN"     , 16, AP_ModPayload, _ahrs.json.eth.enabled_at_boot, 0),
+    AP_GROUPINFO("JSON_RATE"   , 17, AP_ModPayload, _ahrs.json.eth.interval_ms, 100),
 
-#if AP_KHA_MAIM_PAYLOAD_COUNT_MAX >= 1
-    AP_GROUPINFO("P1_CON_IP1"  , 20, AP_KHA, _payload[0].console.eth.addr.ip[0], 239),
-    AP_GROUPINFO("P1_CON_IP2"  , 21, AP_KHA, _payload[0].console.eth.addr.ip[1], 2),
-    AP_GROUPINFO("P1_CON_IP3"  , 22, AP_KHA, _payload[0].console.eth.addr.ip[2], 3),
-    AP_GROUPINFO("P1_CON_IP4"  , 23, AP_KHA, _payload[0].console.eth.addr.ip[3], 2),
-    AP_GROUPINFO("P1_CON_PORT" , 24, AP_KHA, _payload[0].console.eth.addr.port, 7000),
-    AP_GROUPINFO("P1_CON_EN"   , 25, AP_KHA, _payload[0].console.eth.enabled_at_boot, 0),
-    AP_GROUPINFO("P1_POW_V_PIN", 26, AP_KHA, _payload[0].power.valid_pin, 1),
-    AP_GROUPINFO("P1_POW_E_PIN", 27, AP_KHA, _payload[0].power.enable_pin, 3),
-    AP_GROUPINFO("P1_POW_ENABL", 28, AP_KHA, _payload[0].power.enabled_at_boot, 1),
-    AP_GROUPINFO("P1_CON_RATE" , 29, AP_KHA, _payload[0].console.eth.interval_ms, 100),
+#if AP_MODPAYLOAD_PAYLOAD_COUNT_MAX >= 1
+    AP_GROUPINFO("P1_CON_IP1"  , 20, AP_ModPayload, _payload[0].console.eth.addr.ip[0], 239),
+    AP_GROUPINFO("P1_CON_IP2"  , 21, AP_ModPayload, _payload[0].console.eth.addr.ip[1], 2),
+    AP_GROUPINFO("P1_CON_IP3"  , 22, AP_ModPayload, _payload[0].console.eth.addr.ip[2], 3),
+    AP_GROUPINFO("P1_CON_IP4"  , 23, AP_ModPayload, _payload[0].console.eth.addr.ip[3], 2),
+    AP_GROUPINFO("P1_CON_PORT" , 24, AP_ModPayload, _payload[0].console.eth.addr.port, 7000),
+    AP_GROUPINFO("P1_CON_EN"   , 25, AP_ModPayload, _payload[0].console.eth.enabled_at_boot, 0),
+    AP_GROUPINFO("P1_POW_V_PIN", 26, AP_ModPayload, _payload[0].power.valid_pin, 1),
+    AP_GROUPINFO("P1_POW_E_PIN", 27, AP_ModPayload, _payload[0].power.enable_pin, 3),
+    AP_GROUPINFO("P1_POW_ENABL", 28, AP_ModPayload, _payload[0].power.enabled_at_boot, 1),
+    AP_GROUPINFO("P1_CON_RATE" , 29, AP_ModPayload, _payload[0].console.eth.interval_ms, 100),
 #endif
 
-#if AP_KHA_MAIM_PAYLOAD_COUNT_MAX >= 2
-    AP_GROUPINFO("P2_CON_IP1"  , 30, AP_KHA, _payload[1].console.eth.addr.ip[0], 239),
-    AP_GROUPINFO("P2_CON_IP2"  , 31, AP_KHA, _payload[1].console.eth.addr.ip[1], 2),
-    AP_GROUPINFO("P2_CON_IP3"  , 32, AP_KHA, _payload[1].console.eth.addr.ip[2], 3),
-    AP_GROUPINFO("P2_CON_IP4"  , 33, AP_KHA, _payload[1].console.eth.addr.ip[3], 3),
-    AP_GROUPINFO("P2_CON_PORT" , 34, AP_KHA, _payload[1].console.eth.addr.port, 7001),
-    AP_GROUPINFO("P2_CON_EN"   , 35, AP_KHA, _payload[1].console.eth.enabled_at_boot, 0),
-    AP_GROUPINFO("P2_POW_V_PIN", 36, AP_KHA, _payload[1].power.valid_pin, 2),
-    AP_GROUPINFO("P2_POW_E_PIN", 37, AP_KHA, _payload[1].power.enable_pin, 4),
-    AP_GROUPINFO("P2_POW_ENABL", 38, AP_KHA, _payload[1].power.enabled_at_boot, 1),
-    AP_GROUPINFO("P2_CON_RATE" , 39, AP_KHA, _payload[1].console.eth.interval_ms, 100),
-#endif // AP_KHA_MAIM_PAYLOAD_COUNT_MAX
+#if AP_MODPAYLOAD_PAYLOAD_COUNT_MAX >= 2
+    AP_GROUPINFO("P2_CON_IP1"  , 30, AP_ModPayload, _payload[1].console.eth.addr.ip[0], 239),
+    AP_GROUPINFO("P2_CON_IP2"  , 31, AP_ModPayload, _payload[1].console.eth.addr.ip[1], 2),
+    AP_GROUPINFO("P2_CON_IP3"  , 32, AP_ModPayload, _payload[1].console.eth.addr.ip[2], 3),
+    AP_GROUPINFO("P2_CON_IP4"  , 33, AP_ModPayload, _payload[1].console.eth.addr.ip[3], 3),
+    AP_GROUPINFO("P2_CON_PORT" , 34, AP_ModPayload, _payload[1].console.eth.addr.port, 7001),
+    AP_GROUPINFO("P2_CON_EN"   , 35, AP_ModPayload, _payload[1].console.eth.enabled_at_boot, 0),
+    AP_GROUPINFO("P2_POW_V_PIN", 36, AP_ModPayload, _payload[1].power.valid_pin, 2),
+    AP_GROUPINFO("P2_POW_E_PIN", 37, AP_ModPayload, _payload[1].power.enable_pin, 4),
+    AP_GROUPINFO("P2_POW_ENABL", 38, AP_ModPayload, _payload[1].power.enabled_at_boot, 1),
+    AP_GROUPINFO("P2_CON_RATE" , 39, AP_ModPayload, _payload[1].console.eth.interval_ms, 100),
+#endif // AP_MODPAYLOAD_PAYLOAD_COUNT_MAX
 
-#if AP_KHA_MAIM_PAYLOAD_COUNT_MAX >= 3
+#if AP_MODPAYLOAD_PAYLOAD_COUNT_MAX >= 3
     // 40-49
 #endif
 
-#if AP_KHA_MAIM_PAYLOAD_COUNT_MAX >= 4
+#if AP_MODPAYLOAD_PAYLOAD_COUNT_MAX >= 4
     // 50-59
 #endif
 
     AP_GROUPEND
 };
 
-AP_KHA::AP_KHA(void)
+AP_ModPayload::AP_ModPayload(void)
 {
-    _singleton = this;
-
-    // load parameter defaults
     AP_Param::setup_object_defaults(this, var_info);
+#if CONFIG_HAL_BOARD == HAL_BOARD_SITL
+    if (_singleton != nullptr) {
+        AP_HAL::panic("AP_ModPayload must be singleton");
+    }
+#endif
+    _singleton = this;
 }
 
-void AP_KHA::init(void)
+void AP_ModPayload::init(void)
 {
     if (_init.done || !is_enabled()) {
         return;
     }
 
-    _ahrs.uart.port = AP::serialmanager().find_serial(AP_SerialManager::SerialProtocol_KHA_MAIM_AHRS_Sensor, 0);
+    _ahrs.uart.port = AP::serialmanager().find_serial(AP_SerialManager::SerialProtocol_ModPayload_AHRS_Sensor, 0);
 
-    for (uint8_t p=0; p<AP_KHA_MAIM_PAYLOAD_COUNT_MAX; p++) {
-        _payload[p].state.uart.port = AP::serialmanager().find_serial(AP_SerialManager::SerialProtocol_KHA_MAIM_Payload_State, p);
-        _payload[p].console.uart.port = AP::serialmanager().find_serial(AP_SerialManager::SerialProtocol_KHA_MAIM_Payload_Console, p);
+    for (uint8_t p=0; p<AP_MODPAYLOAD_PAYLOAD_COUNT_MAX; p++) {
+        _payload[p].state.uart.port = AP::serialmanager().find_serial(AP_SerialManager::SerialProtocol_ModPayload_Payload_State, p);
+        _payload[p].console.uart.port = AP::serialmanager().find_serial(AP_SerialManager::SerialProtocol_ModPayload_Payload_Console, p);
     }
 
-    _maint.uart.port = AP::serialmanager().find_serial(AP_SerialManager::SerialProtocol_KHA_MAIM_Maint, 0);
-    _avionics.uart.port = AP::serialmanager().find_serial(AP_SerialManager::SerialProtocol_KHA_MAIM_Avionics, 0);
+    _maint.uart.port = AP::serialmanager().find_serial(AP_SerialManager::SerialProtocol_ModPayload_Maint, 0);
+    _avionics.uart.port = AP::serialmanager().find_serial(AP_SerialManager::SerialProtocol_ModPayload_Avionics, 0);
 
 
     if (_system.pps.in.pin >= 0) {
         hal.gpio->pinMode(_system.pps.in.pin, HAL_GPIO_INPUT);
         if (!hal.gpio->attach_interrupt(
                 _system.pps.in.pin,
-                FUNCTOR_BIND_MEMBER(&AP_KHA::pps_pin_irq_handler,
+                FUNCTOR_BIND_MEMBER(&AP_ModPayload::pps_pin_irq_handler,
                                     void,
                                     uint8_t,
                                     bool,
                                     uint32_t),
                 AP_HAL::GPIO::INTERRUPT_BOTH)) {
-            GCS_SEND_TEXT(MAV_SEVERITY_WARNING, "KHA: Failed to attach to pin %u", (unsigned)_system.pps.in.pin);
+            GCS_SEND_TEXT(MAV_SEVERITY_WARNING, "ModPayload: Failed to attach to pin %u", (unsigned)_system.pps.in.pin);
         }
         _system.pps.in.state = hal.gpio->read(_system.pps.in.pin);
     }
@@ -147,7 +153,7 @@ void AP_KHA::init(void)
     _maint.uart.bytes_in.len = 0;
     _ahrs.uart.bytes_in.len = 0;
 
-    for (uint8_t p=0; p<AP_KHA_MAIM_PAYLOAD_COUNT_MAX; p++) {
+    for (uint8_t p=0; p<AP_MODPAYLOAD_PAYLOAD_COUNT_MAX; p++) {
         hal.gpio->pinMode(_payload[p].power.valid_pin, HAL_GPIO_INPUT);
         
         bool enabled;
@@ -172,16 +178,16 @@ void AP_KHA::init(void)
     _init.done = true;
 }
 
-bool AP_KHA::is_enabled()
+bool AP_ModPayload::is_enabled()
 {
-    switch ((KHA_Vehicle_Type_t)_type.get()) {
-        case KHA_Vehicle_Type_t::MAIM:
+    switch ((ModPayload_Vehicle_Type_t)_type.get()) {
+        case ModPayload_Vehicle_Type_t::MAIM:
             // this is the only support vehicle
             return true;
 
-        case KHA_Vehicle_Type_t::DISABLED:
-        case KHA_Vehicle_Type_t::Plane:
-        case KHA_Vehicle_Type_t::Plane_VTOL:
+        case ModPayload_Vehicle_Type_t::DISABLED:
+        case ModPayload_Vehicle_Type_t::Plane:
+        case ModPayload_Vehicle_Type_t::Plane_VTOL:
         default:
             // not supported, do nothing
             break;
@@ -189,7 +195,7 @@ bool AP_KHA::is_enabled()
     return false;
 }
 
-void AP_KHA::update(void)
+void AP_ModPayload::update(void)
 {
     if (!is_enabled()) {
         return;
@@ -203,7 +209,7 @@ void AP_KHA::update(void)
 
     housekeeping_system(now_ms);
 
-    for (uint8_t p=0; p<AP_KHA_MAIM_PAYLOAD_COUNT_MAX; p++) {
+    for (uint8_t p=0; p<AP_MODPAYLOAD_PAYLOAD_COUNT_MAX; p++) {
         housekeeping_payload(now_ms, p);
     }
 
@@ -217,16 +223,16 @@ void AP_KHA::update(void)
     service_json_out(now_ms);
 }
 
-void AP_KHA::housekeeping_system(const uint32_t now_ms)
+void AP_ModPayload::housekeeping_system(const uint32_t now_ms)
 {
     _avionics.uart.bytes_in.len = _avionics.uart.bytes_out.len = 0;
     _maint.uart.bytes_in.len = _maint.uart.bytes_out.len = 0;
     _ahrs.uart.bytes_in.len = _ahrs.uart.bytes_out.len = 0;
 
-    update_power(now_ms, _system.power.data, (uint8_t)KHA_MAIM_POWER_TARGET::SYSTEM);
+    update_power(now_ms, _system.power.data, (uint8_t)ModPayload_POWER_TARGET::SYSTEM);
 }
 
-void AP_KHA::update_power(const uint32_t now_ms, KHA_Power_t &power_data, const uint8_t battery_instance)
+void AP_ModPayload::update_power(const uint32_t now_ms, ModPayload_Power_t &power_data, const uint8_t battery_instance)
 {
     if (now_ms - power_data.last_ms < 100) {
         return;
@@ -253,9 +259,9 @@ void AP_KHA::update_power(const uint32_t now_ms, KHA_Power_t &power_data, const 
     }
 }
 
-void AP_KHA::housekeeping_payload(const uint32_t now_ms, const uint8_t index)
+void AP_ModPayload::housekeeping_payload(const uint32_t now_ms, const uint8_t index)
 {
-    if (index >= AP_KHA_MAIM_PAYLOAD_COUNT_MAX) {
+    if (index >= AP_MODPAYLOAD_PAYLOAD_COUNT_MAX) {
         return;
     }
     _payload[index].power.valid = hal.gpio->read(_payload[index].power.valid_pin);
@@ -264,10 +270,10 @@ void AP_KHA::housekeeping_payload(const uint32_t now_ms, const uint8_t index)
     _payload[index].state.uart.bytes_in.len = _payload[index].state.uart.bytes_out.len = 0;
     _payload[index].console.uart.bytes_in.len = _payload[index].console.uart.bytes_out.len = 0;
 
-    update_power(now_ms, _payload[index].power.data, (uint8_t)(KHA_MAIM_POWER_TARGET::PAYLOAD1)+index);
+    update_power(now_ms, _payload[index].power.data, (uint8_t)(ModPayload_POWER_TARGET::PAYLOAD1)+index);
 }
 
-void AP_KHA::service_input_uarts(const uint32_t now_ms)
+void AP_ModPayload::service_input_uarts(const uint32_t now_ms)
 {
     if (_avionics.uart.port != nullptr) {
         _avionics.uart.bytes_in.len = _avionics.uart.port->read(_avionics.uart.bytes_in.data, sizeof(_avionics.uart.bytes_in.data));
@@ -281,7 +287,7 @@ void AP_KHA::service_input_uarts(const uint32_t now_ms)
         _ahrs.uart.bytes_in.len = _ahrs.uart.port->read(_ahrs.uart.bytes_in.data, sizeof(_ahrs.uart.bytes_in.data));
     }
 
-    for (uint8_t p=0; p<AP_KHA_MAIM_PAYLOAD_COUNT_MAX; p++) {
+    for (uint8_t p=0; p<AP_MODPAYLOAD_PAYLOAD_COUNT_MAX; p++) {
         if (_payload[p].state.uart.port != nullptr) {
             _payload[p].state.uart.bytes_in.len = _payload[p].state.uart.port->read(_payload[p].state.uart.bytes_in.data, sizeof(_payload[p].state.uart.bytes_in.data));
         }
@@ -293,7 +299,7 @@ void AP_KHA::service_input_uarts(const uint32_t now_ms)
 }
 
 
-void AP_KHA::service_router(const uint32_t now_ms)
+void AP_ModPayload::service_router(const uint32_t now_ms)
 {
     uint16_t len = 0;
 
@@ -306,14 +312,14 @@ void AP_KHA::service_router(const uint32_t now_ms)
     // }
     
     // copy ahrs.in -> state[p].out
-    for (uint8_t p=0; p<AP_KHA_MAIM_PAYLOAD_COUNT_MAX; p++) {
+    for (uint8_t p=0; p<AP_MODPAYLOAD_PAYLOAD_COUNT_MAX; p++) {
         len = MIN(_ahrs.uart.bytes_in.len, sizeof(_payload[p].state.uart.bytes_out.data));
         memcpy(_payload[p].state.uart.bytes_out.data, _ahrs.uart.bytes_in.data, len);
         _payload[p].state.uart.bytes_out.len += len;
     }
 
     // // copy state[p].in -> ahrs.out
-    // for (uint8_t p=0; p<AP_KHA_MAIM_PAYLOAD_COUNT_MAX; p++) {
+    // for (uint8_t p=0; p<AP_MODPAYLOAD_PAYLOAD_COUNT_MAX; p++) {
     //     // if more than one channel writes to "_ahrs.uart.bytes_out", then we need to append it so we don't clobber the data
     //     // This is likely ruining ther packets anyway so this is best done as locked access of one-on-one at a time
     //     const uint16_t offset = _ahrs.uart.bytes_out.len;
@@ -322,23 +328,23 @@ void AP_KHA::service_router(const uint32_t now_ms)
     //     _payload[p].state.uart.bytes_out.len += len;
     // }
 
-    switch ((KHA_MAIM_Routing)_ahrs.route.get()) {
-    case KHA_MAIM_Routing::PAYLOAD1_STATE:
+    switch ((ModPayload_Routing)_ahrs.route.get()) {
+    case ModPayload_Routing::PAYLOAD1_STATE:
         len = MIN(_payload[0].state.uart.bytes_in.len, sizeof(_ahrs.uart.bytes_out.data));
         memcpy(_ahrs.uart.bytes_out.data, _payload[0].state.uart.bytes_in.data, len);
         _ahrs.uart.bytes_out.len += len;
         break;
-    case KHA_MAIM_Routing::PAYLOAD2_STATE:
+    case ModPayload_Routing::PAYLOAD2_STATE:
         len = MIN(_payload[1].state.uart.bytes_in.len, sizeof(_ahrs.uart.bytes_out.data));
         memcpy(_ahrs.uart.bytes_out.data, _payload[1].state.uart.bytes_in.data, len);
         _ahrs.uart.bytes_out.len += len;
         break;
-    case KHA_MAIM_Routing::MAINT:
+    case ModPayload_Routing::MAINT:
         len = MIN(_maint.uart.bytes_in.len, sizeof(_ahrs.uart.bytes_out.data));
         memcpy(_ahrs.uart.bytes_out.data, _maint.uart.bytes_in.data, len);
         _ahrs.uart.bytes_out.len += len;
         break;
-    case KHA_MAIM_Routing::AVIONICS:
+    case ModPayload_Routing::AVIONICS:
         len = MIN(_avionics.uart.bytes_in.len, sizeof(_ahrs.uart.bytes_out.data));
         memcpy(_ahrs.uart.bytes_out.data, _avionics.uart.bytes_in.data, len);
         _ahrs.uart.bytes_out.len += len;
@@ -348,23 +354,23 @@ void AP_KHA::service_router(const uint32_t now_ms)
     }
 
 
-    switch ((KHA_MAIM_Routing)_maint.route.get()) {
-    case KHA_MAIM_Routing::PAYLOAD1_CONSOLE_SERIAL:
+    switch ((ModPayload_Routing)_maint.route.get()) {
+    case ModPayload_Routing::PAYLOAD1_CONSOLE_SERIAL:
         len = MIN(_payload[0].state.uart.bytes_in.len, sizeof(_maint.uart.bytes_out.data));
         memcpy(_maint.uart.bytes_out.data, _payload[0].state.uart.bytes_in.data, len);
         _maint.uart.bytes_out.len += len;
         break;
-    case KHA_MAIM_Routing::PAYLOAD2_CONSOLE_SERIAL:
+    case ModPayload_Routing::PAYLOAD2_CONSOLE_SERIAL:
         len = MIN(_payload[1].state.uart.bytes_in.len, sizeof(_maint.uart.bytes_out.data));
         memcpy(_maint.uart.bytes_out.data, _payload[1].state.uart.bytes_in.data, len);
         _maint.uart.bytes_out.len += len;
         break;
-    case KHA_MAIM_Routing::AHRS_Byte_Passthrough:
+    case ModPayload_Routing::AHRS_Byte_Passthrough:
         len = MIN(_ahrs.uart.bytes_in.len, sizeof(_maint.uart.bytes_out.data));
         memcpy(_maint.uart.bytes_out.data, _ahrs.uart.bytes_in.data, len);
         _maint.uart.bytes_out.len += len;
         break;
-    case KHA_MAIM_Routing::AVIONICS:
+    case ModPayload_Routing::AVIONICS:
         len = MIN(_avionics.uart.bytes_in.len, sizeof(_maint.uart.bytes_out.data));
         memcpy(_maint.uart.bytes_out.data, _avionics.uart.bytes_in.data, len);
         _maint.uart.bytes_out.len += len;
@@ -373,23 +379,23 @@ void AP_KHA::service_router(const uint32_t now_ms)
         break;
     }
 
-    switch ((KHA_MAIM_Routing)_avionics.route.get()) {
-    case KHA_MAIM_Routing::PAYLOAD1_CONSOLE_SERIAL:
+    switch ((ModPayload_Routing)_avionics.route.get()) {
+    case ModPayload_Routing::PAYLOAD1_CONSOLE_SERIAL:
         len = MIN(_payload[0].state.uart.bytes_in.len, sizeof(_avionics.uart.bytes_out.data));
         memcpy(_avionics.uart.bytes_out.data, _payload[0].state.uart.bytes_in.data, len);
         _avionics.uart.bytes_out.len += len;
         break;
-    case KHA_MAIM_Routing::PAYLOAD2_CONSOLE_SERIAL:
+    case ModPayload_Routing::PAYLOAD2_CONSOLE_SERIAL:
         len = MIN(_payload[1].state.uart.bytes_in.len, sizeof(_avionics.uart.bytes_out.data));
         memcpy(_avionics.uart.bytes_out.data, _payload[1].state.uart.bytes_in.data, len);
         _avionics.uart.bytes_out.len += len;
         break;
-    case KHA_MAIM_Routing::AHRS_Byte_Passthrough:
+    case ModPayload_Routing::AHRS_Byte_Passthrough:
         len = MIN(_ahrs.uart.bytes_in.len, sizeof(_avionics.uart.bytes_out.data));
         memcpy(_avionics.uart.bytes_out.data, _ahrs.uart.bytes_in.data, len);
         _maint.uart.bytes_out.len += len;
         break;
-    case KHA_MAIM_Routing::MAINT:
+    case ModPayload_Routing::MAINT:
         len = MIN(_maint.uart.bytes_in.len, sizeof(_avionics.uart.bytes_out.data));
         memcpy(_avionics.uart.bytes_out.data, _maint.uart.bytes_in.data, len);
         _avionics.uart.bytes_out.len += len;
@@ -400,13 +406,13 @@ void AP_KHA::service_router(const uint32_t now_ms)
 
 
 
-    switch ((KHA_MAIM_Routing)_payload[0].console.route.get()) {
-    case KHA_MAIM_Routing::MAINT:
+    switch ((ModPayload_Routing)_payload[0].console.route.get()) {
+    case ModPayload_Routing::MAINT:
         len = MIN(_maint.uart.bytes_in.len, sizeof(_payload[0].console.uart.bytes_out.data));
         memcpy(_payload[0].console.uart.bytes_out.data, _maint.uart.bytes_in.data, len);
         _payload[0].console.uart.bytes_out.len += len;
         break;
-    case KHA_MAIM_Routing::PAYLOAD1_CONSOLE_IP:
+    case ModPayload_Routing::PAYLOAD1_CONSOLE_IP:
         // len = MIN(_payload[0].console.eth.buf_in.available(), sizeof(_payload[0].console.uart.bytes_out.data));
         // _payload[0].console.uart.bytes_out.len = _payload[0].console.eth.buf_in.read(_payload[0].console.uart.bytes_out.data, len);
 
@@ -417,13 +423,13 @@ void AP_KHA::service_router(const uint32_t now_ms)
         break;
     }
 
-    switch ((KHA_MAIM_Routing)_payload[1].console.route.get()) {
-    case KHA_MAIM_Routing::MAINT:
+    switch ((ModPayload_Routing)_payload[1].console.route.get()) {
+    case ModPayload_Routing::MAINT:
         len = MIN(_maint.uart.bytes_in.len, sizeof(_payload[1].console.uart.bytes_out.data));
         memcpy(_payload[1].console.uart.bytes_out.data, _maint.uart.bytes_in.data, len);
         _payload[1].console.uart.bytes_out.len += len;
         break;
-    case KHA_MAIM_Routing::PAYLOAD2_CONSOLE_IP:
+    case ModPayload_Routing::PAYLOAD2_CONSOLE_IP:
         // len = MIN(_payload[1].console.eth.buf_in.available(), sizeof(_payload[1].console.uart.bytes_out.data));
         // _payload[1].console.uart.bytes_out.len = _payload[1].console.eth.buf_in.read(_payload[1].console.uart.bytes_out.data, len);
 
@@ -436,7 +442,7 @@ void AP_KHA::service_router(const uint32_t now_ms)
 
 }
 
-void AP_KHA::service_output_uarts(const uint32_t now_ms)
+void AP_ModPayload::service_output_uarts(const uint32_t now_ms)
 {
     if (_avionics.uart.port != nullptr && _avionics.uart.bytes_out.len > 0) {
         _avionics.uart.port->write(_avionics.uart.bytes_out.data, _avionics.uart.bytes_out.len);
@@ -450,7 +456,7 @@ void AP_KHA::service_output_uarts(const uint32_t now_ms)
         _ahrs.uart.port->write(_ahrs.uart.bytes_out.data, _ahrs.uart.bytes_out.len);
     }
 
-    for (uint8_t p=0; p<AP_KHA_MAIM_PAYLOAD_COUNT_MAX; p++) {
+    for (uint8_t p=0; p<AP_MODPAYLOAD_PAYLOAD_COUNT_MAX; p++) {
         if (_payload[p].state.uart.port != nullptr && _payload[p].state.uart.bytes_out.len > 0) {
             _payload[p].state.uart.port->write(_payload[p].state.uart.bytes_out.data, _payload[p].state.uart.bytes_out.len);
         }
@@ -460,7 +466,7 @@ void AP_KHA::service_output_uarts(const uint32_t now_ms)
     }
 }
 
-void AP_KHA::pps_pin_irq_handler(uint8_t pin, bool pin_value, uint32_t timestamp_us)
+void AP_ModPayload::pps_pin_irq_handler(uint8_t pin, bool pin_value, uint32_t timestamp_us)
 {
     if (pin != _system.pps.in.pin) {
         return;
@@ -475,7 +481,7 @@ void AP_KHA::pps_pin_irq_handler(uint8_t pin, bool pin_value, uint32_t timestamp
 }
 
 
-void AP_KHA::set_enable(const uint32_t index, const bool value)
+void AP_ModPayload::set_enable(const uint32_t index, const bool value)
 {
     if (_ignore_uavcan_gpio_relay_commands) {
         return;
@@ -491,7 +497,7 @@ void AP_KHA::set_enable(const uint32_t index, const bool value)
     }
 }
 
-bool AP_KHA::get_enable(const uint32_t index) const
+bool AP_ModPayload::get_enable(const uint32_t index) const
 {
     bool result = false;
     switch (index) {
@@ -505,7 +511,7 @@ bool AP_KHA::get_enable(const uint32_t index) const
     return result;
 }
 
-char* AP_KHA::get_udp_out_ip(const uint32_t stream_id)
+char* AP_ModPayload::get_udp_out_ip(const uint32_t stream_id)
 {
     // switch (stream_id) {
     //     case 0: return convert_ip_to_str(stream_id, _ahrs.json.eth.addr);
@@ -515,7 +521,7 @@ char* AP_KHA::get_udp_out_ip(const uint32_t stream_id)
     return (char*)"1.2.3.4";
 }
 
-uint16_t AP_KHA::get_udp_out_port(const uint32_t stream_id)
+uint16_t AP_ModPayload::get_udp_out_port(const uint32_t stream_id)
 {
     switch (stream_id) {
         case 0: return _ahrs.json.eth.addr.port;
@@ -525,7 +531,7 @@ uint16_t AP_KHA::get_udp_out_port(const uint32_t stream_id)
     return 1234;
 }
 
-char* AP_KHA::get_udp_out_name(const uint32_t stream_id)
+char* AP_ModPayload::get_udp_out_name(const uint32_t stream_id)
 {
     switch (stream_id) {
         case 0: return (char*)"AHRS JSON";
@@ -535,7 +541,7 @@ char* AP_KHA::get_udp_out_name(const uint32_t stream_id)
     return (char*)"Unknown Name";
 }
 
-uint32_t AP_KHA::get_udp_out_interval_ms(const uint32_t stream_id)
+uint32_t AP_ModPayload::get_udp_out_interval_ms(const uint32_t stream_id)
 {
     int32_t interval_ms;
     switch (stream_id) {
@@ -547,7 +553,7 @@ uint32_t AP_KHA::get_udp_out_interval_ms(const uint32_t stream_id)
     return (uint32_t)constrain_int32(interval_ms, 1, 60000);
 }
 
-// char* AP_KHA::convert_ip_to_str(const uint32_t stream_id)
+// char* AP_ModPayload::convert_ip_to_str(const uint32_t stream_id)
 // {
 // #if HAL_ENABLE_NETWORKING
 //     const uint32_t ip = IP4_ADDR_VALUE((int)addr.ip[0].get(),(int)addr.ip[1].get(),(int)addr.ip[2].get(),(int)addr.ip[3].get());
@@ -563,7 +569,7 @@ uint32_t AP_KHA::get_udp_out_interval_ms(const uint32_t stream_id)
 // #endif
 // }
 
-// char* AP_KHA::get_udp_out_data_str(const uint32_t stream_id)
+// char* AP_ModPayload::get_udp_out_data_str(const uint32_t stream_id)
 // {
 //     uint32_t len;
 //     switch (stream_id) {
@@ -572,7 +578,7 @@ uint32_t AP_KHA::get_udp_out_interval_ms(const uint32_t stream_id)
 
 //      // case 1: return _payload[0].console.eth.enabled ? (char*)"Payload 1 Console payload data" : nullptr;
 //         case 1:
-//             if ((KHA_MAIM_Routing)_payload[0].console.route.get() != KHA_MAIM_Routing::PAYLOAD1_CONSOLE_IP) {
+//             if ((ModPayload_Routing)_payload[0].console.route.get() != ModPayload_Routing::PAYLOAD1_CONSOLE_IP) {
 //                 break;
 //             }
 //             len = _payload[0].console.eth.buf_out.available();
@@ -584,7 +590,7 @@ uint32_t AP_KHA::get_udp_out_interval_ms(const uint32_t stream_id)
 
 //      // case 2: return _payload[1].console.eth.enabled ? (char*)"Payload 2 Console payload data" : nullptr;
 //         case 2:
-//             if ((KHA_MAIM_Routing)_payload[1].console.route.get() != KHA_MAIM_Routing::PAYLOAD2_CONSOLE_IP) {
+//             if ((ModPayload_Routing)_payload[1].console.route.get() != ModPayload_Routing::PAYLOAD2_CONSOLE_IP) {
 //                 break;
 //             }
 //             len = _payload[1].console.eth.buf_out.available();
@@ -597,7 +603,7 @@ uint32_t AP_KHA::get_udp_out_interval_ms(const uint32_t stream_id)
 //     return nullptr;
 // }
 
-// uint32_t AP_KHA::get_udp_out_data(const uint32_t stream_id, uint8_t* data, const uint32_t data_len_max)
+// uint32_t AP_ModPayload::get_udp_out_data(const uint32_t stream_id, uint8_t* data, const uint32_t data_len_max)
 // {
 //     uint32_t len;
 //     switch (stream_id) {
@@ -608,7 +614,7 @@ uint32_t AP_KHA::get_udp_out_interval_ms(const uint32_t stream_id)
 
 //      // case 1: return _payload[0].console.eth.enabled ? (char*)"Payload 1 Console payload data" : nullptr;
 //         case 1:
-//             // if ((KHA_MAIM_Routing)_payload[0].console.route.get() != KHA_MAIM_Routing::PAYLOAD1_CONSOLE_IP) {
+//             // if ((ModPayload_Routing)_payload[0].console.route.get() != ModPayload_Routing::PAYLOAD1_CONSOLE_IP) {
 //             //     break;
 //             // }
 //             // len = _payload[0].console.eth.buf_out.available();
@@ -620,7 +626,7 @@ uint32_t AP_KHA::get_udp_out_interval_ms(const uint32_t stream_id)
 
 //      // case 2: return _payload[1].console.eth.enabled ? (char*)"Payload 2 Console payload data" : nullptr;
 //         case 2:
-//             // if ((KHA_MAIM_Routing)_payload[1].console.route.get() != KHA_MAIM_Routing::PAYLOAD2_CONSOLE_IP) {
+//             // if ((ModPayload_Routing)_payload[1].console.route.get() != ModPayload_Routing::PAYLOAD2_CONSOLE_IP) {
 //             //     break;
 //             // }
 //             // len = _payload[1].console.eth.buf_out.available();
@@ -633,7 +639,7 @@ uint32_t AP_KHA::get_udp_out_interval_ms(const uint32_t stream_id)
 //     return 0;
 // }
 
-void AP_KHA::service_json_out(const uint32_t now_ms)
+void AP_ModPayload::service_json_out(const uint32_t now_ms)
 {
     if (!_ahrs.json.eth.enabled) {
         return;
@@ -653,7 +659,7 @@ void AP_KHA::service_json_out(const uint32_t now_ms)
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic error "-Wframe-larger-than=1700"
-void AP_KHA::generate_and_send_json(const KHA_JSON_Msg msg_name)
+void AP_ModPayload::generate_and_send_json(const ModPayload_JSON_Msg msg_name)
 {
     auto &ahrs = AP::ahrs();
     if (!ahrs.initialised()) {
@@ -700,7 +706,7 @@ void AP_KHA::generate_and_send_json(const KHA_JSON_Msg msg_name)
     UNUSED_RESULT(AP::gps().vertical_accuracy(gps_velocity_error.z));
 
     switch (msg_name) {
-    case KHA_JSON_Msg::MAIM_VER: {
+    case ModPayload_JSON_Msg::MAIM_VER: {
         //return (char*)R"({"class":"MAIM_VER","sw":"1.0","dev":"SBG ELLIPSE-N","devhw":"2.4","devsw":"6.5"})";
         _ahrs.json.bytes_out.len = hal.util->snprintf((char*)_ahrs.json.bytes_out.data, sizeof(_ahrs.json.bytes_out.data),
             "{\"class\":\"MAIM_VER\",\"sw\":\"%s\",\"dev\":\"SBG ELLIPSE-N\",\"devhw\":\"%u.%u.%u.%u.%u\",\"devsw\":\"%u.%u.%u.%u.%u\"}",
@@ -711,7 +717,7 @@ void AP_KHA::generate_and_send_json(const KHA_JSON_Msg msg_name)
         }
         break;
 
-    case KHA_JSON_Msg::STATUS:
+    case ModPayload_JSON_Msg::STATUS:
         // return (char*)R"({"class":"STATUS","general":"7F","com":"17FFFFFF","aiding":"3FFF","utc":"64","imu":"17E","mag":"0C5","sol":"1234CC7","vel":"C3","pos":"FFABC","alt":"3"})";
         _ahrs.json.bytes_out.len = hal.util->snprintf((char*)_ahrs.json.bytes_out.data, sizeof(_ahrs.json.bytes_out.data),
             "{\"class\":\"STATUS\",\"general\":\"%X\",\"com\":\"%X\",\"aiding\":\"%X\",\"utc\":\"%X\",\"imu\":\"%X\",\"mag\":\"%X\",\"sol\":\"%X\",\"vel\":\"%X\",\"pos\":\"%X\",\"alt\":\"%X\"}",
@@ -728,7 +734,7 @@ void AP_KHA::generate_and_send_json(const KHA_JSON_Msg msg_name)
             );
         break;
 
-    case KHA_JSON_Msg::IMUNAV: {
+    case ModPayload_JSON_Msg::IMUNAV: {
         Vector3f vel = Vector3f();
         AP::ahrs().get_velocity_NED(vel);
     //     return (char*)R"({"class":"IMUNAV","veln":-175.135,"vele":-22.0,"veld":-4.234})";
@@ -740,7 +746,7 @@ void AP_KHA::generate_and_send_json(const KHA_JSON_Msg msg_name)
         }
         break;
 
-    case KHA_JSON_Msg::PRESSURE:
+    case ModPayload_JSON_Msg::PRESSURE:
     //     return (char*)R"({"class":"PRESSURE","pressure":101325.0,"alt":0.0})";
         _ahrs.json.bytes_out.len = hal.util->snprintf((char*)_ahrs.json.bytes_out.data, sizeof(_ahrs.json.bytes_out.data),
             "{\"class\":\"PRESSURE\",\"pressure\":\"%.1f\",\"alt\":\"%.3f\"}",
@@ -748,7 +754,7 @@ void AP_KHA::generate_and_send_json(const KHA_JSON_Msg msg_name)
             (double)AP::baro().get_altitude());
         break;
 
-    case KHA_JSON_Msg::TPV:
+    case ModPayload_JSON_Msg::TPV:
     //     return (char*)R"({"class":"TPV","time":"2017-05-15T10:30:43.123Z","ept":500, "track":123.45,"lat":12.12345,"lon":-12.12345,"alt":12345.12, "mode":3,"epx":12.12,"epy":12.12,"epv":12.12,"climb":-4.234, "epd":12.345,"epc":12.345})";
         _ahrs.json.bytes_out.len = hal.util->snprintf((char*)_ahrs.json.bytes_out.data, sizeof(_ahrs.json.bytes_out.data),
             "{\"class\":\"TPV\",\"time\":\"%s\",\"ept\":%u,\"track\":%.2f,\"lat\":%.7f,\"lon\":%.7f,\"alt\":%.2f,\"mode\":%u,\"epx\":%.2f,\"epy\":%.2f,\"epv\":%.2f,\"climb\":%.3f,\"epd\":%.3f,\"epc\":%.3f}",
@@ -767,7 +773,7 @@ void AP_KHA::generate_and_send_json(const KHA_JSON_Msg msg_name)
             (double)UNKNOWN_VALUE); // epc - Climb/Sink Error Estimate, meters per second (Down - Positive)
         break;
 
-    case KHA_JSON_Msg::ATT:
+    case ModPayload_JSON_Msg::ATT:
     //     return (char*)R"({"class":"ATT","acc_x":3.123,"acc_y":2.123,"acc_z":-1.456,"gyro_x":1.456,"gyro_y":2.789,"gyro_z":3.567,"temp":12.12,"mag_x":123.456,"mag_y":234.789,"mag_z":24.223,"roll":3.001,"pitch":-0.345,"yaw":-2.789,"heading":123.45})";
         _ahrs.json.bytes_out.len = hal.util->snprintf((char*)_ahrs.json.bytes_out.data, sizeof(_ahrs.json.bytes_out.data),
             "{\"class\":\"ATT\",\"acc_x\":%.3f,\"acc_y\":%.3f,\"acc_z\":%.3f,\"gyro_x\":%.3f,\"gyro_y\":%.3f,\"gyro_z\":%.3f,\"temp\":%.2f,\"mag_x\":%.3f,\"mag_y\":%.3f,\"mag_z\":%.3f,\"roll\":%.3f,\"pitch\":%.3f,\"yaw\":%.3f,\"heading\":%.2f}",
@@ -787,7 +793,7 @@ void AP_KHA::generate_and_send_json(const KHA_JSON_Msg msg_name)
             (double)degrees(ahrs.groundspeed_vector().angle()));
         break;
 
-    case KHA_JSON_Msg::SKY:
+    case ModPayload_JSON_Msg::SKY:
     //     return (char*)R"({"class":"SKY","time":"2017-05-15T10:30:43.123Z","hdop":6.3})";
         _ahrs.json.bytes_out.len = hal.util->snprintf((char*)_ahrs.json.bytes_out.data, sizeof(_ahrs.json.bytes_out.data), 
             "{\"class\":\"SKY\",\"time\":\"%s\",\"hdop\":%.1f}",
@@ -795,7 +801,7 @@ void AP_KHA::generate_and_send_json(const KHA_JSON_Msg msg_name)
             (double)AP::gps().get_hdop()*0.01f);
         break;
 
-    case KHA_JSON_Msg::ADDL:
+    case ModPayload_JSON_Msg::ADDL:
     //     return (char*)R"({"class\":"ADDL\",\"up\":1345786201,\"tow\":375218453,"und":3.7,"gveln":-175.135,"gvele":-22.0,"gveld":-4.234,"epn":4.75,"epe":1.66,"epd":0.37,"nsv":7})";
         _ahrs.json.bytes_out.len = hal.util->snprintf((char*)_ahrs.json.bytes_out.data, sizeof(_ahrs.json.bytes_out.data),
             "{\"class\":\"ADDL\",\"up\":%u,\"tow\":%u,\"und\":%.1f,\"gveln\":%.3f,\"gvele\":%.1f,\"gveld\":%.3f,\"epn\":%.2f,\"epe\":%.2f,\"epd\":%.2f,\"nsv\":%u}",
@@ -821,7 +827,7 @@ void AP_KHA::generate_and_send_json(const KHA_JSON_Msg msg_name)
 
 #pragma GCC diagnostic pop
 
-float AP_KHA::get_voltage(const uint8_t instance)
+float AP_ModPayload::get_voltage(const uint8_t instance)
 {
     switch (instance) {
         case 0:
@@ -833,7 +839,7 @@ float AP_KHA::get_voltage(const uint8_t instance)
     return 0;
 }
 
-float AP_KHA::get_current(const uint8_t instance)
+float AP_ModPayload::get_current(const uint8_t instance)
 {
     switch (instance) {
         case 0:
@@ -845,17 +851,10 @@ float AP_KHA::get_current(const uint8_t instance)
     return 0;
 }
 
-// singleton instance
-AP_KHA *AP_KHA::_singleton;
 
-namespace AP
+AP_ModPayload *AP::mod_payload()
 {
-
-AP_KHA *kha()
-{
-    return AP_KHA::get_singleton();
+    return AP_ModPayload::get_singleton();
 }
-
-}
-#endif // #if KHA_MAIM_ENABLED
+#endif // #if AP_MODPAYLOAD_ENABLED
 

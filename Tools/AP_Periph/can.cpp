@@ -590,11 +590,11 @@ static void handle_gpio(CanardInstance* ins, CanardRxTransfer* transfer)
         return;
     }
 
-#if KHA_MAIM_ENABLED
+#if AP_MODPAYLOAD_ENABLED
     // use relay library for GPIO control
     for (uint8_t i=0; i<AP_RELAY_NUM_RELAYS; i++) {
         const bool pin_state = (msg.pin_states & (1UL<<i)) != 0;
-        periph.kha.set_enable(i, pin_state);
+        periph.mod_payload.set_enable(i, pin_state);
     }
 #endif
 }

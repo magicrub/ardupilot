@@ -90,7 +90,7 @@ public:
 
     static const int buffer_data_len_size = 1500;
 
-    // AP_KHA needs 3: json + p1 + p2
+    // AP_ModPayload needs 3: json + p1 + p2
     static const int buffer_data_id_max = 3;
     struct buffer_data_t {
         ByteBuffer queue_out{1500}; // Ethernet MTU

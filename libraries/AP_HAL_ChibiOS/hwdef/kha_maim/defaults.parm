@@ -91,7 +91,7 @@ NET_GWADDR3     1
 NET_NETMASK     16
 NET_DHCP        0
 
-KHA_TYPE        1
+MP_TYPE        1
 
 # set up External AHRS
 EAHRS_TYPE 3

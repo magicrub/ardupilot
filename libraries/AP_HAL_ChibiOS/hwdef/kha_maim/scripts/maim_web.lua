@@ -60,13 +60,13 @@ local configuration = {
         maintenancePort = "none"
     },
     payload1 = {
-        enabled = kha:get_enable(1),
-        ip = "127.0.0.1", -- tostring(kha::get_udp_out_ip(1)),
+        enabled = mod_payload:get_enable(1),
+        ip = "127.0.0.1", -- tostring(mod_payload:get_udp_out_ip(1)),
         netmask = "255.0.0.0",
         gateway = "1.1.1.1"
     },
     payload2 = {
-        enabled = kha:get_enable(2),
+        enabled = mod_payload:get_enable(2),
         ip = "127.0.0.1",
         netmask = "255.0.0.0",
         gateway = "2.2.2.2"
@@ -113,16 +113,16 @@ local function update() -- this is the loop which periodically runs
             elseif path == "/state" then
                 local state = {
                     system = {
-                        voltage = kha:get_voltage(batt_instance_system),
-                        current = kha:get_current(batt_instance_system)
+                        voltage = mod_payload:get_voltage(batt_instance_system),
+                        current = mod_payload:get_current(batt_instance_system)
                     },
                     payload1 = {
-                        voltage = kha:get_voltage(batt_instance_payload1),
-                        current = kha:get_current(batt_instance_payload1)
+                        voltage = mod_payload:get_voltage(batt_instance_payload1),
+                        current = mod_payload:get_current(batt_instance_payload1)
                     },
                     payload2 = {
-                        voltage = kha:get_voltage(batt_instance_payload2),
-                        current = kha:get_current(batt_instance_payload2)
+                        voltage = mod_payload:get_voltage(batt_instance_payload2),
+                        current = mod_payload:get_current(batt_instance_payload2)
                     }
                 }
 
@@ -165,8 +165,8 @@ local function update() -- this is the loop which periodically runs
                     payload2.netmask = updates["payload2.netmask"] or payload2.netmask
                     payload2.gateway = updates["payload2.gateway"] or payload2.gateway
 
-                    kha:set_enable(1, payload1.enabled)
-                    kha:set_enable(2, payload2.enabled)
+                    mod_payload:set_enable(1, payload1.enabled)
+                    mod_payload:set_enable(2, payload2.enabled)
 
                     -- TODO: Tom, configuration has been updated. Use it
                 end

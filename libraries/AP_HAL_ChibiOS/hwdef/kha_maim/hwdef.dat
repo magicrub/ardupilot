@@ -125,7 +125,7 @@ define STM32_MAC_ETH1_CHANGE_PHY_STATE FALSE
 #Communications and debug
 # use DNA
 define HAL_CAN_DEFAULT_NODE_ID 0
-define CAN_APP_NODE_NAME "com.KHA.maim"
+define CAN_APP_NODE_NAME "org.ardupilot.modpayload"
 #################################
 
 # Multi-purpose pins like SPI, I2C, GPIO, PWMs, LEDs, ADC
@@ -229,7 +229,7 @@ define HAL_EXTERNAL_AHRS_SBG_ENABLED 1
 
 define HAL_GCS_ENABLED 1
 
-define KHA_MAIM_ENABLED 1
+define AP_MODPAYLOAD_ENABLED 1
 
 # listen for reboot command from uploader.py script
 # undefine to disable. Use -1 to allow on all ports, otherwise serial number index defined in SERIAL_ORDER starting at 0

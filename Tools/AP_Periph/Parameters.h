@@ -52,7 +52,7 @@ public:
         k_param_scripting,
         k_param_esc_telem_port,
         k_param_networking,
-        k_param_kha,
+        k_param_mod_payload,
         k_param_relay,
         k_param_externalAHRS,
     };

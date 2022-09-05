@@ -226,8 +226,8 @@ void AP_Periph_FW::init()
     notify.init();
 #endif
 
-#if KHA_MAIM_ENABLED
-    kha.init();
+#if AP_MODPAYLOAD_ENABLED
+    mod_payload.init();
 #endif
 
 #if AP_SCRIPTING_ENABLED
@@ -425,8 +425,8 @@ void AP_Periph_FW::update()
     update_rainbow();
 #endif
 
-#if KHA_MAIM_ENABLED
-    kha.update();
+#if AP_MODPAYLOAD_ENABLED
+    mod_payload.update();
 #endif
 
 #ifdef HAL_PERIPH_ENABLE_ADSB

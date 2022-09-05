@@ -433,17 +433,17 @@ singleton AP_Networking method set_gateway_param_str void string
 -- ----------------------
 -- ----------------------
 
-include AP_KHA/AP_KHA.h
-singleton AP_KHA depends KHA_MAIM_ENABLED
-singleton AP_KHA alias kha
-singleton AP_KHA method get_udp_out_ip string uint8_t 0 3
-singleton AP_KHA method get_udp_out_port uint16_t uint8_t 0 3
-singleton AP_KHA method get_udp_out_name string uint8_t 0 3
-singleton AP_KHA method get_udp_out_interval_ms uint16_t uint8_t 0 3
-singleton AP_KHA method set_enable void uint8_t 0 4 boolean
-singleton AP_KHA method get_enable boolean uint8_t 0 4
-singleton AP_KHA method get_voltage float uint8_t 0 4
-singleton AP_KHA method get_current float uint8_t 0 4
+include AP_ModPayload/AP_ModPayload.h
+singleton AP_ModPayload depends AP_MODPAYLOAD_ENABLED
+singleton AP_ModPayload alias mod_payload
+singleton AP_ModPayload method get_udp_out_ip string uint8_t 0 3
+singleton AP_ModPayload method get_udp_out_port uint16_t uint8_t 0 3
+singleton AP_ModPayload method get_udp_out_name string uint8_t 0 3
+singleton AP_ModPayload method get_udp_out_interval_ms uint16_t uint8_t 0 3
+singleton AP_ModPayload method set_enable void uint8_t 0 4 boolean
+singleton AP_ModPayload method get_enable boolean uint8_t 0 4
+singleton AP_ModPayload method get_voltage float uint8_t 0 4
+singleton AP_ModPayload method get_current float uint8_t 0 4
 
 -- ----------------------
 -- ----------------------

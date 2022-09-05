@@ -52,7 +52,7 @@ PE1 UART8_TX UART8
 SERIAL_ORDER OTG1 UART7 UART8
 
 
-define CAN_APP_NODE_NAME "com.KHA.maim-bl"
+define CAN_APP_NODE_NAME "org.ardupilot.modpayload-bl"
 
 # use a small bootloader timeout
 define HAL_BOOTLOADER_TIMEOUT 3000

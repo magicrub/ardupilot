@@ -293,10 +293,10 @@ const AP_Param::Info AP_Periph_FW::var_info[] = {
     GSCALAR(esc_number, "ESC_NUMBER", 0),
 #endif
 
-#if KHA_MAIM_ENABLED
-    // @Group: KHA
-    // @Path: ../libraries/AP_KHA/AP_KHA.cpp
-    GOBJECT(kha, "KHA_", AP_KHA),
+#if AP_MODPAYLOAD_ENABLED
+    // @Group: MP_
+    // @Path: ../libraries/AP_ModPayload/AP_ModPayload.cpp
+    GOBJECT(mod_payload, "MP_", AP_ModPayload),
 #endif
 
 #ifdef HAL_PERIPH_ENABLE_RC_OUT

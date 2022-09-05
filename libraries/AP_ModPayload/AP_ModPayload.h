@@ -20,44 +20,44 @@
 
 #include <AP_HAL/AP_HAL.h>
 
-#ifndef KHA_MAIM_ENABLED
-#define KHA_MAIM_ENABLED 0
+#ifndef AP_MODPAYLOAD_ENABLED
+#define AP_MODPAYLOAD_ENABLED 0
 #endif
 
-#if KHA_MAIM_ENABLED
+#if AP_MODPAYLOAD_ENABLED
 #include <AP_Common/AP_Common.h>
 #include <AP_Param/AP_Param.h>
 #include <AP_SerialManager/AP_SerialManager.h>
 
-#define AP_KHA_MAIM_PAYLOAD_COUNT_MAX 2
+#define AP_MODPAYLOAD_PAYLOAD_COUNT_MAX 2
 
-#if AP_KHA_MAIM_PAYLOAD_COUNT_MAX <= 0
-#error "AP_KHA_MAIM_PAYLOAD_COUNT_MAX must be at least 1"
+#if AP_MODPAYLOAD_PAYLOAD_COUNT_MAX <= 0
+#error "AP_MODPAYLOAD_PAYLOAD_COUNT_MAX must be at least 1"
 #endif
 
-class AP_KHA
+class AP_ModPayload
 {
 public:
     // constructor.  This remains because construction of Copter's g2
     // object becomes problematic if we don't have at least one object
     // to initialise
-    AP_KHA();
+    AP_ModPayload();
 
     /* Do not allow copies */
-    AP_KHA(const AP_KHA &other) = delete;
-    AP_KHA &operator=(const AP_KHA&) = delete;
+    AP_ModPayload(const AP_ModPayload &other) = delete;
+    AP_ModPayload &operator=(const AP_ModPayload&) = delete;
 
     // settable parameters
     static const struct AP_Param::GroupInfo var_info[];
 
-    static AP_KHA *get_singleton(void) { return _singleton; }
+    static AP_ModPayload *get_singleton(void) { return _singleton; }
 
     void update(void);
 
     void init();
     bool is_enabled();
 
-    enum class KHA_MAIM_POWER_TARGET : uint8_t {
+    enum class ModPayload_POWER_TARGET : uint8_t {
         SYSTEM      = 0,
         PAYLOAD1    = 1,
         PAYLOAD2    = 2,
@@ -77,7 +77,7 @@ public:
     void set_enable(const uint32_t index, const bool value);
     bool get_enable(const uint32_t index) const;
 
-    enum class KHA_MAIM_Routing : uint8_t {
+    enum class ModPayload_Routing : uint8_t {
         NONE                    = 0,
         PAYLOAD1_STATE          = 1,
         PAYLOAD1_CONSOLE_SERIAL = 2,
@@ -101,17 +101,17 @@ public:
         LOOPBACK                = 20,
     };
 
-    enum class KHA_Vehicle_Type_t : uint8_t {
+    enum class ModPayload_Vehicle_Type_t : uint8_t {
         DISABLED        = 0,
         MAIM            = 1,
         Plane           = 2,
         Plane_VTOL      = 3,
     };
 
-    struct KHA_IP_t {
+    struct ModPayload_IP_t {
         AP_Int16 ip[4];
     };
-    struct KHA_IP_PORT_t {
+    struct ModPayload_IP_PORT_t {
         AP_Int16 ip[4];
         AP_Int32 port;
     };
@@ -119,7 +119,7 @@ public:
 private:
 
 
-    enum class KHA_JSON_Msg : uint8_t {
+    enum class ModPayload_JSON_Msg : uint8_t {
         MAIM_VER,
         STATUS,
         IMUNAV,
@@ -130,15 +130,15 @@ private:
         ADDL,
     };
 
-    struct KHA_JSON_Msg_Interval {
-        const KHA_JSON_Msg name;
+    struct ModPayload_JSON_Msg_Interval {
+        const ModPayload_JSON_Msg name;
         const uint32_t interval_ms;
         uint32_t last_ms;
     };
 
     
 
-    struct KHA_Uart {
+    struct ModPayload_Uart {
         struct {
             uint8_t data[256];
             uint16_t len;
@@ -150,7 +150,7 @@ private:
         AP_HAL::UARTDriver *port;
     };
 
-    struct KHA_Power_t {
+    struct ModPayload_Power_t {
         float voltage;
         float current;
         float voltage_smoothed;
@@ -161,18 +161,18 @@ private:
     struct {
         struct {
             struct {
-                KHA_IP_PORT_t addr;
+                ModPayload_IP_PORT_t addr;
                 AP_Int8 enabled_at_boot;
                 bool enabled;
                 AP_Int32 interval_ms;
             } eth;
-            KHA_Uart uart;
-            AP_Enum<KHA_MAIM_Routing> route;
+            ModPayload_Uart uart;
+            AP_Enum<ModPayload_Routing> route;
         } console;
 
         struct {
-            KHA_Uart uart;
-            AP_Enum<KHA_MAIM_Routing> route;
+            ModPayload_Uart uart;
+            AP_Enum<ModPayload_Routing> route;
         } state;
 
         struct {
@@ -181,19 +181,19 @@ private:
             AP_Int8 enable_pin;
             AP_Int8 enabled_at_boot;
             bool enabled;
-            KHA_Power_t data;
+            ModPayload_Power_t data;
         } power;
-    } _payload[AP_KHA_MAIM_PAYLOAD_COUNT_MAX];
+    } _payload[AP_MODPAYLOAD_PAYLOAD_COUNT_MAX];
 
     struct {
-        KHA_Uart uart;
-        AP_Enum<KHA_MAIM_Routing> route; // Who talks to Avionics/Maint? Maint, Avionics, State 1, State2, Console1, or Console2
+        ModPayload_Uart uart;
+        AP_Enum<ModPayload_Routing> route; // Who talks to Avionics/Maint? Maint, Avionics, State 1, State2, Console1, or Console2
     } _maint, _avionics;
 
     struct {
         struct {
             struct {
-                KHA_IP_PORT_t addr;
+                ModPayload_IP_PORT_t addr;
                 AP_Int8 enabled_at_boot;
                 bool enabled;
                 AP_Int32 interval_ms;
@@ -204,18 +204,18 @@ private:
             } bytes_out;
             uint32_t timer_ms;
             
-            KHA_JSON_Msg_Interval msgs[8] = {
-                {KHA_JSON_Msg::MAIM_VER, 1000, 0},
-                {KHA_JSON_Msg::STATUS, 1000, 0},
-                {KHA_JSON_Msg::IMUNAV, 100, 0},
-                {KHA_JSON_Msg::PRESSURE, 1000, 0},
-                {KHA_JSON_Msg::TPV, 1000, 0},
-                {KHA_JSON_Msg::ATT, 100, 0},
-                {KHA_JSON_Msg::SKY, 1000, 0},
-                {KHA_JSON_Msg::ADDL, 1000, 0} };
+            ModPayload_JSON_Msg_Interval msgs[8] = {
+                {ModPayload_JSON_Msg::MAIM_VER, 1000, 0},
+                {ModPayload_JSON_Msg::STATUS, 1000, 0},
+                {ModPayload_JSON_Msg::IMUNAV, 100, 0},
+                {ModPayload_JSON_Msg::PRESSURE, 1000, 0},
+                {ModPayload_JSON_Msg::TPV, 1000, 0},
+                {ModPayload_JSON_Msg::ATT, 100, 0},
+                {ModPayload_JSON_Msg::SKY, 1000, 0},
+                {ModPayload_JSON_Msg::ADDL, 1000, 0} };
         } json;
-        KHA_Uart uart;
-        AP_Enum<KHA_MAIM_Routing> route; // Who talks to AHRS? Maint, Avionics, State 1 or State2
+        ModPayload_Uart uart;
+        AP_Enum<ModPayload_Routing> route; // Who talks to AHRS? Maint, Avionics, State 1 or State2
     } _ahrs;
 
     struct {
@@ -229,7 +229,7 @@ private:
         } pps;
         
         struct {
-            KHA_Power_t data;
+            ModPayload_Power_t data;
         } power;
 
         struct {
@@ -240,18 +240,18 @@ private:
 
     AP_Int8 _ignore_uavcan_gpio_relay_commands;
 
-    static AP_KHA *_singleton;
+    static AP_ModPayload *_singleton;
     
     void service_input_uarts(const uint32_t now_ms);
     void service_output_uarts(const uint32_t now_ms);
     void service_router(const uint32_t now_ms);
-    // char* convert_ip_to_str(const uint32_t stream_id, const KHA_IP_PORT_t addr);
+    // char* convert_ip_to_str(const uint32_t stream_id, const MP_IP_PORT_t addr);
 
     void service_json_out(const uint32_t now_ms);
-    void generate_and_send_json(const KHA_JSON_Msg msg_name);
+    void generate_and_send_json(const ModPayload_JSON_Msg msg_name);
 
     void housekeeping_system(const uint32_t now_ms);
-    static void update_power(const uint32_t now_ms, KHA_Power_t &power_data, const uint8_t battery_instance);
+    static void update_power(const uint32_t now_ms, ModPayload_Power_t &power_data, const uint8_t battery_instance);
     void housekeeping_payload(const uint32_t now_ms, const uint8_t index);
 
     uint32_t get_udp_out_data(const uint32_t stream_id, uint8_t* data, const uint32_t data_len_max);
@@ -264,7 +264,7 @@ private:
         uint8_t state;
     } _init;
 
-    AP_Enum<KHA_Vehicle_Type_t> _type;
+    AP_Enum<ModPayload_Vehicle_Type_t> _type;
 
     uint32_t _ip_str_last[10];
     char _ip_str[10][256];
@@ -272,6 +272,7 @@ private:
 
 
 namespace AP {
-    AP_KHA *kha(void);
+    AP_ModPayload *mod_payload();
 };
-#endif // #if KHA_MAIM_ENABLED
+
+#endif // #if AP_MODPAYLOAD_ENABLED

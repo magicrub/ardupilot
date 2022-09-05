@@ -48,7 +48,7 @@
 #include <AP_Frsky_Telem/AP_Frsky_Parameters.h>
 #include <AP_ExternalAHRS/AP_ExternalAHRS.h>
 #include <AP_VideoTX/AP_SmartAudio.h>
-#include <AP_KHA/AP_KHA.h>
+#include <AP_ModPayload/AP_ModPayload.h>
 #if CONFIG_HAL_BOARD == HAL_BOARD_SITL
 #include <SITL/SITL.h>
 #endif
@@ -380,8 +380,8 @@ protected:
     AP_Airspeed airspeed;
 #endif
 
-#if KHA_MAIM_ENABLED
-    AP_KHA kha;
+#if AP_MODPAYLOAD_ENABLED
+    AP_ModPayload mod_payload;
 #endif
 
     static const struct AP_Param::GroupInfo var_info[];
