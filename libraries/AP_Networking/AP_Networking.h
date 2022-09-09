@@ -3,11 +3,11 @@
 
 #include <AP_HAL/AP_HAL.h>
 
-#ifndef HAL_ENABLE_NETWORKING
-#define HAL_ENABLE_NETWORKING 1
+#ifndef AP_NETWORKING_ENABLED
+#define AP_NETWORKING_ENABLED 0
 #endif
 
-#if HAL_ENABLE_NETWORKING
+#if AP_NETWORKING_ENABLED
 
 #include <AP_Param/AP_Param.h>
 //#include <AP_HAL/utility/sparse-endian.h>
@@ -139,4 +139,4 @@ namespace AP {
     AP_Networking *network();
 };
 
-#endif // HAL_ENABLE_NETWORKING
+#endif // AP_NETWORKING_ENABLED

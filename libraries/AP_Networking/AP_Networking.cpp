@@ -1,7 +1,7 @@
 
 #include "AP_Networking.h"
 
-#if HAL_ENABLE_NETWORKING
+#if AP_NETWORKING_ENABLED
 
 #if CONFIG_HAL_BOARD == HAL_BOARD_CHIBIOS
     #include <hal_mii.h>
@@ -458,4 +458,4 @@ namespace AP {
     }
 }
 
-#endif // HAL_ENABLE_NETWORKING
+#endif // AP_NETWORKING_ENABLED

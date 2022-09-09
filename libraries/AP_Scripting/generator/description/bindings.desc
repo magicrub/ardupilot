@@ -400,7 +400,7 @@ singleton AP_MotorsMatrix_6DoF_Scripting method add_motor void int8_t 0 (AP_MOTO
 -- ----------------------
 -- ----------------------
 include AP_Networking/AP_Networking.h
-singleton AP_Networking depends HAL_ENABLE_NETWORKING
+singleton AP_Networking depends AP_NETWORKING_ENABLED
 singleton AP_Networking alias network
 singleton AP_Networking method is_healthy boolean
 

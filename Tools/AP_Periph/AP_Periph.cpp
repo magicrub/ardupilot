@@ -142,7 +142,7 @@ void AP_Periph_FW::init()
         printf("Reboot after watchdog reset\n");
     }
 
-#if HAL_ENABLE_NETWORKING
+#if AP_NETWORKING_ENABLED
     networking.init();
 #endif
 
@@ -417,7 +417,7 @@ void AP_Periph_FW::update()
 
     can_update();
 
-#if HAL_ENABLE_NETWORKING
+#if AP_NETWORKING_ENABLED
     networking.update();
 #endif
 

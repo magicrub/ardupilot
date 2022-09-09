@@ -73,7 +73,7 @@ const AP_Param::GroupInfo AP_Vehicle::var_info[] = {
     AP_SUBGROUPINFO(airspeed, "ARSPD", 10, AP_Vehicle, AP_Airspeed),
 #endif
 
-#if HAL_ENABLE_NETWORKING
+#if AP_NETWORKING_ENABLED
     // @Group: NET_
     // @Path: ../AP_Networking/AP_Networking.cpp
     AP_SUBGROUPINFO(networking, "NET_", 11, AP_Vehicle, AP_Networking),
@@ -216,7 +216,7 @@ void AP_Vehicle::setup()
     efi.init();
 #endif
 
-#if HAL_ENABLE_NETWORKING
+#if AP_NETWORKING_ENABLED
     networking.init();
 #endif
 
@@ -313,7 +313,7 @@ const AP_Scheduler::Task AP_Vehicle::scheduler_tasks[] = {
 #if HAL_GENERATOR_ENABLED
     SCHED_TASK_CLASS(AP_Generator, &vehicle.generator,      update,                   10,  50, 235),
 #endif
-#if HAL_ENABLE_NETWORKING
+#if AP_NETWORKING_ENABLED
     SCHED_TASK_CLASS(AP_Networking, &vehicle.networking,    update,                 1000,  50, 251),
 #endif
 #if OSD_ENABLED

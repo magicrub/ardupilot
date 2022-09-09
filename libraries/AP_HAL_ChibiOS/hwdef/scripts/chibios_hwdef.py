@@ -855,11 +855,11 @@ def write_mcu_config(f):
         f.write('#define HAL_USE_MAC                         TRUE\n')
         f.write('#define MAC_USE_EVENTS                      TRUE\n')
         f.write('#define STM32_NOCACHE_SRAM3                 TRUE\n')
-        f.write('#define HAL_ENABLE_NETWORKING               TRUE\n')
+        f.write('#define AP_NETWORKING_ENABLED               TRUE\n')
         build_flags.append('USE_LWIP=yes')
         env_vars['WITH_NETWORKING'] = "1"
     else:
-        f.write('#define HAL_ENABLE_NETWORKING               FALSE\n')
+        f.write('#define AP_NETWORKING_ENABLED               FALSE\n')
         build_flags.append('USE_LWIP=no')
         env_vars['WITH_NETWORKING'] = "0"
 

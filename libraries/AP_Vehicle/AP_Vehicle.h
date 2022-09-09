@@ -367,7 +367,7 @@ protected:
     AP_SmartAudio smartaudio;
 #endif
 
-#if HAL_ENABLE_NETWORKING
+#if AP_NETWORKING_ENABLED
     AP_Networking networking;
 #endif
 

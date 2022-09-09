@@ -380,7 +380,7 @@ const AP_Param::Info AP_Periph_FW::var_info[] = {
     GOBJECT(scripting, "SCR_", AP_Scripting),
 #endif
 
-#if HAL_ENABLE_NETWORKING
+#if AP_NETWORKING_ENABLED
     // @Group: NET_
     // @Path: ../libraries/AP_Networking/AP_Networking.cpp
     GOBJECT(networking, "NET_", AP_Networking),

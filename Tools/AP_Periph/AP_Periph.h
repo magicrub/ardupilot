@@ -270,7 +270,7 @@ public:
 
     static bool no_iface_finished_dna;
 
-#if HAL_ENABLE_NETWORKING
+#if AP_NETWORKING_ENABLED
     AP_Networking networking;
 #endif
 

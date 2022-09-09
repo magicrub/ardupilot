@@ -555,7 +555,7 @@ uint32_t AP_ModPayload::get_udp_out_interval_ms(const uint32_t stream_id)
 
 // char* AP_ModPayload::convert_ip_to_str(const uint32_t stream_id)
 // {
-// #if HAL_ENABLE_NETWORKING
+// #if AP_NETWORKING_ENABLED
 //     const uint32_t ip = IP4_ADDR_VALUE((int)addr.ip[0].get(),(int)addr.ip[1].get(),(int)addr.ip[2].get(),(int)addr.ip[3].get());
 //     if (ip == _ip_str_last[stream_id]) {
 //         return _ip_str[stream_id];
