@@ -661,6 +661,10 @@ void AP_ModPayload::service_json_out(const uint32_t now_ms)
 #pragma GCC diagnostic error "-Wframe-larger-than=1700"
 void AP_ModPayload::generate_and_send_json(const ModPayload_JSON_Msg msg_name)
 {
+#if !defined(HAL_BUILD_AP_PERIPH) || defined(HAL_PERIPH_ENABLE_AHRS)
+    return;
+#endif
+
     auto &ahrs = AP::ahrs();
     if (!ahrs.initialised()) {
         return;
@@ -671,10 +675,18 @@ void AP_ModPayload::generate_and_send_json(const ModPayload_JSON_Msg msg_name)
         mag = AP::compass().get_field();
     }
 
-    const Vector3f accel = AP::ins().get_accel();
+    Vector3f accel = Vector3f();
+#if HAL_INS_ENABLED
+    accel = AP::ins().get_accel();
+#endif
     const Vector3f gyro = ahrs.get_gyro();
 
-    const float temperature = AP::baro().healthy() ? AP::baro().get_temperature() : 0;
+#if !defined(HAL_BUILD_AP_PERIPH) || defined(HAL_PERIPH_ENABLE_BARO)
+    const temperature = AP::baro().healthy() ? AP::baro().get_temperature() : 0;
+#else
+    const float temperature = 0;
+#endif
+
     //const float temperature = AP::ins().get_temperature(0);
     //const float temperature = AP::sbg().get_temperature(0);
 
@@ -750,8 +762,11 @@ void AP_ModPayload::generate_and_send_json(const ModPayload_JSON_Msg msg_name)
     //     return (char*)R"({"class":"PRESSURE","pressure":101325.0,"alt":0.0})";
         _ahrs.json.bytes_out.len = hal.util->snprintf((char*)_ahrs.json.bytes_out.data, sizeof(_ahrs.json.bytes_out.data),
             "{\"class\":\"PRESSURE\",\"pressure\":\"%.1f\",\"alt\":\"%.3f\"}",
-            (double)AP::baro().get_pressure(),
-            (double)AP::baro().get_altitude());
+#if !defined(HAL_BUILD_AP_PERIPH) || defined(HAL_PERIPH_ENABLE_BARO)
+            (double)AP::baro().get_pressure(), (double)AP::baro().get_altitude());
+#else
+            0.0, 0.0);
+#endif
         break;
 
     case ModPayload_JSON_Msg::TPV:
