@@ -9,6 +9,8 @@
 # MCU class and specific type
 MCU STM32H7xx STM32H743xx
 
+env OPTIMIZE -O2
+
 # USB setup
 USB_STRING_MANUFACTURER "ArduPilot"
 USB_STRING_PRODUCT "%BOARD%"
@@ -29,8 +31,13 @@ define HAL_BUILD_AP_PERIPH
 
 # bootloader is installed at zero offset
 FLASH_RESERVE_START_KB 128
+FLASH_BOOTLOADER_LOAD_KB 128
 
+# reserve 256 bytes for comms between app and bootloader
+RAM_RESERVE_START 256
 
+MAIN_STACK 0x2000
+PROCESS_STACK 0x6000
 
 # board ID for firmware load
 APJ_BOARD_ID 1315
@@ -145,6 +152,14 @@ define HAL_NO_RCIN_THREAD
 define HAL_NO_GPIO_IRQ
 
 
+env AP_PERIPH 1
+define PERIPH_FW TRUE
+define HAL_BUILD_AP_PERIPH
+define HAL_NO_MONITOR_THREAD
+define HAL_DISABLE_LOOP_DELAY
+define HAL_USE_RTC FALSE
+define DISABLE_SERIAL_ESC_COMM TRUE
+define NO_DATAFLASH TRUE
 
 
 #################################
