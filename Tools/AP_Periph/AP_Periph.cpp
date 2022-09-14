@@ -460,6 +460,11 @@ void AP_Periph_FW::check_for_serial_reboot_cmd(const int8_t serial_index)
             continue;
         }
 
+        if (serial_index == -2 && uart->get_usb_baud() != 0) {
+            // only check USB ports and this is not a USB port
+            continue;
+        }
+
         uint32_t available = MIN(uart->available(), 1000U);
         while (available-- > 0) {
             const char reboot_string[] = "\r\r\rreboot -b\n\r\r\rreboot\n";
