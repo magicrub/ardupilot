@@ -66,15 +66,16 @@ PC10 UART4_TX UART4
 PC11 UART4_RX UART4
 
 # UART 4 - debug console, J6 (4 pin)
-PE7 UART7_RX UART7
-PE8 UART7_TX UART7
+PE7 UART7_RX UART7 SPEED_HIGH
+PE8 UART7_TX UART7 SPEED_HIGH
 
 # Now we define the pins that USB is connected on.
 PA11 OTG_FS_DM OTG1
 PA12 OTG_FS_DP OTG1
 
 # order of UARTs (and USB)
-SERIAL_ORDER OTG1 USART1 USART2 UART4 UART7
+SERIAL_ORDER OTG1 USART1 USART2
+#SERIAL_ORDER UART7 USART1 USART2 UART4 OTG1
 
 STDOUT_SERIAL SD7
 STDOUT_BAUDRATE 57600
@@ -82,8 +83,9 @@ STDOUT_BAUDRATE 57600
 ###########################
 # storage
 ###########################
-define HAL_USE_EMPTY_STORAGE 1
-define HAL_STORAGE_SIZE 32768
+#define HAL_USE_EMPTY_STORAGE 1
+#define HAL_STORAGE_SIZE 32768
+define HAL_STORAGE_SIZE 16384
 ###########################
 # OPTION A: build-in flash
 STORAGE_FLASH_PAGE 14
@@ -149,7 +151,7 @@ define HAL_DISABLE_ADC_DRIVER TRUE
 # ---------------------------------------------------------------------------------------------
 define DISABLE_SERIAL_ESC_COMM TRUE
 define HAL_NO_RCIN_THREAD
-define HAL_NO_GPIO_IRQ
+#define HAL_NO_GPIO_IRQ
 
 
 env AP_PERIPH 1
@@ -172,7 +174,7 @@ define HAL_GCS_ENABLED 1
 
 # listen for reboot command from uploader.py script
 # undefine to disable. Use -1 to allow on all ports, otherwise serial number index defined in SERIAL_ORDER starting at 0
-define HAL_PERIPH_LISTEN_FOR_SERIAL_UART_REBOOT_CMD_PORT -1
+define HAL_PERIPH_LISTEN_FOR_SERIAL_UART_REBOOT_CMD_PORT -2
 #################################
 
 
