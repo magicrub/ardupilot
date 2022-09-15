@@ -15,7 +15,7 @@ env OPTIMIZE -O2
 USB_STRING_MANUFACTURER "ArduPilot"
 USB_STRING_PRODUCT "%BOARD%"
 
-#define WATCHDOG_DISABLED
+define WATCHDOG_DISABLED
 
 # crystal frequency
 OSCILLATOR_HZ 25000000
@@ -78,21 +78,14 @@ SERIAL_ORDER OTG1 USART1 USART2
 #SERIAL_ORDER UART7 USART1 USART2 UART4 OTG1
 
 STDOUT_SERIAL SD7
-STDOUT_BAUDRATE 57600
+STDOUT_BAUDRATE 115200
 
 ###########################
 # storage
 ###########################
-#define HAL_USE_EMPTY_STORAGE 1
-#define HAL_STORAGE_SIZE 32768
-define HAL_STORAGE_SIZE 16384
-###########################
-# OPTION A: build-in flash
+define HAL_STORAGE_SIZE 32768
+#define HAL_STORAGE_SIZE 16384
 STORAGE_FLASH_PAGE 14
-###########################
-# OPTION B: external RAMTRON flash
-#define HAL_WITH_RAMTRON 1
-#SPIDEV ramtron        SPI4 DEVID10 FRAM_CS      MODE3  8*MHZ  8*MHZ 
 ###########################
 
 
@@ -151,7 +144,7 @@ define HAL_DISABLE_ADC_DRIVER TRUE
 # ---------------------------------------------------------------------------------------------
 define DISABLE_SERIAL_ESC_COMM TRUE
 define HAL_NO_RCIN_THREAD
-#define HAL_NO_GPIO_IRQ
+define HAL_NO_GPIO_IRQ
 
 
 env AP_PERIPH 1
@@ -190,6 +183,8 @@ PC8 SDMMC1_D0 SDMMC1
 #PC11 SDMMC1_D3 SDMMC1
 PC12 SDMMC1_CK SDMMC1
 #PD2 SDMMC1_CMD SDMMC1
+
+define SCRIPTING_HEAP_SIZE (128*1024)
 
 define HAL_OS_FATFS_IO 1
 
