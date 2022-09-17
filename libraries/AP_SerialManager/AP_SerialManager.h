@@ -156,12 +156,7 @@ public:
         SerialProtocol_AIS = 40,
         SerialProtocol_CoDevESC = 41,
         SerialProtocol_MSP_DisplayPort = 42,
-        SerialProtocol_ModPayload = 70,
-        SerialProtocol_ModPayload_Avionics = 71,
-        SerialProtocol_ModPayload_Maint = 72,
-        SerialProtocol_ModPayload_AHRS_Sensor = 73,
-        SerialProtocol_ModPayload_Payload_State = 74,
-        SerialProtocol_ModPayload_Payload_Console = 75,
+        SerialProtocol_Network_Serial2UDP = 46,
         SerialProtocol_NumProtocols                    // must be the last value
     };
 

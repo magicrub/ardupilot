@@ -11,10 +11,12 @@
 
 #include <AP_Param/AP_Param.h>
 //#include <AP_HAL/utility/sparse-endian.h>
-
+#include <AP_SerialManager/AP_SerialManager.h>
+#include <AP_HAL/utility/RingBuffer.h>
 
 #if CONFIG_HAL_BOARD == HAL_BOARD_CHIBIOS
     #include "lwipthread.h"
+    #include "lwip/udp.h"
 #else
     #if BYTE_ORDER == LITTLE_ENDIAN
     #define IP4_ADDR_VALUE(a,b,c,d)        \
@@ -36,6 +38,38 @@
 #ifndef AP_NETWORKING_HAS_THREAD
 #define AP_NETWORKING_HAS_THREAD 0
 #endif
+
+#ifndef AP_NETWORKING_MTU_SIZE
+#define AP_NETWORKING_MTU_SIZE 1500
+#endif
+
+#ifndef AP_NETWORKING_SERIAL2UDP_ENABLED
+#define AP_NETWORKING_SERIAL2UDP_ENABLED 0
+#endif
+
+#if AP_NETWORKING_SERIAL2UDP_ENABLED
+#ifndef AP_NETWORKING_SERIAL2UDP_INSTANCE_MAX
+#define AP_NETWORKING_SERIAL2UDP_INSTANCE_MAX 1
+#endif
+
+#if AP_NETWORKING_SERIAL2UDP_INSTANCE_MAX <= 0
+#error "AP_NETWORKING_SERIAL2UDP_INSTANCE_MAX is too small"
+#endif
+
+#ifndef AP_NETWORKING_SERIAL2UDP_BUFFER_UDP_RX_SIZE
+#define AP_NETWORKING_SERIAL2UDP_BUFFER_UDP_RX_SIZE 2*AP_NETWORKING_MTU_SIZE
+#endif
+#ifndef AP_NETWORKING_SERIAL2UDP_BUFFER_UDP_TX_SIZE
+#define AP_NETWORKING_SERIAL2UDP_BUFFER_UDP_TX_SIZE 2*AP_NETWORKING_MTU_SIZE
+#endif
+
+#ifndef AP_NETWORKING_SERIAL2UDP_BUFFER_UART_RX_SIZE
+#define AP_NETWORKING_SERIAL2UDP_BUFFER_UART_RX_SIZE 2*AP_NETWORKING_MTU_SIZE
+#endif
+#ifndef AP_NETWORKING_SERIAL2UDP_BUFFER_UART_TX_SIZE
+#define AP_NETWORKING_SERIAL2UDP_BUFFER_UART_TX_SIZE 2*AP_NETWORKING_MTU_SIZE
+#endif
+#endif // AP_NETWORKING_SERIAL2UDP_ENABLED
 
 class AP_Networking {
 public:
@@ -99,6 +133,15 @@ public:
     static uint32_t convert_netmask_bitcount_to_ip(const uint32_t netmask_bitcount);
     static uint8_t convert_netmask_ip_to_bitcount(const uint32_t netmask_ip);
 
+
+#if AP_NETWORKING_SERIAL2UDP_ENABLED
+    char* serial2udp_get_ip(const uint32_t stream_id);
+    uint16_t serial2udp_get_port(const uint32_t stream_id);
+    uint32_t serial2udp_get_udp_outbound_buffer(const uint32_t stream_id, uint8_t* data, const uint32_t data_len_max);
+    uint32_t serial2udp_load_udp_inbound_buffer(const uint32_t stream_id, uint8_t* data, const uint32_t data_len_max);
+    static void serial2udp_recv_callback(void *arg, struct udp_pcb *pcb, struct pbuf *p, const ip_addr_t *addr, u16_t port);
+#endif
+
 private:
     static AP_Networking *_singleton;
 
@@ -108,6 +151,31 @@ private:
     
     void apply_errata_for_mac_KSZ9896C();
     void check_for_config_changes();
+
+#if AP_NETWORKING_SERIAL2UDP_ENABLED
+    struct Serial2UDP_t {
+        struct Serial2UDP_Eth_t{
+            int16_t ip[4];  // change to AP_Int16
+            int32_t port;  // change to AP_Int32
+            ByteBuffer buf_in{0};
+            ByteBuffer buf_out{0};
+
+            //struct bbuf* p = pbuf_alloc(PBUF_TRANSPORT, sizeof(DataFrame), PBUF_RAM);
+            // struct ip_addr destAddr;
+ 
+            // DataFrame data;
+
+            ip_addr_t ip_addr;
+            struct udp_pcb* pcb;
+        } eth;
+        AP_HAL::UARTDriver *uart;
+    } _serial2udp[AP_NETWORKING_SERIAL2UDP_INSTANCE_MAX];
+    uint16_t _serial2udp_count;
+
+    void serial2udp_init();
+    void serial2udp_update();
+    bool send_udp(Serial2UDP_t::Serial2UDP_Eth_t &eth, const uint8_t* data, const uint16_t data_len);
+#endif
 
     struct {
         bool done;
