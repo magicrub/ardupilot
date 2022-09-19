@@ -1,71 +1,7 @@
 
-#include "AP_Networking.h"
+#include "AP_Networking_Serial2UDP.h"
 
-#if AP_NETWORKING_ENABLED
-
-#if CONFIG_HAL_BOARD == HAL_BOARD_CHIBIOS
-    #include <hal_mii.h>
-    #include <AP_Scripting/luasocket/src/inet.h>
-
-#else
-    #include <arpa/inet.h>
-    // #include <sys/ioctl.h>
-    // #include <sys/types.h>
-    #include <sys/socket.h>
-    // #include <netinet/in.h>
-    // #include <netinet/tcp.h>
-    // #include <sys/select.h>
-    // #include <termios.h>
-    // #include <sys/time.h>
-
-#endif
-
-#include <GCS_MAVLink/GCS.h>
-
-#ifndef LWIP_DHCP
-#define LWIP_DHCP 0
-//#define NET_ADDRESS_STATIC 222
-#endif
-
-#ifndef AP_NETWORKING_DEFAULT_IP_ADDR0
-#define AP_NETWORKING_DEFAULT_IP_ADDR0     192
-#define AP_NETWORKING_DEFAULT_IP_ADDR1     168
-#define AP_NETWORKING_DEFAULT_IP_ADDR2       0
-#define AP_NETWORKING_DEFAULT_IP_ADDR3      34
-#endif
-
-#ifndef AP_NETWORKING_DEFAULT_GW_ADDR0
-#define AP_NETWORKING_DEFAULT_GW_ADDR0     192
-#define AP_NETWORKING_DEFAULT_GW_ADDR1     168
-#define AP_NETWORKING_DEFAULT_GW_ADDR2       0
-#define AP_NETWORKING_DEFAULT_GW_ADDR3       1
-#endif
-
-#ifndef AP_NETWORKING_DEFAULT_NM_ADDR
-#define AP_NETWORKING_DEFAULT_NM_ADDR       24
-#endif
-
-#ifndef AP_NETWORKING_DEFAULT_DHCP_ENABLE
-#define AP_NETWORKING_DEFAULT_DHCP_ENABLE   LWIP_DHCP
-#endif
-
-#ifndef AP_NETWORKING_DEFAULT_MAC_ADDR0
-    #if CONFIG_HAL_BOARD == HAL_BOARD_CHIBIOS
-        #define AP_NETWORKING_DEFAULT_MAC_ADDR0   LWIP_ETHADDR_0
-        #define AP_NETWORKING_DEFAULT_MAC_ADDR1   LWIP_ETHADDR_1
-        #define AP_NETWORKING_DEFAULT_MAC_ADDR2   LWIP_ETHADDR_2
-        #define AP_NETWORKING_DEFAULT_MAC_ADDR3   LWIP_ETHADDR_3
-        #define AP_NETWORKING_DEFAULT_MAC_ADDR4   LWIP_ETHADDR_4
-        #define AP_NETWORKING_DEFAULT_MAC_ADDR5   LWIP_ETHADDR_5
-    #else
-        #define AP_NETWORKING_DEFAULT_MAC_ADDR0   1
-        #define AP_NETWORKING_DEFAULT_MAC_ADDR1   2
-        #define AP_NETWORKING_DEFAULT_MAC_ADDR2   3
-        #define AP_NETWORKING_DEFAULT_MAC_ADDR3   4
-        #define AP_NETWORKING_DEFAULT_MAC_ADDR4   5
-        #define AP_NETWORKING_DEFAULT_MAC_ADDR5   6
-    #endif
-#endif
+#if AP_NETWORKING_SERIAL2UDP_ENABLED
 
 const AP_Param::GroupInfo AP_Networking::var_info[] = {
 
@@ -536,6 +472,182 @@ char* AP_Networking::convert_ip_to_str(const uint32_t ip)
 void AP_Networking::thread()
 {
     // TODO: do awesome stuff at 1kHz in our own dedicated thread!
+}
+#endif
+
+#if AP_NETWORKING_SERIAL2UDP_ENABLED
+void AP_Networking::serial2udp_init()
+{
+    if (_serial2udp_count > 0) {
+        return;
+    }
+
+    for (uint32_t i=0; i<ARRAY_SIZE(_serial2udp); i++) {
+        _serial2udp[i].uart = AP::serialmanager().find_serial(AP_SerialManager::SerialProtocol_Network_Serial2UDP, i);
+        if (_serial2udp[i].uart == nullptr) {
+            break;
+        }
+        _serial2udp_count++;
+
+        const uint32_t baudrate = AP::serialmanager().find_baudrate(AP_SerialManager::SerialProtocol_Network_Serial2UDP, i);
+        _serial2udp[i].uart->set_flow_control(AP_HAL::UARTDriver::FLOW_CONTROL_DISABLE);
+        _serial2udp[i].uart->begin(baudrate, AP_NETWORKING_SERIAL2UDP_BUFFER_UART_RX_SIZE, AP_NETWORKING_SERIAL2UDP_BUFFER_UART_TX_SIZE);
+
+        _serial2udp[i].eth.buf_in.set_size(AP_NETWORKING_SERIAL2UDP_BUFFER_UDP_RX_SIZE);
+        _serial2udp[i].eth.buf_out.set_size(AP_NETWORKING_SERIAL2UDP_BUFFER_UDP_TX_SIZE);
+
+
+
+
+
+        _serial2udp[i].eth.port = 1313;
+        //IP4_ADDR(_serial2udp[i].eth->ip_addr, 255, 255, 255, 255);
+        _serial2udp[i].eth.ip_addr.u_addr.ip4.addr = IPADDR_BROADCAST;
+
+        if (_serial2udp[i].eth.pcb == NULL) {
+            _serial2udp[i].eth.pcb = udp_new_ip_type(IPADDR_TYPE_ANY);
+            if (_serial2udp[i].eth.pcb != NULL) {
+                // set up RX callback
+                udp_recv(_serial2udp[i].eth.pcb, AP_Networking::serial2udp_recv_callback, NULL);
+
+
+                // // listen only
+                // ip_set_option(_serial2udp[i].eth.pcb, SOF_BROADCAST);
+                // udp_bind(_serial2udp[i].eth.pcb, IP_ANY_TYPE, _serial2udp[i].eth.port);
+            }
+        }
+
+
+    }
+}
+
+void AP_Networking::serial2udp_recv_callback(void *arg, struct udp_pcb *pcb, struct pbuf *p, const ip_addr_t *addr, u16_t port)
+{
+
+}
+
+
+#pragma GCC diagnostic push
+#pragma GCC diagnostic error "-Wframe-larger-than=1800"
+void AP_Networking::serial2udp_update()
+{
+    uint8_t buf[AP_NETWORKING_MTU_SIZE];
+
+    for (uint32_t i=0; i<_serial2udp_count; i++) {
+        // process UART -> buf -> UDP.buf
+        const uint32_t uart_in_avail = _serial2udp[i].uart->available();
+        const uint32_t udp_out_txspace = _serial2udp[i].eth.buf_out.space();
+        if (uart_in_avail > 0 && udp_out_txspace > 0) {
+            const uint32_t buf_size = MIN(MIN(uart_in_avail, udp_out_txspace), sizeof(buf));
+            const ssize_t buf_read_count =_serial2udp[i].uart->read(buf, buf_size);
+            if (buf_read_count != buf_size) {
+                // not all bytes were read??!?!
+            }
+            const uint32_t buf_write_count = _serial2udp[i].eth.buf_out.write(buf, buf_read_count);
+            if (buf_write_count != buf_size) {
+                // not all read bytes were written??!?!
+            }
+        }
+
+        uint32_t navail;
+        const uint8_t *readptr = _serial2udp[i].eth.buf_out.readptr(navail);
+        if (readptr && navail > 0) {
+            send_udp(_serial2udp[i].eth, readptr, navail);
+        }
+
+
+
+
+        // // process UDP.buf -> buf -> UART
+        // const uint32_t udp_in_avail = _serial2udp[i].eth.buf_in.available();
+        // const uint32_t uart_out_txspace = _serial2udp[i].uart->txspace();
+        // if (udp_in_avail > 0 && uart_out_txspace > 0) {
+        //     const uint32_t buf_size = MIN(MIN(udp_in_avail, uart_out_txspace), sizeof(buf));
+        //     const ssize_t buf_read_count =_serial2udp[i].uart->read(buf, buf_size);
+        //     if (buf_read_count != buf_size) {
+        //         // not all bytes were read??!?!
+        //     }
+        //     const uint32_t buf_write_count = _serial2udp[i].eth.buf_in.write(buf, buf_read_count);
+        //     if (buf_write_count != buf_size) {
+        //         // not all read bytes were written??!?!
+        //     }
+        // }
+
+
+
+
+
+        
+
+        // const uint32_t udp_out_available = _serial2udp[i].eth.buf_out.available();
+        // if (udp_out_available > 0) {
+        //     struct udp_pcb* pcb = udp_new();
+        //     if (pcb != NULL) {
+        //         ip4_addr_t addr;
+        //         uint16_t port = 1313;
+        //         IP4_ADDR(&addr, 172,20,13,13);
+
+        //         struct pbuf *p;
+        //         p = pbuf_alloc(PBUF_TRANSPORT, udp_out_available, PBUF_RAM);
+        //         if (p != NULL) {
+        //             p->payload[]
+        //             err_t err = udp_sendto(pcb, p, &addr, port);
+                    
+        //             if (err != ERR_OK) {
+        //                 // handle error
+        //             }
+        //         }
+        //         pbuf_free(p);
+        //     }
+        // }
+
+    }
+}
+#pragma GCC diagnostic pop
+
+bool AP_Networking::send_udp(Serial2UDP_t::Serial2UDP_Eth_t &eth, const uint8_t* data, const uint16_t data_len)
+{
+    struct pbuf *p;
+    p = pbuf_alloc(PBUF_TRANSPORT, data_len, PBUF_RAM);
+    if (p != NULL) {
+        return false;
+    }
+
+    memcpy(p->payload, data, data_len);
+    udp_sendto(eth.pcb, p, &eth.ip_addr, eth.port);
+    pbuf_free(p);
+
+    return true;
+}
+
+char* AP_Networking::serial2udp_get_ip(const uint32_t stream_id)
+{
+    // return (char*)"172.20.13.13";
+    // return (char*)"172.20.13.14";
+    return (char*)"0.0.0.0";
+}
+
+uint16_t AP_Networking::serial2udp_get_port(const uint32_t stream_id)
+{
+    return 1313;
+}
+
+uint32_t AP_Networking::serial2udp_get_udp_outbound_buffer(const uint32_t stream_id, uint8_t* data, const uint32_t data_len_max)
+{
+    if (stream_id >= _serial2udp_count) {
+        return 0;
+    }
+
+    return _serial2udp[stream_id].eth.buf_out.read(data, data_len_max);
+}
+
+uint32_t AP_Networking::serial2udp_load_udp_inbound_buffer(const uint32_t stream_id, uint8_t* data, const uint32_t data_len_max)
+{
+    if (stream_id >= _serial2udp_count) {
+        return 0;
+    }
+
+    return _serial2udp[stream_id].eth.buf_out.write(data, data_len_max);
 }
 #endif
 

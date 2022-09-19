@@ -13,6 +13,11 @@
 //#include <AP_HAL/utility/sparse-endian.h>
 #include <AP_SerialManager/AP_SerialManager.h>
 #include <AP_HAL/utility/RingBuffer.h>
+#include "AP_Networking_Params.h"
+
+#ifndef AP_NETWORKING_MAX_INSTANCES
+#define AP_NETWORKING_MAX_INSTANCES 2
+#endif
 
 #if CONFIG_HAL_BOARD == HAL_BOARD_CHIBIOS
     #include "lwipthread.h"
@@ -40,38 +45,22 @@
 #endif
 
 #ifndef AP_NETWORKING_MTU_SIZE
-#define AP_NETWORKING_MTU_SIZE 1500
+#ifdef LWIP_NETIF_MTU
+    #define AP_NETWORKING_MTU_SIZE LWIP_NETIF_MTU
+#else
+    #define AP_NETWORKING_MTU_SIZE 1500
+#endif
 #endif
 
-#ifndef AP_NETWORKING_SERIAL2UDP_ENABLED
-#define AP_NETWORKING_SERIAL2UDP_ENABLED 0
-#endif
+// declare backend class
+class AP_Networking_Backend;
+class AP_Networking_Serial2UDP;
 
-#if AP_NETWORKING_SERIAL2UDP_ENABLED
-#ifndef AP_NETWORKING_SERIAL2UDP_INSTANCE_MAX
-#define AP_NETWORKING_SERIAL2UDP_INSTANCE_MAX 1
-#endif
+class AP_Networking
+{
+    friend class AP_Networking_Backend;
+    friend class AP_Networking_Serial2UDP;
 
-#if AP_NETWORKING_SERIAL2UDP_INSTANCE_MAX <= 0
-#error "AP_NETWORKING_SERIAL2UDP_INSTANCE_MAX is too small"
-#endif
-
-#ifndef AP_NETWORKING_SERIAL2UDP_BUFFER_UDP_RX_SIZE
-#define AP_NETWORKING_SERIAL2UDP_BUFFER_UDP_RX_SIZE 2*AP_NETWORKING_MTU_SIZE
-#endif
-#ifndef AP_NETWORKING_SERIAL2UDP_BUFFER_UDP_TX_SIZE
-#define AP_NETWORKING_SERIAL2UDP_BUFFER_UDP_TX_SIZE 2*AP_NETWORKING_MTU_SIZE
-#endif
-
-#ifndef AP_NETWORKING_SERIAL2UDP_BUFFER_UART_RX_SIZE
-#define AP_NETWORKING_SERIAL2UDP_BUFFER_UART_RX_SIZE 2*AP_NETWORKING_MTU_SIZE
-#endif
-#ifndef AP_NETWORKING_SERIAL2UDP_BUFFER_UART_TX_SIZE
-#define AP_NETWORKING_SERIAL2UDP_BUFFER_UART_TX_SIZE 2*AP_NETWORKING_MTU_SIZE
-#endif
-#endif // AP_NETWORKING_SERIAL2UDP_ENABLED
-
-class AP_Networking {
 public:
     AP_Networking();
 
@@ -79,9 +68,20 @@ public:
     AP_Networking(const AP_Networking &other) = delete;
     AP_Networking &operator=(const AP_Networking&) = delete;
 
+    // Feature types
+    enum class Type : uint8_t {
+        NONE                        = 0,
+        SERIAL2UDP                  = 1,
+    };
+
+
     void init();
 
     void update();
+
+    // Return the number of feature instances
+    uint8_t num_instances(void) const { return _num_instances; }
+    Type get_type(const uint8_t instance) const;
 
     static AP_Networking *get_singleton(void) {return _singleton; }
 
@@ -133,17 +133,16 @@ public:
     static uint32_t convert_netmask_bitcount_to_ip(const uint32_t netmask_bitcount);
     static uint8_t convert_netmask_ip_to_bitcount(const uint32_t netmask_ip);
 
-
-#if AP_NETWORKING_SERIAL2UDP_ENABLED
-    char* serial2udp_get_ip(const uint32_t stream_id);
-    uint16_t serial2udp_get_port(const uint32_t stream_id);
-    uint32_t serial2udp_get_udp_outbound_buffer(const uint32_t stream_id, uint8_t* data, const uint32_t data_len_max);
-    uint32_t serial2udp_load_udp_inbound_buffer(const uint32_t stream_id, uint8_t* data, const uint32_t data_len_max);
-    static void serial2udp_recv_callback(void *arg, struct udp_pcb *pcb, struct pbuf *p, const ip_addr_t *addr, u16_t port);
-#endif
+protected:
+    // parameters
+    AP_Networking_Params _params[AP_NETWORKING_MAX_INSTANCES];
 
 private:
     static AP_Networking *_singleton;
+
+    AP_Networking_Params *_drivers[AP_NETWORKING_MAX_INSTANCES];
+
+    uint8_t     _num_instances;         // number of temperature sens
 
 #if AP_NETWORKING_HAS_THREAD
     void thread();
@@ -151,31 +150,6 @@ private:
     
     void apply_errata_for_mac_KSZ9896C();
     void check_for_config_changes();
-
-#if AP_NETWORKING_SERIAL2UDP_ENABLED
-    struct Serial2UDP_t {
-        struct Serial2UDP_Eth_t{
-            int16_t ip[4];  // change to AP_Int16
-            int32_t port;  // change to AP_Int32
-            ByteBuffer buf_in{0};
-            ByteBuffer buf_out{0};
-
-            //struct bbuf* p = pbuf_alloc(PBUF_TRANSPORT, sizeof(DataFrame), PBUF_RAM);
-            // struct ip_addr destAddr;
- 
-            // DataFrame data;
-
-            ip_addr_t ip_addr;
-            struct udp_pcb* pcb;
-        } eth;
-        AP_HAL::UARTDriver *uart;
-    } _serial2udp[AP_NETWORKING_SERIAL2UDP_INSTANCE_MAX];
-    uint16_t _serial2udp_count;
-
-    void serial2udp_init();
-    void serial2udp_update();
-    bool send_udp(Serial2UDP_t::Serial2UDP_Eth_t &eth, const uint8_t* data, const uint16_t data_len);
-#endif
 
     struct {
         bool done;
@@ -198,7 +172,6 @@ private:
         uint32_t announce_ms;
         bool once;
     } _activeSettings;
-
 
     HAL_Semaphore _sem;
 };
