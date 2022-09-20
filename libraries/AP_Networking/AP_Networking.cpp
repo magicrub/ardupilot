@@ -3,6 +3,9 @@
 
 #if AP_NETWORKING_ENABLED
 
+#include "AP_Networking_Serial2UDP.h"
+
+
 #if CONFIG_HAL_BOARD == HAL_BOARD_CHIBIOS
     #include <hal_mii.h>
     #include <AP_Scripting/luasocket/src/inet.h>
@@ -67,11 +70,13 @@
     #endif
 #endif
 
+extern const AP_HAL::HAL& hal;
+
 const AP_Param::GroupInfo AP_Networking::var_info[] = {
 
     AP_GROUPINFO_FLAGS("ENABLED"  ,  0, AP_Networking, _param.enabled, 0, AP_PARAM_FLAG_ENABLE),
 
-      // @Group: IPADDR0
+    // @Group: IPADDR0
     // @DisplayName: IP Address MSB
     // @Description: Allows setting static IP address
     // @Range: 0 255
@@ -239,8 +244,6 @@ const AP_Param::GroupInfo AP_Networking::var_info[] = {
     AP_GROUPEND
 };
 
-extern const AP_HAL::HAL& hal;
-
 AP_Networking::AP_Networking(void)
 {
 #if CONFIG_HAL_BOARD == HAL_BOARD_SITL
@@ -299,13 +302,13 @@ void AP_Networking::init()
 
     // create each instance
     for (uint8_t instance = 0; instance < AP_NETWORKING_MAX_INSTANCES; instance++) {
-        switch (get_type(instance) {
+        switch (get_type(instance)) {
 #if AP_NETWORKING_SERIAL2UDP_ENABLED
-            case AP_Networking::Type::SERIAL2UDP:
-                drivers[instance] = new AP_Networking_Serial2UDP(*this, _params[instance]);
+            case AP_Networking_Params::Type::SERIAL2UDP:
+                _drivers[instance] = new AP_Networking_Serial2UDP(*this, _state[instance], _params[instance]);
                 break;
 #endif
-            case AP_Networking::Type::NONE:
+            case AP_Networking_Params::Type::NONE:
             default:
                 break;
         }
@@ -314,9 +317,6 @@ void AP_Networking::init()
         if (_drivers[instance] != nullptr) {
             _drivers[instance]->init();
             // _num_instances is actually the index for looping over instances
-            // the user may have TEMP_TYPE=0 and TEMP2_TYPE=7, in which case
-            // there will be a gap, but as we always check for drivers[instances] being nullptr
-            // this is safe
             _num_instances = instance + 1;
         }
     }
@@ -461,18 +461,18 @@ void AP_Networking::update()
     check_for_config_changes();
 
     for (uint8_t i=0; i<_num_instances; i++) {
-        if (_drivers[i] != nullptr && _param.type[i] != AP_Networking::Type::NONE) {
+        if (_drivers[i] != nullptr && get_type(i) != AP_Networking_Params::Type::NONE) {
             _drivers[i]->update();
         }
     }
 }
 
-AP_Networking::Type AP_Networking::get_type(const uint8_t instance) const
+AP_Networking_Params::Type AP_Networking::get_type(const uint8_t instance) const
 {
     if (instance >= AP_NETWORKING_MAX_INSTANCES) {
-        return AP_Networking::Type::NONE;
+        return AP_Networking_Params::Type::NONE;
     }
-    return (AP_Networking::Type)_params[instance].type.get();
+    return (AP_Networking_Params::Type)_params[instance].type.get();
 }
 
 uint32_t AP_Networking::convert_netmask_bitcount_to_ip(const uint32_t netmask_bitcount)
@@ -541,8 +541,8 @@ void AP_Networking::thread()
 
 AP_Networking *AP_Networking::_singleton;
 namespace AP { 
-    AP_Networking *network() {
-        return AP_Networking::get_singleton();
+    AP_Networking &network() {
+        return *AP_Networking::get_singleton();
     }
 }
 

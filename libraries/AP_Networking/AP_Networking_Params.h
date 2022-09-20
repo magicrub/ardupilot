@@ -27,6 +27,12 @@ public:
     AP_Networking_Params(const AP_Networking_Params &other) = delete;
     AP_Networking_Params &operator=(const AP_Networking_Params&) = delete;
 
-    AP_Int8 type;                   // AP_Networking_Params::Type, 0=disabled, others see frontend enum TYPE
+    // Feature types
+    enum class Type : uint8_t {
+        NONE                        = 0,
+        SERIAL2UDP                  = 1,
+    };
 
-#endif // AP_NETWORKING_ENABLED
+    AP_Enum<Type> type;                   // AP_Networking_Params::Type, 0=disabled, others see frontend enum TYPE
+};
+

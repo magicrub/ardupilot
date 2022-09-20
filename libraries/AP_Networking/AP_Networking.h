@@ -7,17 +7,20 @@
 #define AP_NETWORKING_ENABLED 0
 #endif
 
-#if AP_NETWORKING_ENABLED
-
-#include <AP_Param/AP_Param.h>
-//#include <AP_HAL/utility/sparse-endian.h>
-#include <AP_SerialManager/AP_SerialManager.h>
-#include <AP_HAL/utility/RingBuffer.h>
-#include "AP_Networking_Params.h"
-
 #ifndef AP_NETWORKING_MAX_INSTANCES
 #define AP_NETWORKING_MAX_INSTANCES 2
 #endif
+
+#if AP_NETWORKING_ENABLED
+
+#include "AP_Networking_Params.h"
+
+
+//#include <AP_Param/AP_Param.h>
+//#include <AP_HAL/utility/sparse-endian.h>
+#include <AP_SerialManager/AP_SerialManager.h>
+#include <AP_HAL/utility/RingBuffer.h>
+
 
 #if CONFIG_HAL_BOARD == HAL_BOARD_CHIBIOS
     #include "lwipthread.h"
@@ -68,12 +71,9 @@ public:
     AP_Networking(const AP_Networking &other) = delete;
     AP_Networking &operator=(const AP_Networking&) = delete;
 
-    // Feature types
-    enum class Type : uint8_t {
-        NONE                        = 0,
-        SERIAL2UDP                  = 1,
+    struct AP_Networking_State {
+        const struct AP_Param::GroupInfo *var_info;
     };
-
 
     void init();
 
@@ -81,11 +81,10 @@ public:
 
     // Return the number of feature instances
     uint8_t num_instances(void) const { return _num_instances; }
-    Type get_type(const uint8_t instance) const;
+    AP_Networking_Params::Type get_type(const uint8_t instance) const;
 
     static AP_Networking *get_singleton(void) {return _singleton; }
 
-    static const struct AP_Param::GroupInfo        var_info[];
 
     bool is_healthy() const { return _init.done; }    // TODO: is_healthy()
     bool get_dhcp_enabled() const { return _param.dhcp; }
@@ -133,6 +132,10 @@ public:
     static uint32_t convert_netmask_bitcount_to_ip(const uint32_t netmask_bitcount);
     static uint8_t convert_netmask_ip_to_bitcount(const uint32_t netmask_ip);
 
+
+
+    static const struct AP_Param::GroupInfo        var_info[];
+
 protected:
     // parameters
     AP_Networking_Params _params[AP_NETWORKING_MAX_INSTANCES];
@@ -140,9 +143,10 @@ protected:
 private:
     static AP_Networking *_singleton;
 
-    AP_Networking_Params *_drivers[AP_NETWORKING_MAX_INSTANCES];
+    AP_Networking_State _state[AP_NETWORKING_MAX_INSTANCES];
+    AP_Networking_Backend *_drivers[AP_NETWORKING_MAX_INSTANCES];
 
-    uint8_t     _num_instances;         // number of temperature sens
+    uint8_t     _num_instances;         // number of feature instances
 
 #if AP_NETWORKING_HAS_THREAD
     void thread();
@@ -177,7 +181,7 @@ private:
 };
 
 namespace AP {
-    AP_Networking *network();
+    AP_Networking &network();
 };
 
 #endif // AP_NETWORKING_ENABLED

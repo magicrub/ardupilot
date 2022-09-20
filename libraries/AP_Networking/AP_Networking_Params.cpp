@@ -18,11 +18,6 @@
 
 #if AP_NETWORKING_ENABLED
 
-#ifndef AP_NETWORKING_TYPE_DEFAULT
-#define AP_NETWORKING_TYPE_DEFAULT (int8_t)AP_TemperatureSensor::Type::NONE
-#endif
-
-
 const AP_Param::GroupInfo AP_Networking_Params::var_info[] = {
     // @Param: TYPE
     // @DisplayName: Network Feature
@@ -30,9 +25,13 @@ const AP_Param::GroupInfo AP_Networking_Params::var_info[] = {
     // @Values: 0:Disabled, 1:Serial2UDP
     // @User: Standard
     // @RebootRequired: True
-    AP_GROUPINFO_FLAGS("TYPE", 1, AP_Networking_Params, type, AP_NETWORKING_TYPE_DEFAULT, AP_PARAM_FLAG_ENABLE),
+    AP_GROUPINFO_FLAGS("TYPE", 1, AP_Networking_Params, type, (int8_t)AP_Networking_Params::Type::NONE, AP_PARAM_FLAG_ENABLE),
 
     AP_GROUPEND
+};
+
+AP_Networking_Params::AP_Networking_Params(void) {
+    AP_Param::setup_object_defaults(this, var_info);
 }
 
 #endif // AP_NETWORKING_ENABLED

@@ -22,8 +22,11 @@
     base class constructor.
     This incorporates initialisation as well.
 */
-AP_Networking_Backend::AP_Networking_Backend(AP_Networking &front, AP_Networking_Params &params):
+AP_Networking_Backend::AP_Networking_Backend(AP_Networking &front,
+                                            AP_Networking::AP_Networking_State &state,
+                                            AP_Networking_Params &params):
     _front(front),
+    _state(state),
     _params(params)
 {
 }

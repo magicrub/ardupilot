@@ -17,20 +17,22 @@
 #include "AP_Networking.h"
 
 #if AP_NETWORKING_ENABLED
+#include <AP_HAL/Semaphores.h>
 
 class AP_Networking_Backend {
 public:
     // constructor. This incorporates initialisation as well.
-    AP_Networking_Backend(AP_Networking &front, AP_Networking_Params &params);
+    AP_Networking_Backend(AP_Networking &front, AP_Networking::AP_Networking_State &state, AP_Networking_Params &params);
 
     // initialise
     virtual void init() {};
 
-    virtual void update() = 0;
+    virtual void update() {};
 
 protected:
 
-    AP_Networking_Backend                   &_front;    // reference to front-end
+    AP_Networking                           &_front;    // reference to front-end
+    AP_Networking::AP_Networking_State      &_state;    // reference to front-end state
     AP_Networking_Params                    &_params;   // reference to this instance's parameters (held in the front-end)
 
 private:
