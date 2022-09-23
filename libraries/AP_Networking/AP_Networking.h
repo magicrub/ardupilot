@@ -8,7 +8,7 @@
 #endif
 
 #ifndef AP_NETWORKING_MAX_INSTANCES
-#define AP_NETWORKING_MAX_INSTANCES 2
+#define AP_NETWORKING_MAX_INSTANCES 8
 #endif
 
 #if AP_NETWORKING_ENABLED
@@ -133,6 +133,9 @@ public:
     static uint8_t convert_netmask_ip_to_bitcount(const uint32_t netmask_ip);
 
 
+    AP_Int32 debug;
+
+    static int32_t send_udp(struct udp_pcb *pcb, const ip4_addr_t &ip4_addr, const uint16_t port, const uint8_t* data, uint16_t data_len);
 
     static const struct AP_Param::GroupInfo        var_info[];
 

@@ -241,6 +241,8 @@ const AP_Param::GroupInfo AP_Networking::var_info[] = {
     AP_SUBGROUPINFO(_params[8], "9_", 38, AP_Networking, AP_Networking_Params),
 #endif
 
+    AP_GROUPINFO("DEBUG", 55,  AP_Networking,    debug,   0),
+
     AP_GROUPEND
 };
 
@@ -538,6 +540,33 @@ void AP_Networking::thread()
     // TODO: do awesome stuff at 1kHz in our own dedicated thread!
 }
 #endif
+
+// send a UDP packet and return with bytes sent or an error code
+int32_t AP_Networking::send_udp(struct udp_pcb *pcb, const ip4_addr_t &ip4_addr, const uint16_t port, const uint8_t* data, uint16_t data_len)
+{
+    if (data == nullptr || pcb == nullptr) {
+        return ERR_ARG;
+    }
+    if (data_len == 0) {
+        return 0;
+    }
+    
+    data_len = MIN(data_len, AP_NETWORKING_MTU_SIZE);
+
+    struct pbuf *p = pbuf_alloc(PBUF_TRANSPORT, data_len , PBUF_RAM);
+    if (p == nullptr) {
+        return ERR_MEM;
+    }
+
+    ip_addr_t dst;
+    ip_addr_copy_from_ip4(dst, ip4_addr);
+
+    memcpy(p->payload, data, data_len);
+    const err_t err = udp_sendto(pcb, p, &dst, port);
+    pbuf_free(p);
+
+    return err == ERR_OK ? data_len : err;
+}
 
 AP_Networking *AP_Networking::_singleton;
 namespace AP { 

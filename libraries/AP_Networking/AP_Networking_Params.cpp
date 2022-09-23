@@ -25,7 +25,7 @@ const AP_Param::GroupInfo AP_Networking_Params::var_info[] = {
     // @Values: 0:Disabled, 1:Serial2UDP
     // @User: Standard
     // @RebootRequired: True
-    AP_GROUPINFO_FLAGS("TYPE", 1, AP_Networking_Params, type, (int8_t)AP_Networking_Params::Type::NONE, AP_PARAM_FLAG_ENABLE),
+    AP_GROUPINFO_FLAGS("TYPE", 1, AP_Networking_Params, type, (int8_t)AP_Networking_Params::Type::SERIAL2UDP, AP_PARAM_FLAG_ENABLE),
 
     AP_GROUPEND
 };

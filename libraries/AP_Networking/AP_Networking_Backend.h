@@ -24,6 +24,10 @@ public:
     // constructor. This incorporates initialisation as well.
     AP_Networking_Backend(AP_Networking &front, AP_Networking::AP_Networking_State &state, AP_Networking_Params &params);
 
+    // we declare a virtual destructor so that the driver can
+    // override with a custom destructor if need be
+    virtual ~AP_Networking_Backend(void) {}
+
     // initialise
     virtual void init() {};
 

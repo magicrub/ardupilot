@@ -29,6 +29,7 @@
         "cstdio": "cpp",
         "source_location": "cpp",
         "*.ipp": "cpp",
-        "udp.h": "c"
+        "udp.h": "c",
+        "complex": "cpp"
     }
 }
