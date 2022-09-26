@@ -74,5 +74,8 @@ if param:get("Q_ENABLE") == 1 then
     assert(param:get("SERVO9_FUNCTION") == 35, "K1000: SERVO9_FUNCTION Not Correct")
     assert(param:get("SERVO9_MAX") == 1940, "K1000: SERVO9_MAX Not Correct")
     assert(param:get("SERVO9_MIN") == 1100, "K1000: SERVO9_MIN Not Correct")
+    assert(param:get("TKOFF_ALT") == 8, "K1000: TKOFF_ALT Not Correct")
+    assert(param:get("TKOFF_LVL_ALT") == 8, "K1000: TKOFF_LVL_ALT Not Correct")
+    assert(param:get("TKOFF_THR_MAX") == 0, "K1000: TKOFF_THR_MAX Not Correct")
     assert(param:get("WP_LOITER_RAD") == 150, "K1000: WP_LOITER_RAD Not Correct")
 end
