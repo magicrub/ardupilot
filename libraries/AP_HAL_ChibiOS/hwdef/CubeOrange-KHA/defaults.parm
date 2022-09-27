@@ -130,7 +130,7 @@ SERVO10_FUNCTION        36
 SERVO10_MAX             1940
 SERVO10_MIN             1100
 SERVO1_FUNCTION         70
-SERVO1_MAX              2000
+SERVO1_MAX              1800
 SERVO1_MIN              1290
 SERVO1_TRIM             1290
 SERVO2_FUNCTION         4
