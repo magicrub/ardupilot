@@ -24,7 +24,7 @@ local takeoff_throttle_min = 0.2*takeoff_throttle_max
 -- max throttle is unrestricted when airspeed is 90% of rotate speed
 rotate_speed = rotate_speed*0.9
 
-gcs:send_text(4, "K1000: Takeoff Throttle Limiter Enabled")
+gcs:send_text(4, "K1000: Propeller Stall Limiter Enabled")
 
 local j = 0
 
