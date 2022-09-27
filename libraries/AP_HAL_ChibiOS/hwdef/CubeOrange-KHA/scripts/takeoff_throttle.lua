@@ -48,7 +48,8 @@ function update()
         throttle_max = throttle_scale*throttle_max+throttle_min_pwm -- scale back to pwm values
         throttle_max = math.floor(throttle_max + 0.5) -- turn into an integer value
 
-        SRV_Channels:set_output_pwm_chan_timeout(throttle_srv_chan,throttle_max,15) -- override throttle channel
+        --SRV_Channels:set_output_pwm_chan_timeout(throttle_srv_chan,throttle_max,15) -- override throttle channel
+        logger:write('SCR1','throttle_max,airspeed','ff')
 
         return update, 10
     else
