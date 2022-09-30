@@ -69,9 +69,30 @@ function update()
         end
         gcs:send_text(0, "WARNING: Loss of Thrust Possible")
         motor_out_time = millis()
+        case = RESET_ESC
+        return update, 200
+    end
+    if case == RESET_ESC then
+        if not arming:is_armed() then
+            case = DISARMED
+            return update, 1000
+        end
+        gcs:send_text(0, "WARNING: Resetting ESC 1290us")
+        param:set('SERVO1_MAX', 1290)
+        case = MOTOR_INOP_RESETTING
+        return update, 2000
+    end
+    if case == MOTOR_INOP_RESETTING
+        if not arming:is_armed() then
+            case = DISARMED
+            return update, 1000
+        end
+        gcs:send_text(0, "WARNING: Resetting ESC 1800us")
+        param:set('SERVO1_MAX', 1800)
         case = MOTOR_INOP_WAITING
         return update, 200
     end
+
 
 end
 -- start running update loop
