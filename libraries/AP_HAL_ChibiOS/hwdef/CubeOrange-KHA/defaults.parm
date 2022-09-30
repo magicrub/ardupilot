@@ -67,6 +67,7 @@ FS_LONG_TIMEOUT         1200
 GPS_SBAS_MODE           1
 GPS_TYPE                9
 KFF_THR2PTCH            6
+LAND_ABORT_THR          1
 LAND_DISARMDELAY        3
 LAND_FLARE_ALT          2.5
 LAND_FLARE_SEC          0
