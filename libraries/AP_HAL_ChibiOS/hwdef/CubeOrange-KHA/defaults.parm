@@ -73,7 +73,7 @@ LAND_FLARE_SEC          0
 LAND_PITCH_CD           -200
 LAND_SLOPE_RCALC        0
 LAND_THEN_NEUTRL        1
-LAND_THR_SLEW           126
+LAND_THR_SLEW           0
 LIM_PITCH_MAX           1000
 LIM_PITCH_MIN           -2000
 LIM_ROLL_CD             3000
@@ -210,13 +210,14 @@ TECS_VERT_ACC           15
 THROTTLE_NUDGE          0
 THR_FAILSAFE            0
 THR_MAX                 80
+THR_SLEWRATE            50
 TKOFF_GND_PITCH         -7.0
 TKOFF_ALT               5
 TKOFF_LVL_ALT           5
 TKOFF_LVL_PITCH         4
 TKOFF_ROTATE_SPD        13.5
 TKOFF_THR_MAX           48
-TKOFF_THR_SLEW          50
+TKOFF_THR_SLEW          0
 TRIM_ARSPD_CM           1700
 TRIM_THROTTLE           35
 USE_REV_THRUST          0
