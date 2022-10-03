@@ -1,7 +1,6 @@
 if param:get("Q_ENABLE") == 1 then
     assert(param:get("ARSPD_FBW_MIN") == 14, "K1000: ARSPD_FBW_MIN Not Correct")
     assert(param:get("ARSPD_FBW_MAX") == 22, "K1000: ARSPD_FBW_MAX Not Correct")
-    assert(param:get("TRIM_ARSPD_CM") == 1700, "K1000: TRIM_ARSPD_CM Not Correct")
     assert(param:get("ARMING_MIS_ITEMS") == 18, "K1000: ARMING_MIS_ITEMS Not Correct")
     assert(param:get("BATT_CAPACITY") == 35500, "K1000: BATT_CAPACITY Not Correct")
     assert(param:get("CAN_D2_UC_ESC_BM") == 15, "K1000: CAN_D2_UC_ESC_BM Not Correct")
@@ -24,6 +23,7 @@ if param:get("Q_ENABLE") == 1 then
     assert(param:get("INS_NOTCH_BW") == 30, "K1000: INS_NOTCH_BW Not Correct")
     assert(param:get("INS_NOTCH_ENABLE") == 1, "K1000: INS_NOTCH_ENABLE Not Correct")
     assert(param:get("INS_NOTCH_FREQ") == 113, "K1000: INS_NOTCH_FREQ Not Correct")
+    assert(param:get("LAND_ABORT_THR") == 0, "K1000: LAND_ABORT_THR Not Correct")
     assert(param:get("Q_FRAME_CLASS") == 1, "K1000: Q_FRAME_CLASS Not Correct")
     assert(param:get("Q_FRAME_TYPE") == 1, "K1000: Q_FRAME_TYPE Not Correct")
     assert(param:get("Q_ANGLE_MAX") == 1500, "K1000: Q_ANGLE_MAX Not Correct")
@@ -78,6 +78,8 @@ if param:get("Q_ENABLE") == 1 then
     assert(param:get("SERVO9_MAX") == 1940, "K1000: SERVO9_MAX Not Correct")
     assert(param:get("SERVO9_MIN") == 1100, "K1000: SERVO9_MIN Not Correct")
     assert(param:get("TKOFF_THR_MAX") == 0, "K1000: TKOFF_THR_MAX Not Correct")
+    assert(param:get("TRIM_ARSPD_CM") == 1700, "K1000: TRIM_ARSPD_CM Not Correct")
+    assert(param:get("TRIM_THROTTLE") == 50, "K1000: TRIM_THROTTLE Not Correct")
     assert(param:get("WP_LOITER_RAD") == 150, "K1000: WP_LOITER_RAD Not Correct")
     gcs:send_text(4, "K1000: VTOL Param Audit Complete")
 end
