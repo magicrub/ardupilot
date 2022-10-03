@@ -1,6 +1,6 @@
 if param:get("Q_ENABLE") == 1 then
     assert(param:get("ARSPD_FBW_MIN") == 14, "K1000: ARSPD_FBW_MIN Not Correct")
-    assert(param:get("ARSPD_FBW_MAX") == 20, "K1000: ARSPD_FBW_MAX Not Correct")
+    assert(param:get("ARSPD_FBW_MAX") == 22, "K1000: ARSPD_FBW_MAX Not Correct")
     assert(param:get("TRIM_ARSPD_CM") == 1700, "K1000: TRIM_ARSPD_CM Not Correct")
     assert(param:get("ARMING_MIS_ITEMS") == 18, "K1000: ARMING_MIS_ITEMS Not Correct")
     assert(param:get("BATT_CAPACITY") == 35500, "K1000: BATT_CAPACITY Not Correct")
