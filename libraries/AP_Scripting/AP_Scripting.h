@@ -51,10 +51,6 @@ public:
    // User parameters for inputs into scripts 
    AP_Float _user[4]; 
 
-    AP_Int32    _mtr_stop_ms;
-    AP_Float    _vibe_low;
-    AP_Int32    _thr_thresh;
-
     struct terminal_s {
         int output_fd;
         off_t input_offset;
