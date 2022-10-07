@@ -29,6 +29,7 @@
 #include "hwdef/common/stm32_util.h"
 #include "hwdef/common/watchdog.h"
 #include <AP_BoardConfig/AP_BoardConfig.h>
+#include <AP_Networking/AP_Networking.h>
 #include <AP_InternalError/AP_InternalError.h>
 #ifndef HAL_BOOTLOADER_BUILD
 #include <AP_Logger/AP_Logger.h>

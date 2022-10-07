@@ -64,6 +64,10 @@ ifeq ($(USE_FATFS),yes)
 include $(CHIBIOS)/os/various/fatfs_bindings/fatfs.mk
 endif
 
+ifeq ($(USE_LWIP),yes)
+include $(CHIBIOS)/os/various/lwip_bindings/lwip.mk
+endif
+
 #
 # Build global options
 ##############################################################################
@@ -109,7 +113,7 @@ include $(CHIBIOS)/$(CHIBIOS_PLATFORM_MK)
 include $(CHIBIOS)/os/hal/osal/rt-nil/osal.mk
 # RTOS files (optional).
 include $(CHIBIOS)/os/rt/rt.mk
-include $(CHIBIOS)/os/common/ports/ARMCMx/compilers/GCC/mk/port_v7m.mk
+include $(CHIBIOS)/os/common/ports/ARMv7-M/compilers/GCC/mk/port.mk
 # Other files (optional).
 #include $(CHIBIOS)/test/rt/test.mk
 include $(CHIBIOS)/os/hal/lib/streams/streams.mk
@@ -135,6 +139,10 @@ CSRC += $(HWDEF)/common/stubs.c \
        $(HWDEF)/common/stm32_util.c \
        $(HWDEF)/common/bouncebuffer.c \
        $(HWDEF)/common/watchdog.c
+
+ifeq ($(USE_LWIP),yes)
+CSRC += $(CHIBIOS)/os/various/evtimer.c
+endif
 
 #	   $(TESTSRC) \
 #	   test.c

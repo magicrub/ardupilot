@@ -65,8 +65,9 @@
  */
 #define STM32_NOCACHE_MPU_REGION            MPU_REGION_6
 #define STM32_NOCACHE_SRAM1_SRAM2           FALSE
+#ifndef STM32_NOCACHE_SRAM3
 #define STM32_NOCACHE_SRAM3                 FALSE
-
+#endif
 /*
  * PWR system settings.
  * Reading STM32 Reference Manual is required, settings in PWR_CR3 are
@@ -458,7 +459,9 @@
 #define STM32_MAC_RECEIVE_BUFFERS           4
 #define STM32_MAC_BUFFERS_SIZE              1522
 #define STM32_MAC_PHY_TIMEOUT               100
+#ifndef STM32_MAC_ETH1_CHANGE_PHY_STATE
 #define STM32_MAC_ETH1_CHANGE_PHY_STATE     TRUE
+#endif
 #define STM32_MAC_ETH1_IRQ_PRIORITY         13
 #define STM32_MAC_IP_CHECKSUM_OFFLOAD       0
 

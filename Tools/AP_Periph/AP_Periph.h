@@ -21,6 +21,7 @@
 #include <AP_Scripting/AP_Scripting.h>
 #include <AP_HAL/CANIface.h>
 #include <AP_Stats/AP_Stats.h>
+#include <AP_Networking/AP_Networking.h>
 
 #if HAL_GCS_ENABLED
 #include "GCS_MAVLink.h"
@@ -285,6 +286,11 @@ public:
 
     static bool no_iface_finished_dna;
     static constexpr auto can_printf = ::can_printf;
+
+#if AP_NETWORKING_ENABLED
+    AP_Networking networking;
+#endif
+
 };
 
 namespace AP
