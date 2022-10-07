@@ -99,6 +99,11 @@ public:
     // Initialisation of SLCAN Passthrough method of operation
     bool init_passthrough(uint8_t i);
 
+    void set_can_iface(AP_HAL::CANIface* can_iface)
+    {
+        _can_iface = can_iface;
+    }
+
     void reset_params();
     int8_t get_iface_num() const
     {
