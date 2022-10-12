@@ -46,7 +46,6 @@ if param:get("Q_ENABLE") == 1 then
     assert(param:get("Q_A_RAT_YAW_FLTE") == 0.0, "K1000: Q_A_RAT_YAW_FLTE Not Correct")
     assert(param:get("Q_A_RAT_YAW_I") == 0.09, "K1000: Q_A_RAT_YAW_I Not Correct")
     assert(param:get("Q_A_RAT_YAW_P") == 4.37, "K1000: Q_A_RAT_YAW_P Not Correct")
-    assert(param:get("Q_M_THST_HOVER") == 0.52, "K1000: Q_M_THST_HOVER Not Correct")
     assert(param:get("Q_OPTIONS") == 1057, "K1000: Q_OPTIONS Not Correct")
     assert(param:get("Q_P_ACCZ_FLTE") == 7, "K1000: Q_P_ACCZ_FLTE Not Correct")
     assert(param:get("Q_P_ACCZ_FLTT") == 5, "K1000: Q_P_ACCZ_FLTT Not Correct")
