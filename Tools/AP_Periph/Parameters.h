@@ -51,6 +51,7 @@ public:
         k_param_gps_mb_only_can_port,
         k_param_scripting,
         k_param_esc_telem_port,
+        k_param_networking,
     };
 
     AP_Int16 format_version;

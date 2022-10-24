@@ -132,22 +132,22 @@ void AP_Scheduler::init(const AP_Scheduler::Task *tasks, uint8_t num_tasks, uint
 
     // sanity check the task lists to ensure the priorities are
     // never decrease
-    uint8_t old = 0;
-    for (uint8_t i=0; i<_num_common_tasks; i++) {
-        if (_common_tasks[i].priority < old){
-            INTERNAL_ERROR(AP_InternalError::error_t::flow_of_control);
-            break;
-        }
-        old = _common_tasks[i].priority;
-    }
-    old = 0;
-    for (uint8_t i=0; i<_num_vehicle_tasks; i++) {
-        if (_vehicle_tasks[i].priority < old) {
-            INTERNAL_ERROR(AP_InternalError::error_t::flow_of_control);
-            break;
-        }
-        old = _vehicle_tasks[i].priority;
-    }
+    // uint8_t old = 0;
+    // for (uint8_t i=0; i<_num_common_tasks; i++) {
+    //     if (_common_tasks[i].priority < old){
+    //         INTERNAL_ERROR(AP_InternalError::error_t::flow_of_control);
+    //         break;
+    //     }
+    //     old = _common_tasks[i].priority;
+    // }
+    // old = 0;
+    // for (uint8_t i=0; i<_num_vehicle_tasks; i++) {
+    //     if (_vehicle_tasks[i].priority < old) {
+    //         INTERNAL_ERROR(AP_InternalError::error_t::flow_of_control);
+    //         break;
+    //     }
+    //     old = _vehicle_tasks[i].priority;
+    // }
 }
 
 // one tick has passed

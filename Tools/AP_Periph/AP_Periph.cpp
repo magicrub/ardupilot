@@ -140,6 +140,10 @@ void AP_Periph_FW::init()
         printf("Reboot after watchdog reset\n");
     }
 
+#if AP_NETWORKING_ENABLED
+    networking.init();
+#endif
+
 #ifdef HAL_PERIPH_ENABLE_GPS
     if (gps.get_type(0) != AP_GPS::GPS_Type::GPS_TYPE_NONE && g.gps_port >= 0) {
         serial_manager.set_protocol_and_baud(g.gps_port, AP_SerialManager::SerialProtocol_GPS, AP_SERIALMANAGER_GPS_BAUD);
@@ -400,6 +404,10 @@ void AP_Periph_FW::update()
 #endif
 
     can_update();
+
+#if AP_NETWORKING_ENABLED
+    networking.update();
+#endif
 
 #if (defined(HAL_PERIPH_NEOPIXEL_COUNT_WITHOUT_NOTIFY) && HAL_PERIPH_NEOPIXEL_COUNT_WITHOUT_NOTIFY == 8) || defined(HAL_PERIPH_ENABLE_NOTIFY)
     update_rainbow();
