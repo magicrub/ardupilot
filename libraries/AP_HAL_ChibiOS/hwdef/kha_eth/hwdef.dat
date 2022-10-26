@@ -74,6 +74,7 @@ PA11 OTG_FS_DM OTG1
 PA12 OTG_FS_DP OTG1
 
 # order of UARTs (and USB)
+#SERIAL_ORDER OTG1 USART1 USART2 UART4 UART7 OTG2
 SERIAL_ORDER OTG1 USART1 USART2 UART4 UART7
 
 #STDOUT_SERIAL SD7
@@ -159,6 +160,10 @@ define PERIPH_FW TRUE
 
 define HAL_BARO_ALLOW_INIT_NO_BARO
 define HAL_GCS_ENABLED 1
+#env DISABLE_SCRIPTING 1
+define HAL_PERIPH_ENABLE_SLCAN
+
+define AP_NETWORKING_MAX_INSTANCES 2
 
 # listen for reboot command from uploader.py script
 # undefine to disable. Use -1 to allow on all ports, otherwise serial number index defined in SERIAL_ORDER starting at 0
