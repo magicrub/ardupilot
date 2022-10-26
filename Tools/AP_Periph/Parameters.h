@@ -51,6 +51,7 @@ public:
         k_param_gps_mb_only_can_port,
         k_param_scripting,
         k_param_esc_telem_port,
+        k_param_can_slcan_cport,
         k_param_networking,
     };
 
@@ -60,6 +61,10 @@ public:
     AP_Int32 can_baudrate[HAL_NUM_CAN_IFACES];
 #if HAL_NUM_CAN_IFACES >= 2
     AP_Enum<AP_CANManager::Driver_Type> can_protocol[HAL_NUM_CAN_IFACES];
+#endif
+
+#ifdef HAL_PERIPH_ENABLE_SLCAN
+    AP_Int8 can_slcan_cport;
 #endif
 
 #ifdef HAL_PERIPH_ENABLE_BUZZER_WITHOUT_NOTIFY
