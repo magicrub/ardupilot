@@ -17,6 +17,7 @@
 #include "hwing_esc.h"
 #include <AP_CANManager/AP_CANManager.h>
 #include <AP_Scripting/AP_Scripting.h>
+#include <AP_Networking/AP_Networking.h>
 #if CONFIG_HAL_BOARD == HAL_BOARD_CHIBIOS
 #include <AP_HAL_ChibiOS/CANIface.h>
 #elif CONFIG_HAL_BOARD == HAL_BOARD_SITL
@@ -235,6 +236,10 @@ public:
     AP_Logger logger;
 #endif
 
+#if AP_NETWORKING_ENABLED
+    AP_Networking networking;
+#endif
+
 #if HAL_GCS_ENABLED
     GCS_Periph _gcs;
 #endif
@@ -255,6 +260,7 @@ public:
     void show_stack_free();
 
     static bool no_iface_finished_dna;
+
 };
 
 namespace AP
