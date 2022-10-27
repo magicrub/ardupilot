@@ -24,8 +24,7 @@ public:
     AP_Networking_Params(void);
 
     /* Do not allow copies */
-    AP_Networking_Params(const AP_Networking_Params &other) = delete;
-    AP_Networking_Params &operator=(const AP_Networking_Params&) = delete;
+    CLASS_NO_COPY(AP_Networking_Params);
 
     // Feature types
     enum class Type : uint8_t {

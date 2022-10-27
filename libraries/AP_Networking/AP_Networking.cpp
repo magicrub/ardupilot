@@ -189,62 +189,38 @@ const AP_Param::GroupInfo AP_Networking::var_info[] = {
     AP_GROUPINFO("MACADDR5", 16,  AP_Networking,    _param.macaddr[5],   AP_NETWORKING_DEFAULT_MAC_ADDR5),
 
 
-// @Group: 1_
+    // @Group: 1_
     // @Path: AP_TemperatureSensor_Params.cpp
     AP_SUBGROUPINFO(_params[0], "1_", 30, AP_Networking, AP_Networking_Params),
+    AP_SUBGROUPVARPTR(_drivers[0], "1_", 31, AP_Networking, backend_var_info[0]),
 
 #if AP_NETWORKING_MAX_INSTANCES >= 2
     // @Group: 2_
     // @Path: AP_Networking_Params.cpp
-    AP_SUBGROUPINFO(_params[1], "2_", 31, AP_Networking, AP_Networking_Params),
+    AP_SUBGROUPINFO(_params[1], "2_", 32, AP_Networking, AP_Networking_Params),
+    AP_SUBGROUPVARPTR(_drivers[1], "2_", 33, AP_Networking, backend_var_info[1]),
 #endif
 
 #if AP_NETWORKING_MAX_INSTANCES >= 3
     // @Group: 3_
     // @Path: AP_Networking_Params.cpp
-    AP_SUBGROUPINFO(_params[2], "3_", 32, AP_Networking, AP_Networking_Params),
+    AP_SUBGROUPINFO(_params[2], "3_", 34, AP_Networking, AP_Networking_Params),
+    AP_SUBGROUPVARPTR(_drivers[2], "3_", 35, AP_Networking, backend_var_info[2]),
 #endif
 
 #if AP_NETWORKING_MAX_INSTANCES >= 4
     // @Group: 4_
     // @Path: AP_Networking_Params.cpp
-    AP_SUBGROUPINFO(_params[3], "4_", 33, AP_Networking, AP_Networking_Params),
+    AP_SUBGROUPINFO(_params[3], "4_", 36, AP_Networking, AP_Networking_Params),
+    AP_SUBGROUPVARPTR(_drivers[3], "4_", 37, AP_Networking, backend_var_info[3]),
 #endif
 
-#if AP_NETWORKING_MAX_INSTANCES >= 5
-    // @Group: 5_
-    // @Path: AP_Networking_Params.cpp
-    AP_SUBGROUPINFO(_params[4], "5_", 34, AP_Networking, AP_Networking_Params),
-#endif
-
-#if AP_NETWORKING_MAX_INSTANCES >= 6
-    // @Group: 6_
-    // @Path: AP_Networking_Params.cpp
-    AP_SUBGROUPINFO(_params[5], "6_", 35, AP_Networking, AP_Networking_Params),
-#endif
-
-#if AP_NETWORKING_MAX_INSTANCES >= 7
-    // @Group: 7_
-    // @Path: AP_Networking_Params.cpp
-    AP_SUBGROUPINFO(_params[6], "7_", 36, AP_Networking, AP_Networking_Params),
-#endif
-
-#if AP_NETWORKING_MAX_INSTANCES >= 8
-    // @Group: 8_
-    // @Path: AP_Networking_Params.cpp
-    AP_SUBGROUPINFO(_params[7], "8_", 37, AP_Networking, AP_Networking_Params),
-#endif
-
-#if AP_NETWORKING_MAX_INSTANCES >= 9
-    // @Group: 9_
-    // @Path: AP_Networking_Params.cpp
-    AP_SUBGROUPINFO(_params[8], "9_", 38, AP_Networking, AP_Networking_Params),
-#endif
 
     AP_GROUPINFO("DEBUG", 55,  AP_Networking,    debug,   0),
 
     AP_GROUPEND
 };
+const AP_Param::GroupInfo *AP_Networking::backend_var_info[AP_NETWORKING_MAX_INSTANCES];
 
 AP_Networking::AP_Networking(void)
 {
@@ -317,6 +293,14 @@ void AP_Networking::init()
 
         // call init function for each backend
         if (_drivers[instance] != nullptr) {
+            // if the backend has some local parameters then make those available in the tree
+            if (_state[instance].var_info != nullptr) {
+                backend_var_info[instance] = _state[instance].var_info;
+                AP_Param::load_object_from_eeprom(_drivers[instance], backend_var_info[instance]);
+
+                // param count could have changed
+                AP_Param::invalidate_count();
+            }
             _drivers[instance]->init();
             // _num_instances is actually the index for looping over instances
             _num_instances = instance + 1;

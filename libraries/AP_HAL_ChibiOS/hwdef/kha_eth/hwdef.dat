@@ -147,11 +147,11 @@ define HAL_DISABLE_ADC_DRIVER TRUE
 # ---------------------------------------------------------------------------------------------
 define DISABLE_SERIAL_ESC_COMM TRUE
 define HAL_NO_RCIN_THREAD
-#define HAL_NO_GPIO_IRQ
+define HAL_NO_GPIO_IRQ
 
 
 define PERIPH_FW TRUE
-#define NO_DATAFLASH TRUE
+define NO_DATAFLASH TRUE
 
 
 #################################
@@ -160,10 +160,11 @@ define PERIPH_FW TRUE
 
 define HAL_BARO_ALLOW_INIT_NO_BARO
 define HAL_GCS_ENABLED 1
-#env DISABLE_SCRIPTING 1
-define HAL_PERIPH_ENABLE_SLCAN
+env DISABLE_SCRIPTING 1
+#define HAL_PERIPH_ENABLE_SLCAN
 
 define AP_NETWORKING_MAX_INSTANCES 2
+define AP_NETWORKING_SERIAL2UDP_ENABLED 1
 
 # listen for reboot command from uploader.py script
 # undefine to disable. Use -1 to allow on all ports, otherwise serial number index defined in SERIAL_ORDER starting at 0
@@ -172,17 +173,4 @@ define HAL_PERIPH_LISTEN_FOR_SERIAL_UART_REBOOT_CMD_PORT 0
 
 
 #DMA_NOSHARE USART1* USART2* CAN1*
-
-##############################################
-################## Scripting #################
-
-# Now setup the pins for the microSD card, if available.
-PC8 SDMMC1_D0 SDMMC1
-#PC9 SDMMC1_D1 SDMMC1
-#PC10 SDMMC1_D2 SDMMC1
-#PC11 SDMMC1_D3 SDMMC1
-PC12 SDMMC1_CK SDMMC1
-#PD2 SDMMC1_CMD SDMMC1
-
-define HAL_OS_FATFS_IO 1
 

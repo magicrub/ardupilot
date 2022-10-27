@@ -8,7 +8,7 @@
 #endif
 
 #ifndef AP_NETWORKING_MAX_INSTANCES
-#define AP_NETWORKING_MAX_INSTANCES 8
+#define AP_NETWORKING_MAX_INSTANCES 2
 #endif
 
 #if AP_NETWORKING_ENABLED
@@ -68,12 +68,13 @@ public:
     AP_Networking();
 
     /* Do not allow copies */
-    AP_Networking(const AP_Networking &other) = delete;
-    AP_Networking &operator=(const AP_Networking&) = delete;
+    CLASS_NO_COPY(AP_Networking);
 
     struct AP_Networking_State {
+        // TODO: add additional state variables
         const struct AP_Param::GroupInfo *var_info;
     };
+    static const struct AP_Param::GroupInfo *backend_var_info[AP_NETWORKING_MAX_INSTANCES];
 
     void init();
 
@@ -88,9 +89,8 @@ public:
 
     bool is_healthy() const { return _init.done; }    // TODO: is_healthy()
     bool get_dhcp_enabled() const { return _param.dhcp; }
-    void set_dhcp_enable(const bool enable) { _param.dhcp = enable; }
+    void set_dhcp_enable(const bool enable) { _param.dhcp.set(enable); }
 
-    // TODO: implement all _active() helpers
     uint32_t get_ip_active() const { return _activeSettings.ip; }
     uint32_t get_ip_param() const { return IP4_ADDR_VALUE_FROM_ARRAY(_param.ipaddr); }
     char*    get_ip_active_str() { return convert_ip_to_str(get_ip_active()); }
@@ -109,7 +109,7 @@ public:
     char*    get_netmask_active_str() { return convert_ip_to_str(get_netmask_active()); }
     char*    get_netmask_param_str() { return convert_ip_to_str(get_netmask_param()); }
     void     set_netmask_param_str(const char* nm_str) { set_netmask_param(convert_str_to_ip((char*)nm_str)); }
-    void     set_netmask_param(const uint32_t nm) { _param.netmask = convert_netmask_ip_to_bitcount(nm); }
+    void     set_netmask_param(const uint32_t nm) { _param.netmask.set(convert_netmask_ip_to_bitcount(nm)); }
 
     uint32_t get_gateway_active() const { return _activeSettings.gw; }
     uint32_t get_gateway_param() const { return IP4_ADDR_VALUE_FROM_ARRAY(_param.gwaddr); }

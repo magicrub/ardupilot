@@ -4,20 +4,48 @@
 #if AP_NETWORKING_SERIAL2UDP_ENABLED
 #include <AP_Math/AP_Math.h> // for MIN()
 
-//struct udp_pcb *AP_Networking_Serial2UDP::_serial2udp_pcb;
+#ifndef AP_NETWORKING_SERIAL2UDP_DEFAULT_PORT
+#define AP_NETWORKING_SERIAL2UDP_DEFAULT_PORT   10000
+#endif
+
+#ifndef AP_NETWORKING_SERIAL2UDP_UDP_MAX_PACKET_SIZE
+#define AP_NETWORKING_SERIAL2UDP_UDP_MAX_PACKET_SIZE AP_NETWORKING_SERIAL2UDP_BUFFER_UDP_TX_SIZE
+#endif
+
+#ifndef AP_Networking_Serial2UDP_DELAY_MS
+#define AP_Networking_Serial2UDP_DELAY_MS 10
+#endif
+
+#ifndef AP_NETWORKING_SERIAL2UDP_MAX_INSTANCES
+#define AP_NETWORKING_SERIAL2UDP_MAX_INSTANCES 4
+#endif
+
+#if SERIALMANAGER_NUM_PORTS < AP_NETWORKING_SERIAL2UDP_MAX_INSTANCES
+// limit UDP_serial tunnel count to physical serial port count
+#undef AP_NETWORKING_SERIAL2UDP_MAX_INSTANCES
+#define AP_NETWORKING_SERIAL2UDP_MAX_INSTANCES SERIALMANAGER_NUM_PORTS
+#endif
+
+#ifndef AP_NETWORKING_SERIAL2UDP_BANDWIDTH_TEST
+#define AP_NETWORKING_SERIAL2UDP_BANDWIDTH_TEST         0
+#endif
+
 uint8_t AP_Networking_Serial2UDP::_serial2udp_instance_count = 0;
-// AP_Networking_Serial2UDP::Eth_static_t AP_Networking_Serial2UDP::_eth_static[AP_NETWORKING_SERIAL2UDP_MAX_INSTANCES];
 
 const AP_Param::GroupInfo AP_Networking_Serial2UDP::var_info[] = {
 
-    // @Param: FOO
-    // @DisplayName: FOO
-    // @Description: FOO
-    // @Values: FOO
+    // @Param: PORT
+    // @DisplayName: PORT
+    // @Description: PORT
+    // @Range: 1 65535
     // @User: Standard
-    AP_GROUPINFO("FOO", 1, AP_Networking_Serial2UDP, _foo, 0),
+    AP_GROUPINFO("PORT", 1, AP_Networking_Serial2UDP, _eth.port, AP_NETWORKING_SERIAL2UDP_DEFAULT_PORT-1),
 
-  
+    AP_GROUPINFO("DST_ADDR0", 2,  AP_Networking_Serial2UDP,    _eth.ip[0],   255),
+    AP_GROUPINFO("DST_ADDR1", 3,  AP_Networking_Serial2UDP,    _eth.ip[1],   255),
+    AP_GROUPINFO("DST_ADDR2", 4,  AP_Networking_Serial2UDP,    _eth.ip[2],   255),
+    AP_GROUPINFO("DST_ADDR3", 5,  AP_Networking_Serial2UDP,    _eth.ip[3],   255),
+
     AP_GROUPEND
 };
 
@@ -31,13 +59,13 @@ AP_Networking_Serial2UDP::AP_Networking_Serial2UDP(AP_Networking &front, AP_Netw
     _state.var_info = var_info;
 }
 
-
 void AP_Networking_Serial2UDP::init()
 {
     if (_serial2udp_instance_count >= AP_NETWORKING_SERIAL2UDP_MAX_INSTANCES) {
         printf("\n\nSerial2UDP init failed, too many instances\r\n");
         return;
     }
+    _eth.port.set_default(AP_NETWORKING_SERIAL2UDP_DEFAULT_PORT + _instance);
 
     _serial.uart = AP::serialmanager().find_serial(AP_SerialManager::SerialProtocol_Network_Serial2UDP, _serial2udp_instance_count);
     if (_serial.uart == nullptr) {
@@ -52,35 +80,20 @@ void AP_Networking_Serial2UDP::init()
     _serial.uart->set_flow_control(AP_HAL::UARTDriver::FLOW_CONTROL_DISABLE);
     _serial.uart->begin(baudrate, AP_NETWORKING_SERIAL2UDP_BUFFER_UART_RX_SIZE, AP_NETWORKING_SERIAL2UDP_BUFFER_UART_TX_SIZE);
 
-    _eth.port = 10000 + _instance;
-    //IP4_ADDR(_eth->ip_addr, 255, 255, 255, 255);
-    //_eth.u_addr.ip4.addr = IPADDR_BROADCAST;
-
-#if !AP_NETWORKING_SERIAL2UDP_UDP_TO_UART_UNBUFFERED
-    {
-        WITH_SEMAPHORE(_eth.sem);
-        _eth.buf_in.set_size(1000);
-    }
-#endif
-
-    IP4_ADDR(&_eth.ip4_addr, 255, 255, 255, 255);
+    IP4_ADDR(&_eth.ip4_addr, _eth.ip[0], _eth.ip[1], _eth.ip[2], _eth.ip[3]);
 
     if (_eth.pcb == NULL) {
         _eth.pcb = udp_new_ip_type(IPADDR_TYPE_ANY);
         if (_eth.pcb != NULL) {
 
-
-            // // allow to sending broadcast packets
+            // allow to sending broadcast packets
             ip_set_option(_eth.pcb, SOF_BROADCAST);
-            //udp_bind(_eth.pcb, IP_ANY_TYPE, _eth.port);
 
-
-            // // listen only
+            // listen only
             // ip_set_option(_eth.pcb, SOF_BROADCAST);
             // udp_bind(_eth.pcb, IP_ANY_TYPE, _eth.port);
 
-
-            // // set up RX callback
+            // set up RX callback
             udp_recv(_eth.pcb, AP_Networking_Serial2UDP::serial2udp_recv_callback, _eth.pcb);
         }
     }
@@ -111,10 +124,10 @@ void AP_Networking_Serial2UDP::serial2udp_recv_callback(void *arg, struct udp_pc
     if (driver != nullptr)
     {
         WITH_SEMAPHORE(driver->_eth.sem);
-#if AP_NETWORKING_SERIAL2UDP_UDP_TO_UART_UNBUFFERED
-        driver->_serial.uart->write((uint8_t*)p->payload, p->len);
-#else
+#if AP_NETWORKING_SERIAL2UDP_UDP_TO_UART_BUFFERED
         driver->_eth.buf_in.write((uint8_t*)p->payload, p->len);
+#else
+        driver->_serial.uart->write((uint8_t*)p->payload, p->len);
 #endif
         driver->_eth.last_rx_ms = AP_HAL::millis();
     }
@@ -140,7 +153,7 @@ void AP_Networking_Serial2UDP::update()
 
     const uint32_t now_ms = AP_HAL::millis();
 
-#if 0
+#if AP_NETWORKING_SERIAL2UDP_BANDWIDTH_TEST
     // throughput test by sending whatever is in _eth.buf_out
     // by keeping _eth.buf_out[] filled with dummy data 'z'
     uint8_t buf2[1] = {'z'};
@@ -148,7 +161,7 @@ void AP_Networking_Serial2UDP::update()
 
     const uint32_t send_count = 2;
     for (uint32_t i=0; i<send_count; i++) {
-        result = serial2udp_send_buf_out();
+        const int32_t result = serial2udp_send_buf_out();
         if (result < 0) {
         //     printf("%d send_udp(%d) result %d\r\n", (int)now_ms, (int)i, (int)result);
         //     break;
@@ -164,7 +177,7 @@ void AP_Networking_Serial2UDP::update()
             // we've either filled up out out buffer, expired our timer, or a send is forced
 
             // send it!
-            int32_t result = serial2udp_send_buf_out();
+            const int32_t result = serial2udp_send_buf_out();
             if (result > 0) {
                 // send is complete!
                 _eth.last_tx_ms = now_ms;
@@ -173,10 +186,7 @@ void AP_Networking_Serial2UDP::update()
     }
 #endif
 
-
-
-
-#if !AP_NETWORKING_SERIAL2UDP_UDP_TO_UART_UNBUFFERED
+#if AP_NETWORKING_SERIAL2UDP_UDP_TO_UART_BUFFERED
     // process eth.buf_in -> UART
     const uint32_t udp_in_avail = _eth.buf_in.available();
     const uint32_t uart_out_txspace = _serial.uart->txspace();
@@ -203,7 +213,6 @@ void AP_Networking_Serial2UDP::update()
     if (uart_available > 0 && eth_in_space > 0) {
         const uint32_t read_len_max = MIN(uart_available, eth_in_space);
         uint8_t buf[read_len_max];
-        
         const uint32_t read_len = _serial.uart->read(buf, sizeof(buf));
         _eth.buf_out.write(buf, read_len);
         _serial.last_rx_ms = now_ms;
@@ -211,8 +220,6 @@ void AP_Networking_Serial2UDP::update()
 #endif
 
 }
-
-
 
 int32_t AP_Networking_Serial2UDP::serial2udp_send_buf_out()
 {
@@ -236,7 +243,5 @@ int32_t AP_Networking_Serial2UDP::serial2udp_send_buf_out()
 
     return AP_Networking::send_udp(_eth.pcb, _eth.ip4_addr, _eth.port, buf, read_count);
 }
-
-
-
 #endif // AP_NETWORKING_SERIAL2UDP_ENABLED
+
