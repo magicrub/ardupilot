@@ -46,8 +46,6 @@ public:
     static AP_Networking_Serial2UDP* get_Serial2UDP_backend(struct udp_pcb *pcb, const uint16_t port);
 
 private:
-
-    static void serial2udp_recv_callback(void *arg, struct udp_pcb *pcb, struct pbuf *p, const ip_addr_t *addr, u16_t port);
     
         struct {
         AP_Int16 ip[4];
@@ -65,6 +63,8 @@ private:
         uint32_t last_tx_ms;
         uint32_t last_rx_ms;
     } _eth;
+
+    static void serial2udp_recv_callback(void *arg, struct udp_pcb *pcb, struct pbuf *p, const ip_addr_t *addr, u16_t port);
 
     struct Uart_t {
         AP_HAL::UARTDriver *uart;
