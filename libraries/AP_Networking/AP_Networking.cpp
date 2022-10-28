@@ -4,6 +4,7 @@
 #if AP_NETWORKING_ENABLED
 
 #include "AP_Networking_Serial2UDP.h"
+#include "AP_Networking_Speedtest.h"
 
 
 #if CONFIG_HAL_BOARD == HAL_BOARD_CHIBIOS
@@ -366,6 +367,12 @@ void AP_Networking::init()
 #if AP_NETWORKING_SERIAL2UDP_ENABLED
             case AP_Networking_Params::Type::Serial2UDP:
                 _drivers[instance] = new AP_Networking_Serial2UDP(*this, _state[instance], _params[instance]);
+                break;
+#endif
+
+#if AP_NETWORKING_SPEEDTEST_ENABLED
+            case AP_Networking_Params::Type::Speedtest:
+                _drivers[instance] = new AP_Networking_Speedtest(*this, _state[instance], _params[instance]);
                 break;
 #endif
 

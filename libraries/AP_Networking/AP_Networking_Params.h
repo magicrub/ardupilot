@@ -30,6 +30,7 @@ public:
     enum class Type : uint8_t {
         None                        = 0,
         Serial2UDP                  = 1,
+        Speedtest                   = 2,
     };
 
     AP_Enum<Type> type;                   // AP_Networking_Params::Type, 0=disabled, others see frontend enum TYPE
