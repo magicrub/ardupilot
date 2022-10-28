@@ -76,7 +76,7 @@ const AP_Param::GroupInfo AP_Vehicle::var_info[] = {
 #if AP_NETWORKING_ENABLED
     // @Group: NET_
     // @Path: ../AP_Networking/AP_Networking.cpp
-    AP_SUBGROUPINFO(networking, "NET_", 11, AP_Vehicle, AP_Networking),
+    AP_SUBGROUPINFO(networking, "NET", 11, AP_Vehicle, AP_Networking),
 #endif
 
     AP_GROUPEND

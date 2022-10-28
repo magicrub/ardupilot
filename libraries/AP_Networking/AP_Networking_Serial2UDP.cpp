@@ -9,7 +9,7 @@
 #endif
 
 #ifndef AP_NETWORKING_SERIAL2UDP_UDP_MAX_PACKET_SIZE
-#define AP_NETWORKING_SERIAL2UDP_UDP_MAX_PACKET_SIZE AP_NETWORKING_SERIAL2UDP_BUFFER_UDP_TX_SIZE
+#define AP_NETWORKING_SERIAL2UDP_UDP_MAX_PACKET_SIZE AP_NETWORKING_ETHERNET_UDP_PAYLOAD_MAX_SIZE
 #endif
 
 #ifndef AP_Networking_Serial2UDP_DELAY_MS
@@ -82,9 +82,9 @@ void AP_Networking_Serial2UDP::init()
 
     IP4_ADDR(&_eth.ip4_addr, _eth.ip[0], _eth.ip[1], _eth.ip[2], _eth.ip[3]);
 
-    if (_eth.pcb == NULL) {
+    if (_eth.pcb == nullptr) {
         _eth.pcb = udp_new_ip_type(IPADDR_TYPE_ANY);
-        if (_eth.pcb != NULL) {
+        if (_eth.pcb != nullptr) {
 
             // allow to sending broadcast packets
             ip_set_option(_eth.pcb, SOF_BROADCAST);

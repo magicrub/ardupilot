@@ -74,120 +74,124 @@ extern const AP_HAL::HAL& hal;
 
 const AP_Param::GroupInfo AP_Networking::var_info[] = {
 
-    AP_GROUPINFO_FLAGS("ENABLED"  ,  0, AP_Networking, _param.enabled, 0, AP_PARAM_FLAG_ENABLE),
+    // @Param: _ENABLED
+    // @DisplayName: Enable Networking
+    // @Description: Enable Networking
+    // @Values: 0:Disable,1:Enable
+    // @User: Advanced
+    AP_GROUPINFO_FLAGS("_ENABLED",  0, AP_Networking, _param.enabled, 0, AP_PARAM_FLAG_ENABLE),
 
-    // @Group: IPADDR0
+    // @Param: _IPADDR0
     // @DisplayName: IP Address MSB
     // @Description: Allows setting static IP address
     // @Range: 0 255
     // @User: Advanced
-    AP_GROUPINFO("IPADDR0", 1,  AP_Networking,    _param.ipaddr[0],   AP_NETWORKING_DEFAULT_IP_ADDR0),
+    AP_GROUPINFO("_IPADDR0", 1,  AP_Networking,    _param.ipaddr[0],   AP_NETWORKING_DEFAULT_IP_ADDR0),
 
-    // @Group: IPADDR1
+    // @Param: _IPADDR1
     // @DisplayName: IP Address 2nd byte
     // @Description: Allows setting static IP address
     // @Range: 0 255
     // @User: Advanced
-    AP_GROUPINFO("IPADDR1", 2,  AP_Networking,    _param.ipaddr[1],   AP_NETWORKING_DEFAULT_IP_ADDR1),
+    AP_GROUPINFO("_IPADDR1", 2,  AP_Networking,    _param.ipaddr[1],   AP_NETWORKING_DEFAULT_IP_ADDR1),
 
-    // @Group: IPADDR2
+    // @Param: _IPADDR2
     // @DisplayName: IP Address 3rd byte
     // @Description: Allows setting static IP address
     // @Range: 0 255
     // @User: Advanced
-    AP_GROUPINFO("IPADDR2", 3,  AP_Networking,    _param.ipaddr[2],   AP_NETWORKING_DEFAULT_IP_ADDR2),
+    AP_GROUPINFO("_IPADDR2", 3,  AP_Networking,    _param.ipaddr[2],   AP_NETWORKING_DEFAULT_IP_ADDR2),
 
-    // @Group: IPADDR3
+    // @Param: _IPADDR3
     // @DisplayName: IP Address LSB
     // @Description: Allows setting static IP address
     // @Range: 0 255
     // @User: Advanced
-    AP_GROUPINFO("IPADDR3", 4,  AP_Networking,    _param.ipaddr[3],   AP_NETWORKING_DEFAULT_IP_ADDR3),
+    AP_GROUPINFO("_IPADDR3", 4,  AP_Networking,    _param.ipaddr[3],   AP_NETWORKING_DEFAULT_IP_ADDR3),
 
-    // @Group: NETMASK
+    // @Param: _NETMASK
     // @DisplayName: IP Subnet mask
-    // @Description: Allows setting static subnet mask
+    // @Description: Allows setting static subnet mask. The value is a count of consecutive bits. Examples: 24 = 255.255.255.0, 16 = 255.255.0.0
     // @Range: 0 32
     // @User: Advanced
-    AP_GROUPINFO("NETMASK", 5,  AP_Networking,    _param.netmask,   AP_NETWORKING_DEFAULT_NM_ADDR),
+    AP_GROUPINFO("_NETMASK", 5,  AP_Networking,    _param.netmask,   AP_NETWORKING_DEFAULT_NM_ADDR),
 
-    // @Group: DHCP
+    // @Param: _DHCP
     // @DisplayName: DHCP client
     // @Description: Enable/Disable DHCP client
     // @Range: 0:Disable 1:Enable
     // @User: Advanced
-    AP_GROUPINFO("DHCP", 6,  AP_Networking,    _param.dhcp,   AP_NETWORKING_DEFAULT_DHCP_ENABLE),
+    AP_GROUPINFO("_DHCP", 6,  AP_Networking,    _param.dhcp,   AP_NETWORKING_DEFAULT_DHCP_ENABLE),
 
-    // @Group: GWADDR0
+    // @Param: _GWADDR0
     // @DisplayName: Gateway IP Address MSB
     // @Description: Allows setting static GW address
     // @Range: 0 255
     // @User: Advanced
-    AP_GROUPINFO("GWADDR0", 7,  AP_Networking,    _param.gwaddr[0],   AP_NETWORKING_DEFAULT_GW_ADDR0),
+    AP_GROUPINFO("_GWADDR0", 7,  AP_Networking,    _param.gwaddr[0],   AP_NETWORKING_DEFAULT_GW_ADDR0),
 
-    // @Group: GWADDR1
+    // @Param: _GWADDR1
     // @DisplayName: Gateway IP Address 2nd byte
     // @Description: Allows setting static GW address
     // @Range: 0 255
     // @User: Advanced
-    AP_GROUPINFO("GWADDR1", 8,  AP_Networking,    _param.gwaddr[1],   AP_NETWORKING_DEFAULT_GW_ADDR1),
+    AP_GROUPINFO("_GWADDR1", 8,  AP_Networking,    _param.gwaddr[1],   AP_NETWORKING_DEFAULT_GW_ADDR1),
 
-    // @Group: GWADDR2
+    // @Param: _GWADDR2
     // @DisplayName: Gateway IP Address 3rd byte
     // @Description: Allows setting static GW address
     // @Range: 0 255
     // @User: Advanced
-    AP_GROUPINFO("GWADDR2", 9,  AP_Networking,    _param.gwaddr[2],   AP_NETWORKING_DEFAULT_GW_ADDR2),
+    AP_GROUPINFO("_GWADDR2", 9,  AP_Networking,    _param.gwaddr[2],   AP_NETWORKING_DEFAULT_GW_ADDR2),
 
-    // @Group: GWADDR3
+    // @Param: _GWADDR3
     // @DisplayName: Gateway IP Address LSB
     // @Description: Allows setting static GW address
     // @Range: 0 255
     // @User: Advanced
-    AP_GROUPINFO("GWADDR3", 10,  AP_Networking,    _param.gwaddr[3],   AP_NETWORKING_DEFAULT_GW_ADDR3),
+    AP_GROUPINFO("_GWADDR3", 10,  AP_Networking,    _param.gwaddr[3],   AP_NETWORKING_DEFAULT_GW_ADDR3),
 
-    // @Group: LWIP_MACADDR0
+    // @Param: _MACADDR0
     // @DisplayName: MAC Address MSbyte
     // @Description: Allows setting MAC address
     // @Range: 0 255
     // @User: Advanced
-    AP_GROUPINFO("MACADDR0", 11,  AP_Networking,    _param.macaddr[0],  AP_NETWORKING_DEFAULT_MAC_ADDR0),
+    AP_GROUPINFO("_MACADDR0", 11,  AP_Networking,    _param.macaddr[0],  AP_NETWORKING_DEFAULT_MAC_ADDR0),
 
-    // @Group: MACADDR1
+    // @Param: _MACADDR1
     // @DisplayName: MAC Address 2nd byte
     // @Description: Allows setting MAC address
     // @Range: 0 255
     // @User: Advanced
-    AP_GROUPINFO("MACADDR1", 12,  AP_Networking,    _param.macaddr[1],   AP_NETWORKING_DEFAULT_MAC_ADDR1),
+    AP_GROUPINFO("_MACADDR1", 12,  AP_Networking,    _param.macaddr[1],   AP_NETWORKING_DEFAULT_MAC_ADDR1),
 
-    // @Group: MACADDR2
+    // @Param: _MACADDR2
     // @DisplayName: MAC Address 3rd byte
     // @Description: Allows setting MAC address
     // @Range: 0 255
     // @User: Advanced
-    AP_GROUPINFO("MACADDR2", 13,  AP_Networking,    _param.macaddr[2],   AP_NETWORKING_DEFAULT_MAC_ADDR2),
+    AP_GROUPINFO("_MACADDR2", 13,  AP_Networking,    _param.macaddr[2],   AP_NETWORKING_DEFAULT_MAC_ADDR2),
 
-    // @Group: MACADDR3
+    // @Param: _MACADDR3
     // @DisplayName: MAC Address 4th byte
     // @Description: Allows setting MAC address
     // @Range: 0 255
     // @User: Advanced
-    AP_GROUPINFO("MACADDR3", 14,  AP_Networking,    _param.macaddr[3],   AP_NETWORKING_DEFAULT_MAC_ADDR3),
+    AP_GROUPINFO("_MACADDR3", 14,  AP_Networking,    _param.macaddr[3],   AP_NETWORKING_DEFAULT_MAC_ADDR3),
 
-    // @Group: MACADDR4
+    // @Param: _MACADDR4
     // @DisplayName: MAC Address 5th byte
     // @Description: Allows setting MAC address
     // @Range: 0 255
     // @User: Advanced
-    AP_GROUPINFO("MACADDR4", 15,  AP_Networking,    _param.macaddr[4],   AP_NETWORKING_DEFAULT_MAC_ADDR4),
+    AP_GROUPINFO("_MACADDR4", 15,  AP_Networking,    _param.macaddr[4],   AP_NETWORKING_DEFAULT_MAC_ADDR4),
 
-    // @Group: MACADDR5
+    // @Param: _MACADDR5
     // @DisplayName: MAC Address LSb
     // @Description: Allows setting MAC address
     // @Range: 0 255
     // @User: Advanced
-    AP_GROUPINFO("MACADDR5", 16,  AP_Networking,    _param.macaddr[5],   AP_NETWORKING_DEFAULT_MAC_ADDR5),
-
+    AP_GROUPINFO("_MACADDR5", 16,  AP_Networking,    _param.macaddr[5],   AP_NETWORKING_DEFAULT_MAC_ADDR5),
 
     // @Group: 1_
     // @Path: AP_TemperatureSensor_Params.cpp
@@ -215,8 +219,86 @@ const AP_Param::GroupInfo AP_Networking::var_info[] = {
     AP_SUBGROUPVARPTR(_drivers[3], "4_", 37, AP_Networking, backend_var_info[3]),
 #endif
 
+#if AP_NETWORKING_MAX_INSTANCES >= 5
+    // @Group: 5_
+    // @Path: AP_Networking_Params.cpp
+    AP_SUBGROUPINFO(_params[4], "5_", 38, AP_Networking, AP_Networking_Params),
+    AP_SUBGROUPVARPTR(_drivers[4], "5_", 39, AP_Networking, backend_var_info[4]),
+#endif
 
-    AP_GROUPINFO("DEBUG", 55,  AP_Networking,    debug,   0),
+#if AP_NETWORKING_MAX_INSTANCES >= 6
+    // @Group: 6_
+    // @Path: AP_Networking_Params.cpp
+    AP_SUBGROUPINFO(_params[5], "6_", 40, AP_Networking, AP_Networking_Params),
+    AP_SUBGROUPVARPTR(_drivers[5], "6_", 41, AP_Networking, backend_var_info[5]),
+#endif
+
+#if AP_NETWORKING_MAX_INSTANCES >= 7
+    // @Group: 7_
+    // @Path: AP_Networking_Params.cpp
+    AP_SUBGROUPINFO(_params[6], "7_", 42, AP_Networking, AP_Networking_Params),
+    AP_SUBGROUPVARPTR(_drivers[6], "7_", 43, AP_Networking, backend_var_info[6]),
+#endif
+
+#if AP_NETWORKING_MAX_INSTANCES >= 8
+    // @Group: 8_
+    // @Path: AP_Networking_Params.cpp
+    AP_SUBGROUPINFO(_params[7], "8_", 44, AP_Networking, AP_Networking_Params),
+    AP_SUBGROUPVARPTR(_drivers[7], "8_", 45, AP_Networking, backend_var_info[7]),
+#endif
+
+#if AP_NETWORKING_MAX_INSTANCES >= 9
+    // @Group: 9_
+    // @Path: AP_Networking_Params.cpp
+    AP_SUBGROUPINFO(_params[8], "9_", 46, AP_Networking, AP_Networking_Params),
+    AP_SUBGROUPVARPTR(_drivers[8], "9_", 47, AP_Networking, backend_var_info[8]),
+#endif
+
+#if AP_NETWORKING_MAX_INSTANCES >= 10
+    // @Group: A_
+    // @Path: AP_Networking_Params.cpp
+    AP_SUBGROUPINFO(_params[9], "A_", 48, AP_Networking, AP_Networking_Params),
+    AP_SUBGROUPVARPTR(_drivers[9], "A_", 49, AP_Networking, backend_var_info[9]),
+#endif
+
+#if AP_NETWORKING_MAX_INSTANCES >= 11
+    // @Group: B_
+    // @Path: AP_Networking_Params.cpp
+    AP_SUBGROUPINFO(_params[10], "B_", 50, AP_Networking, AP_Networking_Params),
+    AP_SUBGROUPVARPTR(_drivers[10], "B_", 51, AP_Networking, backend_var_info[10]),
+#endif
+
+#if AP_NETWORKING_MAX_INSTANCES >= 12
+    // @Group: C_
+    // @Path: AP_Networking_Params.cpp
+    AP_SUBGROUPINFO(_params[11], "C", 52, AP_Networking, AP_Networking_Params),
+    AP_SUBGROUPVARPTR(_drivers[11], "C_", 53, AP_Networking, backend_var_info[11]),
+#endif
+
+#if AP_NETWORKING_MAX_INSTANCES >= 13
+    // @Group: D_
+    // @Path: AP_Networking_Params.cpp
+    AP_SUBGROUPINFO(_params[12], "D_", 54, AP_Networking, AP_Networking_Params),
+    AP_SUBGROUPVARPTR(_drivers[12], "D_", 55, AP_Networking, backend_var_info[12]),
+#endif
+
+#if AP_NETWORKING_MAX_INSTANCES >= 14
+    // @Group: E_
+    // @Path: AP_Networking_Params.cpp
+    AP_SUBGROUPINFO(_params[13], "E_", 56, AP_Networking, AP_Networking_Params),
+    AP_SUBGROUPVARPTR(_drivers[13], "E_", 57, AP_Networking, backend_var_info[13]),
+#endif
+
+#if AP_NETWORKING_MAX_INSTANCES >= 15
+    // @Group: F_
+    // @Path: AP_Networking_Params.cpp
+    AP_SUBGROUPINFO(_params[14], "F_", 58, AP_Networking, AP_Networking_Params),
+    AP_SUBGROUPVARPTR(_drivers[14], "F_", 59, AP_Networking, backend_var_info[14]),
+#endif
+
+#if AP_NETWORKING_MAX_INSTANCES >= 16
+    #error "AP_NETWORKING_MAX_INSTANCES value is too large. Value must be <= 15."
+#endif
 
     AP_GROUPEND
 };
@@ -282,11 +364,12 @@ void AP_Networking::init()
     for (uint8_t instance = 0; instance < AP_NETWORKING_MAX_INSTANCES; instance++) {
         switch (get_type(instance)) {
 #if AP_NETWORKING_SERIAL2UDP_ENABLED
-            case AP_Networking_Params::Type::SERIAL2UDP:
+            case AP_Networking_Params::Type::Serial2UDP:
                 _drivers[instance] = new AP_Networking_Serial2UDP(*this, _state[instance], _params[instance]);
                 break;
 #endif
-            case AP_Networking_Params::Type::NONE:
+
+            case AP_Networking_Params::Type::None:
             default:
                 break;
         }
@@ -447,7 +530,7 @@ void AP_Networking::update()
     check_for_config_changes();
 
     for (uint8_t i=0; i<_num_instances; i++) {
-        if (_drivers[i] != nullptr && get_type(i) != AP_Networking_Params::Type::NONE) {
+        if (_drivers[i] != nullptr && get_type(i) != AP_Networking_Params::Type::None) {
             _drivers[i]->update();
         }
     }
@@ -456,7 +539,7 @@ void AP_Networking::update()
 AP_Networking_Params::Type AP_Networking::get_type(const uint8_t instance) const
 {
     if (instance >= AP_NETWORKING_MAX_INSTANCES) {
-        return AP_Networking_Params::Type::NONE;
+        return AP_Networking_Params::Type::None;
     }
     return (AP_Networking_Params::Type)_params[instance].type.get();
 }
@@ -535,7 +618,7 @@ int32_t AP_Networking::send_udp(struct udp_pcb *pcb, const ip4_addr_t &ip4_addr,
         return 0;
     }
     
-    data_len = MIN(data_len, AP_NETWORKING_MTU_SIZE);
+    //data_len = MIN(data_len, AP_NETWORKING_MTU_SIZE);
 
     struct pbuf *p = pbuf_alloc(PBUF_TRANSPORT, data_len , PBUF_RAM);
     if (p == nullptr) {

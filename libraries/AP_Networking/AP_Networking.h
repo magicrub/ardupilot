@@ -8,7 +8,7 @@
 #endif
 
 #ifndef AP_NETWORKING_MAX_INSTANCES
-#define AP_NETWORKING_MAX_INSTANCES 2
+#define AP_NETWORKING_MAX_INSTANCES 15
 #endif
 
 #if AP_NETWORKING_ENABLED
@@ -47,12 +47,11 @@
 #define AP_NETWORKING_HAS_THREAD 0
 #endif
 
-#ifndef AP_NETWORKING_MTU_SIZE
-#ifdef LWIP_NETIF_MTU
-    #define AP_NETWORKING_MTU_SIZE LWIP_NETIF_MTU
-#else
-    #define AP_NETWORKING_MTU_SIZE 1500
+#ifndef AP_NETWORKING_ETHERNET_TCP_PAYLOAD_MAX_SIZE
+#define AP_NETWORKING_ETHERNET_TCP_PAYLOAD_MAX_SIZE 1460
 #endif
+#ifndef AP_NETWORKING_ETHERNET_UDP_PAYLOAD_MAX_SIZE
+#define AP_NETWORKING_ETHERNET_UDP_PAYLOAD_MAX_SIZE 1472
 #endif
 
 // declare backend class
@@ -84,7 +83,7 @@ public:
     uint8_t num_instances(void) const { return _num_instances; }
     AP_Networking_Params::Type get_type(const uint8_t instance) const;
 
-    static AP_Networking *get_singleton(void) {return _singleton; }
+    static AP_Networking *get_singleton(void) { return _singleton; }
 
 
     bool is_healthy() const { return _init.done; }    // TODO: is_healthy()
@@ -93,8 +92,8 @@ public:
 
     uint32_t get_ip_active() const { return _activeSettings.ip; }
     uint32_t get_ip_param() const { return IP4_ADDR_VALUE_FROM_ARRAY(_param.ipaddr); }
-    char*    get_ip_active_str() { return convert_ip_to_str(get_ip_active()); }
-    char*    get_ip_param_str() { return convert_ip_to_str(get_ip_param()); }
+    char*    get_ip_active_str() const { return convert_ip_to_str(get_ip_active()); }
+    char*    get_ip_param_str() const { return convert_ip_to_str(get_ip_param()); }
     void     set_ip_param_str(const char* ip_str) { set_ip_param(convert_str_to_ip((char*)ip_str)); }
     void     set_ip_param(const uint32_t ip) {
                 //put_le32_ptr(_param.ipaddr->get(), ip);
@@ -132,8 +131,6 @@ public:
     static uint32_t convert_netmask_bitcount_to_ip(const uint32_t netmask_bitcount);
     static uint8_t convert_netmask_ip_to_bitcount(const uint32_t netmask_ip);
 
-
-    AP_Int32 debug;
 
     static int32_t send_udp(struct udp_pcb *pcb, const ip4_addr_t &ip4_addr, const uint16_t port, const uint8_t* data, uint16_t data_len);
 
