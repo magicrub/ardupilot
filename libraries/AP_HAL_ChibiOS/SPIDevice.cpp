@@ -370,15 +370,13 @@ bool SPIDevice::acquire_bus(bool set, bool skip_cs)
         bus.spicfg.error_cb = nullptr;
         bus.spicfg.cfg1 = freq_flag;
         bus.spicfg.cfg2 = device_desc.mode;
-#if 0
-        if (bus.spicfg.dummytx == nullptr) {
-            bus.spicfg.dummytx = (uint32_t *)malloc_dma(4);
-            memset(bus.spicfg.dummytx, 0xFF, 4);
+        if (bus.spicfg.txsource == nullptr) {
+            bus.spicfg.txsource = (uint32_t *)malloc_dma(4);
+            memset(bus.spicfg.txsource, 0xFF, 4);
         }
-        if (bus.spicfg.dummyrx == nullptr) {
-            bus.spicfg.dummyrx = (uint32_t *)malloc_dma(4);
+        if (bus.spicfg.rxsink == nullptr) {
+            bus.spicfg.rxsink = (uint32_t *)malloc_dma(4);
         }
-#endif
 #else
         bus.spicfg.cr1 = (uint16_t)(freq_flag | device_desc.mode);
         bus.spicfg.cr2 = 0;

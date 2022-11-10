@@ -152,10 +152,9 @@
 #define STM32_PLL2_DIVN_VALUE               45
 #define STM32_PLL2_DIVP_VALUE               2
 #define STM32_PLL2_DIVQ_VALUE               5
-#define STM32_PLL2_DIVR_VALUE               1
+#define STM32_PLL2_DIVR_VALUE               8
 
 #define STM32_PLL3_DIVN_VALUE               15
-#define STM32_PLL3_DIVP_VALUE               3
 #define STM32_PLL3_DIVQ_VALUE               5
 #define STM32_PLL3_DIVR_VALUE               8
 
@@ -177,10 +176,9 @@
 #define STM32_PLL2_DIVN_VALUE               45
 #define STM32_PLL2_DIVP_VALUE               2
 #define STM32_PLL2_DIVQ_VALUE               5
-#define STM32_PLL2_DIVR_VALUE               1
+#define STM32_PLL2_DIVR_VALUE               8
 
 #define STM32_PLL3_DIVN_VALUE               72
-#define STM32_PLL3_DIVP_VALUE               3
 #define STM32_PLL3_DIVQ_VALUE               6
 #define STM32_PLL3_DIVR_VALUE               9
 
@@ -201,10 +199,9 @@
 #define STM32_PLL2_DIVN_VALUE               30
 #define STM32_PLL2_DIVP_VALUE               2
 #define STM32_PLL2_DIVQ_VALUE               5
-#define STM32_PLL2_DIVR_VALUE               1
+#define STM32_PLL2_DIVR_VALUE               8
 
 #define STM32_PLL3_DIVN_VALUE               72
-#define STM32_PLL3_DIVP_VALUE               3
 #define STM32_PLL3_DIVQ_VALUE               6
 #define STM32_PLL3_DIVR_VALUE               9
 
@@ -220,10 +217,9 @@
 #define STM32_PLL2_DIVN_VALUE               72
 #define STM32_PLL2_DIVP_VALUE               2
 #define STM32_PLL2_DIVQ_VALUE               5
-#define STM32_PLL2_DIVR_VALUE               1
+#define STM32_PLL2_DIVR_VALUE               8
 
 #define STM32_PLL3_DIVN_VALUE               48
-#define STM32_PLL3_DIVP_VALUE               3
 #define STM32_PLL3_DIVQ_VALUE               5
 #define STM32_PLL3_DIVR_VALUE               8
 #endif // clock selection
@@ -251,7 +247,7 @@
 #define STM32_PLL2_FRACN_VALUE              0
 
 #define STM32_PLL3_ENABLED                  TRUE
-#define STM32_PLL3_P_ENABLED                TRUE
+#define STM32_PLL3_P_ENABLED                FALSE
 #define STM32_PLL3_Q_ENABLED                TRUE
 #define STM32_PLL3_R_ENABLED                TRUE
 #define STM32_PLL3_FRACN_VALUE              0
@@ -287,7 +283,7 @@
 #ifndef STM32_CKPERSEL
 #define STM32_CKPERSEL                      STM32_CKPERSEL_HSE_CK
 #endif
-#define STM32_SDMMCSEL                      STM32_SDMMCSEL_PLL1_Q_CK
+#define STM32_SDMMCSEL                      STM32_SDMMCSEL_PLL2_R_CK
 #define STM32_QSPISEL                       STM32_QSPISEL_PLL2_R_CK
 #define STM32_FMCSEL                        STM32_QSPISEL_HCLK
 #define STM32_SWPSEL                        STM32_SWPSEL_PCLK1
@@ -592,8 +588,8 @@
 
 // limit SDMMC clock to 12.5MHz by default. This increases
 // reliability
-#ifndef STM32_SDMMC_MAXCLK
-#define STM32_SDMMC_MAXCLK                  88000000U
+#ifndef STM32_SDC_MAX_CLOCK
+#define STM32_SDC_MAX_CLOCK                 12500000
 #endif
 
 #ifndef STM32_WSPI_USE_QUADSPI1
