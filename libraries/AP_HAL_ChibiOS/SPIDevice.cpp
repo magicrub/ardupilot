@@ -205,7 +205,7 @@ bool SPIDevice::do_transfer(const uint8_t *send, uint8_t *recv, uint32_t len)
     // expect this timeout to trigger unless there is a severe MCU
     // error
     const uint32_t timeout_us = 20000U + len * 32U;
-    msg_t msg = osalThreadSuspendTimeoutS(&spi_devices[device_desc.bus].driver->thread, TIME_US2I(timeout_us));
+    msg_t msg = osalThreadSuspendTimeoutS(&spi_devices[device_desc.bus].driver->sync_transfer, TIME_US2I(timeout_us));
     osalSysUnlock();
     if (msg == MSG_TIMEOUT) {
         ret = false;
@@ -233,7 +233,7 @@ bool SPIDevice::clock_pulse(uint32_t n)
         acquire_bus(true, true);
         osalSysLock();
         spiStartIgnoreI(spi_devices[device_desc.bus].driver, n);
-        msg = osalThreadSuspendTimeoutS(&spi_devices[device_desc.bus].driver->thread, TIME_US2I(timeout_us));
+        msg = osalThreadSuspendTimeoutS(&spi_devices[device_desc.bus].driver->sync_transfer, TIME_US2I(timeout_us));
         osalSysUnlock();
         if (msg == MSG_TIMEOUT) {
             spiAbort(spi_devices[device_desc.bus].driver);
@@ -246,7 +246,7 @@ bool SPIDevice::clock_pulse(uint32_t n)
         }
         osalSysLock();
         spiStartIgnoreI(spi_devices[device_desc.bus].driver, n);
-        msg = osalThreadSuspendTimeoutS(&spi_devices[device_desc.bus].driver->thread, TIME_US2I(timeout_us));
+        msg = osalThreadSuspendTimeoutS(&spi_devices[device_desc.bus].driver->sync_transfer, TIME_US2I(timeout_us));
         osalSysUnlock();
         if (msg == MSG_TIMEOUT) {
             spiAbort(spi_devices[device_desc.bus].driver);
@@ -363,12 +363,14 @@ bool SPIDevice::acquire_bus(bool set, bool skip_cs)
     } else {
         bus.dma_handle->lock();
         spiAcquireBus(spi_devices[device_desc.bus].driver);              /* Acquire ownership of the bus.    */
-        bus.spicfg.end_cb = nullptr;
         bus.spicfg.ssport = PAL_PORT(device_desc.pal_line);
         bus.spicfg.sspad = PAL_PAD(device_desc.pal_line);
 #if defined(STM32H7)
+        bus.spicfg.data_cb = nullptr;
+        bus.spicfg.error_cb = nullptr;
         bus.spicfg.cfg1 = freq_flag;
         bus.spicfg.cfg2 = device_desc.mode;
+#if 0
         if (bus.spicfg.dummytx == nullptr) {
             bus.spicfg.dummytx = (uint32_t *)malloc_dma(4);
             memset(bus.spicfg.dummytx, 0xFF, 4);
@@ -376,7 +378,9 @@ bool SPIDevice::acquire_bus(bool set, bool skip_cs)
         if (bus.spicfg.dummyrx == nullptr) {
             bus.spicfg.dummyrx = (uint32_t *)malloc_dma(4);
         }
+#endif
 #else
+        bus.spicfg.end_cb = nullptr;
         bus.spicfg.cr1 = (uint16_t)(freq_flag | device_desc.mode);
         bus.spicfg.cr2 = 0;
 #endif

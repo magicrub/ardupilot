@@ -592,8 +592,8 @@
 
 // limit SDMMC clock to 12.5MHz by default. This increases
 // reliability
-#ifndef STM32_SDC_MAX_CLOCK
-#define STM32_SDC_MAX_CLOCK                 12500000
+#ifndef STM32_SDMMC_MAXCLK
+#define STM32_SDMMC_MAXCLK                  88000000U
 #endif
 
 #ifndef STM32_WSPI_USE_QUADSPI1
