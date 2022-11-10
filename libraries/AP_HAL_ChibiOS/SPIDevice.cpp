@@ -380,7 +380,6 @@ bool SPIDevice::acquire_bus(bool set, bool skip_cs)
         }
 #endif
 #else
-        bus.spicfg.end_cb = nullptr;
         bus.spicfg.cr1 = (uint16_t)(freq_flag | device_desc.mode);
         bus.spicfg.cr2 = 0;
 #endif
