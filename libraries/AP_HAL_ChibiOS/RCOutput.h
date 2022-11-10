@@ -628,7 +628,7 @@ private:
     bool bdshot_decode_dshot_telemetry(pwm_group& group, uint8_t chan);
     static uint8_t bdshot_find_next_ic_channel(const pwm_group& group);
     static void bdshot_dma_ic_irq_callback(void *p, uint32_t flags);
-    static void bdshot_finish_dshot_gcr_transaction(void *p);
+    static void bdshot_finish_dshot_gcr_transaction(virtual_timer_t* vt, void *p);
     bool bdshot_setup_group_ic_DMA(pwm_group &group);
     static void bdshot_receive_pulses_DMAR(pwm_group* group);
     static void bdshot_config_icu_dshot(stm32_tim_t* TIMx, uint8_t chan, uint8_t ccr_ch);
