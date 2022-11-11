@@ -56,6 +56,7 @@ mcu = {
         (0x38000000,  64, 1), # SRAM4.
     ],
     
+    'ETHERNET_RAM' : (0x30040000, 256, 0), # SRAM3
     'EXPECTED_CLOCK' : 400000000,
 
     # this MCU has M7 instructions and hardware double precision

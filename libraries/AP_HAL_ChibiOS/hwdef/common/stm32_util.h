@@ -164,6 +164,8 @@ void save_fault_watchdog(uint16_t line, FaultType fault_type, uint32_t fault_add
 #if HAL_USE_HW_RNG && defined(RNG)
 bool stm32_rand_generate_blocking(unsigned char* output, unsigned int sz, uint32_t timeout_us);
 unsigned int stm32_rand_generate_nonblocking(unsigned char* output, unsigned int sz);
+// To be defined in HAL code
+extern uint32_t chibios_rand_generate(void);
 #endif
 
 void stm32_flash_protect_flash(bool bootloader, bool protect);
