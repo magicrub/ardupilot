@@ -22,6 +22,7 @@
 #include <AP_Scripting/AP_Scripting.h>
 #include <AP_HAL/CANIface.h>
 #include <AP_Stats/AP_Stats.h>
+#include <AP_Networking/AP_Networking.h>
 
 #if HAL_GCS_ENABLED
 #include "GCS_MAVLink.h"
@@ -261,6 +262,10 @@ public:
 #if HAL_LOGGING_ENABLED
     static const struct LogStructure log_structure[];
     AP_Logger logger;
+#endif
+
+#if AP_NETWORKING_ENABLED
+    AP_Networking networking;
 #endif
 
 #if HAL_GCS_ENABLED
