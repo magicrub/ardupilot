@@ -9,7 +9,7 @@
 #include <AP_Common/AP_Common.h>
 #include <GCS_MAVLink/GCS.h>
 #include <AP_Math/AP_Math.h>
-#include <AP_UAVCAN/AP_UAVCAN.h>
+//#include <AP_UAVCAN/AP_UAVCAN.h>
 
 #include <uavcan/equipment/power/BatteryInfo.hpp>
 #include <mppt/Stream.hpp>
@@ -21,6 +21,10 @@ extern const AP_HAL::HAL& hal;
 
 UC_REGISTRY_BINDER(BattInfoCb, uavcan::equipment::power::BatteryInfo);
 UC_REGISTRY_BINDER(MpptStreamCb, mppt::Stream);
+
+static void trampoline_handleOutputEnable(const uavcan::ServiceCallResult<mppt::OutputEnable>& resp);
+
+static uavcan::ServiceClient<mppt::OutputEnable>* outputEnable_client[HAL_MAX_CAN_PROTOCOL_DRIVERS];
 
 /// Constructor
 AP_BattMonitor_UAVCAN::AP_BattMonitor_UAVCAN(AP_BattMonitor &mon, AP_BattMonitor::BattMonitor_State &mon_state, BattMonitor_UAVCAN_Type type, AP_BattMonitor_Params &params) :
@@ -56,6 +60,18 @@ void AP_BattMonitor_UAVCAN::subscribe_msgs(AP_UAVCAN* ap_uavcan)
         AP_HAL::panic("UAVCAN Mppt::Stream subscriber start problem");
         return;
     }
+
+    const uint8_t driver_index = ap_uavcan->get_driver_index();
+    outputEnable_client[driver_index] = new uavcan::ServiceClient<mppt::OutputEnable>(*node);
+    if (outputEnable_client[driver_index] == nullptr) {
+        AP_HAL::panic("AP_UAVCAN_DNA: outputEnable_client[%d]", driver_index);
+    }
+    int res = outputEnable_client[driver_index]->init();
+    if (res < 0) {
+        return;
+    }
+    outputEnable_client[driver_index]->setCallback(trampoline_handleOutputEnable);
+
 }
 
 AP_BattMonitor_UAVCAN* AP_BattMonitor_UAVCAN::get_uavcan_backend(AP_UAVCAN* ap_uavcan, uint8_t node_id, uint8_t battery_id)
@@ -219,17 +235,26 @@ void AP_BattMonitor_UAVCAN::read()
 
     _has_temperature = (AP_HAL::millis() - _state.temperature_time) <= AP_BATT_MONITOR_TIMEOUT;
 
+    if (_is_mppt_packet_digital == true) {
+        if (_mppt_powered_state_remote_ms != 0) {
+            // at first, retry fast and then reduce retry attempts by a second, every second, but no slower tha n 1 minute.
+            const uint32_t retry_interval_ms = constrain_int32(_mppt_set_attempt_retry_count, 1, 60) * 1000;
+            if (AP_HAL::millis() - _mppt_powered_state_remote_ms >= retry_interval_ms) {
+                _mppt_set_attempt_retry_count++;
+                GCS_SEND_TEXT(MAV_SEVERITY_INFO, "Battery %u: MPPT Retry %u", (unsigned)_instance+1, (unsigned)_mppt_set_attempt_retry_count);
+                mppt_send_enable_output(_params._curr_pin != 0);
+            }
+        }
 
-    // KHA HACK:
-    // BATTx_CURR_PIN = current power state
-    if ((_is_mppt_packet_digital == true) &&
-        (_curr_pin_last != _params._curr_pin) &&
-        (_params._curr_pin == 0 || _params._curr_pin == 1))
-    {
-        const AP_BattMonitor::PoweredState new_state = (_params._curr_pin == 0) ? AP_BattMonitor::PoweredState::Powered_Off : AP_BattMonitor::PoweredState::Powered_On;
-        set_powered_state(new_state);
+        // KHA HACK:
+        // BATTx_CURR_PIN = current power state
+        if ((_curr_pin_last != _params._curr_pin) &&
+            (_params._curr_pin == 0 || _params._curr_pin == 1))
+        {
+            const AP_BattMonitor::PoweredState new_state = (_params._curr_pin == 0) ? AP_BattMonitor::PoweredState::Powered_Off : AP_BattMonitor::PoweredState::Powered_On;
+            set_powered_state(new_state);
+        }
     }
-
 }
 
 void AP_BattMonitor_UAVCAN::set_hardware_to_powered_state(const AP_BattMonitor::PoweredState desired_state)
@@ -255,18 +280,51 @@ void AP_BattMonitor_UAVCAN::mppt_send_enable_output(const bool enable)
     _params._curr_pin.set_and_notify(enable?1:0);
     _curr_pin_last = _params._curr_pin;
 
+    // set up a request /w a status callback
     mppt::OutputEnable::Request request;
     request.enable = enable ? true : false;
     request.disable = !request.enable;
+    _mppt_powered_state = request.enable;
 
-    uavcan::ServiceClient<mppt::OutputEnable> client(*_node);
-    client.setCallback([](const uavcan::ServiceCallResult<mppt::OutputEnable>& handle_mppt_enable_output_response){});
-    client.call(_node_id, request);
+    _mppt_powered_state_remote_ms = AP_HAL::millis();
+    const uint8_t driver_index = _ap_uavcan->get_driver_index();
+    outputEnable_client[driver_index]->call(_node_id, request);
 }
 
-void AP_BattMonitor_UAVCAN::handle_mppt_enable_output_response(const uavcan::ServiceCallResult<mppt::OutputEnable>& response)
+void trampoline_handleOutputEnable(const uavcan::ServiceCallResult<mppt::OutputEnable>& resp)
 {
-    // Not supported
+    uint8_t can_num_drivers = AP::can().get_num_drivers();
+    for (uint8_t i = 0; i < can_num_drivers; i++) {
+        AP_UAVCAN *uavcan = AP_UAVCAN::get_uavcan(i);
+        if (uavcan == nullptr) {
+            continue;
+        }
+
+        const uint8_t node_id = resp.getResponse().getSrcNodeID().get();
+        AP_BattMonitor_UAVCAN* driver = AP_BattMonitor_UAVCAN::get_uavcan_backend(uavcan, node_id, node_id);
+        if (driver == nullptr) {
+            continue;
+        }
+
+        const auto &response = resp.getResponse();
+        const uint8_t nodeId = response.getSrcNodeID().get();
+        const bool enabled = response.enabled;
+        driver->handle_OutputEnable_Response(nodeId, enabled);
+    }
+}
+
+// void AP_BattMonitor_UAVCAN::handle_OutputEnable_Response(mppt::OutputEnable::Response response)
+void AP_BattMonitor_UAVCAN::handle_OutputEnable_Response(const uint8_t nodeId, const bool enabled)
+{
+    if (nodeId != _node_id) {
+        // this response is not from the node we are looking for
+        return;
+    }
+
+    if (enabled == _mppt_powered_state) {
+        _mppt_powered_state_remote_ms = 0;
+        _mppt_set_attempt_retry_count = 0;
+    }
 }
 
 // returns string description of MPPT fault bit. Only handles single bit faults

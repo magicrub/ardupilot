@@ -47,6 +47,7 @@ public:
     static AP_BattMonitor_UAVCAN* get_uavcan_backend(AP_UAVCAN* ap_uavcan, uint8_t node_id, uint8_t battery_id);
     static void handle_battery_info_trampoline(AP_UAVCAN* ap_uavcan, uint8_t node_id, const BattInfoCb &cb);
     static void handle_mppt_stream_trampoline(AP_UAVCAN* ap_uavcan, uint8_t node_id, const MpptStreamCb &cb);
+    void handle_OutputEnable_Response(const uint8_t nodeId, const bool enabled);
 
     void set_hardware_to_powered_state(const AP_BattMonitor::PoweredState desired_state) override;
 
@@ -61,7 +62,6 @@ private:
     }
 
     void handle_mppt_stream(const MpptStreamCb &cb);
-    void handle_mppt_enable_output_response(const uavcan::ServiceCallResult<mppt::OutputEnable>& response);
     void mppt_send_enable_output(const bool enable);
     static const char* mppt_fault_string(const MPPT_FaultFlags fault);
     void mppt_check_and_report_faults(const uint8_t flags);
@@ -79,6 +79,10 @@ private:
     // needed for MPPT
     bool _is_mppt_packet_digital;   // true if this UAVCAN device is a Packet Digital MPPT
     uint8_t _mppt_fault_flags;
+    bool _mppt_powered_state;             // true if the mppt is powered on, false if powered off
+    uint32_t _mppt_powered_state_remote_ms; // timestamp of when request was sent.
+    uint32_t _mppt_set_attempt_retry_count;
+    
     uint8_t _instance;
     uavcan::Node<0> *_node;
     int8_t _curr_pin_last = -2;
