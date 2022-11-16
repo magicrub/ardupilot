@@ -160,27 +160,10 @@ void AP_NMEA_Output::update()
     char rmc_end[6];
     snprintf(rmc_end, sizeof(rmc_end), "*%02X\r\n", (unsigned) _nmea_checksum(rmc));
 
-    // get yaw
-    const float yaw_deg = wrap_360(degrees(ahrs.get_yaw()));
-
-    // format HDT message
-    char* hdt = nullptr;
-    int16_t hdt_res = asprintf(&hdt,
-                              "$GPHDT,%.2f,T",
-                              yaw_deg);
-    if (hdt_res == -1) {
-        free(gga);
-        free(rmc);
-        return;
-    }
-
-    char hdt_end[6];
-    snprintf(hdt_end, sizeof(hdt_end), "*%02X\r\n", (unsigned) _nmea_checksum(hdt));
-
-
-    // get roll, pitch
+    // get roll, pitch, yaw
     const float roll_deg = wrap_180(degrees(ahrs.get_roll()));
     const float pitch_deg = wrap_180(degrees(ahrs.get_pitch()));
+    const float yaw_deg = wrap_360(degrees(ahrs.get_yaw()));
     const float heave_m = 0; // instantaneous heave in meters
     const float roll_deg_accuracy = 0; // stddev of roll_deg;
     const float pitch_deg_accuracy = 0; // stddev of pitch_deg;
@@ -217,7 +200,6 @@ void AP_NMEA_Output::update()
                             (unsigned)ins_status_flag);
 
     if (pashr_res == -1) {
-        free(hdt);
         free(gga);
         free(rmc);
         return;
@@ -227,7 +209,7 @@ void AP_NMEA_Output::update()
     snprintf(pashr_end, sizeof(pashr_end), "*%02X\r\n", (unsigned) _nmea_checksum(pashr));
 
 
-    const uint32_t space_required = strlen(gga) + strlen(gga_end) + strlen(rmc) + strlen(rmc_end) + strlen(hdt) + strlen(hdt_end) + strlen(pashr) + strlen(pashr_end);
+    const uint32_t space_required = strlen(gga) + strlen(gga_end) + strlen(rmc) + strlen(rmc_end) + strlen(pashr) + strlen(pashr_end);
 
     // send to all NMEA output ports
     for (uint8_t i = 0; i < _num_outputs; i++) {
@@ -245,11 +227,6 @@ void AP_NMEA_Output::update()
             _uart[i]->write(rmc_end);
         }
 
-        if (hdt_res != -1) {
-            _uart[i]->write(hdt);
-            _uart[i]->write(hdt_end);
-        }
-
         if (pashr_res != -1) {
             _uart[i]->write(pashr);
             _uart[i]->write(pashr_end);
@@ -264,9 +241,6 @@ void AP_NMEA_Output::update()
         free(rmc);
     }
 
-    if (hdt_res != -1) {
-        free(hdt);
-    }
     if (pashr_res != -1) {
         free(pashr);
     }
