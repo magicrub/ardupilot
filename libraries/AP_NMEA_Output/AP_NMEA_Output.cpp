@@ -23,6 +23,7 @@
 
 #include <AP_Math/definitions.h>
 #include <AP_RTC/AP_RTC.h>
+#include <AP_GPS/AP_GPS.h>
 #include <AP_SerialManager/AP_SerialManager.h>
 
 #include <stdio.h>
@@ -159,24 +160,56 @@ void AP_NMEA_Output::update()
     char rmc_end[6];
     snprintf(rmc_end, sizeof(rmc_end), "*%02X\r\n", (unsigned) _nmea_checksum(rmc));
 
-    // get yaw
+    // get roll, pitch, yaw
+    const float roll_deg = wrap_180(degrees(ahrs.get_roll()));
+    const float pitch_deg = wrap_180(degrees(ahrs.get_pitch()));
     const float yaw_deg = wrap_360(degrees(ahrs.get_yaw()));
+    const float heave_m = 0; // instantaneous heave in meters
+    const float roll_deg_accuracy = 0; // stddev of roll_deg;
+    const float pitch_deg_accuracy = 0; // stddev of pitch_deg;
+    const float heading_deg_accuracy = 0; // stddev of yaw_deg;
 
-    // format HDT message
-    char* hdt = nullptr;
-    int16_t hdt_res = asprintf(&hdt,
-                              "$GPHDT,%.2f,T",
-                              yaw_deg);
-    if (hdt_res == -1) {
+    // GPS Update Quality Flag:
+    // 0 = no position
+    // 1 = All non-RTK fixed integer positions
+    // 2 = RTK fixed integer positions
+    const AP_GPS::GPS_Status gps_status = AP::gps().status();
+    const uint8_t gps_status_flag = (gps_status >= AP_GPS::GPS_OK_FIX_3D_RTK_FIXED) ? 2 :
+                                                (gps_status >= AP_GPS::GPS_OK_FIX_2D ? 1 : 0);
+
+    // INS Status Flag:
+    // 0 = All SPAN Pre-Alignment INS Status
+    // 1 = All SPAN Post-Alignment INS Status
+    const bool ins_status_flag = ahrs.initialised() &&
+                                    ahrs.healthy() &&
+                                    (!ahrs.have_inertial_nav() || AP::ins().accel_calibrated_ok_all());
+
+    // format PASHR message
+    char* pashr = nullptr;
+    int16_t pashr_res = asprintf(&pashr,
+                            "$PASHR,%s,%.2f,T,%c%.2f,%c%.2f,%c%.2f,%.3f,%.3f,%.3f,%u,%u",
+                            tstring,
+                            yaw_deg, // This is a TRUE NORTH value
+                            roll_deg<0? '-':'+', fabs(roll_deg),    // always show + or - symbol
+                            pitch_deg<0?'-':'+', fabs(pitch_deg),   // always show + or - symbol
+                            heave_m<0?  '-':'+', fabs(heave_m),     // always show + or - symbol
+                            roll_deg_accuracy,
+                            pitch_deg_accuracy,
+                            heading_deg_accuracy,
+                            (unsigned)gps_status_flag,
+                            (unsigned)ins_status_flag);
+
+    if (pashr_res == -1) {
         free(gga);
         free(rmc);
         return;
     }
 
-    char hdt_end[6];
-    snprintf(hdt_end, sizeof(hdt_end), "*%02X\r\n", (unsigned) _nmea_checksum(hdt));
+    char pashr_end[6];
+    snprintf(pashr_end, sizeof(pashr_end), "*%02X\r\n", (unsigned) _nmea_checksum(pashr));
 
-    const uint32_t space_required = strlen(gga) + strlen(gga_end) + strlen(rmc) + strlen(rmc_end) + strlen(hdt) + strlen(hdt_end);
+
+    const uint32_t space_required = strlen(gga) + strlen(gga_end) + strlen(rmc) + strlen(rmc_end) + strlen(pashr) + strlen(pashr_end);
 
     // send to all NMEA output ports
     for (uint8_t i = 0; i < _num_outputs; i++) {
@@ -194,9 +227,9 @@ void AP_NMEA_Output::update()
             _uart[i]->write(rmc_end);
         }
 
-        if (hdt_res != -1) {
-            _uart[i]->write(hdt);
-            _uart[i]->write(hdt_end);
+        if (pashr_res != -1) {
+            _uart[i]->write(pashr);
+            _uart[i]->write(pashr_end);
         }
     }
 
@@ -208,8 +241,8 @@ void AP_NMEA_Output::update()
         free(rmc);
     }
 
-    if (hdt_res != -1) {
-        free(hdt);
+    if (pashr_res != -1) {
+        free(pashr);
     }
 }
 
