@@ -17,6 +17,10 @@
 
 #define LOG_TAG "BattMon"
 
+#ifndef AP_BATTMONITOR_UAVCAN_MPPT_FAULT_ANNOUNCE
+#define AP_BATTMONITOR_UAVCAN_MPPT_FAULT_ANNOUNCE 0
+#endif
+
 extern const AP_HAL::HAL& hal;
 
 UC_REGISTRY_BINDER(BattInfoCb, uavcan::equipment::power::BatteryInfo);
@@ -185,6 +189,7 @@ void AP_BattMonitor_UAVCAN::handle_mppt_stream(const MpptStreamCb &cb)
 
 void AP_BattMonitor_UAVCAN::mppt_check_and_report_faults(const uint8_t flags)
 {
+#if AP_BATTMONITOR_UAVCAN_MPPT_FAULT_ANNOUNCE
     if (_mppt_fault_flags == flags) {
         // only report flags when they change
         return;
@@ -201,6 +206,7 @@ void AP_BattMonitor_UAVCAN::mppt_check_and_report_faults(const uint8_t flags)
             return;
         }
     }
+#endif
 }
 
 void AP_BattMonitor_UAVCAN::handle_mppt_stream_trampoline(AP_UAVCAN* ap_uavcan, uint8_t node_id, const MpptStreamCb &cb)
@@ -327,6 +333,7 @@ void AP_BattMonitor_UAVCAN::handle_OutputEnable_Response(const uint8_t nodeId, c
     }
 }
 
+#if AP_BATTMONITOR_UAVCAN_MPPT_FAULT_ANNOUNCE
 // returns string description of MPPT fault bit. Only handles single bit faults
 const char* AP_BattMonitor_UAVCAN::mppt_fault_string(const MPPT_FaultFlags fault)
 {
@@ -339,6 +346,7 @@ const char* AP_BattMonitor_UAVCAN::mppt_fault_string(const MPPT_FaultFlags fault
     }
     return "Unknown";
 }
+#endif
 
 /// capacity_remaining_pct - returns the % battery capacity remaining (0 ~ 100)
 uint8_t AP_BattMonitor_UAVCAN::capacity_remaining_pct() const
