@@ -1986,7 +1986,7 @@ uint16_t AP_Mission::num_commands_max(void) const
 // find the nearest landing sequence starting point (DO_LAND_START) and
 // return its index.  Returns 0 if no appropriate DO_LAND_START point can
 // be found.
-uint16_t AP_Mission::get_landing_sequence_start() const
+uint16_t AP_Mission::get_landing_sequence_start()
 {
     struct Location current_loc;
 
@@ -2005,6 +2005,10 @@ uint16_t AP_Mission::get_landing_sequence_start() const
             continue;
         }
         if (tmp.id == MAV_CMD_DO_LAND_START) {
+            if (!tmp.content.location.initialised() && !get_next_nav_cmd(i, tmp)) {
+                // command does not have a valid location and cannot get next valid
+                continue;
+            }
             float tmp_distance;
             if (current_loc_alt_frame == tmp.content.location.get_alt_frame() || tmp.content.location.change_alt_frame(current_loc_alt_frame)) {
                 // 3D distance - altitudes are able to be compared in the same frame
