@@ -62,28 +62,29 @@ local MAV_CMD_NAV_LAND = 21
 local MAV_CMD_NAV_CONTINUE_AND_CHANGE_ALT = 30
 local MAV_CMD_NAV_LOITER_TO_ALT = 31
 local MAV_CMD_DO_LAND_START = 189
+local MAV_CMD_DO_AUX_FUNCTION = 218
+local MAV_CMD_JUMP_TAG = 600
+local MAV_CMD_DO_JUMP_TAG = 601
 
 local ROTATION_PITCH_270 = 25
 
-local landing_direction_has_been_chosen = false
 
-local wp_land1_sequence_start = 0
-local wp_land2_sequence_start = 0
 
 local wp_lidar_start = 0
 local wp_lidar_stop = 0
+local wp_decide_landing_direction_index = 0
+local wp_land1_sequence_start = 0
+local wp_land1_index = 0
+local wp_land2_sequence_start = 0
 local lidar_sample_count = 0
 local lidar_samples_sum = 0
+
+local landing_direction_has_been_chosen = false
 local baro_has_been_updated = false
 
 local mission_count = 0
+local mission_type_matches_this_script = false
 
-local wp_land1_index = 0
-local wp_land1_x = 0
-local wp_land1_y = 0
-local wp_decide_landing_direction_index = 0
-
-gcs:send_text(MAV_SEVERITY_foo, string.format("LUA: Mission land wind + Lidar SCRIPT START"))
 
 function reset()
     -- gcs:send_text(MAV_SEVERITY_foo, string.format("LUA: RESET"))
@@ -99,24 +100,30 @@ function reset()
     baro_has_been_updated = false
 
     wp_land1_index = 0
-    wp_land1_x = 0
-    wp_land1_y = 0
     wp_decide_landing_direction_index= 0
 end
 
 function detect_if_mission_changed()
     -- try and detect if the mission has changed
+    local has_changed = false
     local mission_count_new = mission:num_commands()-1
     if (mission_count ~= mission_count_new) then
-        gcs:send_text(MAV_SEVERITY_foo, string.format("LUA: Detected Mission Change %d", mission_count_new))
-        reset()
         mission_count = mission_count_new
+        has_changed = true
+    end
+
+    if (has_changed) then
+        reset()
+        detect_mission_type(false)
+        if (mission_type_matches_this_script) then
+            gcs:send_text(MAV_SEVERITY_foo, string.format("LUA: Detected Mission Change"))
+        end
     end
 end
 
 function determine_waypoint_indexes()
 
-    if (wp_land1_index > 2) and (wp_land1_sequence_start > 0) and (wp_land2_sequence_start > 0) and (wp_lidar_start > 0) then
+    if (wp_lidar_start > 0) and (wp_lidar_stop > 0) and (wp_decide_landing_direction_index > 0) and (wp_land1_sequence_start > 0) and (wp_land1_index > 2) and (wp_land2_sequence_start > 0) then
         return
     end
 
@@ -126,33 +133,46 @@ function determine_waypoint_indexes()
         if not mitem then
             return
         end
+        
+        if (mitem:command() == MAV_CMD_JUMP_TAG) then
+            
+            -- p1 is Tag
+            -- p2 is Repeat (unused)
 
-        if (mitem:command() == MAV_CMD_NAV_LOITER_TO_ALT) then
-            most_recent_loiter_to_alt_index = index
+            -- p1=300x is lidar start/stop + wind decision
+                -- p1=3000  -> lidar start
+                -- p1=3001  -> lidar stop
+                -- p1=3002  -> wind_direction decision
 
-        elseif (mitem:command() == MAV_CMD_NAV_LAND) and (wp_land1_sequence_start == 0) then
-            wp_land1_index = index
-            wp_land1_x = mitem:x()
-            wp_land1_y = mitem:y()
-            wp_land1_sequence_start = most_recent_loiter_to_alt_index
-            gcs:send_text(MAV_SEVERITY_foo, string.format("LUA: Found wp_land1_sequence_start = %d", wp_land1_sequence_start))
+            -- p1=301x is PRIMARY landing info
+                -- p1=3010  -> start of land1 sequence (PRIMARY location)
+                -- p1=3011  -> corresponding NAV_LAND point
+                -- p1=3012  -> start land2 sequence to jump to for reversed landing of primary location
 
-            wp_decide_landing_direction_index = wp_land1_sequence_start - 1
-            gcs:send_text(MAV_SEVERITY_foo, string.format("LUA: Found wp_decide_landing_direction_index = %d", wp_decide_landing_direction_index))
+            -- p1=302x is SECONDARY landing info
+                -- p1=3020  -> start of land1 sequence (SECONDARY location)
+                -- p1=3021  -> corresponding NAV_LAND point
+                -- p1=3022  -> start land2 sequence to jump to for reversed landing of secondary location
 
-        elseif (mitem:command() == MAV_CMD_NAV_RETURN_TO_LAUNCH) and (wp_land1_sequence_start > 0) and (wp_land2_sequence_start == 0) then
-            wp_land2_sequence_start = index + 1
-            gcs:send_text(MAV_SEVERITY_foo, string.format("LUA: Found wp_land2_sequence_start = %d", wp_land2_sequence_start))
-        elseif (mitem:command() == MAV_CMD_NAV_WAYPOINT) and (wp_lidar_start == 0) and (mitem:x() == wp_land1_x) and (mitem:y() ==  wp_land1_y) then
-            wp_lidar_start = index
-            wp_lidar_stop = index + 2
-            gcs:send_text(MAV_SEVERITY_foo, string.format("LUA: Found wp_lidar_start,_stop = %d, %d", wp_lidar_start, wp_lidar_stop))
-        end
+            if (mitem:param1() == 3000) then
+                wp_lidar_start = index
+            elseif (mitem:param1() == 3001) then
+                wp_lidar_stop = index
+            elseif (mitem:param1() == 3002) then
+                wp_decide_landing_direction_index = index
+            elseif (mitem:param1() == 3010) then
+                wp_land1_sequence_start = index
+            elseif (mitem:param1() == 3011) then
+                wp_land1_index = index
+            elseif (mitem:param1() == 3012) then
+                wp_land2_sequence_start = index
+            end
 
-        if (wp_land1_index > 2) and (wp_land1_sequence_start > 0) and (wp_land2_sequence_start > 0) and (wp_lidar_start > 0) then
-            -- quit early if we know all we need to know
-            gcs:send_text(MAV_SEVERITY_foo, string.format("LUA: found everything we need!"))
-            return
+            if (wp_lidar_start > 0) and (wp_lidar_stop > 0) and (wp_decide_landing_direction_index > 0) and (wp_land1_sequence_start > 0) and (wp_land1_index > 2) and (wp_land2_sequence_start > 0) then
+                -- quit early if we know all we need to know
+                gcs:send_text(MAV_SEVERITY_foo, string.format("LUA: found everything we need!"))
+                return
+            end
         end
     end
 end
@@ -160,7 +180,7 @@ end
 
 function check_wind_and_jump_to_INTO_wind_landing()
 
-    if (landing_direction_has_been_chosen) or (wp_land2_sequence_start == 0) or (wp_decide_landing_direction_index == 0) or (wp_land1_index <= 2) then
+    if (landing_direction_has_been_chosen) or (wp_land1_sequence_start == 0) or (wp_land2_sequence_start == 0) or (wp_decide_landing_direction_index == 0) or (wp_land1_index <= 2) then
         -- we're not ready to calculate this
         return
     end
@@ -184,7 +204,6 @@ function check_wind_and_jump_to_INTO_wind_landing()
     wp2:lng(mitem2:y())
 
     local bearing = wp1:get_bearing(wp2)
-    
 
     -- wind is in NED, convert for readability
     local wind = ahrs:wind_estimate()
@@ -197,6 +216,7 @@ function check_wind_and_jump_to_INTO_wind_landing()
         gcs:send_text(MAV_SEVERITY_foo, "LUA: jump mission to other into-wind landing direction")
         mission:set_current_cmd(wp_land2_sequence_start)
     else
+        mission:set_current_cmd(wp_land1_sequence_start)
         gcs:send_text(MAV_SEVERITY_foo, "LUA: continuing with normal landing direction")
     end
 end
@@ -266,27 +286,52 @@ end
 
 function update()
 
-    if mission:state() ~= mission.MISSION_RUNNING or not arming:is_armed() or not vehicle:get_likely_flying() then
+    detect_if_mission_changed()
+    if (not mission_type_matches_this_script) then
+        return update, 5000
+    end
+
+    if (mission:state() ~= mission.MISSION_RUNNING) or (not arming:is_armed()) or (not vehicle:get_likely_flying()) then
         -- only run landing mission checks if in auto with a valid mission and armed and flying.
         reset()
         return update, 5000
     end
 
-    if (mission:get_current_nav_id() == MAV_CMD_NAV_WAYPOINT) then
-        -- all the logic and triggers only happen while we're doing a NAV_WAYPOINT
 
-        detect_if_mission_changed()
+    determine_waypoint_indexes()
 
-        determine_waypoint_indexes()
-    
-        use_lidar_to_update_baro_if_necessary()
-    
-        check_wind_and_jump_to_INTO_wind_landing()
-    end
+    use_lidar_to_update_baro_if_necessary()
+
+    check_wind_and_jump_to_INTO_wind_landing()
 
     return update, 1000
 end
 
+function detect_mission_type(force_gcs_msg)
 
+    for index = 1, mission:num_commands()-1 do
+        mitem = mission:get_item(index)
+        if not mitem then
+            return
+        end
+
+        if (mitem:command() == MAV_CMD_JUMP_TAG) then
+            if (not mission_type_matches_this_script or force_gcs_msg) then
+                mission_type_matches_this_script = true
+                gcs:send_text(MAV_SEVERITY_foo, string.format("LUA: mission check JUMP_TAG is running"))
+            end
+            return
+        end
+    end
+
+    -- not supported
+    if (mission_type_matches_this_script or force_gcs_msg) then
+        mission_type_matches_this_script = false
+        gcs:send_text(MAV_SEVERITY_foo, string.format("LUA: mission check JUMP_TAG is snoozing"))
+    end
+end
+
+gcs:send_text(MAV_SEVERITY_foo, string.format("LUA: SCRIPT START: mission check JUMP_TAG"))
+detect_mission_type(true)
 return update() -- run immediately before starting to reschedule
 
