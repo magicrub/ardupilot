@@ -529,6 +529,14 @@ public:
         return _last_change_time_ms;
     }
 
+    // find the first JUMP_TAG with this tag and return its index.
+    // Returns 0 if no appropriate JUMP_TAG match can be found.
+    uint16_t get_index_of_jump_tag(const uint16_t tag);
+
+    // confirm all DO_JUMP_TAG commands point to a matching JUMP_TAG.
+    // Returns true there are no tags or if all tags match correctly.
+    bool check_do_jump_tags();
+
     // find the nearest landing sequence starting point (DO_LAND_START) and
     // return its index.  Returns 0 if no appropriate DO_LAND_START point can
     // be found.
