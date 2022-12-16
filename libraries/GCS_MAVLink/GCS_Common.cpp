@@ -2496,6 +2496,24 @@ void GCS_MAVLINK::send_heartbeat() const
         system_status());
 }
 
+MAV_RESULT GCS_MAVLINK::handle_command_do_jump_tag(const mavlink_command_long_t &packet)
+{
+    AP_Mission *mission = AP::mission();
+    if (mission == nullptr) {
+        return MAV_RESULT_UNSUPPORTED;
+    }
+
+    const uint16_t index = mission->get_index_of_jump_tag(packet.param1);
+    if (index == 0) {
+        return MAV_RESULT_DENIED;
+    }
+
+    if (!mission->set_current_cmd(index)) {
+        return MAV_RESULT_FAILED;
+    }
+    return MAV_RESULT_ACCEPTED;
+}
+
 MAV_RESULT GCS_MAVLINK::handle_command_do_aux_function(const mavlink_command_long_t &packet)
 {
     if (packet.param2 > 2) {
@@ -4214,6 +4232,10 @@ MAV_RESULT GCS_MAVLINK::handle_command_long_packet(const mavlink_command_long_t 
             send_text(MAV_SEVERITY_WARNING, "All parameters reset, reboot board");
             result= MAV_RESULT_ACCEPTED;
         }
+        break;
+
+    case MAV_CMD_DO_JUMP_TAG:
+        result = handle_command_do_jump_tag(packet);
         break;
 
     case MAV_CMD_DO_AUX_FUNCTION:

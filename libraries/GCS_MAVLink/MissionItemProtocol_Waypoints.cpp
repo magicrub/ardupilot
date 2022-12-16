@@ -52,6 +52,11 @@ bool MissionItemProtocol_Waypoints::clear_all_items()
 
 MAV_MISSION_RESULT MissionItemProtocol_Waypoints::complete(const GCS_MAVLINK &_link)
 {
+    if (!mission.check_do_jump_tags()) {
+        _link.send_text(MAV_SEVERITY_WARNING, "Mission upload failed due to DO_JUMP_TAG verification");
+        return MAV_MISSION_INVALID;
+    }
+
     _link.send_text(MAV_SEVERITY_INFO, "Flight plan received");
     AP::logger().Write_EntireMission();
     return MAV_MISSION_ACCEPTED;
