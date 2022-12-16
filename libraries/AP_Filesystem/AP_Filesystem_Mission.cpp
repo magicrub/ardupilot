@@ -397,6 +397,9 @@ bool AP_Filesystem_Mission::finish_upload(const rfile &r)
             }
         }
     }
+    if (!mission->check_do_jump_tags()) {
+        return false;
+    }
     return true;
 }
 
