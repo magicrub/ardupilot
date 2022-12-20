@@ -72,7 +72,7 @@ LAND_ABORT_THR          1
 LAND_DISARMDELAY        3
 LAND_FLARE_ALT          2.8
 LAND_FLARE_SEC          0
-LAND_PITCH_CD           -50
+LAND_PITCH_CD           0
 LAND_SLOPE_RCALC        0
 LAND_THEN_NEUTRL        1
 LAND_THR_SLEW           0
@@ -165,11 +165,15 @@ TECS_CLMB_MAX           3.0
 TECS_CLMB_OPER          1.5
 TECS_INTEG_GAIN         0.6
 TECS_LAND_ARSPD         18
+TECS_LAND_DAMP          10
+TECS_LAND_IGAIN         0.6 
 TECS_LAND_PDAMP         0.5
+TECS_LAND_PMAX          10
 TECS_LAND_SINK          0.3
 TECS_LAND_TCONST        4
+TECS_LAND_TDAMP         0.5
 TECS_PITCH_MAX          10
-TECS_PTCH_DAMP          10
+TECS_PTCH_DAMP          0.8
 TECS_PTCH_FF_K          -0.05
 TECS_PTCH_FF_V0         17
 TECS_RLL2THR            10
