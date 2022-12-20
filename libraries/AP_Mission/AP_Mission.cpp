@@ -198,6 +198,7 @@ void AP_Mission::reset()
     _flags.do_cmd_loaded   = false;
     _flags.do_cmd_all_done = false;
     _flags.in_landing_sequence = false;
+    _flags.current_tag_is_valid = false;
     _nav_cmd.index         = AP_MISSION_CMD_INDEX_NONE;
     _do_cmd.index          = AP_MISSION_CMD_INDEX_NONE;
     _prev_nav_cmd_index    = AP_MISSION_CMD_INDEX_NONE;
@@ -223,7 +224,7 @@ bool AP_Mission::clear()
     _nav_cmd.index = AP_MISSION_CMD_INDEX_NONE;
     _do_cmd.index = AP_MISSION_CMD_INDEX_NONE;
     _flags.nav_cmd_loaded = false;
-    _flags.do_cmd_loaded = false;
+    _flags.current_tag_is_valid = false;
 
     // return success
     return true;
@@ -265,6 +266,7 @@ void AP_Mission::update()
         if (verify_command(_nav_cmd)) {
             // market _nav_cmd as complete (it will be started on the next iteration)
             _flags.nav_cmd_loaded = false;
+            _flags.current_tag_is_valid = false;
             // immediately advance to the next mission command
             if (!advance_current_nav_cmd()) {
                 // failure to advance nav command means mission has completed
@@ -320,6 +322,8 @@ bool AP_Mission::start_command(const Mission_Command& cmd)
     gcs().send_text(MAV_SEVERITY_INFO, "Mission: %u %s", cmd.index, cmd.type());
     switch (cmd.id) {
     case MAV_CMD_JUMP_TAG:
+        _flags.current_tag_is_valid = true;
+        _current_tag = cmd.content.jump.target;
         return true;
     case MAV_CMD_DO_AUX_FUNCTION:
         return start_command_do_aux_function(cmd);
@@ -1915,6 +1919,18 @@ bool AP_Mission::get_next_do_cmd(uint16_t start_index, Mission_Command& cmd)
 /// jump handling methods
 ///
 
+
+bool AP_Mission::jump_to_tag(const uint16_t tag)
+{
+    const uint16_t index = get_index_of_jump_tag(tag);
+    if (index == 0) {
+        //gcs().send_text(MAV_SEVERITY_INFO, "Mission: jump_to_tag FAILED %u", tag);
+        return false;
+    }
+    //gcs().send_text(MAV_SEVERITY_INFO, "Mission: jump_to_tag SUCCESS %u %u", tag, index);
+    return set_current_cmd(index);
+}
+
 // find the first JUMP_TAG with this tag and return its index.
 // Returns 0 if no appropriate JUMP_TAG match can be found.
 uint16_t AP_Mission::get_index_of_jump_tag(const uint16_t tag)
@@ -1944,6 +1960,15 @@ bool AP_Mission::check_do_jump_tags()
             return false;
         }
     }
+    return true;
+}
+
+bool AP_Mission::get_current_tag(uint16_t &tag) const
+{
+    if (!_flags.current_tag_is_valid) {
+        return false;
+    }
+    tag = _current_tag;
     return true;
 }
 
