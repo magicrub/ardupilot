@@ -2376,7 +2376,12 @@ const char *AP_Mission::Mission_Command::type() const
         return "Winch";
     case MAV_CMD_DO_SEND_SCRIPT_MESSAGE:
         return "Scripting";
-
+    case MAV_CMD_DO_JUMP:
+        return "Jump";
+    case MAV_CMD_DO_JUMP_TAG:
+        return "Jump to Tag";
+    case MAV_CMD_JUMP_TAG:
+        return "Jump Tag";
     default:
 #if CONFIG_HAL_BOARD == HAL_BOARD_SITL
         AP_HAL::panic("Mission command with ID %u has no string", id);
