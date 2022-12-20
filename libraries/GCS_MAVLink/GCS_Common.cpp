@@ -2502,16 +2502,7 @@ MAV_RESULT GCS_MAVLINK::handle_command_do_jump_tag(const mavlink_command_long_t 
     if (mission == nullptr) {
         return MAV_RESULT_UNSUPPORTED;
     }
-
-    const uint16_t index = mission->get_index_of_jump_tag(packet.param1);
-    if (index == 0) {
-        return MAV_RESULT_DENIED;
-    }
-
-    if (!mission->set_current_cmd(index)) {
-        return MAV_RESULT_FAILED;
-    }
-    return MAV_RESULT_ACCEPTED;
+    return mission->jump_to_tag(packet.param1) ? MAV_RESULT_ACCEPTED : MAV_RESULT_FAILED;
 }
 
 MAV_RESULT GCS_MAVLINK::handle_command_do_aux_function(const mavlink_command_long_t &packet)
