@@ -1,6 +1,7 @@
 --This script is designed to set the K1000P preflight params prior to takeoff
 local FLIGHT_MODE_PLANE_AUTO = 10
 local MAV_CMD_NAV_LAND = 21
+local TAKEOFF_PARAMS_SET = false
 local LANDING_PARAMS_SET = false
 
 if param:get("Q_ENABLE") == 0 then
