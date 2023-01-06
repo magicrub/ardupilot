@@ -107,17 +107,12 @@ function check_wind_and_jump_to_INTO_wind_landing()
 
     -- we need at least 10 cm/s of tailwind. With very little wind (or a noisy 0 value) we don't want to flip around.
     local tail_wind_threshold = 0.1
-    local jump_to_tag = 0
     if (tail_wind > tail_wind_threshold) then
         -- jump mission to other into-wind landing direction
-        gcs:send_text(MAV_SEVERITY_foo, "LUA: jump mission to other into-wind landing direction")
-        jump_to_tag = MISSION_TAG_LAND1_START_REVERSED
-    else
-        gcs:send_text(MAV_SEVERITY_foo, "LUA: continuing with normal landing direction")
-        jump_to_tag = MISSION_TAG_LAND1_START
-    end
-    if (not mission:jump_to_tag(jump_to_tag)) then
-        gcs:send_text(MAV_SEVERITY_foo, string.format("LUA: jump_to_tag %u failed", jump_to_tag))
+        gcs:send_text(MAV_SEVERITY_foo, "LUA: jump mission to reverse direction")
+        if (not mission:jump_to_tag(MISSION_TAG_LAND1_START_REVERSED)) then
+            gcs:send_text(MAV_SEVERITY_foo, string.format("LUA: jump_to_tag %u failed", jump_to_tag))
+        end
     end
 end
 
