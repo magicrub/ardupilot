@@ -168,7 +168,7 @@ function update_baro(lidar_average)
     end
 
     local alt_error_m = ekf_agl_m - lidar_average
-    gcs:send_text(MAV_SEVERITY_foo, string.format("LUA: current_alt - alt_error is: %.2f - %.2f = %.2f", ekf_agl_m, lidar_average, alt_error_m))
+    gcs:send_text(MAV_SEVERITY_foo, string.format("LUA: alt_error is: %.2f - %.2f = %.2f", ekf_agl_m, lidar_average, alt_error_m))
 
     local baro_alt_offset = param:get('BARO_ALT_OFFSET')
     local baro_alt_offset_new_value = baro_alt_offset + alt_error_m
