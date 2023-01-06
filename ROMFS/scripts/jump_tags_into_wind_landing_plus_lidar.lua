@@ -113,6 +113,8 @@ function check_wind_and_jump_to_INTO_wind_landing()
         if (not mission:jump_to_tag(MISSION_TAG_LAND1_START_REVERSED)) then
             gcs:send_text(MAV_SEVERITY_foo, string.format("LUA: jump_to_tag %u failed", jump_to_tag))
         end
+    else 
+        gcs:send_text(MAV_SEVERITY_foo, "LUA: continuing with normal landing direction")
     end
 end
 
