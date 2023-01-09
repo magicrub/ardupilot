@@ -33,8 +33,8 @@ local MISSION_TAG_LAND1_START_REVERSED = 301
 local lidar_sample_count = 0
 local lidar_samples_sum = 0
 
---local mission_timestamp_ms = 0
---local mission_type_matches_this_script = false
+local mission_timestamp_ms = 0
+local mission_type_matches_this_script = false
 
 
 function reset()
@@ -52,10 +52,10 @@ function detect_if_mission_changed()
     mission_timestamp_ms = current_timestamp
 
     reset()
---    detect_mission_type(false)
---    if (mission_type_matches_this_script) then
---        gcs:send_text(MAV_SEVERITY_foo, string.format("LUA: Detected Mission Change"))
---    end
+    detect_mission_type(false)
+    if (mission_type_matches_this_script) then
+        gcs:send_text(MAV_SEVERITY_foo, string.format("LUA: Detected Mission Change"))
+    end
 end
 
 
@@ -80,7 +80,7 @@ function check_wind_and_jump_to_INTO_wind_landing()
 
     local index_land = get_index_of_next_land()
 
-    if (index_land <= 1) then
+    if (index_land == 0) then
         return
     end
 
@@ -91,14 +91,17 @@ function check_wind_and_jump_to_INTO_wind_landing()
     end
 
     local wp1 = Location()
+    local wp2 = Location()
+
     wp1:lat(mitem1:x())
     wp1:lng(mitem1:y())
 
-    local wp2 = Location()
     wp2:lat(mitem2:x())
     wp2:lng(mitem2:y())
 
     local bearing = wp1:get_bearing(wp2)
+
+    -- wind is in NED, convert for readability
     local wind = ahrs:wind_estimate()
     local tail_wind = (math.sin(bearing) * wind:y()) + (math.cos(bearing) * wind:x())
 
@@ -110,12 +113,8 @@ function check_wind_and_jump_to_INTO_wind_landing()
         if (not mission:jump_to_tag(MISSION_TAG_LAND1_START_REVERSED)) then
             gcs:send_text(MAV_SEVERITY_foo, string.format("LUA: jump_to_tag %u failed", jump_to_tag))
         end
-    else
+    else 
         gcs:send_text(MAV_SEVERITY_foo, "LUA: continuing with normal landing direction")
-        if (not mission:jump_to_tag(MISSION_TAG_LAND1_START)) then
-        -- fail quietly, this tag is optional. If not found, behavior is to continue on to next waypoint
-        --  gcs:send_text(MAV_SEVERITY_foo, string.format("LUA: jump_to_tag %u failed", jump_to_tag))
-        end
     end
 end
 
