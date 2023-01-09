@@ -466,11 +466,6 @@ public:
 
     bool get_current_tag(uint16_t &tag) const;
     
-    void invalidate_current_tag()
-    {
-        _flags.current_tag_is_valid = false;
-    }
-
     /// get_next_nav_cmd - gets next "navigation" command found at or after start_index
     ///     returns true if found, false if not found (i.e. reached end of mission command list)
     ///     accounts for do_jump commands
