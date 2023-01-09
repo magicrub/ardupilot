@@ -198,6 +198,7 @@ void AP_Mission::reset()
     _flags.do_cmd_loaded   = false;
     _flags.do_cmd_all_done = false;
     _flags.in_landing_sequence = false;
+    _flags.current_tag_is_valid = false;
     _nav_cmd.index         = AP_MISSION_CMD_INDEX_NONE;
     _do_cmd.index          = AP_MISSION_CMD_INDEX_NONE;
     _prev_nav_cmd_index    = AP_MISSION_CMD_INDEX_NONE;
@@ -224,6 +225,7 @@ bool AP_Mission::clear()
     _do_cmd.index = AP_MISSION_CMD_INDEX_NONE;
     _flags.nav_cmd_loaded = false;
     _flags.do_cmd_loaded = false;
+    _flags.current_tag_is_valid = false;
 
     // return success
     return true;
@@ -265,6 +267,7 @@ void AP_Mission::update()
         if (verify_command(_nav_cmd)) {
             // market _nav_cmd as complete (it will be started on the next iteration)
             _flags.nav_cmd_loaded = false;
+            _flags.current_tag_is_valid = false;
             // immediately advance to the next mission command
             if (!advance_current_nav_cmd()) {
                 // failure to advance nav command means mission has completed
@@ -301,6 +304,7 @@ bool AP_Mission::verify_command(const Mission_Command& cmd)
     case MAV_CMD_DO_PARACHUTE:
     case MAV_CMD_DO_SEND_SCRIPT_MESSAGE:
     case MAV_CMD_DO_SPRAYER:
+    case MAV_CMD_JUMP_TAG:
     case MAV_CMD_DO_AUX_FUNCTION:
     case MAV_CMD_DO_SET_RESUME_REPEAT_DIST:
         return true;
@@ -318,6 +322,10 @@ bool AP_Mission::start_command(const Mission_Command& cmd)
 
     gcs().send_text(MAV_SEVERITY_INFO, "Mission: %u %s", cmd.index, cmd.type());
     switch (cmd.id) {
+    case MAV_CMD_JUMP_TAG:
+        _flags.current_tag_is_valid = true;
+        _current_tag = cmd.content.jump.target;
+        return true;
     case MAV_CMD_DO_AUX_FUNCTION:
         return start_command_do_aux_function(cmd);
     case MAV_CMD_DO_GRIPPER:
@@ -978,8 +986,13 @@ MAV_MISSION_RESULT AP_Mission::mavlink_int_to_mission_cmd(const mavlink_mission_
         break;
 
     case MAV_CMD_DO_JUMP:                               // MAV ID: 177
-        cmd.content.jump.target = packet.param1;        // jump-to command number
+    case MAV_CMD_DO_JUMP_TAG:                           // MAV ID: 601
+        cmd.content.jump.target = packet.param1;        // jump-to command/tag number
         cmd.content.jump.num_times = packet.param2;     // repeat count
+        break;
+
+    case MAV_CMD_JUMP_TAG:                              // MAV ID: 600
+        cmd.content.jump.target = packet.param1;        // jump-to tag number
         break;
 
     case MAV_CMD_DO_CHANGE_SPEED:                       // MAV ID: 178
@@ -1434,8 +1447,13 @@ bool AP_Mission::mission_cmd_to_mavlink_int(const AP_Mission::Mission_Command& c
         break;
 
     case MAV_CMD_DO_JUMP:                               // MAV ID: 177
-        packet.param1 = cmd.content.jump.target;        // jump-to command number
+    case MAV_CMD_DO_JUMP_TAG:                           // MAV ID: 601
+        packet.param1 = cmd.content.jump.target;        // jump-to command/tag number
         packet.param2 = cmd.content.jump.num_times;     // repeat count
+        break;
+
+    case MAV_CMD_JUMP_TAG:                              // MAV ID: 600
+        packet.param1 = cmd.content.jump.target;        // jump-to tag number
         break;
 
     case MAV_CMD_DO_CHANGE_SPEED:                       // MAV ID: 178
@@ -1809,6 +1827,13 @@ bool AP_Mission::get_next_cmd(uint16_t start_index, Mission_Command& cmd, bool i
             return false;
         }
 
+        // check for do-jump-tag command and convert to do-jump
+        if (temp_cmd.id == MAV_CMD_DO_JUMP_TAG) {
+            temp_cmd.id = MAV_CMD_DO_JUMP;
+            temp_cmd.content.jump.target = get_index_of_jump_tag(temp_cmd.content.jump.target);
+            // continue processing below as traditional DO_JUMP
+        }
+
         // check for do-jump command
         if (temp_cmd.id == MAV_CMD_DO_JUMP) {
 
@@ -1895,6 +1920,59 @@ bool AP_Mission::get_next_do_cmd(uint16_t start_index, Mission_Command& cmd)
 /// jump handling methods
 ///
 
+
+bool AP_Mission::jump_to_tag(const uint16_t tag)
+{
+    const uint16_t index = get_index_of_jump_tag(tag);
+    if (index == 0) {
+        //gcs().send_text(MAV_SEVERITY_INFO, "Mission: jump_to_tag FAILED %u", tag);
+        return false;
+    }
+    //gcs().send_text(MAV_SEVERITY_INFO, "Mission: jump_to_tag SUCCESS %u %u", tag, index);
+    return set_current_cmd(index);
+}
+
+// find the first JUMP_TAG with this tag and return its index.
+// Returns 0 if no appropriate JUMP_TAG match can be found.
+uint16_t AP_Mission::get_index_of_jump_tag(const uint16_t tag)
+{
+    for (uint16_t i = 1; i < (unsigned)_cmd_total; i++) {
+        Mission_Command tmp;
+        if (!read_cmd_from_storage(i, tmp)) {
+            continue;
+        }
+        if (tmp.id == MAV_CMD_JUMP_TAG && tmp.content.jump.target == tag) {
+            return i;
+        }
+    }
+    return 0;
+}
+
+// confirm all DO_JUMP_TAG commands point to a matching JUMP_TAG.
+// Returns true there are no tags or if all tags match correctly.
+bool AP_Mission::check_do_jump_tags()
+{
+    for (uint16_t i = 1; i < (unsigned)_cmd_total; i++) {
+        Mission_Command tmp;
+        if (!read_cmd_from_storage(i, tmp)) {
+            continue;
+        }
+        if (tmp.id == MAV_CMD_DO_JUMP_TAG && (get_index_of_jump_tag(tmp.content.jump.target) == 0)) {
+            return false;
+        }
+    }
+    return true;
+}
+
+bool AP_Mission::get_current_tag(uint16_t &tag) const
+{
+    if (!_flags.current_tag_is_valid) {
+        return false;
+    }
+    tag = _current_tag;
+    return true;
+}
+
 // init_jump_tracking - initialise jump_tracking variables
 void AP_Mission::init_jump_tracking()
 {
@@ -1908,7 +1986,7 @@ void AP_Mission::init_jump_tracking()
 int16_t AP_Mission::get_jump_times_run(const Mission_Command& cmd)
 {
     // exit immediately if cmd is not a do-jump command or target is invalid
-    if ((cmd.id != MAV_CMD_DO_JUMP) || (cmd.content.jump.target >= (unsigned)_cmd_total) || (cmd.content.jump.target == 0)) {
+    if ((cmd.id != MAV_CMD_DO_JUMP && cmd.id != MAV_CMD_DO_JUMP_TAG) || (cmd.content.jump.target >= (unsigned)_cmd_total) || (cmd.content.jump.target == 0)) {
         // To-Do: log an error?
         return AP_MISSION_JUMP_TIMES_MAX;
     }
@@ -1934,7 +2012,7 @@ int16_t AP_Mission::get_jump_times_run(const Mission_Command& cmd)
 void AP_Mission::increment_jump_times_run(Mission_Command& cmd, bool send_gcs_msg)
 {
     // exit immediately if cmd is not a do-jump command
-    if (cmd.id != MAV_CMD_DO_JUMP) {
+    if (cmd.id != MAV_CMD_DO_JUMP && cmd.id != MAV_CMD_DO_JUMP_TAG) {
         // To-Do: log an error?
         return;
     }
@@ -2324,7 +2402,12 @@ const char *AP_Mission::Mission_Command::type() const
         return "Winch";
     case MAV_CMD_DO_SEND_SCRIPT_MESSAGE:
         return "Scripting";
-
+    case MAV_CMD_DO_JUMP:
+        return "Jump";
+    case MAV_CMD_DO_JUMP_TAG:
+        return "Jump to Tag";
+    case MAV_CMD_JUMP_TAG:
+        return "Jump Tag";
     default:
 #if CONFIG_HAL_BOARD == HAL_BOARD_SITL
         AP_HAL::panic("Mission command with ID %u has no string", id);

@@ -464,6 +464,8 @@ public:
         return _prev_nav_cmd_wp_index;
     }
 
+    bool get_current_tag(uint16_t &tag) const;
+    
     /// get_next_nav_cmd - gets next "navigation" command found at or after start_index
     ///     returns true if found, false if not found (i.e. reached end of mission command list)
     ///     accounts for do_jump commands
@@ -528,6 +530,18 @@ public:
     {
         return _last_change_time_ms;
     }
+
+    // find the first JUMP_TAG with this tag and set the return its index.
+    // Returns 0 if no appropriate JUMP_TAG match can be found.
+    bool jump_to_tag(const uint16_t tag);
+
+    // find the first JUMP_TAG with this tag and return its index.
+    // Returns 0 if no appropriate JUMP_TAG match can be found.
+    uint16_t get_index_of_jump_tag(const uint16_t tag);
+
+    // confirm all DO_JUMP_TAG commands point to a matching JUMP_TAG.
+    // Returns true there are no tags or if all tags match correctly.
+    bool check_do_jump_tags();
 
     // find the nearest landing sequence starting point (DO_LAND_START) and
     // return its index.  Returns 0 if no appropriate DO_LAND_START point can
@@ -605,6 +619,7 @@ private:
         bool do_cmd_all_done;        // true if all "do"/"conditional" commands have been completed (stops unnecessary searching through eeprom for do commands)
         bool in_landing_sequence;   // true if the mission has jumped to a landing
         bool resuming_mission;      // true if the mission is resuming and set false once the aircraft attains the interrupted WP
+        bool current_tag_is_valid;
     } _flags;
 
     // mission WP resume history
@@ -696,6 +711,7 @@ private:
     uint16_t                _prev_nav_cmd_index;    // index of the previous "navigation" command.  Rarely used which is why we don't store the whole command
     uint16_t                _prev_nav_cmd_wp_index; // index of the previous "navigation" command that contains a waypoint.  Rarely used which is why we don't store the whole command
     struct Location         _exit_position;  // the position in the mission that the mission was exited
+    uint16_t                _current_tag;           // current tag that is running
 
     // jump related variables
     struct jump_tracking_struct {
