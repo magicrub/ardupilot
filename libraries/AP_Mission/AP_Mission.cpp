@@ -224,6 +224,7 @@ bool AP_Mission::clear()
     _nav_cmd.index = AP_MISSION_CMD_INDEX_NONE;
     _do_cmd.index = AP_MISSION_CMD_INDEX_NONE;
     _flags.nav_cmd_loaded = false;
+    _flags.do_cmd_loaded = false;
     _flags.current_tag_is_valid = false;
 
     // return success
