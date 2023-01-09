@@ -33,34 +33,34 @@ local MISSION_TAG_LAND1_START_REVERSED = 301
 local lidar_sample_count = 0
 local lidar_samples_sum = 0
 
---local mission_timestamp_ms = 0
---local mission_type_matches_this_script = false
+local mission_timestamp_ms = 0
+local tag_check_complete_wind_dir = false
 
 
 function reset()
     -- gcs:send_text(MAV_SEVERITY_foo, string.format("LUA: RESET"))
     lidar_sample_count = 0
     lidar_samples_sum = 0
+    tag_check_complete_wind_dir = false
 end
 
 function detect_if_mission_changed()
-
     local current_timestamp = mission:last_change_time_ms()
-    if (mission_timestamp_ms == current_timestamp) then
-        return
+    if (mission_timestamp_ms ~= current_timestamp) then
+        mission_timestamp_ms = current_timestamp
+        reset()
     end
-    mission_timestamp_ms = current_timestamp
-
-    reset()
---    detect_mission_type(false)
---    if (mission_type_matches_this_script) then
---        gcs:send_text(MAV_SEVERITY_foo, string.format("LUA: Detected Mission Change"))
---    end
 end
 
 
 function get_index_of_next_land()
-    for index = mission:get_current_nav_index(), mission:num_commands()-1 do
+    
+    local index_start = mission:get_index_of_jump_tag(MISSION_TAG_LAND1_START)
+    if (not index_start) or (index_start == 0) then
+        index_start = mission:get_current_nav_index()
+    end
+
+    for index = index_start, mission:num_commands()-1 do
         mitem = mission:get_item(index)
         if (mitem) and (mitem:command() == MAV_CMD_NAV_LAND) then
             return index
@@ -74,10 +74,16 @@ function check_wind_and_jump_to_INTO_wind_landing()
     local current_tag = mission:get_current_tag()
     if (not current_tag) or (current_tag ~= MISSION_TAG_DETERMINE_LAND_DIRECTION) then
         -- we're not at the decision point yet
+        tag_check_complete_wind_dir = false
         return
     end
-    mission:invalidate_current_tag()
-
+    if (tag_check_complete_wind_dir) then
+        -- this function should only run once at the tag
+        return
+    end
+    
+    tag_check_complete_wind_dir = true
+    
     local index_land = get_index_of_next_land()
 
     if (index_land <= 1) then
@@ -114,7 +120,7 @@ function check_wind_and_jump_to_INTO_wind_landing()
         gcs:send_text(MAV_SEVERITY_foo, "LUA: continuing with normal landing direction")
         if (not mission:jump_to_tag(MISSION_TAG_LAND1_START)) then
         -- fail quietly, this tag is optional. If not found, behavior is to continue on to next waypoint
-        --  gcs:send_text(MAV_SEVERITY_foo, string.format("LUA: jump_to_tag %u failed", jump_to_tag))
+        -- gcs:send_text(MAV_SEVERITY_foo, string.format("LUA: jump_to_tag %u failed", jump_to_tag))
         end
     end
 end
@@ -182,9 +188,6 @@ end
 function update()
 
     detect_if_mission_changed()
-    if (not mission_type_matches_this_script) then
-        return update, 5000
-    end
 
     if (mission:state() ~= mission.MISSION_RUNNING) or (not arming:is_armed()) or (not vehicle:get_likely_flying()) then
         -- only run landing mission checks if in auto with a valid mission and armed and flying.
@@ -192,37 +195,12 @@ function update()
         return update, 5000
     end
 
-    sample_lidar_to_get_AGL()
+    --sample_lidar_to_get_AGL()
     check_wind_and_jump_to_INTO_wind_landing()
 
     return update, 1000
 end
 
-function detect_mission_type(force_gcs_msg)
-
-    for index = 1, mission:num_commands()-1 do
-        mitem = mission:get_item(index)
-        if not mitem then
-            return
-        end
-
-        if (mitem:command() == MAV_CMD_JUMP_TAG) then
-            if (not mission_type_matches_this_script or force_gcs_msg) then
-                mission_type_matches_this_script = true
-                gcs:send_text(MAV_SEVERITY_foo, string.format("LUA: mission check JUMP_TAG is running"))
-            end
-            return
-        end
-    end
-
-    -- not supported
-    if (mission_type_matches_this_script or force_gcs_msg) then
-        mission_type_matches_this_script = false
-        gcs:send_text(MAV_SEVERITY_foo, string.format("LUA: mission check JUMP_TAG is snoozing"))
-    end
-end
-
 gcs:send_text(MAV_SEVERITY_foo, string.format("LUA: SCRIPT START: mission check JUMP_TAG"))
-detect_mission_type(true)
 return update() -- run immediately before starting to reschedule
 
