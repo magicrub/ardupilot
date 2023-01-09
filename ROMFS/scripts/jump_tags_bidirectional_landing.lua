@@ -1,16 +1,7 @@
 
-
-local MAV_SEVERITY_EMERGENCY=0 -- System is unusable. This is a "panic" condition.
-local MAV_SEVERITY_ALERT=1     -- Action should be taken immediately. Indicates error in non-critical systems.
-local MAV_SEVERITY_CRITICAL=2  -- Action must be taken immediately. Indicates failure in a primary system.
-local MAV_SEVERITY_ERROR=3     -- Indicates an error in secondary/redundant systems.
-local MAV_SEVERITY_WARNING=4   -- Indicates about a possible future error if this is not resolved within a given timeframe. Example would be a low battery warning. 
 local MAV_SEVERITY_NOTICE=5    -- An unusual event has occurred, though not an error condition. This should be investigated for the root cause.
 local MAV_SEVERITY_INFO=6      -- Normal operational messages. Useful for logging. No action is required for these messages.
-local MAV_SEVERITY_DEBUG=7     -- Useful non-operational messages that can assist in debugging. These should not occur during normal operation.
-local MAV_SEVERITY_ENUM_END=8
 
-local MAV_SEVERITY_foo = MAV_SEVERITY_NOTICE
 
 local MAV_CMD_NAV_LAND = 21
 
@@ -24,14 +15,14 @@ local tag_check_complete_wind_dir = false
 local run_once = true
 
 
-function get_index_of_next_land()
+local function get_index_of_next_land()
     local index_start = mission:get_index_of_jump_tag(MISSION_TAG_LAND1_START)
     if (not index_start) or (index_start == 0) then
         index_start = mission:get_current_nav_index()
     end
 
     for index = index_start, mission:num_commands()-1 do
-        mitem = mission:get_item(index)
+        local mitem = mission:get_item(index)
         if (mitem) and (mitem:command() == MAV_CMD_NAV_LAND) then
             return index
         end
@@ -40,7 +31,7 @@ function get_index_of_next_land()
 end
 
 
-function check_wind_and_jump_to_INTO_wind_landing()
+local function check_wind_and_jump_to_INTO_wind_landing()
     local index_land = get_index_of_next_land()
 
     if (index_land <= 1) then
@@ -71,23 +62,23 @@ function check_wind_and_jump_to_INTO_wind_landing()
     local tail_wind_threshold = 0.1
     if (tail_wind > tail_wind_threshold) then
         -- jump mission to other into-wind landing direction
-        gcs:send_text(MAV_SEVERITY_foo, "LUA: jump mission to reverse direction")
+        gcs:send_text(MAV_SEVERITY_INFO, "LUA: jump mission to reverse direction")
         if (not mission:jump_to_tag(MISSION_TAG_LAND1_START_REVERSED)) then
-            gcs:send_text(MAV_SEVERITY_foo, string.format("LUA: jump_to_tag %u failed", jump_to_tag))
+            gcs:send_text(MAV_SEVERITY_NOTICE, string.format("LUA: jump_to_tag %u failed", jump_to_tag))
         end
     else
-        gcs:send_text(MAV_SEVERITY_foo, "LUA: continuing with normal landing direction")
+        gcs:send_text(MAV_SEVERITY_INFO, "LUA: continuing with normal landing direction")
         if (not mission:jump_to_tag(MISSION_TAG_LAND1_START)) then
         -- fail quietly, this tag is optional. If not found, behavior is to continue on with current waypoint
-        -- gcs:send_text(MAV_SEVERITY_foo, string.format("LUA: jump_to_tag %u failed", jump_to_tag))
+        -- gcs:send_text(MAV_SEVERITY_NOTICE, string.format("LUA: jump_to_tag %u failed", jump_to_tag))
         end
     end
 end
 
 
-function update()
+local function update()
     if (run_once) then
-        gcs:send_text(MAV_SEVERITY_foo, "LUA: SCRIPT START: Check Wind for Reverse Landing")
+        gcs:send_text(MAV_SEVERITY_INFO, "LUA: SCRIPT START: Check Wind for Reverse Landing")
         run_once = false
     end
 

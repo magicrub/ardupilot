@@ -1,16 +1,7 @@
 
 
-local MAV_SEVERITY_EMERGENCY=0 -- System is unusable. This is a "panic" condition.
-local MAV_SEVERITY_ALERT=1     -- Action should be taken immediately. Indicates error in non-critical systems.
-local MAV_SEVERITY_CRITICAL=2  -- Action must be taken immediately. Indicates failure in a primary system.
-local MAV_SEVERITY_ERROR=3     -- Indicates an error in secondary/redundant systems.
-local MAV_SEVERITY_WARNING=4   -- Indicates about a possible future error if this is not resolved within a given timeframe. Example would be a low battery warning. 
 local MAV_SEVERITY_NOTICE=5    -- An unusual event has occurred, though not an error condition. This should be investigated for the root cause.
 local MAV_SEVERITY_INFO=6      -- Normal operational messages. Useful for logging. No action is required for these messages.
-local MAV_SEVERITY_DEBUG=7     -- Useful non-operational messages that can assist in debugging. These should not occur during normal operation.
-local MAV_SEVERITY_ENUM_END=8
-
-local MAV_SEVERITY_foo = MAV_SEVERITY_NOTICE
 
 local ROTATION_PITCH_270 = 25
 
@@ -38,37 +29,37 @@ function sample_rangefinder_to_get_AGL()
     if (agl_samples_count <= 0) then
         agl_samples_count = 0 -- divide-by-zero sanity check in case it somehow wrapped or initialized wrong
         agl_samples_sum = 0
-        gcs:send_text(MAV_SEVERITY_foo, string.format("LUA: AGL measurements started"))
+        gcs:send_text(MAV_SEVERITY_INFO, string.format("LUA: AGL measurements started"))
     end
 
     agl_samples_sum = agl_samples_sum + agl_corrected_for_attitude_m
     agl_samples_count = agl_samples_count + 1
 
     local agl_average = agl_samples_sum / agl_samples_count
-    gcs:send_text(MAV_SEVERITY_foo, string.format("LUA: AGL measurement %u: %.2fm, avg: %.2f", agl_samples_count, agl_corrected_for_attitude_m, agl_average))
+    gcs:send_text(MAV_SEVERITY_INFO, string.format("LUA: AGL measurement %u: %.2fm, avg: %.2f", agl_samples_count, agl_corrected_for_attitude_m, agl_average))
 end
 
 
 function update_baro(new_agl_m)
     local ekf_agl_m = ahrs:get_hagl()
     if (not ekf_agl_m) then
-        gcs:send_text(MAV_SEVERITY_foo, string.format("LUA: unable to get current AGL so we can not correct baro"))
+        gcs:send_text(MAV_SEVERITY_NOTICE, string.format("LUA: unable to get current AGL so we can not correct baro"))
         return
     end
 
     local alt_error_m = ekf_agl_m - new_agl_m
-    gcs:send_text(MAV_SEVERITY_foo, string.format("LUA: AGL alt_error is: %.2f - %.2f = %.2f", ekf_agl_m, new_agl_m, alt_error_m))
+    gcs:send_text(MAV_SEVERITY_INFO, string.format("LUA: AGL alt_error is: %.2f - %.2f = %.2f", ekf_agl_m, new_agl_m, alt_error_m))
 
     local baro_alt_offset = param:get('BARO_ALT_OFFSET')
     local baro_alt_offset_new_value = baro_alt_offset + alt_error_m
-    gcs:send_text(MAV_SEVERITY_foo, string.format("LUA: BARO_ALT_OFFSET changed from %.2f to %.2f", baro_alt_offset, baro_alt_offset_new_value))
+    gcs:send_text(MAV_SEVERITY_INFO, string.format("LUA: BARO_ALT_OFFSET changed from %.2f to %.2f", baro_alt_offset, baro_alt_offset_new_value))
     param:set('BARO_ALT_OFFSET', baro_alt_offset_new_value)
 end
 
 
 function update()
     if (run_once) then
-        gcs:send_text(MAV_SEVERITY_foo, "LUA: SCRIPT START: Check AGL Adjust Baro")
+        gcs:send_text(MAV_SEVERITY_INFO, "LUA: SCRIPT START: Check AGL Adjust Baro")
         run_once = false
     end
 
@@ -84,7 +75,7 @@ function update()
         -- we're not at the decision point but  we've recently been sampling so we must be done!
         local agl_average_final_m = agl_samples_sum / agl_samples_count
         -- finished sampling, use the result to offset baro
-        gcs:send_text(MAV_SEVERITY_foo, string.format("LUA: AGL measurements stopped: samples = %d, avg = %.2fm", agl_samples_count, agl_average_final_m))
+        gcs:send_text(MAV_SEVERITY_INFO, string.format("LUA: AGL measurements stopped: samples = %d, avg = %.2fm", agl_samples_count, agl_average_final_m))
         update_baro(agl_average_final_m)
         agl_samples_count = 0
         agl_samples_sum = 0
