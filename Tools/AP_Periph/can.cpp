@@ -375,7 +375,7 @@ static void handle_param_executeopcode(CanardInstance* ins, CanardRxTransfer* tr
         AP_Param::erase_all();
         AP_Param::load_all();
         AP_Param::setup_sketch_defaults();
-#ifdef HAL_PERIPH_ENABLE_GPS
+#if defined(HAL_PERIPH_ENABLE_GPS) || defined(HAL_PERIPH_ENABLE_GPS_IN)
         AP_Param::setup_object_defaults(&periph.gps, periph.gps.var_info);
 #endif
 #ifdef HAL_PERIPH_ENABLE_BATTERY
@@ -651,12 +651,74 @@ static void handle_MovingBaselineData(CanardInstance* ins, CanardRxTransfer* tra
 
 #endif // HAL_PERIPH_ENABLE_GPS
 
+#ifdef HAL_PERIPH_ENABLE_GPS_IN
+static void handle_gps_fix(CanardInstance* ins, CanardRxTransfer* transfer)
+{
+    if (canardGetLocalNodeID(ins) == transfer->source_node_id || periph.gps.get_type(0) != AP_GPS::GPS_Type::GPS_TYPE_UAVCAN) {
+        // ignore yourself and don't bother parsing if we're not looking at the data
+        return;
+    }
+    uavcan_equipment_gnss_Fix msg;
+    if (uavcan_equipment_gnss_Fix_decode(transfer, &msg)) {
+        return;
+    }
+    periph.gps_in.uavcan_handle_fix(msg);
+}
+static void handle_gps_fix2(CanardInstance* ins, CanardRxTransfer* transfer)
+{
+    if (canardGetLocalNodeID(ins) == transfer->source_node_id || periph.gps.get_type(0) != AP_GPS::GPS_Type::GPS_TYPE_UAVCAN) {
+        // ignore yourself and don't bother parsing if we're not looking at the data
+        return;
+    }
+    uavcan_equipment_gnss_Fix2 msg;
+    if (uavcan_equipment_gnss_Fix2_decode(transfer, &msg)) {
+        return;
+    }
+    periph.gps_in.uavcan_handle_fix2(msg);
+}
+static void handle_gps_aux(CanardInstance* ins, CanardRxTransfer* transfer)
+{
+    if (canardGetLocalNodeID(ins) == transfer->source_node_id || periph.gps.get_type(0) != AP_GPS::GPS_Type::GPS_TYPE_UAVCAN) {
+        // ignore yourself and don't bother parsing if we're not looking at the data
+        return;
+    }
+    uavcan_equipment_gnss_Auxiliary msg;
+    if (uavcan_equipment_gnss_Auxiliary_decode(transfer, &msg)) {
+        return;
+    }
+    periph.gps_in.uavcan_handle_aux(msg);
+}
+static void handle_gps_heading(CanardInstance* ins, CanardRxTransfer* transfer)
+{
+    if (canardGetLocalNodeID(ins) == transfer->source_node_id || periph.gps.get_type(0) != AP_GPS::GPS_Type::GPS_TYPE_UAVCAN) {
+        // ignore yourself and don't bother parsing if we're not looking at the data
+        return;
+    }
+    ardupilot_gnss_Heading msg;
+    if (ardupilot_gnss_Heading_decode(transfer, &msg)) {
+        return;
+    }
+    periph.gps_in.uavcan_handle_heading(msg);
+}
+static void handle_gps_status(CanardInstance* ins, CanardRxTransfer* transfer)
+{
+    if (canardGetLocalNodeID(ins) == transfer->source_node_id || periph.gps.get_type(0) != AP_GPS::GPS_Type::GPS_TYPE_UAVCAN) {
+        // ignore yourself and don't bother parsing if we're not looking at the data
+        return;
+    }
+    ardupilot_gnss_Status msg;
+    if (ardupilot_gnss_Status_decode(transfer, &msg)) {
+        return;
+    }
+    periph.gps_in.uavcan_handle_status(msg);
+}
+#endif // HAL_PERIPH_ENABLE_GPS_IN
 
 #ifdef HAL_PERIPH_ENABLE_ADSB_OUT
 static void handle_adsb_out_config(CanardInstance* ins, CanardRxTransfer* transfer)
 {
     ardupilot_equipment_trafficmonitor_ADSBOutConfig pkt;
-    if (ardupilot_equipment_trafficmonitor_ADSBOutConfig_decode(transfer, transfer->payload_len, &pkt, nullptr) < 0) {
+    if (ardupilot_equipment_trafficmonitor_ADSBOutConfig_decode(transfer, &pkt)) {
         return;
     }
 
@@ -676,7 +738,7 @@ static void handle_adsb_out_config(CanardInstance* ins, CanardRxTransfer* transf
 static void handle_adsb_out_control(CanardInstance* ins, CanardRxTransfer* transfer)
 {
     ardupilot_equipment_trafficmonitor_ADSBOutControl pkt;
-    if (ardupilot_equipment_trafficmonitor_ADSBOutControl_decode(transfer, transfer->payload_len, &pkt, nullptr) < 0) {
+    if (ardupilot_equipment_trafficmonitor_ADSBOutControl_decode(transfer, &pkt)) {
         return;
     }
 
@@ -1028,6 +1090,24 @@ static void onTransferReceived(CanardInstance* ins,
         break;
 #endif
 #endif
+
+#ifdef HAL_PERIPH_ENABLE_GPS_IN
+    case UAVCAN_EQUIPMENT_GNSS_FIX_ID:
+        handle_gps_fix(ins, transfer);
+        break;
+    case UAVCAN_EQUIPMENT_GNSS_FIX2_ID:
+        handle_gps_fix2(ins, transfer);
+        break;
+    case UAVCAN_EQUIPMENT_GNSS_AUXILIARY_ID:
+        handle_gps_aux(ins, transfer);
+        break;
+    case ARDUPILOT_GNSS_HEADING_ID:
+        handle_gps_heading(ins, transfer);
+        break;
+    case ARDUPILOT_GNSS_STATUS_ID:
+        handle_gps_status(ins, transfer);
+        break;
+#endif
         
 #if defined(AP_PERIPH_HAVE_LED_WITHOUT_NOTIFY) || defined(HAL_PERIPH_ENABLE_NOTIFY)
     case UAVCAN_EQUIPMENT_INDICATION_LIGHTSCOMMAND_ID:
@@ -1136,6 +1216,23 @@ static bool shouldAcceptTransfer(const CanardInstance* ins,
         *out_data_type_signature = ARDUPILOT_GNSS_MOVINGBASELINEDATA_SIGNATURE;
         return true;
 #endif
+#endif
+#ifdef HAL_PERIPH_ENABLE_GPS_IN
+    case UAVCAN_EQUIPMENT_GNSS_FIX_ID:
+        *out_data_type_signature = UAVCAN_EQUIPMENT_GNSS_FIX_SIGNATURE;
+        return true;
+    case UAVCAN_EQUIPMENT_GNSS_FIX2_ID:
+        *out_data_type_signature = UAVCAN_EQUIPMENT_GNSS_FIX2_SIGNATURE;
+        return true;
+    case UAVCAN_EQUIPMENT_GNSS_AUXILIARY_ID:
+        *out_data_type_signature = UAVCAN_EQUIPMENT_GNSS_AUXILIARY_SIGNATURE;
+        return true;
+    case ARDUPILOT_GNSS_HEADING_ID:
+        *out_data_type_signature = ARDUPILOT_GNSS_HEADING_SIGNATURE;
+        return true;
+    case ARDUPILOT_GNSS_STATUS_ID:
+        *out_data_type_signature = ARDUPILOT_GNSS_STATUS_SIGNATURE;
+        return true;
 #endif
 #ifdef HAL_PERIPH_ENABLE_RC_OUT
     case UAVCAN_EQUIPMENT_ESC_RAWCOMMAND_ID:
@@ -1956,17 +2053,23 @@ static void check_float16_range(float *v, uint8_t len)
  */
 void AP_Periph_FW::can_gps_update(void)
 {
-#ifdef HAL_PERIPH_ENABLE_GPS
-    if (gps.get_type(0) == AP_GPS::GPS_Type::GPS_TYPE_NONE) {
-        return;
-    }
+#if defined(HAL_PERIPH_ENABLE_GPS) || defined(HAL_PERIPH_ENABLE_GPS_IN)
     gps.update();
+    if (gps.get_type(0) == AP_GPS::GPS_Type::GPS_TYPE_NONE) {
+        // Disabled, nothing-ish to do and we defintely don't want to broadcast anything. However, we still need to
+        // run gps.update() so a change to GPS_TYPE = 0 at runtime will correctly flush out the stale state data
+        // and any other on-board modules relying on gps.get_status() won't keep using stale data
+        return;
+    }    
+#endif
+
+#ifdef HAL_PERIPH_ENABLE_GPS
     send_moving_baseline_msg();
     send_relposheading_msg();
-    if (last_gps_update_ms == gps.last_message_time_ms()) {
+    if (gps_last_update_ms == gps.last_message_time_ms()) {
         return;
     }
-    last_gps_update_ms = gps.last_message_time_ms();
+    gps_last_update_ms = gps.last_message_time_ms();
 
     {
         /*

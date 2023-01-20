@@ -132,9 +132,13 @@ void AP_Periph_FW::init()
     node_stats.init();
 #endif
 
+#if defined(HAL_PERIPH_ENABLE_GPS) || defined(HAL_PERIPH_ENABLE_GPS_IN)
+    if (gps.get_type(0) != AP_GPS::GPS_Type::GPS_TYPE_NONE) {
 #ifdef HAL_PERIPH_ENABLE_GPS
-    if (gps.get_type(0) != AP_GPS::GPS_Type::GPS_TYPE_NONE && g.gps_port >= 0) {
-        serial_manager.set_protocol_and_baud(g.gps_port, AP_SerialManager::SerialProtocol_GPS, AP_SERIALMANAGER_GPS_BAUD);
+         if (g.gps_port >= 0) {
+            serial_manager.set_protocol_and_baud(g.gps_port, AP_SerialManager::SerialProtocol_GPS, AP_SERIALMANAGER_GPS_BAUD);
+        }
+#endif
 #if HAL_LOGGING_ENABLED
         #define MASK_LOG_GPS (1<<2)
         gps.set_log_gps_bit(MASK_LOG_GPS);
@@ -358,6 +362,15 @@ void AP_Periph_FW::update()
             palToggleLine(HAL_GPIO_PIN_LED);
         }
 #endif
+
+#ifdef HAL_PERIPH_ENABLE_GPS_IN
+    const AP_GPS::GPS_Status gps_status = gps.status();
+    if (gps_in.status != gps_status) {
+        can_printf("GPS status: %u\n", (unsigned)gps_status);
+        gps_in.status = gps_status;
+    }
+#endif
+
 #if 0
 #ifdef HAL_PERIPH_ENABLE_GPS
         hal.serial(0)->printf("GPS status: %u\n", (unsigned)gps.status());

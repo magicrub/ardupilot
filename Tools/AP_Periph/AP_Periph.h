@@ -19,6 +19,7 @@
 #include <AP_ADSB/AP_ADSB.h>
 #include "../AP_Bootloader/app_comms.h"
 #include <AP_CheckFirmware/AP_CheckFirmware.h>
+#include "gps_in.h"
 #include "hwing_esc.h"
 #include <AP_CANManager/AP_CANManager.h>
 #include <AP_Scripting/AP_Scripting.h>
@@ -122,11 +123,17 @@ public:
     AP_Stats node_stats;
 #endif
 
-#ifdef HAL_PERIPH_ENABLE_GPS
+#if defined(HAL_PERIPH_ENABLE_GPS) || defined(HAL_PERIPH_ENABLE_GPS_IN)
     AP_GPS gps;
-#if HAL_NUM_CAN_IFACES >= 2
-    int8_t gps_mb_can_port = -1;
-#endif
+    #ifdef HAL_PERIPH_ENABLE_GPS
+        #if HAL_NUM_CAN_IFACES >= 2
+        int8_t gps_mb_can_port = -1;
+        #endif
+        uint32_t gps_last_update_ms;
+    #endif
+    #ifdef HAL_PERIPH_ENABLE_GPS_IN
+    Periph_GPS_In gps_in;
+    #endif
 #endif
 
 #ifdef HAL_PERIPH_ENABLE_MAG
