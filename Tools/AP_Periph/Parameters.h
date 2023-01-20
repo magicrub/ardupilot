@@ -69,6 +69,7 @@ public:
         k_param_proximity_baud,
         k_param_proximity_port,
         k_param_proximity_max_rate,
+        k_param_adsb_lib,
     };
 
     AP_Int16 format_version;

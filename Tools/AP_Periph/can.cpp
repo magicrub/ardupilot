@@ -652,6 +652,46 @@ static void handle_MovingBaselineData(CanardInstance* ins, CanardRxTransfer* tra
 #endif // HAL_PERIPH_ENABLE_GPS
 
 
+#ifdef HAL_PERIPH_ENABLE_ADSB_OUT
+static void handle_adsb_out_config(CanardInstance* ins, CanardRxTransfer* transfer)
+{
+    ardupilot_equipment_trafficmonitor_ADSBOutConfig pkt;
+    if (ardupilot_equipment_trafficmonitor_ADSBOutConfig_decode(transfer, transfer->payload_len, &pkt, nullptr) < 0) {
+        return;
+    }
+
+    mavlink_uavionix_adsb_out_cfg_t msg {};
+    msg.ICAO = pkt.ICAO;
+    memcpy(msg.callsign, pkt.callsign, sizeof(msg.callsign));
+    msg.emitterType = pkt.emitterType;
+    msg.aircraftSize = pkt.aircraftSize;
+    msg.gpsOffsetLat = pkt.gpsOffsetLat;
+    msg.gpsOffsetLon = pkt.gpsOffsetLon;
+    msg.stallSpeed = pkt.stallSpeed;
+    msg.rfSelect = pkt.rfSelect;
+
+    periph.adsb_lib.handle_out_cfg(msg);
+}
+
+static void handle_adsb_out_control(CanardInstance* ins, CanardRxTransfer* transfer)
+{
+    ardupilot_equipment_trafficmonitor_ADSBOutControl pkt;
+    if (ardupilot_equipment_trafficmonitor_ADSBOutControl_decode(transfer, transfer->payload_len, &pkt, nullptr) < 0) {
+        return;
+    }
+
+    mavlink_uavionix_adsb_out_control_t msg {};
+    msg.state = pkt.state;
+    msg.baroAltMSL = pkt.baroAltMSL;
+    msg.squawk = pkt.squawk;
+    msg.emergencyStatus = pkt.emergencyStatus;
+    memcpy(msg.flight_id, pkt.flight_id, sizeof(msg.flight_id));
+    msg.x_bit = pkt.x_bit;
+
+    periph.adsb_lib.handle_out_control(msg);
+}
+#endif
+
 #if defined(AP_PERIPH_HAVE_LED_WITHOUT_NOTIFY) || defined(HAL_PERIPH_ENABLE_NOTIFY)
 static void set_rgb_led(uint8_t red, uint8_t green, uint8_t blue)
 {
@@ -1005,6 +1045,15 @@ static void onTransferReceived(CanardInstance* ins,
         break;
 #endif
 
+#ifdef HAL_PERIPH_ENABLE_ADSB_OUT
+    case ARDUPILOT_EQUIPMENT_TRAFFICMONITOR_ADSBOUTCONFIG_ID:
+        handle_adsb_out_config(ins, transfer);
+        break;
+    case ARDUPILOT_EQUIPMENT_TRAFFICMONITOR_ADSBOUTCONTROL_ID:
+        handle_adsb_out_control(ins, transfer);
+        break;
+#endif
+
 #ifdef HAL_PERIPH_ENABLE_NOTIFY
     case ARDUPILOT_INDICATION_NOTIFYSTATE_ID:
         handle_notify_state(ins, transfer);
@@ -1097,6 +1146,15 @@ static bool shouldAcceptTransfer(const CanardInstance* ins,
         *out_data_type_signature = UAVCAN_EQUIPMENT_ACTUATOR_ARRAYCOMMAND_SIGNATURE;
         return true;
 #endif
+#ifdef HAL_PERIPH_ENABLE_ADSB_OUT
+    case ARDUPILOT_EQUIPMENT_TRAFFICMONITOR_ADSBOUTCONFIG_ID:
+        *out_data_type_signature = ARDUPILOT_EQUIPMENT_TRAFFICMONITOR_ADSBOUTCONFIG_SIGNATURE;
+        return true;
+    case ARDUPILOT_EQUIPMENT_TRAFFICMONITOR_ADSBOUTCONTROL_ID:
+        *out_data_type_signature = ARDUPILOT_EQUIPMENT_TRAFFICMONITOR_ADSBOUTCONTROL_SIGNATURE;
+        return true;
+#endif
+
 #if defined(HAL_PERIPH_ENABLE_NOTIFY)
     case ARDUPILOT_INDICATION_NOTIFYSTATE_ID:
         *out_data_type_signature = ARDUPILOT_INDICATION_NOTIFYSTATE_SIGNATURE;
@@ -2351,7 +2409,6 @@ void AP_Periph_FW::can_rangefinder_update(void)
                     total_size);
 #endif // HAL_PERIPH_ENABLE_RANGEFINDER
 }
-
 
 void AP_Periph_FW::can_proximity_update()
 {
