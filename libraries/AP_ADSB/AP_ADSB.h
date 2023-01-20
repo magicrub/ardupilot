@@ -24,7 +24,7 @@
 #include <AP_HAL/AP_HAL_Boards.h>
 
 #ifndef HAL_ADSB_ENABLED
-#define HAL_ADSB_ENABLED !HAL_MINIMIZE_FEATURES && BOARD_FLASH_SIZE > 1024
+#define HAL_ADSB_ENABLED (!defined(HAL_BUILD_AP_PERIPH) && !HAL_MINIMIZE_FEATURES && BOARD_FLASH_SIZE > 1024) || (defined(HAL_BUILD_AP_PERIPH) && defined(HAL_PERIPH_ENABLE_ADSB_OUT))
 #endif
 
 #if HAL_ADSB_ENABLED
@@ -143,6 +143,15 @@ public:
     // mavlink message handler
     void handle_message(const mavlink_channel_t chan, const mavlink_message_t &msg);
 
+    // configure ADSB-out transceivers
+    void handle_out_cfg(const mavlink_uavionix_adsb_out_cfg_t &packet);
+
+    // control ADSB-out transcievers
+    void handle_out_control(const mavlink_uavionix_adsb_out_control_t &packet);
+
+    // mavlink handler
+    void handle_transceiver_report(const mavlink_channel_t chan, const mavlink_uavionix_adsb_transceiver_health_report_t &packet);
+
     void send_adsb_out_status(const mavlink_channel_t chan) const;
 
     // when true, a vehicle with that ICAO was found in database and the vehicle is populated.
@@ -197,15 +206,6 @@ private:
 
     // set callsign: 8char string (plus null termination) then optionally append last 4 digits of icao
     void set_callsign(const char* str, const bool append_icao);
-
-    // configure ADSB-out transceivers
-    void handle_out_cfg(const mavlink_uavionix_adsb_out_cfg_t &packet);
-
-    // control ADSB-out transcievers
-    void handle_out_control(const mavlink_uavionix_adsb_out_control_t &packet);
-
-    // mavlink handler
-    void handle_transceiver_report(const mavlink_channel_t chan, const mavlink_uavionix_adsb_transceiver_health_report_t &packet);
 
     void detect_instance(uint8_t instance);
 
