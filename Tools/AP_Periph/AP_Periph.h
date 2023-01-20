@@ -17,6 +17,7 @@
 #include <AP_MSP/AP_MSP.h>
 #include <AP_MSP/msp.h>
 #include <AP_TemperatureSensor/AP_TemperatureSensor.h>
+#include <AP_ADSB/AP_ADSB.h>
 #include "../AP_Bootloader/app_comms.h"
 #include <AP_CheckFirmware/AP_CheckFirmware.h>
 #include "hwing_esc.h"
@@ -198,6 +199,9 @@ public:
         mavlink_message_t msg;
         mavlink_status_t status;
     } adsb;
+#endif
+#ifdef HAL_PERIPH_ENABLE_ADSB_OUT
+    AP_ADSB adsb_lib;
 #endif
 
 #ifdef HAL_PERIPH_ENABLE_AIRSPEED
