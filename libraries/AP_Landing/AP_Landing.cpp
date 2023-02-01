@@ -138,6 +138,22 @@ const AP_Param::GroupInfo AP_Landing::var_info[] = {
     // @User: Advanced
     AP_GROUPINFO("FLAP_PERCNT", 13, AP_Landing, flap_percent, 0),
 
+    // @Param: OPTIONS
+    // @DisplayName: Landing options bitmask
+    // @Description: Bitmask of options to use with landing.
+    // @Bitmask: 0: honor min throttle during landing flare,1: Increase Target landing airspeed constraint From Trim Airspeed to ARSPD_FBW_MAX
+    // @User: Advanced
+    AP_GROUPINFO("OPTIONS", 16, AP_Landing, _options, 0),
+
+    // @Param: WIND_COMP
+    // @DisplayName: Headwind Compensation when Landing
+    // @Description: This param controls how much headwind compensation is used when landing.  Headwind speed component multiplied by this parameter is added to TECS_LAND_ARSPD command.  Set to Zero to disable.  Note:  The target landing airspeed command is still limited to ARSPD_FBW_MAX.
+    // @Range: 0 100
+    // @Units: %
+    // @Increment: 1
+    // @User: Advanced
+    AP_GROUPINFO("WIND_COMP", 18, AP_Landing, wind_comp, 50),
+
     // @Param: TYPE
     // @DisplayName: Auto-landing type
     // @Description: Specifies the auto-landing type to use
@@ -628,6 +644,12 @@ bool AP_Landing::is_throttle_suppressed(void) const
 bool AP_Landing::use_thr_min_during_flare(void) const
 {
     return (OptionsMask::ON_LANDING_FLARE_USE_THR_MIN & _options) != 0;
+}
+
+//defaults to false, but _options bit zero enables it.
+bool AP_Landing::allow_max_airspeed_on_land(void) const
+{
+    return (OptionsMask::ON_LANDING_USE_ARSPD_MAX & _options) != 0;
 }
 
 /*
