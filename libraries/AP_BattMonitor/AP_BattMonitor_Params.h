@@ -1,6 +1,7 @@
 #pragma once
 
 #include <AP_Param/AP_Param.h>
+#include "AP_BattMonitor_config.h"
 
 class AP_BattMonitor_Params {
 public:
@@ -49,4 +50,36 @@ public:
     AP_Int8  _failsafe_voltage_source;  /// voltage type used for detection of low voltage event
     AP_Int8  _failsafe_low_action;      /// action to preform on a low battery failsafe
     AP_Int8  _failsafe_critical_action; /// action to preform on a critical battery failsafe
+
+#if BATTERY_EKF_ENABLED
+    // TODO: move all these to a new EKFBattery object so it has it's own memory space
+
+    AP_Int8  _cell_count;               /// count of cells, like "4S" or "6S"
+    struct {
+        AP_Float SOH_init;
+
+        // TODO: change to AP_Vector3f
+        AP_Float R0_init;
+        AP_Float R1_init;
+        AP_Float R2_init;
+        AP_Float RC1;
+        AP_Float RC2;
+        AP_Float I_sigma;
+        AP_Float I_scale_sigma;
+        AP_Float SOH_sigma;
+        // TODO: change to AP_Vector3f
+        AP_Float R0_sigma;
+        AP_Float R1_sigma;
+        AP_Float R2_sigma;
+        AP_Float I_step_sigma;
+        AP_Float V_sigma;
+        AP_Float Q;
+        AP_Float SOH_pnoise;
+        // TODO: change to AP_Vector3f
+        AP_Float R0_pnoise;
+        AP_Float R1_pnoise;
+        AP_Float R2_pnoise;
+    } _ekf;
+#endif
+
 };
