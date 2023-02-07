@@ -13,11 +13,11 @@
 using namespace Eigen;
 
 float BatteryEKF::get_remaining_energy_J(float temp_C) {
-    return _params.Q*x(STATE_IDX_SOH)*_model.OCV_from_SOC_integral(x(STATE_IDX_SOC), temp_C);
+    return _params.Q*_model.OCV_from_SOC_integral(x(STATE_IDX_SOC), temp_C)/x(STATE_IDX_SOH_INV);
 }
 
 float BatteryEKF::get_remaining_energy_J_sigma(float temp_C) {
-    return sqrt(_params.Q*x(STATE_IDX_SOH)*(P(0,0)*_params.Q*x(STATE_IDX_SOH)*_model.OCV_from_SOC(x(STATE_IDX_SOC), temp_C) + P(0,1)*_params.Q*_model.OCV_from_SOC_integral(x(STATE_IDX_SOC), temp_C))*_model.OCV_from_SOC(x(STATE_IDX_SOC), temp_C) + _params.Q*(P(0,1)*_params.Q*x(STATE_IDX_SOH)*_model.OCV_from_SOC(x(STATE_IDX_SOC), temp_C) + P(1,1)*_params.Q*_model.OCV_from_SOC_integral(x(STATE_IDX_SOC), temp_C))*_model.OCV_from_SOC_integral(x(STATE_IDX_SOC), temp_C));
+    return sqrt((P(0,0)*pow(x(STATE_IDX_SOH_INV), 2)*pow(_model.OCV_from_SOC(x(STATE_IDX_SOC), temp_C), 2) - 2*P(0,1)*x(STATE_IDX_SOH_INV)*_model.OCV_from_SOC(x(STATE_IDX_SOC), temp_C)*_model.OCV_from_SOC_integral(x(STATE_IDX_SOC), temp_C) + P(1,1)*pow(_model.OCV_from_SOC_integral(x(STATE_IDX_SOC), temp_C), 2))/pow(x(STATE_IDX_SOH_INV), 4))*fabs(_params.Q);
 }
 
 
@@ -39,7 +39,6 @@ void BatteryEKF::predict(float dt, float I) {
 
     #include "ekf_generated/predict.cpp"
 
-    P_n(STATE_IDX_SOH,STATE_IDX_SOH) += SQ(dt*_params.SOH_pnoise);
     P_n(STATE_IDX_R0,STATE_IDX_R0) += SQ(dt*_params.R0_pnoise);
     P_n(STATE_IDX_R1,STATE_IDX_R1) += SQ(dt*_params.R1_pnoise);
     P_n(STATE_IDX_R2,STATE_IDX_R2) += SQ(dt*_params.R2_pnoise);

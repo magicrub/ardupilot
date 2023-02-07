@@ -16,7 +16,7 @@ _model.SOC_from_OCV_diff(subx0, temp_C);
         initial_state(0) = // Not supported in C:
 // _model.SOC_from_OCV
 _model.SOC_from_OCV(subx0, temp_C);
-        initial_state(1) = _params.SOH_init;
+        initial_state(1) = 1/(_params.SOH_init);
         initial_state(2) = I*_params.R1_init;
         initial_state(3) = I*_params.R2_init;
         initial_state(4) = _params.R0_init;
@@ -29,7 +29,7 @@ _model.SOC_from_OCV(subx0, temp_C);
         initial_state_cov(0,4) = I*((_params.R0_sigma)*(_params.R0_sigma))*subx1;
         initial_state_cov(0,5) = I*subx1*subx4;
         initial_state_cov(0,6) = I*subx1*subx5;
-        initial_state_cov(1,1) = ((_params.SOH_sigma)*(_params.SOH_sigma));
+        initial_state_cov(1,1) = ((_params.SOH_sigma)*(_params.SOH_sigma))/((_params.SOH_init)*(_params.SOH_init)*(_params.SOH_init)*(_params.SOH_init));
         initial_state_cov(2,0) = subx9;
         initial_state_cov(2,2) = ((_params.R1_init)*(_params.R1_init))*subx6 + ((_params.R1_init)*(_params.R1_init))*subx8 + subx3*subx4;
         initial_state_cov(2,3) = _params.R1_init*_params.R2_init*subx6 + _params.R1_init*_params.R2_init*subx8;

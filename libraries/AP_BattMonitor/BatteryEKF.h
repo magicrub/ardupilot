@@ -1,5 +1,11 @@
 #pragma once
 
+#define EIGEN_NO_MALLOC
+#define EIGEN_RUNTIME_NO_MALLOC
+#define EIGEN_UNROLLING_LIMIT 0
+#define EIGEN_NO_DEBUG
+#define EIGEN_MALLOC_ALREADY_ALIGNED true
+
 #ifdef _AP_CONFIG_H_
     #include "AP_BattMonitor_config.h"
 #else
@@ -8,15 +14,6 @@
 
 #if BATTERY_EKF_ENABLED
 
-#include "BatteryChemistryModel.h"
-
-#define EIGEN_NO_MALLOC
-#define EIGEN_RUNTIME_NO_MALLOC
-#define EIGEN_UNROLLING_LIMIT 0
-#define EIGEN_NO_DEBUG
-#define EIGEN_MALLOC_ALREADY_ALIGNED true
-
-#include <stdint.h>
 #include <stdio.h>
 
 #ifdef _AP_CONFIG_H_
@@ -33,16 +30,22 @@
     #pragma GCC diagnostic pop
 
 #else
+    #pragma GCC diagnostic push
+    #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
     #include <Eigen/Dense>
+    #pragma GCC diagnostic pop
 #endif
 
+#include "BatteryChemistryModel.h"
+
+#include <stdint.h>
 
 #define SQ(x) ((x)*(x))
 #define SECONDS_PER_HOUR 3600
 
 // STATES
 #define STATE_IDX_SOC 0
-#define STATE_IDX_SOH 1
+#define STATE_IDX_SOH_INV 1
 #define STATE_IDX_V1 2
 #define STATE_IDX_V2 3
 #define STATE_IDX_R0 4
@@ -64,7 +67,6 @@ public:
         float RC1;
         float RC2;
         float I_sigma;
-        float I_scale_sigma;
         float SOH_sigma;
         float R0_sigma;
         float R1_sigma;
@@ -72,13 +74,12 @@ public:
         float I_step_sigma;
         float V_sigma;
         float Q;
-        float SOH_pnoise;
         float R0_pnoise;
         float R1_pnoise;
         float R2_pnoise;
     } Params;
 
-    BatteryEKF(Params params, BatteryChemistryModel& model) :
+    BatteryEKF(Params& params, BatteryChemistryModel& model) :
     _params(params), _model(model)
     {}
 
@@ -121,7 +122,7 @@ private:
 
     bool _is_initialized;
 
-    Params _params;
+    Params& _params;
     BatteryChemistryModel& _model;
 
     // EKF state
