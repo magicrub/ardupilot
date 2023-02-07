@@ -1,0 +1,19 @@
+{
+"SOH_init":     0.85,
+"R0_init":      0,
+"R1_init":      0,
+"R2_init":      0,
+"RC1":          39,
+"RC2":          3.6,
+"I_sigma":      0.07,
+"SOH_sigma":    0.12,
+"R0_sigma":     2,
+"R1_sigma":     0.4,
+"R2_sigma":     0.4,
+"I_step_sigma": 3.35,
+"V_sigma":      0.02,
+"Q":            12060,
+"R0_pnoise":    4e-03,
+"R1_pnoise":    2e-04,
+"R2_pnoise":    2e-04
+}
