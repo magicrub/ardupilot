@@ -83,9 +83,6 @@ public:
     _params(params), _model(model)
     {}
 
-    void set_params(Params params) {
-        _params = params;
-    }
     void set_chemistry_model(BatteryChemistryModel& model) {
         _model = model;
     }
@@ -95,11 +92,11 @@ public:
     void predict(float dt, float I);
     bool update(float V, float I, float temp_C, float& y, float& NIS);
 
-    const MatrixSx1& get_state() {
+    const MatrixSx1& get_state() const {
         return x;
     }
 
-    const MatrixSxS& get_covariance() {
+    const MatrixSxS& get_covariance() const {
         return P;
     }
 
@@ -107,20 +104,22 @@ public:
         return _is_initialized;
     }
 
-    float get_remaining_energy_J(float temp_C);
-    float get_remaining_energy_Wh(float temp_C) {
+    float get_remaining_energy_J(float temp_C) const;
+    float get_remaining_energy_Wh(float temp_C) const {
         return get_remaining_energy_J(temp_C)/SECONDS_PER_HOUR;
     }
 
-    float get_remaining_energy_J_sigma(float temp_C);
-    float get_remaining_energy_Wh_sigma(float temp_C) {
+    float get_remaining_energy_J_sigma(float temp_C) const;
+    float get_remaining_energy_Wh_sigma(float temp_C) const {
         return get_remaining_energy_J_sigma(temp_C)/SECONDS_PER_HOUR;
+    }
+    
+    const BatteryChemistryModel& get_chemistry_model() const {
+        return _model;
     }
 
 private:
-    void addProcessNoise();
-
-    bool _is_initialized;
+    bool _is_initialized {};
 
     Params& _params;
     BatteryChemistryModel& _model;

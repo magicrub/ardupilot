@@ -9,19 +9,19 @@ public:
     _num_points(num_points)
     {}
 
-    T eval(T x) {
+    T eval(T x) const {
         T a,b;
         get_a_b(x,a,b);
         return a*x+b;
     }
 
-    T slope(T x) {
+    T slope(T x) const {
         T a,b;
         get_a_b(x,a,b);
         return a;
     }
 
-    T definite_integral(T x0, T x1) {
+    T definite_integral(T x0, T x1) const {
         if (_num_points <= 1) {
             return NAN;
         }
@@ -55,16 +55,16 @@ public:
     }
 
 private:
-    T integrate_line(T a, T b, T x1, T x2) {
+    T integrate_line(T a, T b, T x1, T x2) const {
         return -a*(x1*x1)/2 + a*(x2*x2)/2 - b*x1 + b*x2;
     }
 
-    void get_a_b(T x1, T x2, T y1, T y2, T& a_ret, T& b_ret) {
+    void get_a_b(T x1, T x2, T y1, T y2, T& a_ret, T& b_ret) const {
         a_ret = (y2-y1)/(x2-x1);
         b_ret = y1-a_ret*x1;
     }
 
-    void get_a_b(T x, T& a_ret, T& b_ret) {
+    void get_a_b(T x, T& a_ret, T& b_ret) const {
         if (_num_points <= 1) {
             a_ret = NAN;
             b_ret = NAN;

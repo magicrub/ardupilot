@@ -18,6 +18,7 @@
 #include "AP_BattMonitor.h"
 #include "AP_BattMonitor_Backend.h"
 
+extern const AP_HAL::HAL& hal;
 
 #if BATTERY_EKF_ENABLED
 #include <AP_Logger/AP_Logger.h>
@@ -122,13 +123,11 @@ void AP_BattMonitor_Backend::run_ekf_battery_estimation(const uint8_t instance)
     // get V and I
     float V = _state.voltage;
     float I = _state.current_amps;
-    if (V <= 0) {
-        // something is wrong
-        return;
-    }
+    
     if (_params._cell_count > 0) {
         V /= _params._cell_count;
     }
+    
 
     // get dt
     const uint64_t now_us = AP_HAL::micros64();
@@ -145,6 +144,7 @@ void AP_BattMonitor_Backend::run_ekf_battery_estimation(const uint8_t instance)
         temp_C = _state.temperature;
     }
 
+    bool V_in_range = V > _ekf.get_chemistry_model().min_valid_OCV(temp_C)*0.8 && V < _ekf.get_chemistry_model().max_valid_OCV(temp_C)*1.1;
 
     // update params at 1Hz and initialize if needed
     const uint32_t now_ms = AP_HAL::millis();
@@ -177,23 +177,29 @@ void AP_BattMonitor_Backend::run_ekf_battery_estimation(const uint8_t instance)
         // BatteryChemistryModelLinearInterpolated new_ekf_chemistry_model = BatteryChemistryModelLinearInterpolated(new_ekf_soc_ocv_x, new_ekf_soc_ocv_y, sizeof(new_ekf_soc_ocv_x)/sizeof(*new_ekf_soc_ocv_x));
         // _ekf.set_chemistry_model(new_ekf_chemistry_model);
 
-        if (!_ekf.initialized()) {
+        if (!_ekf.initialized() && V_in_range) {
             _ekf.initialize(V, I, temp_C);
+            hal.console->printf("Battery EKF init\n");
         }
     }
-
-    _ekf.predict(dt,I);
-
+    
     float y = 0;
     float NIS = 0;
-    if(_ekf.update(V, I, temp_C, y, NIS)) {
-        _ekf_last_successful_update_ms = now_ms;
-    }
-    
-    if (now_ms - _ekf_last_successful_update_ms > 3000) {
-        // TODO print a message
-        _ekf_last_successful_update_ms = now_ms;
-        _ekf.initialize(V, I, temp_C);
+
+    if (_ekf.initialized()) {
+        _ekf.predict(dt,I);
+
+        if (V_in_range) {
+            if (_ekf.update(V, I, temp_C, y, NIS)) {
+                _ekf_last_successful_update_ms = now_ms;
+            }
+            
+            if (now_ms - _ekf_last_successful_update_ms > 3000) {
+                hal.console->printf("Battery EKF reset\n");
+                _ekf_last_successful_update_ms = now_ms;
+                _ekf.initialize(V, I, temp_C);
+            }
+        }
     }
 
 #if HAL_LOGGING_ENABLED

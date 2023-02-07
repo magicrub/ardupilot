@@ -12,11 +12,11 @@
 #if BATTERY_EKF_ENABLED
 using namespace Eigen;
 
-float BatteryEKF::get_remaining_energy_J(float temp_C) {
+float BatteryEKF::get_remaining_energy_J(float temp_C) const {
     return _params.Q*_model.OCV_from_SOC_integral(x(STATE_IDX_SOC), temp_C)/x(STATE_IDX_SOH_INV);
 }
 
-float BatteryEKF::get_remaining_energy_J_sigma(float temp_C) {
+float BatteryEKF::get_remaining_energy_J_sigma(float temp_C) const {
     return sqrt((P(0,0)*pow(x(STATE_IDX_SOH_INV), 2)*pow(_model.OCV_from_SOC(x(STATE_IDX_SOC), temp_C), 2) - 2*P(0,1)*x(STATE_IDX_SOH_INV)*_model.OCV_from_SOC(x(STATE_IDX_SOC), temp_C)*_model.OCV_from_SOC_integral(x(STATE_IDX_SOC), temp_C) + P(1,1)*pow(_model.OCV_from_SOC_integral(x(STATE_IDX_SOC), temp_C), 2))/pow(x(STATE_IDX_SOH_INV), 4))*fabs(_params.Q);
 }
 
