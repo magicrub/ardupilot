@@ -79,7 +79,7 @@ public:
         float R2_pnoise;
     } Params;
 
-    BatteryEKF(Params params, BatteryChemistryModel& model) :
+    BatteryEKF(Params& params, BatteryChemistryModel& model) :
     _params(params), _model(model)
     {}
 
@@ -122,7 +122,7 @@ private:
 
     bool _is_initialized;
 
-    Params _params;
+    Params& _params;
     BatteryChemistryModel& _model;
 
     // EKF state
