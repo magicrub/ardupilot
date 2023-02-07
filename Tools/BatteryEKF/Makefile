@@ -27,7 +27,6 @@ build:
 clean:
 	-@rm -rvf $(BUILD)
 	-@rm -rvf $(TARGET)
-	-@rm -rvf ekf_generated
 
 depend: .depend
 
@@ -37,8 +36,8 @@ depend: .depend
 
 include .depend
 
-$(OBJ_DIR)/BatteryEKF.o: ekf_generated/init.cpp ekf_generated/predict.cpp ekf_generated/update.cpp
-
 ekf_generated/%.cpp: derivations/%.py derivations/common.py derivations/helpers.py
 	@mkdir -p "$(@D)"
 	python "$<" "$@"
+
+generated: ekf_generated/init.cpp ekf_generated/predict.cpp ekf_generated/update.cpp
