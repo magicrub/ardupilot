@@ -626,16 +626,20 @@ void Plane::rangefinder_terrain_correction(float &height)
  */
 void Plane::rangefinder_height_update(void)
 {
-    float distance = rangefinder.distance_orient(ROTATION_PITCH_270);
+
     
     if ((rangefinder.status_orient(ROTATION_PITCH_270) == RangeFinder::Status::Good) && ahrs.home_is_set()) {
+        // correct the range for attitude (multiply by DCM.c.z, which
+        // is cos(roll)*cos(pitch))
+        const float distance = rangefinder.distance_orient(ROTATION_PITCH_270) * ahrs.get_rotation_body_to_ned().c.z;
+
         if (!rangefinder_state.have_initial_reading) {
+            // zero rangefinder state, start to accumulate good samples now
+            memset(&rangefinder_state, 0, sizeof(rangefinder_state));
             rangefinder_state.have_initial_reading = true;
             rangefinder_state.initial_range = distance;
         }
-        // correct the range for attitude (multiply by DCM.c.z, which
-        // is cos(roll)*cos(pitch))
-        rangefinder_state.height_estimate = distance * ahrs.get_rotation_body_to_ned().c.z;
+        rangefinder_state.height_estimate = distance;
 
         rangefinder_terrain_correction(rangefinder_state.height_estimate);
 
@@ -711,7 +715,7 @@ void Plane::rangefinder_height_update(void)
                 if (rangefinder_state.in_use) {
                     gcs().send_text(MAV_SEVERITY_INFO, "Rangefinder disengaged at %.2fm", (double)rangefinder_state.height_estimate);
                 }
-                memset(&rangefinder_state, 0, sizeof(rangefinder_state));
+                rangefinder_state.have_initial_reading = false;
             }
         }
         

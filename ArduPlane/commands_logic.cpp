@@ -408,9 +408,6 @@ void Plane::do_land(const AP_Mission::Mission_Command& cmd)
         auto_state.takeoff_pitch_cd = 1000;
     }
 
-    // zero rangefinder state, start to accumulate good samples now
-    memset(&rangefinder_state, 0, sizeof(rangefinder_state));
-
     landing.do_land(cmd, relative_altitude);
 
     if (flight_stage == AP_FixedWing::FlightStage::ABORT_LANDING) {
