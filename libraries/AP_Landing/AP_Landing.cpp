@@ -699,6 +699,12 @@ bool AP_Landing::allow_max_airspeed_on_land(void) const
     return (OptionsMask::ON_LANDING_USE_ARSPD_MAX & _options) != 0;
 }
 
+//defaults to false, but _options bit zero enables it.
+bool AP_Landing::allow_rangefinder_1wp_before_land(void) const
+{
+    return (OptionsMask::ON_LANDING_USE_RNGFND_1_WP_BEFORE_LAND & _options) != 0;
+}
+
 /*
  * returns false when the vehicle might not be flying forward while landing
  */

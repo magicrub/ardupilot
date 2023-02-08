@@ -62,6 +62,7 @@ public:
     enum OptionsMask {
         ON_LANDING_FLARE_USE_THR_MIN                   = (1<<0),   // If set then set trottle to thr_min instead of zero on final flare
         ON_LANDING_USE_ARSPD_MAX                       = (1<<1),   // If set then allow landing throttle constraint to be increased from trim airspeed to max airspeed (ARSPD_FBW_MAX)
+        ON_LANDING_USE_RNGFND_1_WP_BEFORE_LAND         = (1<<2),   // If set then allow rangefinder baro correction during land AND while one waypoint before land
     };
 
     void do_land(const AP_Mission::Mission_Command& cmd, const float relative_altitude);
@@ -111,6 +112,7 @@ public:
     bool is_expecting_impact(void) const;
     void Log(void) const;
     const AP_PIDInfo * get_pid_info(void) const;
+    bool allow_rangefinder_1wp_before_land() const;
 
     // landing altitude offset (meters)
     float alt_offset;
