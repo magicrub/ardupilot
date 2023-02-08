@@ -576,6 +576,22 @@ float Plane::lookahead_adjustment(void)
 #endif
 }
 
+bool Plane::mission_allows_rangefinder_correction()
+{
+    if (!g.rangefinder_landing) {
+        return false;
+    }
+    
+    if (flight_stage == AP_FixedWing::FlightStage::LAND) {
+        return true;
+    }
+
+    if (auto_state.wp_is_land_approach && landing.allow_rangefinder_1wp_before_land()) {
+        return true;
+    }
+
+    return false;
+}
 
 /*
   correct target altitude using rangefinder data. Returns offset in
@@ -590,8 +606,7 @@ float Plane::rangefinder_correction(void)
     }
 
     // for now we only support the rangefinder for landing 
-    bool using_rangefinder = (g.rangefinder_landing && flight_stage == AP_FixedWing::FlightStage::LAND);
-    if (!using_rangefinder) {
+    if (!mission_allows_rangefinder_correction()) {
         return 0;
     }
 
@@ -626,8 +641,13 @@ void Plane::rangefinder_terrain_correction(float &height)
  */
 void Plane::rangefinder_height_update(void)
 {
+    if (!mission_allows_rangefinder_correction()) {
+        rangefinder_state.have_initial_reading = false;
+        rangefinder_state.in_range = false;
+        rangefinder_state.in_range_count = 0;
+        return;
+    }
 
-    
     if ((rangefinder.status_orient(ROTATION_PITCH_270) == RangeFinder::Status::Good) && ahrs.home_is_set()) {
         // correct the range for attitude (multiply by DCM.c.z, which
         // is cos(roll)*cos(pitch))
@@ -660,7 +680,7 @@ void Plane::rangefinder_height_update(void)
         } else {
             rangefinder_state.in_range = true;
             bool flightstage_good_for_rangefinder_landing = false;
-            if (flight_stage == AP_FixedWing::FlightStage::LAND) {
+            if (mission_allows_rangefinder_correction()) {
                 flightstage_good_for_rangefinder_landing = true;
             }
 #if HAL_QUADPLANE_ENABLED

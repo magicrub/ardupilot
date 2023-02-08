@@ -666,7 +666,7 @@ float Plane::tecs_hgt_afe(void)
       coming.
     */
     float hgt_afe;
-    if (flight_stage == AP_FixedWing::FlightStage::LAND) {
+    if (mission_allows_rangefinder_correction()) {
         hgt_afe = height_above_target();
         hgt_afe -= rangefinder_correction();
     } else {
