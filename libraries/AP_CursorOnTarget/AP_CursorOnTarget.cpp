@@ -37,6 +37,11 @@
 #define AP_CURSORONTARGET_SEND_BASIC_POSITION_INTERVAL_MS_MAX 60000 // 1 minute
 #define AP_CURSORONTARGET_SEND_BASIC_POSITION_INTERVAL_MS_MIN 100   // 10 Hz
 
+
+
+#define AP_CURSORONTARGET_PARAM_DEFAULT_OPTIONS (AP_CursorOnTarget::Options::SEND_TO_ADSB)
+
+
 extern const AP_HAL::HAL& hal;
 
 const AP_Param::GroupInfo AP_CursorOnTarget::var_info[] = {
@@ -55,6 +60,19 @@ const AP_Param::GroupInfo AP_CursorOnTarget::var_info[] = {
     // @Range: 100 60000
     // @Increment: 500
     AP_GROUPINFO("SEND_RATE_MS", 1, AP_CursorOnTarget, _params.send_basic_position_interval_ms, 1000),
+
+    // @Param: OPTIONS
+    // @DisplayName: Cursor on Target options
+    // @Description: 0:Enable or disable using the pitch/roll stick control circle mode's radius and rate
+    // @Bitmask: 0:Treat inbound vehicles as ADSB vehicles,2:blah,3:blah
+    // @User: Advanced
+    AP_GROUPINFO("OPTIONS", 2, AP_CursorOnTarget, _param.options, (int32_t)AP_CURSORONTARGET_PARAM_DEFAULT_OPTIONS),
+
+#if AP_CURSORONTARGET_IN_ENABLED
+    // @Group: _IN_
+    // @Path: AP_CursorOnTarget_In.cpp
+    AP_SUBGROUPINFO(CoT_in, "_IN_", 3, AP_CursorOnTarget, AP_CursorOnTarget_In),
+#endif
 
     AP_GROUPEND
 };
@@ -75,6 +93,13 @@ AP_CursorOnTarget::AP_CursorOnTarget()
 void AP_CursorOnTarget::init()
 {
     _uart = AP::serialmanager().find_serial(AP_SerialManager::SerialProtocol_CursorOnTarget, 0);
+
+#if AP_CURSORONTARGET_IN_ENABLED
+    if (_uart != nullptr) {
+        CoT_in.init(_uart);
+    }
+#endif
+
 }
 
 void AP_CursorOnTarget::update()
@@ -95,6 +120,11 @@ void AP_CursorOnTarget::update()
             _last_send_basic_position_ms = now_ms;
         }
     }
+
+#if AP_CURSORONTARGET_IN_ENABLED
+    CoT_in.update();
+#endif
+
 }
 
 bool AP_CursorOnTarget::send_basic_position()

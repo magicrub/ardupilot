@@ -25,6 +25,9 @@
 
 #include <AP_Param/AP_Param.h>
 
+#include "AP_CursorOnTarget_In.h"
+
+
 class AP_CursorOnTarget {
 
 public:
@@ -58,6 +61,11 @@ private:
         AP_Int8     enabled;
         AP_Int32    send_basic_position_interval_ms;
     } _params;
+
+#if AP_CURSORONTARGET_IN_ENABLED
+    AP_CursorOnTarget_In CoT_in;
+#endif
+
 };
 
 namespace AP {
