@@ -183,12 +183,14 @@ const AP_Param::GroupInfo AP_BattMonitor_Params::var_info[] = {
     // @Increment: 1
     // @Range: 0 14
     AP_GROUPINFO("EKF_CELLS",  40, AP_BattMonitor_Params, _cell_count, 6),
-    AP_GROUPINFO("EKF_SOHINI", 41, AP_BattMonitor_Params, _ekf.SOH_init,    0.85),
+    AP_GROUPINFO("EKF_SOHINI", 41, AP_BattMonitor_Params, _ekf.SOH_init,    1),
     AP_GROUPINFO("EKF_RC1",    42, AP_BattMonitor_Params, _ekf.RC1,         39),
     AP_GROUPINFO("EKF_RC2",    43, AP_BattMonitor_Params, _ekf.RC2,         3.6),
-    AP_GROUPINFO("EKF_I_SIG",  44, AP_BattMonitor_Params, _ekf.I_sigma,     0.05),
-    AP_GROUPINFO("EKF_SOH_SG", 45, AP_BattMonitor_Params, _ekf.SOH_sigma,   0.3),
-    AP_GROUPINFO("EKF_V_SIG",  46, AP_BattMonitor_Params, _ekf.V_sigma,     0.01),
+    AP_GROUPINFO("EKF_I_SIG",  44, AP_BattMonitor_Params, _ekf.I_sigma,     0.1),
+    AP_GROUPINFO("EKF_SOH_SG", 45, AP_BattMonitor_Params, _ekf.SOH_sigma,   0.15),
+    AP_GROUPINFO("EKF_V_SIG",  46, AP_BattMonitor_Params, _ekf.V_sigma,     0.02),
+    AP_GROUPINFO("EKF_SOC_PN",  47, AP_BattMonitor_Params, _ekf.SOC_pnoise,  5e-4),
+
 #endif // BATTERY_EKF_ENABLED
 
     AP_GROUPEND

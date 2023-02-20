@@ -60,10 +60,8 @@ for fn in sys.argv[1:]:
         if len(data["volt"]) <= 100 or data["volt"][100] > 26/6. or max(data["currtot"]) < 10000 or max(data["NIS"]) < 1:
             continue
 
-    data["currtot"] /= 16.
-    data["curr"] /= 16.
     data["volt"] /= 6.
-    data["R"] = data["R"]*16./6.
+    data["R"] = data["R"]/6.
 
     #if None in data["NIS"]:
         #print("%s - contains NaN" % (fn,))

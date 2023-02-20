@@ -128,13 +128,15 @@ void AP_BattMonitor_Backend::run_ekf_battery_estimation(const uint8_t instance)
         V /= _params._cell_count;
     }
     
-
     // get dt
-    const uint64_t now_us = AP_HAL::micros64();
-    const float dt = (now_us - _ekf_timestamp_last_us) * 1E-6;
-    // TODO: figure out if _state.last_time_micros is better than now_us
-    //const float dt = (_ekf_timestamp_last_us - _ekf_timestamp_last_us) * 1E-6;
-    _ekf_timestamp_last_us = now_us;
+    const uint32_t dt_us = _state.last_time_micros - _ekf_timestamp_last_us;
+    if (dt_us == 0 || dt_us > 1e6f) {
+        _ekf_timestamp_last_us = _state.last_time_micros;
+        return;
+    }
+    const float dt = dt_us * 1E-6f;
+    
+    _ekf_timestamp_last_us = _state.last_time_micros;
 
     // get tempC
     float temp_C = 25;
@@ -170,12 +172,8 @@ void AP_BattMonitor_Backend::run_ekf_battery_estimation(const uint8_t instance)
         .R0_pnoise =    12.5f/_params._pack_capacity,
         .R1_pnoise =    0.625f/_params._pack_capacity,
         .R2_pnoise =    0.625f/_params._pack_capacity,
+        .SOC_pnoise =   _params._ekf.SOC_pnoise
         };
-
-        // float new_ekf_soc_ocv_x[] = {0.0, 0.005063014925373088, 0.01613838805970147, 0.02905964179104481, 0.04382680597014932, 0.060439850746268675, 0.07705289552238803, 0.09920364179104468, 0.1268920298507462, 0.15642635820895523, 0.19334423880597018, 0.2357997910447761, 0.2708717910447762, 0.2967142985074628, 0.3244027164179104, 0.34839934328358213, 0.3779336417910447, 0.4037761791044776, 0.4388481492537314, 0.462844776119403, 0.4868414029850746, 0.5182216119402985, 0.5551394925373134, 0.5920573731343284, 0.6289752537313433, 0.6695849253731343, 0.7194240895522388, 0.7581878507462687, 0.7932598507462687, 0.8283318507462687, 0.8615579402985074, 0.9058594029850746, 0.9446231641791045, 0.9815410447761194, 1.0};
-        // float new_ekf_soc_ocv_y[] = {2.5180000000000002, 2.6487000000000003, 2.75, 2.8668, 2.9681, 3.0693, 3.1550000000000002, 3.2406, 3.3107, 3.373, 3.4198, 3.4587, 3.4899, 3.5132, 3.5288, 3.5444, 3.5678, 3.5911, 3.6145, 3.6456, 3.6612, 3.7001, 3.7313, 3.7702, 3.8014, 3.8403, 3.8793, 3.9104, 3.9494000000000002, 3.9961, 4.027299999999999, 4.0584, 4.074, 4.1051, 4.158};
-        // BatteryChemistryModelLinearInterpolated new_ekf_chemistry_model = BatteryChemistryModelLinearInterpolated(new_ekf_soc_ocv_x, new_ekf_soc_ocv_y, sizeof(new_ekf_soc_ocv_x)/sizeof(*new_ekf_soc_ocv_x));
-        // _ekf.set_chemistry_model(new_ekf_chemistry_model);
 
         if (!_ekf.initialized() && V_in_range) {
             _ekf.initialize(V, I, temp_C);
@@ -201,11 +199,20 @@ void AP_BattMonitor_Backend::run_ekf_battery_estimation(const uint8_t instance)
             }
         }
     }
+    
+    static uint32_t last_print_ms = 0;
+    if (now_ms-last_print_ms > 2000) {
+        const auto& x = _ekf.get_state();
+        hal.console->printf("%09.6f %09.6f %09.6f %09.6f %09.6f %09.6f %09.6f\n", x(0),x(1),x(2),x(3),x(4),x(5),x(6));
+        
+        last_print_ms = now_ms;
+    }
 
 #if HAL_LOGGING_ENABLED
-    AP::logger().WriteStreaming("BEKF", "TimeUS,Instance,dt,V,I,TempC,y,NIS,E,ESig",
+
+    AP::logger().WriteStreaming("BKF1", "TimeUS,Instance,dt,V,I,TempC,y,NIS,E,ESig",
         "QBffffffff",
-        now_us,
+        AP_HAL::micros64(),
         instance,
         (double)dt,
         (double)V,
@@ -215,6 +222,32 @@ void AP_BattMonitor_Backend::run_ekf_battery_estimation(const uint8_t instance)
         (double)NIS,
         (double)_ekf.get_remaining_energy_Wh(temp_C),
         (double)_ekf.get_remaining_energy_Wh_sigma(temp_C));
+    
+    const auto& x = _ekf.get_state();
+    AP::logger().WriteStreaming("BKF2", "TimeUS,Instance,x0,x1,x2,x3,x4,x5,x6",
+        "QBfffffff",
+        AP_HAL::micros64(),
+        instance,
+        (double)x(0),
+        (double)x(1),
+        (double)x(2),
+        (double)x(3),
+        (double)x(4),
+        (double)x(5),
+        (double)x(6));
+    
+    const auto& P = _ekf.get_covariance();
+    AP::logger().WriteStreaming("BKF3", "TimeUS,Instance,s0,s1,s2,s3,s4,s5,s6",
+        "QBfffffff",
+        AP_HAL::micros64(),
+        instance,
+        (double)sqrtf(P(0,0)),
+        (double)sqrtf(P(1,1)),
+        (double)sqrtf(P(2,2)),
+        (double)sqrtf(P(3,3)),
+        (double)sqrtf(P(4,4)),
+        (double)sqrtf(P(5,5)),
+        (double)sqrtf(P(6,6)));
 #endif // HAL_LOGGING_ENABLED
 }
 #endif

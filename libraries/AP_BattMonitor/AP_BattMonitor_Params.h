@@ -57,28 +57,12 @@ public:
     AP_Int8  _cell_count;               /// count of cells, like "4S" or "6S"
     struct {
         AP_Float SOH_init;
-
-        // TODO: change to AP_Vector3f
-        AP_Float R0_init;
-        AP_Float R1_init;
-        AP_Float R2_init;
         AP_Float RC1;
         AP_Float RC2;
         AP_Float I_sigma;
-        AP_Float I_scale_sigma;
         AP_Float SOH_sigma;
-        // TODO: change to AP_Vector3f
-        AP_Float R0_sigma;
-        AP_Float R1_sigma;
-        AP_Float R2_sigma;
-        AP_Float I_step_sigma;
         AP_Float V_sigma;
-        AP_Float Q;
-        AP_Float SOH_pnoise;
-        // TODO: change to AP_Vector3f
-        AP_Float R0_pnoise;
-        AP_Float R1_pnoise;
-        AP_Float R2_pnoise;
+        AP_Float SOC_pnoise;
     } _ekf;
 #endif
 

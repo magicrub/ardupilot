@@ -11,6 +11,14 @@ OBJECTS := $(SRC:%.cpp=$(OBJ_DIR)/%.o)
 
 all: build $(TARGET)
 
+depend: .depend
+
+.depend: $(SRC)
+	rm -f "$@"
+	$(CXX) $(CXXFLAGS) -MM $^ -MF "$@"
+
+include .depend
+
 $(OBJ_DIR)/%.o: %.cpp
 	@mkdir -p $(@D)
 	$(CXX) $(CXXFLAGS) $(INCLUDE) -o "$@" -c "$<"
@@ -28,13 +36,7 @@ clean:
 	-@rm -rvf $(BUILD)
 	-@rm -rvf $(TARGET)
 
-depend: .depend
 
-.depend: $(SRC)
-	rm -f "$@"
-	$(CXX) $(CXXFLAGS) -MM $^ -MF "$@"
-
-include .depend
 
 ekf_generated/%.cpp: derivations/%.py derivations/common.py derivations/helpers.py
 	@mkdir -p "$(@D)"

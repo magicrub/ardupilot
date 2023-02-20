@@ -2,7 +2,7 @@ from common import *
 
 z = Matrix([V])
 R = Matrix([((I_sigma)*R0 + V_sigma)**2])
-# Tag obs model
+# Obs model
 h = Matrix([OCV_from_SOC(SOC, temp_C)-R0*I-V1-V2])
 y = z-h                       # Innovation
 H = h.jacobian(x)   # Obervation sensitivity matrix

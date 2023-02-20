@@ -5,7 +5,7 @@ from common import *
 # f: state-transtition model for the purpose of linearization
 f = Matrix([SOC-dt*I*SOH_inv/Q,
             SOH_inv,
-            exp(-dt/(RC1))*V1+R1*I*(1-exp(-dt/(RC1))),
+            exp(-dt/(RC1))*V1 + R1*I*(1-exp(-dt/(RC1))),
             exp(-dt/(RC2))*V2+R2*I*(1-exp(-dt/(RC2))),
             R0,
             R1,
@@ -30,7 +30,9 @@ _Q = G*Q_u*G.T
 
 P_n = F*P*F.T + _Q
 
-P_n[0,0] += simplify((sqrt(P[0,0])+dt*I_sigma*SOH_inv/Q)**2-P[0,0])
+pprint(_Q)
+
+#P_n[0,0] += (sqrt(P[0,0])+dt*I_sigma*SOH_inv/Q)**2-P[0,0]
 
 # Generate C code for prediction model
 x_n, P_n, subx = extractSubexpressions([f, P_n], 'subx', threshold=4)

@@ -98,7 +98,7 @@ private:
 #if BATTERY_EKF_ENABLED
     BatteryEKF _ekf;
     BatteryEKF::Params _ekf_params;
-    uint64_t _ekf_timestamp_last_us;
+    uint32_t _ekf_timestamp_last_us;
     uint32_t _ekf_last_successful_update_ms;
     uint32_t _ekf_param_update_ms;
 #endif

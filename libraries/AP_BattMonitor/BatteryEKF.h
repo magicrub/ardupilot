@@ -77,6 +77,7 @@ public:
         float R0_pnoise;
         float R1_pnoise;
         float R2_pnoise;
+        float SOC_pnoise;
     } Params;
 
     BatteryEKF(Params& params, BatteryChemistryModel& model) :

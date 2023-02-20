@@ -39,6 +39,7 @@ void BatteryEKF::predict(float dt, float I) {
 
     #include "ekf_generated/predict.cpp"
 
+    P_n(STATE_IDX_SOC,STATE_IDX_SOC) += SQ(dt*_params.SOC_pnoise);
     P_n(STATE_IDX_R0,STATE_IDX_R0) += SQ(dt*_params.R0_pnoise);
     P_n(STATE_IDX_R1,STATE_IDX_R1) += SQ(dt*_params.R1_pnoise);
     P_n(STATE_IDX_R2,STATE_IDX_R2) += SQ(dt*_params.R2_pnoise);
