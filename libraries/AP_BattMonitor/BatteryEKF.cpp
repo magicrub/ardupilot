@@ -1,4 +1,4 @@
-#ifdef _AP_CONFIG_H_
+#ifdef ARDUPILOT_BUILD
     // this is stupid, but this must be included HERE and
     // not in BatteryEKF.h or else it gets included multiple
     // times and causes redefinition compile errors. This is

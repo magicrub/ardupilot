@@ -140,9 +140,7 @@ void AP_BattMonitor_Backend::run_ekf_battery_estimation(const uint8_t instance)
 
     // get tempC
     float temp_C = 25;
-    if (_state.temperature_external_use) {
-        temp_C = _state.temperature_external;
-    } else if (has_temperature()) {
+    if (has_temperature()) {
         temp_C = _state.temperature;
     }
 
@@ -210,7 +208,7 @@ void AP_BattMonitor_Backend::run_ekf_battery_estimation(const uint8_t instance)
 
 #if HAL_LOGGING_ENABLED
 
-    AP::logger().WriteStreaming("BKF1", "TimeUS,Instance,dt,V,I,TempC,y,NIS,E,ESig",
+    AP::logger().Write("BKF1", "TimeUS,Instance,dt,V,I,TempC,y,NIS,E,ESig",
         "QBffffffff",
         AP_HAL::micros64(),
         instance,
@@ -224,7 +222,7 @@ void AP_BattMonitor_Backend::run_ekf_battery_estimation(const uint8_t instance)
         (double)_ekf.get_remaining_energy_Wh_sigma(temp_C));
     
     const auto& x = _ekf.get_state();
-    AP::logger().WriteStreaming("BKF2", "TimeUS,Instance,x0,x1,x2,x3,x4,x5,x6",
+    AP::logger().Write("BKF2", "TimeUS,Instance,x0,x1,x2,x3,x4,x5,x6",
         "QBfffffff",
         AP_HAL::micros64(),
         instance,
@@ -237,7 +235,7 @@ void AP_BattMonitor_Backend::run_ekf_battery_estimation(const uint8_t instance)
         (double)x(6));
     
     const auto& P = _ekf.get_covariance();
-    AP::logger().WriteStreaming("BKF3", "TimeUS,Instance,s0,s1,s2,s3,s4,s5,s6",
+    AP::logger().Write("BKF3", "TimeUS,Instance,s0,s1,s2,s3,s4,s5,s6",
         "QBfffffff",
         AP_HAL::micros64(),
         instance,

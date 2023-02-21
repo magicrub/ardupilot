@@ -6,7 +6,7 @@
 #define EIGEN_NO_DEBUG
 #define EIGEN_MALLOC_ALREADY_ALIGNED true
 
-#ifdef _AP_CONFIG_H_
+#ifdef ARDUPILOT_BUILD
     #include "AP_BattMonitor_config.h"
 #else
     #define BATTERY_EKF_ENABLED 1
@@ -16,7 +16,7 @@
 
 #include <stdio.h>
 
-#ifdef _AP_CONFIG_H_
+#ifdef ARDUPILOT_BUILD
     #if CONFIG_HAL_BOARD == HAL_BOARD_CHIBIOS
     // Eigen gets angry about a missing declaration for std::vsnprintf() for HAL_BOARD_CHIBIOS builds
     namespace std {
