@@ -53,6 +53,17 @@ bool BatteryEKF::update(float V, float I, float temp_C, float& y, float& NIS) {
     MatrixSxS P_n;
 
     #include "ekf_generated/update.cpp"
+    
+    for (uint32_t i=0; i<N_STATES; i++) {
+        if (isnan(x_n(i))||isinf(x_n(i))) {
+            return false;
+        }
+        for (uint32_t j=0; j<N_STATES; j++) {
+            if (isnan(P_n(i,j))||isinf(P_n(i,j))) {
+                return false;
+            }
+        }
+    }
 
     if (NIS >= 3) {
         return false;
