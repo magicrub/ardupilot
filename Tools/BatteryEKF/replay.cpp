@@ -116,6 +116,45 @@ int main(int argc, char** argv) {
     for (uint8_t i=0; i<sizeof(param_desc_list)/sizeof(param_desc_list[0]); i++) {
         auto name = param_desc_list[i].name;
         auto default_value = param_desc_list[i].default_value;
+        
+        if (conf_json["PACK_CAPACITY"].is_number()) {
+            double pack_capacity = conf_json["PACK_CAPACITY"];
+            if (string(param_desc_list[i].name) == "R0_sigma") {
+                params.as_array[i] = 6250.0f/pack_capacity;
+                cout << "param " << name << " " << params.as_array[i] << " from PACK_CAPACITY" << endl;
+                continue;
+            } else if (string(param_desc_list[i].name) == "R1_sigma") {
+                params.as_array[i] = 1250.0f/pack_capacity;
+                cout << "param " << name << " " << params.as_array[i] << " from PACK_CAPACITY" << endl;
+                continue;
+            } else if (string(param_desc_list[i].name) == "R2_sigma") {
+                params.as_array[i] = 1250.0f/pack_capacity;
+                cout << "param " << name << " " << params.as_array[i] << " from PACK_CAPACITY" << endl;
+                continue;
+            } else if (string(param_desc_list[i].name) == "I_step_sigma") {
+                params.as_array[i] = pack_capacity*1e-3f;
+                cout << "param " << name << " " << params.as_array[i] << " from PACK_CAPACITY" << endl;
+                continue;
+            } else if (string(param_desc_list[i].name) == "Q") {
+                params.as_array[i] = pack_capacity*1e-3f*3600;
+                cout << "param " << name << " " << params.as_array[i] << " from PACK_CAPACITY" << endl;
+                continue;
+            } else if (string(param_desc_list[i].name) == "R0_pnoise") {
+                params.as_array[i] = 6.0f/pack_capacity;
+                cout << "param " << name << " " << params.as_array[i] << " from PACK_CAPACITY" << endl;
+                continue;
+            } else if (string(param_desc_list[i].name) == "R1_pnoise") {
+                params.as_array[i] = 3.0f/pack_capacity;
+                cout << "param " << name << " " << params.as_array[i] << " from PACK_CAPACITY" << endl;
+                continue;
+            } else if (string(param_desc_list[i].name) == "R2_pnoise") {
+                params.as_array[i] = 3.0f/pack_capacity;
+                cout << "param " << name << " " << params.as_array[i] << " from PACK_CAPACITY" << endl;
+                continue;
+            }
+            
+        }
+        
         if (conf_json[name].is_number()) {
             params.as_array[i] = (float)conf_json[name];
             cout << "param " << name << " " << params.as_array[i] << endl;

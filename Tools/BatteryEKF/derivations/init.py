@@ -35,7 +35,7 @@ init_variables_cov = diag(*init_variables_sigma.multiply_elementwise(init_variab
 
 initial_state_cov = init_variable_influence*init_variables_cov*init_variable_influence.T
 
-subs = {I_step:0, SOC_from_OCV(V+I*R0_init+V1_init+V2_init, temp_C).fdiff(): Function("_model.SOC_from_OCV_diff")(V+I*R0_init+V1_init+V2_init, temp_C), R0_init:0, R1_init:0, R2_init:0, I: 1.}
+subs = {I_step:0, SOC_from_OCV(V+I*R0_init+V1_init+V2_init, temp_C).fdiff(): Function("_model.SOC_from_OCV_diff")(V+I*R0_init+V1_init+V2_init, temp_C)}
 
 initial_state = initial_state.subs(subs)
 initial_state_cov = initial_state_cov.subs(subs)
