@@ -168,8 +168,8 @@ void AP_BattMonitor_Backend::run_ekf_battery_estimation(const uint8_t instance)
         .V_sigma =      _params._ekf.V_sigma,
         .Q =            _params._pack_capacity*1e-3f*3600,
         .R0_pnoise =    12.5f/_params._pack_capacity,
-        .R1_pnoise =    0.625f/_params._pack_capacity,
-        .R2_pnoise =    0.625f/_params._pack_capacity,
+        .R1_pnoise =    1.5f/_params._pack_capacity,
+        .R2_pnoise =    1.5f/_params._pack_capacity,
         .SOC_pnoise =   _params._ekf.SOC_pnoise
         };
 
