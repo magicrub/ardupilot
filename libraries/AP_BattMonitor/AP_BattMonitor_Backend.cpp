@@ -199,9 +199,14 @@ void AP_BattMonitor_Backend::run_ekf_battery_estimation(const uint8_t instance)
     }
     
     static uint32_t last_print_ms = 0;
-    if (now_ms-last_print_ms > 2000) {
+        
+    if (instance == 0 && now_ms-last_print_ms > 2000) {
         const auto& x = _ekf.get_state();
-        hal.console->printf("%09.6f %09.6f %09.6f %09.6f %09.6f %09.6f %09.6f\n", x(0),x(1),x(2),x(3),x(4),x(5),x(6));
+        
+        gcs().send_named_float("BatERem", _ekf.get_remaining_energy_J(temp_C));
+        gcs().send_named_float("BatERemSD", _ekf.get_remaining_energy_J_sigma(temp_C));
+        gcs().send_named_float("BatSOC", x(STATE_IDX_SOC));
+        gcs().send_named_float("BatSOH", 1/x(STATE_IDX_SOH_INV));
         
         last_print_ms = now_ms;
     }
