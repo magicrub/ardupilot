@@ -200,11 +200,11 @@ void AP_BattMonitor_Backend::run_ekf_battery_estimation(const uint8_t instance)
     
     static uint32_t last_print_ms = 0;
         
-    if (instance == 0 && now_ms-last_print_ms > 2000) {
+    if (instance == 0 && _ekf.initialized() && now_ms-last_print_ms > 2000) {
         const auto& x = _ekf.get_state();
         
-        gcs().send_named_float("BatERem", _ekf.get_remaining_energy_J(temp_C));
-        gcs().send_named_float("BatERemSD", _ekf.get_remaining_energy_J_sigma(temp_C));
+        gcs().send_named_float("BatERem", _ekf.get_remaining_energy_J(temp_C)*_params._cell_count);
+        gcs().send_named_float("BatERemSD", _ekf.get_remaining_energy_J_sigma(temp_C)*_params._cell_count);
         gcs().send_named_float("BatSOC", x(STATE_IDX_SOC));
         gcs().send_named_float("BatSOH", 1/x(STATE_IDX_SOH_INV));
         
@@ -213,44 +213,46 @@ void AP_BattMonitor_Backend::run_ekf_battery_estimation(const uint8_t instance)
 
 #if HAL_LOGGING_ENABLED
 
-    AP::logger().Write("BKF1", "TimeUS,Instance,dt,V,I,TempC,y,NIS,E,ESig",
-        "QBffffffff",
-        AP_HAL::micros64(),
-        instance,
-        (double)dt,
-        (double)V,
-        (double)I,
-        (double)temp_C,
-        (double)y,
-        (double)NIS,
-        (double)_ekf.get_remaining_energy_Wh(temp_C),
-        (double)_ekf.get_remaining_energy_Wh_sigma(temp_C));
-    
-    const auto& x = _ekf.get_state();
-    AP::logger().Write("BKF2", "TimeUS,Instance,x0,x1,x2,x3,x4,x5,x6",
-        "QBfffffff",
-        AP_HAL::micros64(),
-        instance,
-        (double)x(0),
-        (double)x(1),
-        (double)x(2),
-        (double)x(3),
-        (double)x(4),
-        (double)x(5),
-        (double)x(6));
-    
-    const auto& P = _ekf.get_covariance();
-    AP::logger().Write("BKF3", "TimeUS,Instance,s0,s1,s2,s3,s4,s5,s6",
-        "QBfffffff",
-        AP_HAL::micros64(),
-        instance,
-        (double)sqrtf(P(0,0)),
-        (double)sqrtf(P(1,1)),
-        (double)sqrtf(P(2,2)),
-        (double)sqrtf(P(3,3)),
-        (double)sqrtf(P(4,4)),
-        (double)sqrtf(P(5,5)),
-        (double)sqrtf(P(6,6)));
+    if (_ekf.initialized()) {
+        AP::logger().Write("BKF1", "TimeUS,Instance,dt,V,I,TempC,y,NIS,E,ESig",
+            "QBffffffff",
+            AP_HAL::micros64(),
+            instance,
+            (double)dt,
+            (double)V,
+            (double)I,
+            (double)temp_C,
+            (double)y,
+            (double)NIS,
+            (double)_ekf.get_remaining_energy_Wh(temp_C)*_params._cell_count,
+            (double)_ekf.get_remaining_energy_Wh_sigma(temp_C)*_params._cell_count);
+        
+        const auto& x = _ekf.get_state();
+        AP::logger().Write("BKF2", "TimeUS,Instance,x0,x1,x2,x3,x4,x5,x6",
+            "QBfffffff",
+            AP_HAL::micros64(),
+            instance,
+            (double)x(0),
+            (double)x(1),
+            (double)x(2),
+            (double)x(3),
+            (double)x(4),
+            (double)x(5),
+            (double)x(6));
+        
+        const auto& P = _ekf.get_covariance();
+        AP::logger().Write("BKF3", "TimeUS,Instance,s0,s1,s2,s3,s4,s5,s6",
+            "QBfffffff",
+            AP_HAL::micros64(),
+            instance,
+            (double)sqrtf(P(0,0)),
+            (double)sqrtf(P(1,1)),
+            (double)sqrtf(P(2,2)),
+            (double)sqrtf(P(3,3)),
+            (double)sqrtf(P(4,4)),
+            (double)sqrtf(P(5,5)),
+            (double)sqrtf(P(6,6)));
+    }
 #endif // HAL_LOGGING_ENABLED
 }
 #endif
