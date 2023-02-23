@@ -339,8 +339,17 @@ void Plane::calculate_forces(const struct sitl_input &input, Vector3f &rot_accel
         thrust *= throttle;
     }
 
-    battery_voltage = sitl->batt_voltage - 0.7*throttle;
-    battery_current = 50.0f*throttle;
+    
+    if (!batt_initialized) {
+        battery.setup(sitl->batt_capacity_ah, 0.0, sitl->batt_voltage);
+        battery.init_voltage(sitl->batt_voltage);
+        batt_initialized = true;
+    }
+    
+    battery_current = 60;
+    battery.set_current(battery_current);
+    battery_voltage = battery.get_voltage();
+//     printf("battery_voltage %f battery_current %f\n", battery_voltage, battery_current);
 
     if (ice_engine) {
         thrust = icengine.update(input);
