@@ -464,8 +464,6 @@ public:
         return _prev_nav_cmd_wp_index;
     }
 
-    bool get_current_tag(uint16_t &tag) const;
-    
     /// get_next_nav_cmd - gets next "navigation" command found at or after start_index
     ///     returns true if found, false if not found (i.e. reached end of mission command list)
     ///     accounts for do_jump commands
@@ -531,18 +529,6 @@ public:
         return _last_change_time_ms;
     }
 
-    // find the first JUMP_TAG with this tag and set the return its index.
-    // Returns 0 if no appropriate JUMP_TAG match can be found.
-    bool jump_to_tag(const uint16_t tag);
-
-    // find the first JUMP_TAG with this tag and return its index.
-    // Returns 0 if no appropriate JUMP_TAG match can be found.
-    uint16_t get_index_of_jump_tag(const uint16_t tag);
-
-    // confirm all DO_JUMP_TAG commands point to a matching JUMP_TAG.
-    // Returns true there are no tags or if all tags match correctly.
-    bool check_do_jump_tags();
-
     // find the nearest landing sequence starting point (DO_LAND_START) and
     // return its index.  Returns 0 if no appropriate DO_LAND_START point can
     // be found.
@@ -605,12 +591,37 @@ public:
     bool get_item(uint16_t index, mavlink_mission_item_int_t& result) const ;
     bool set_item(uint16_t index, mavlink_mission_item_int_t& source) ;
 
+    // Jump Tags. When a JUMP_TAG is run in the mission, either via DO_JUMP_TAG or
+    // by just being the next item, the tag is remembered and the age is set to 1.
+    // Only the most recent tag is remembered. It's age is how many NAV items have
+    // progressed since the tag was seen. While executing the tag, the
+    // age will be 1. The next NAV command after it will tick the age to 2, and so on.
+    bool get_last_jump_tag(uint16_t &tag, uint16_t &age) const;
+
+    // Set the mission index to the first JUMP_TAG with this tag.
+    // Returns true on success, else false if no appropriate JUMP_TAG match can be found or if setting the index failed
+    bool jump_to_tag(const uint16_t tag);
+
+    // find the first JUMP_TAG with this tag and return its index.
+    // Returns 0 if no appropriate JUMP_TAG match can be found.
+    uint16_t get_index_of_jump_tag(const uint16_t tag) const;
+
+    // invalidate current jump tag
+    void jump_tag_reset() {
+        _jump_tag.age = 0;
+    }
+
 private:
     static AP_Mission *_singleton;
 
     static StorageAccess _storage;
 
     static bool stored_in_location(uint16_t id);
+
+    struct {
+        uint16_t age;   // a value of 0 means we have never seen a tag. Once a tag is seen, age will increment every time the mission index changes.
+        uint16_t tag;   // most recent tag that was successfully jumped to. Only valid if age > 0
+    } _jump_tag;
 
     struct Mission_Flags {
         mission_state state;
@@ -619,7 +630,6 @@ private:
         bool do_cmd_all_done;        // true if all "do"/"conditional" commands have been completed (stops unnecessary searching through eeprom for do commands)
         bool in_landing_sequence;   // true if the mission has jumped to a landing
         bool resuming_mission;      // true if the mission is resuming and set false once the aircraft attains the interrupted WP
-        bool current_tag_is_valid;
     } _flags;
 
     // mission WP resume history
@@ -688,6 +698,8 @@ private:
     // update progress made in mission to store last position in the event of mission exit
     void update_exit_position(void);
 
+    void on_mission_timestamp_change();
+
     /// sanity checks that the masked fields are not NaN's or infinite
     static MAV_MISSION_RESULT sanity_check_params(const mavlink_mission_item_int_t& packet);
 
@@ -711,7 +723,6 @@ private:
     uint16_t                _prev_nav_cmd_index;    // index of the previous "navigation" command.  Rarely used which is why we don't store the whole command
     uint16_t                _prev_nav_cmd_wp_index; // index of the previous "navigation" command that contains a waypoint.  Rarely used which is why we don't store the whole command
     struct Location         _exit_position;  // the position in the mission that the mission was exited
-    uint16_t                _current_tag;           // current tag that is running
 
     // jump related variables
     struct jump_tracking_struct {
@@ -721,6 +732,7 @@ private:
 
     // last time that mission changed
     uint32_t _last_change_time_ms;
+    uint32_t _last_change_time_prev_ms;
 
 
     // multi-thread support. This is static so it can be used from

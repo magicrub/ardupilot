@@ -537,6 +537,9 @@ void GCS_MAVLINK::handle_mission_set_current(AP_Mission &mission, const mavlink_
         // then they expect to receive a MISSION_CURRENT message with
         // exactly that sequence number in it, even if ArduPilot never
         // actually holds that as a sequence number (e.g. packet.seq==0).
+
+        mission.jump_tag_reset();
+
         if (HAVE_PAYLOAD_SPACE(chan, MISSION_CURRENT)) {
             mavlink_msg_mission_current_send(chan, packet.seq);
         } else {
@@ -2496,15 +2499,6 @@ void GCS_MAVLINK::send_heartbeat() const
         system_status());
 }
 
-MAV_RESULT GCS_MAVLINK::handle_command_do_jump_tag(const mavlink_command_long_t &packet)
-{
-    AP_Mission *mission = AP::mission();
-    if (mission == nullptr) {
-        return MAV_RESULT_UNSUPPORTED;
-    }
-    return mission->jump_to_tag(packet.param1) ? MAV_RESULT_ACCEPTED : MAV_RESULT_FAILED;
-}
-
 MAV_RESULT GCS_MAVLINK::handle_command_do_aux_function(const mavlink_command_long_t &packet)
 {
     if (packet.param2 > 2) {
@@ -3894,6 +3888,8 @@ MAV_RESULT GCS_MAVLINK::handle_command_preflight_can(const mavlink_command_long_
 // the current waypoint, rather than this DO command.  It is hoped we
 // can move to this command in the future to avoid acknowledgement
 // issues with MISSION_SET_CURRENT
+// This also handles DO_JUMP_TAG by converting the tag to an index
+// and setting the index as if it was a normal do_set_mission_current
 MAV_RESULT GCS_MAVLINK::handle_command_do_set_mission_current(const mavlink_command_long_t &packet)
 {
     AP_Mission *mission = AP::mission();
@@ -3902,9 +3898,15 @@ MAV_RESULT GCS_MAVLINK::handle_command_do_set_mission_current(const mavlink_comm
     }
 
     const uint32_t seq = (uint32_t)packet.param1;
-    if (!mission->set_current_cmd(seq)) {
+    if (packet.command == MAV_CMD_DO_JUMP_TAG) {
+        if (!mission->jump_to_tag(seq)) {
+            return MAV_RESULT_FAILED;
+        }
+    } else if (!mission->set_current_cmd(seq)) {
         return MAV_RESULT_FAILED;
     }
+
+    mission->jump_tag_reset();
 
     // volunteer the new current waypoint for all listeners
     send_message(MSG_CURRENT_WAYPOINT);
@@ -4183,7 +4185,7 @@ MAV_RESULT GCS_MAVLINK::handle_command_long_packet(const mavlink_command_long_t 
         result = handle_command_preflight_calibration(packet);
         break;
 
-
+    case MAV_CMD_DO_JUMP_TAG:
     case MAV_CMD_DO_SET_MISSION_CURRENT:
         result = handle_command_do_set_mission_current(packet);
         break;
@@ -4223,10 +4225,6 @@ MAV_RESULT GCS_MAVLINK::handle_command_long_packet(const mavlink_command_long_t 
             send_text(MAV_SEVERITY_WARNING, "All parameters reset, reboot board");
             result= MAV_RESULT_ACCEPTED;
         }
-        break;
-
-    case MAV_CMD_DO_JUMP_TAG:
-        result = handle_command_do_jump_tag(packet);
         break;
 
     case MAV_CMD_DO_AUX_FUNCTION:
