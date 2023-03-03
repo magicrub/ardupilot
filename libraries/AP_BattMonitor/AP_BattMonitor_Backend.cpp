@@ -199,9 +199,8 @@ void AP_BattMonitor_Backend::run_ekf_battery_estimation(const uint8_t instance)
         }
     }
     
-    static uint32_t last_print_ms = 0;
-        
-    if (instance == 0 && _ekf.initialized() && now_ms-last_print_ms > 2000) {
+#ifndef HAL_NO_GCS
+    if (instance == 0 && _ekf.initialized() && now_ms-_ekf_last_print_ms > 2000) {
         const auto& x = _ekf.get_state();
         
         gcs().send_named_float("BatERem", _ekf.get_remaining_energy_J(temp_C)*_params._cell_count);
@@ -209,8 +208,9 @@ void AP_BattMonitor_Backend::run_ekf_battery_estimation(const uint8_t instance)
         gcs().send_named_float("BatSOC", x(STATE_IDX_SOC));
         gcs().send_named_float("BatSOH", 1/x(STATE_IDX_SOH_INV));
         
-        last_print_ms = now_ms;
+        _ekf_last_print_ms = now_ms;
     }
+#endif
 
 #if HAL_LOGGING_ENABLED
 

@@ -106,6 +106,7 @@ private:
     uint32_t _ekf_timestamp_last_us;
     uint32_t _ekf_last_successful_update_ms;
     uint32_t _ekf_param_update_ms;
+    uint32_t _ekf_last_print_ms;
 #endif
 
     // resistance estimate
