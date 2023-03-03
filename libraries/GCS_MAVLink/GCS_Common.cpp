@@ -537,6 +537,9 @@ void GCS_MAVLINK::handle_mission_set_current(AP_Mission &mission, const mavlink_
         // then they expect to receive a MISSION_CURRENT message with
         // exactly that sequence number in it, even if ArduPilot never
         // actually holds that as a sequence number (e.g. packet.seq==0).
+
+        mission.jump_tag_reset();
+
         if (HAVE_PAYLOAD_SPACE(chan, MISSION_CURRENT)) {
             mavlink_msg_mission_current_send(chan, packet.seq);
         } else {
@@ -3902,6 +3905,8 @@ MAV_RESULT GCS_MAVLINK::handle_command_do_set_mission_current(const mavlink_comm
     } else if (!mission->set_current_cmd(seq)) {
         return MAV_RESULT_FAILED;
     }
+
+    mission->jump_tag_reset();
 
     // volunteer the new current waypoint for all listeners
     send_message(MSG_CURRENT_WAYPOINT);
