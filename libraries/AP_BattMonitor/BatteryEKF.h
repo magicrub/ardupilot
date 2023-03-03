@@ -22,6 +22,9 @@
     namespace std {
     int vsnprintf(char *str, size_t size, const char *fmt, va_list ap);
     }
+    namespace uavcan {
+    int vsnprintf(char *str, size_t size, const char *fmt, va_list ap);
+    }
     #endif
 
     #pragma GCC diagnostic push
