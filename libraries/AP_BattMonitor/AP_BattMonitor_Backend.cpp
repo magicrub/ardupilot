@@ -117,7 +117,7 @@ float AP_BattMonitor_Backend::voltage_resting_estimate() const
 #if BATTERY_EKF_ENABLED
 void AP_BattMonitor_Backend::run_ekf_battery_estimation(const uint8_t instance)
 {
-    if (!has_current() || !_state.healthy) {
+    if (!has_current() || !_state.healthy || !option_is_set(AP_BattMonitor_Params::Options::Enable_EKF_SoC_Estimation)) {
         return;
     }
 

@@ -25,6 +25,8 @@ public:
         Power_On_At_Arm                     = (1U<<3),  // Enabled when vehicle is armed, if HW supports it
         Power_Off_At_Boot                   = (1U<<4),  // Disabled at startup (aka boot), if HW supports it
         Power_On_At_Boot                    = (1U<<5),  // Enabled at startup (aka boot), if HW supports it. If Power_Off_at_Boot is also set, the behavior is Power_Off_at_Boot
+        GCS_Resting_Voltage                 = (1U<<6),  // send resistance resting voltage to GCS
+        Enable_EKF_SoC_Estimation           = (1U<<7),
     };
 
     BattMonitor_LowVoltage_Source failsafe_voltage_source(void) const { return (enum BattMonitor_LowVoltage_Source)_failsafe_voltage_source.get(); }

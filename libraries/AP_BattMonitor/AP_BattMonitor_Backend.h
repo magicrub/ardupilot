@@ -85,6 +85,11 @@ public:
     void Log_Write_BAT(const uint8_t instance, const uint64_t time_us) const;
     void Log_Write_BCL(const uint8_t instance, const uint64_t time_us) const;
 
+    // check if a option is set
+    bool option_is_set(const AP_BattMonitor_Params::Options option) const {
+        return (uint16_t(_params._options.get()) & uint16_t(option)) != 0;
+    }
+
 protected:
     AP_BattMonitor                      &_mon;      // reference to front-end
     AP_BattMonitor::BattMonitor_State   &_state;    // reference to this instances state (held in the front-end)
