@@ -606,6 +606,11 @@ public:
     // Returns 0 if no appropriate JUMP_TAG match can be found.
     uint16_t get_index_of_jump_tag(const uint16_t tag) const;
 
+    // invalidate current jump tag
+    void jump_tag_reset() {
+        _jump_tag.age = 0;
+    }
+
 private:
     static AP_Mission *_singleton;
 

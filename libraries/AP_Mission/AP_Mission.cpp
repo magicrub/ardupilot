@@ -82,12 +82,15 @@ void AP_Mission::start()
 void AP_Mission::stop()
 {
     _flags.state = MISSION_STOPPED;
+    jump_tag_reset();
 }
 
 /// resume - continues the mission execution from where we last left off
 ///     previous running commands will be re-initialized
 void AP_Mission::resume()
 {
+    jump_tag_reset();
+    
     // if mission had completed then start it from the first command
     if (_flags.state == MISSION_COMPLETE) {
         start();
@@ -205,6 +208,7 @@ void AP_Mission::reset()
     _prev_nav_cmd_id       = AP_MISSION_CMD_ID_NONE;
     init_jump_tracking();
     reset_wp_history();
+    jump_tag_reset();
 }
 
 /// clear - clears out mission
@@ -295,7 +299,7 @@ void AP_Mission::update()
 // handle events for when the mission has been updated (but maybe not changed)
 void AP_Mission::on_mission_timestamp_change()
 {
-    _jump_tag.age = 0;
+    jump_tag_reset();
 }
 
 bool AP_Mission::verify_command(const Mission_Command& cmd)
