@@ -206,7 +206,7 @@ void AP_BattMonitor_Backend::run_ekf_battery_estimation(const uint8_t instance)
         gcs().send_named_float("BatERem", _ekf.get_remaining_energy_J(temp_C)*_params._cell_count);
         gcs().send_named_float("BatERemSD", _ekf.get_remaining_energy_J_sigma(temp_C)*_params._cell_count);
         gcs().send_named_float("BatSOC", x(STATE_IDX_SOC));
-        gcs().send_named_float("BatSOH", 1/x(STATE_IDX_SOH_INV));
+        gcs().send_named_float("BatSOH", is_zero(x(STATE_IDX_SOH_INV)) ? 0 : 1/x(STATE_IDX_SOH_INV));
         
         _ekf_last_print_ms = now_ms;
     }
