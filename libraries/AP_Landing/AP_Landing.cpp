@@ -138,6 +138,17 @@ const AP_Param::GroupInfo AP_Landing::var_info[] = {
     // @User: Advanced
     AP_GROUPINFO("FLAP_PERCNT", 13, AP_Landing, flap_percent, 0),
 
+    // @Param: TYPE
+    // @DisplayName: Auto-landing type
+    // @Description: Specifies the auto-landing type to use
+    // @Values: 0:Standard Glide Slope, 1:Deepstall
+    // @User: Standard
+    AP_GROUPINFO("TYPE",    14, AP_Landing, type, TYPE_STANDARD_GLIDE_SLOPE),
+
+    // @Group: DS_
+    // @Path: AP_Landing_Deepstall.cpp
+    AP_SUBGROUPINFO(deepstall, "DS_", 15, AP_Landing, AP_Landing_Deepstall),
+
     // @Param: OPTIONS
     // @DisplayName: Landing options bitmask
     // @Description: Bitmask of options to use with landing.
@@ -153,24 +164,6 @@ const AP_Param::GroupInfo AP_Landing::var_info[] = {
     // @Increment: 1
     // @User: Advanced
     AP_GROUPINFO("WIND_COMP", 18, AP_Landing, wind_comp, 50),
-
-    // @Param: TYPE
-    // @DisplayName: Auto-landing type
-    // @Description: Specifies the auto-landing type to use
-    // @Values: 0:Standard Glide Slope, 1:Deepstall
-    // @User: Standard
-    AP_GROUPINFO("TYPE",    14, AP_Landing, type, TYPE_STANDARD_GLIDE_SLOPE),
-
-    // @Group: DS_
-    // @Path: AP_Landing_Deepstall.cpp
-    AP_SUBGROUPINFO(deepstall, "DS_", 15, AP_Landing, AP_Landing_Deepstall),
-
-    // @Param: OPTIONS
-    // @DisplayName: Landing options bitmask
-    // @Description: Bitmask of options to use with landing.
-    // @Bitmask: 0: honor min throttle during landing flare
-    // @User: Advanced
-    AP_GROUPINFO("OPTIONS", 16, AP_Landing, _options, 0),
 
     AP_GROUPEND
 };
