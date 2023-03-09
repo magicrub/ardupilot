@@ -50,6 +50,8 @@
 #define HAL_HAVE_SERVO_VOLTAGE 1
 #define HAL_HAVE_SAFETY_SWITCH 0
 
+// only include if compiling C++ code
+#ifdef __cplusplus
 // allow for static semaphores
 #ifdef __cplusplus
 #include <AP_HAL_SITL/Semaphores.h>
