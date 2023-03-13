@@ -104,8 +104,6 @@ protected:
     float launch_accel;
     float launch_time;
     uint64_t launch_start_ms;
-    
-    bool batt_initialized = false;
 
     const uint8_t throttle_servo = 2;
     const int8_t choke_servo = 14;
