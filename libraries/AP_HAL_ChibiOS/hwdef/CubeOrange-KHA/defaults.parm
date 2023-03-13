@@ -53,7 +53,7 @@ COMPASS_ORIENT2         0
 COMPASS_ORIENT3         4
 EK3_WIND_P_NSE		      0.05
 FENCE_ACTION            0
-FENCE_AUTOENABLE        2
+FENCE_AUTOENABLE        0
 FENCE_ALT_MAX           3657
 FLTMODE1                10
 FLTMODE2                10
@@ -117,6 +117,7 @@ RNGFND_LANDING          1
 RTL_AUTOLAND            2
 RTL_RADIUS              200
 SCR_ENABLE              1
+SCR_HEAP_SIZE           204800
 SERIAL1_BAUD            230
 SERIAL2_BAUD            230
 SERIAL2_PROTOCOL        -1
