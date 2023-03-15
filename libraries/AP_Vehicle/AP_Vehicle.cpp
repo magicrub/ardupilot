@@ -61,6 +61,12 @@ const AP_Param::GroupInfo AP_Vehicle::var_info[] = {
     AP_SUBGROUPINFO(externalAHRS, "EAHRS", 8, AP_Vehicle, AP_ExternalAHRS),
 #endif
 
+#if AP_NMEA_XML_ENABLED
+    // @Group: NMEAX_
+    // @Path: ../AP_NMEA_XML/AP_NMEA_XML.cpp
+    AP_SUBGROUPINFO(nmea_xml, "NMEAX_", 20, AP_Vehicle, AP_NMEA_XML),
+#endif
+
     AP_GROUPEND
 };
 
@@ -223,6 +229,9 @@ const AP_Scheduler::Task AP_Vehicle::scheduler_tasks[] = {
 #if HAL_GYROFFT_ENABLED
     SCHED_TASK_CLASS(AP_GyroFFT,   &vehicle.gyro_fft,       update,                  400, 50),
     SCHED_TASK_CLASS(AP_GyroFFT,   &vehicle.gyro_fft,       update_parameters,         1, 50),
+#endif
+#if AP_NMEA_XML_ENABLED
+    SCHED_TASK_CLASS(AP_NMEA_XML,  &vehicle.nmea_xml,       update,                   50, 180),
 #endif
     SCHED_TASK(update_dynamic_notch_at_specified_rate,             LOOP_RATE,    200),
     SCHED_TASK_CLASS(AP_VideoTX,   &vehicle.vtx,            update,                    2, 100),
