@@ -1,0 +1,21 @@
+{
+"SOH_init":     1,
+"R0_init":      0,
+"R1_init":      0,
+"R2_init":      0,
+"RC1":          39,
+"RC2":          3.6,
+"I_sigma":      0.1,
+"SOH_sigma":    0.5,
+"R0_sigma":     0.12,
+"R1_sigma":     0.023,
+"R2_sigma":     0.023,
+"I_step_sigma": 53.6,
+"V_sigma":      0.05,
+"Q":            192960,
+"R0_pnoise":    2.3e-4,
+"R1_pnoise":    2.3e-04,
+"R2_pnoise":    2.3e-04,
+"SOC_pnoise":   5e-4,
+"PACK_CAPACITY": 53600
+}

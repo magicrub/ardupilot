@@ -17,6 +17,7 @@
 #include <AP_Common/AP_Common.h>
 #include <AP_HAL/AP_HAL.h>
 #include "AP_BattMonitor.h"
+#include "BatteryEKF.h"
 
 class AP_BattMonitor_Backend
 {
@@ -59,6 +60,10 @@ public:
     // update battery resistance estimate and voltage_resting_estimate
     void update_resistance_estimate();
 
+#if BATTERY_EKF_ENABLED
+    void run_ekf_battery_estimation(const uint8_t instance);
+#endif
+
     // updates failsafe timers, and returns what failsafes are active
     virtual AP_BattMonitor::Failsafe update_failsafes(void);
 
@@ -80,6 +85,11 @@ public:
     void Log_Write_BAT(const uint8_t instance, const uint64_t time_us) const;
     void Log_Write_BCL(const uint8_t instance, const uint64_t time_us) const;
 
+    // check if a option is set
+    bool option_is_set(const AP_BattMonitor_Params::Options option) const {
+        return (uint16_t(_params._options.get()) & uint16_t(option)) != 0;
+    }
+
 protected:
     AP_BattMonitor                      &_mon;      // reference to front-end
     AP_BattMonitor::BattMonitor_State   &_state;    // reference to this instances state (held in the front-end)
@@ -89,6 +99,16 @@ protected:
     void check_failsafe_types(bool &low_voltage, bool &low_capacity, bool &critical_voltage, bool &critical_capacity) const;
 
 private:
+
+#if BATTERY_EKF_ENABLED
+    BatteryEKF _ekf;
+    BatteryEKF::Params _ekf_params;
+    uint32_t _ekf_timestamp_last_us;
+    uint32_t _ekf_last_successful_update_ms;
+    uint32_t _ekf_param_update_ms;
+    uint32_t _ekf_last_print_ms;
+#endif
+
     // resistance estimate
     uint32_t    _resistance_timer_ms;    // system time of last resistance estimate update
     float       _voltage_filt;           // filtered voltage

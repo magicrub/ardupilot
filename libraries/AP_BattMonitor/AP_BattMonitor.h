@@ -5,6 +5,7 @@
 #include <AP_Math/AP_Math.h>
 #include <GCS_MAVLink/GCS_MAVLink.h>
 #include "AP_BattMonitor_Params.h"
+#include "AP_BattMonitor_config.h"
 
 // maximum number of battery monitors
 #define AP_BATT_MONITOR_MAX_INSTANCES       9

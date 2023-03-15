@@ -18,6 +18,19 @@
 #include "AP_BattMonitor.h"
 #include "AP_BattMonitor_Backend.h"
 
+extern const AP_HAL::HAL& hal;
+
+#if BATTERY_EKF_ENABLED
+#include <AP_Logger/AP_Logger.h>
+#include <GCS_MAVLink/GCS.h>
+static float soc_ocv_x[] = {0.0, 0.005063014925373088, 0.01613838805970147, 0.02905964179104481, 0.04382680597014932, 0.060439850746268675, 0.07705289552238803, 0.09920364179104468, 0.1268920298507462, 0.15642635820895523, 0.19334423880597018, 0.2357997910447761, 0.2708717910447762, 0.2967142985074628, 0.3244027164179104, 0.34839934328358213, 0.3779336417910447, 0.4037761791044776, 0.4388481492537314, 0.462844776119403, 0.4868414029850746, 0.5182216119402985, 0.5551394925373134, 0.5920573731343284, 0.6289752537313433, 0.6695849253731343, 0.7194240895522388, 0.7581878507462687, 0.7932598507462687, 0.8283318507462687, 0.8615579402985074, 0.9058594029850746, 0.9446231641791045, 0.9815410447761194, 1.0};
+
+static float soc_ocv_y[] = {2.5180000000000002, 2.6487000000000003, 2.75, 2.8668, 2.9681, 3.0693, 3.1550000000000002, 3.2406, 3.3107, 3.373, 3.4198, 3.4587, 3.4899, 3.5132, 3.5288, 3.5444, 3.5678, 3.5911, 3.6145, 3.6456, 3.6612, 3.7001, 3.7313, 3.7702, 3.8014, 3.8403, 3.8793, 3.9104, 3.9494000000000002, 3.9961, 4.027299999999999, 4.0584, 4.074, 4.1051, 4.158};
+
+BatteryChemistryModelLinearInterpolated chemistry_model(soc_ocv_x, soc_ocv_y, ARRAY_SIZE(soc_ocv_x));
+#endif
+
+
 /*
   base class constructor.
   This incorporates initialisation as well.
@@ -26,6 +39,9 @@ AP_BattMonitor_Backend::AP_BattMonitor_Backend(AP_BattMonitor &mon, AP_BattMonit
                                                AP_BattMonitor_Params &params) :
         _mon(mon),
         _state(mon_state),
+#if BATTERY_EKF_ENABLED
+        _ekf(_ekf_params, chemistry_model),
+#endif
         _params(params)
 {
 }
@@ -97,6 +113,150 @@ float AP_BattMonitor_Backend::voltage_resting_estimate() const
     // resting voltage should always be greater than or equal to the raw voltage
     return MAX(_state.voltage, _state.voltage_resting_estimate);
 }
+
+#if BATTERY_EKF_ENABLED
+void AP_BattMonitor_Backend::run_ekf_battery_estimation(const uint8_t instance)
+{
+    if (!has_current() || !_state.healthy || !option_is_set(AP_BattMonitor_Params::Options::Enable_EKF_SoC_Estimation)) {
+        return;
+    }
+
+    // get V and I
+    float V = _state.voltage;
+    float I = _state.current_amps;
+    
+    if (_params._cell_count > 0) {
+        V /= _params._cell_count;
+    }
+    
+    // get dt
+    const uint32_t dt_us = _state.last_time_micros - _ekf_timestamp_last_us;
+    if (dt_us == 0 || dt_us > 1e6f) {
+        _ekf_timestamp_last_us = _state.last_time_micros;
+        return;
+    }
+    const float dt = dt_us * 1E-6f;
+    
+    _ekf_timestamp_last_us = _state.last_time_micros;
+
+    // get tempC
+    float temp_C = 25;
+    if (has_temperature()) {
+        temp_C = _state.temperature;
+    }
+
+    bool V_in_range = V > _ekf.get_chemistry_model().min_valid_OCV(temp_C)*0.8 && V < _ekf.get_chemistry_model().max_valid_OCV(temp_C)*1.1;
+
+    // update params at 1Hz and initialize if needed
+    const uint32_t now_ms = AP_HAL::millis();
+    if (!_ekf.initialized() || (now_ms - _ekf_param_update_ms > 1000)) {
+        _ekf_param_update_ms = now_ms;
+        
+        _ekf_params =
+        (BatteryEKF::Params){
+        .SOH_init =     _params._ekf.SOH_init,
+        .R0_init =      0,
+        .R1_init =      0,
+        .R2_init =      0,
+        .RC1 =          _params._ekf.RC1,
+        .RC2 =          _params._ekf.RC2,
+        .I_sigma =      _params._ekf.I_sigma,
+        .SOH_sigma =    _params._ekf.SOH_sigma,
+        .R0_sigma =     6250.0f/_params._pack_capacity,
+        .R1_sigma =     1250.0f/_params._pack_capacity,
+        .R2_sigma =     1250.0f/_params._pack_capacity,
+        .I_step_sigma = _params._pack_capacity*1e-3f,
+        .V_sigma =      _params._ekf.V_sigma,
+        .Q =            _params._pack_capacity*1e-3f*3600,
+        .R0_pnoise =    12.5f/_params._pack_capacity,
+        .R1_pnoise =    1.5f/_params._pack_capacity,
+        .R2_pnoise =    1.5f/_params._pack_capacity,
+        .SOC_pnoise =   _params._ekf.SOC_pnoise
+        };
+
+        if (!_ekf.initialized() && V_in_range) {
+            _ekf.initialize(V, I, temp_C);
+            hal.console->printf("Battery EKF init\n");
+        }
+    }
+    
+    float y = 0;
+    float NIS = 0;
+
+    if (_ekf.initialized()) {
+        _ekf.predict(dt,I);
+
+        if (V_in_range) {
+            if (_ekf.update(V, I, temp_C, y, NIS)) {
+                _ekf_last_successful_update_ms = now_ms;
+            }
+            
+            if (now_ms - _ekf_last_successful_update_ms > 3000) {
+                hal.console->printf("Battery EKF reset\n");
+                _ekf_last_successful_update_ms = now_ms;
+                _ekf.initialize(V, I, temp_C);
+            }
+        }
+    }
+    
+#ifndef HAL_NO_GCS
+    if (instance == 0 && _ekf.initialized() && now_ms-_ekf_last_print_ms > 2000) {
+        const auto& x = _ekf.get_state();
+        
+        gcs().send_named_float("BatERem", _ekf.get_remaining_energy_J(temp_C)*_params._cell_count);
+        gcs().send_named_float("BatERemSD", _ekf.get_remaining_energy_J_sigma(temp_C)*_params._cell_count);
+        gcs().send_named_float("BatSOC", x(STATE_IDX_SOC));
+        gcs().send_named_float("BatSOH", is_zero(x(STATE_IDX_SOH_INV)) ? 0 : 1/x(STATE_IDX_SOH_INV));
+        
+        _ekf_last_print_ms = now_ms;
+    }
+#endif
+
+#if HAL_LOGGING_ENABLED
+
+    if (_ekf.initialized()) {
+        AP::logger().Write("BKF1", "TimeUS,Instance,dt,V,I,TempC,y,NIS,E,ESig",
+            "QBffffffff",
+            AP_HAL::micros64(),
+            instance,
+            (double)dt,
+            (double)V,
+            (double)I,
+            (double)temp_C,
+            (double)y,
+            (double)NIS,
+            (double)_ekf.get_remaining_energy_Wh(temp_C)*_params._cell_count,
+            (double)_ekf.get_remaining_energy_Wh_sigma(temp_C)*_params._cell_count);
+        
+        const auto& x = _ekf.get_state();
+        AP::logger().Write("BKF2", "TimeUS,Instance,x0,x1,x2,x3,x4,x5,x6",
+            "QBfffffff",
+            AP_HAL::micros64(),
+            instance,
+            (double)x(0),
+            (double)x(1),
+            (double)x(2),
+            (double)x(3),
+            (double)x(4),
+            (double)x(5),
+            (double)x(6));
+        
+        const auto& P = _ekf.get_covariance();
+        AP::logger().Write("BKF3", "TimeUS,Instance,s0,s1,s2,s3,s4,s5,s6",
+            "QBfffffff",
+            AP_HAL::micros64(),
+            instance,
+            (double)sqrtf(P(0,0)),
+            (double)sqrtf(P(1,1)),
+            (double)sqrtf(P(2,2)),
+            (double)sqrtf(P(3,3)),
+            (double)sqrtf(P(4,4)),
+            (double)sqrtf(P(5,5)),
+            (double)sqrtf(P(6,6)));
+    }
+#endif // HAL_LOGGING_ENABLED
+}
+#endif
 
 AP_BattMonitor::Failsafe AP_BattMonitor_Backend::update_failsafes(void)
 {

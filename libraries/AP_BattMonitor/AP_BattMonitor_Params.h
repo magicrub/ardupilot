@@ -1,6 +1,7 @@
 #pragma once
 
 #include <AP_Param/AP_Param.h>
+#include "AP_BattMonitor_config.h"
 
 class AP_BattMonitor_Params {
 public:
@@ -24,6 +25,8 @@ public:
         Power_On_At_Arm                     = (1U<<3),  // Enabled when vehicle is armed, if HW supports it
         Power_Off_At_Boot                   = (1U<<4),  // Disabled at startup (aka boot), if HW supports it
         Power_On_At_Boot                    = (1U<<5),  // Enabled at startup (aka boot), if HW supports it. If Power_Off_at_Boot is also set, the behavior is Power_Off_at_Boot
+        GCS_Resting_Voltage                 = (1U<<6),  // send resistance resting voltage to GCS
+        Enable_EKF_SoC_Estimation           = (1U<<7),
     };
 
     BattMonitor_LowVoltage_Source failsafe_voltage_source(void) const { return (enum BattMonitor_LowVoltage_Source)_failsafe_voltage_source.get(); }
@@ -49,4 +52,20 @@ public:
     AP_Int8  _failsafe_voltage_source;  /// voltage type used for detection of low voltage event
     AP_Int8  _failsafe_low_action;      /// action to preform on a low battery failsafe
     AP_Int8  _failsafe_critical_action; /// action to preform on a critical battery failsafe
+
+#if BATTERY_EKF_ENABLED
+    // TODO: move all these to a new EKFBattery object so it has it's own memory space
+
+    AP_Int8  _cell_count;               /// count of cells, like "4S" or "6S"
+    struct {
+        AP_Float SOH_init;
+        AP_Float RC1;
+        AP_Float RC2;
+        AP_Float I_sigma;
+        AP_Float SOH_sigma;
+        AP_Float V_sigma;
+        AP_Float SOC_pnoise;
+    } _ekf;
+#endif
+
 };

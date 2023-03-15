@@ -578,6 +578,12 @@ public:
     AP_Int32        oneshot_mask;
     
     AP_Int8         takeoff_rotate_elev;
+    
+    AP_Float        vehicle_mass;
+    AP_Float        nom_level_flight_power;
+    AP_Float        auxiliary_power_consumption;
+    AP_Float        nom_level_flight_airspeed;
+    AP_Float        nom_level_flight_mass;
 };
 
 extern const AP_Param::Info var_info[];

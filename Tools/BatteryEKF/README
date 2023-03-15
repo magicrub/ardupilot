@@ -1,0 +1,13 @@
+Files:
+
+./BatteryEKF.cpp ./BatteryEKF.h - defines a BatteryEKF class - a 7-state EKF that estimates state of health and state of charge
+
+./BatteryChemistryModel.h - defines a battery chemistry model, defining the battery's SOC-OCV curve at a given temperature, accepted by BatteryEKF
+
+./derivations - directory that contains the symbolic math derivations written in python. This code generates C++. The makefile automatically does this and puts the C++ code in build/derivations/*.cpp, which are included in BatteryEKF.cpp
+
+./replay.cpp - contains main
+
+./run_filter - built by running make - accepts a configuration .json, an input log, runs a BatteryEKF over the battery data in the log, outputs a .json
+
+./plot.py - reads the .json output by ./run_filter and plots it

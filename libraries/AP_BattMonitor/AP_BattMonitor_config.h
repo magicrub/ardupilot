@@ -1,0 +1,5 @@
+#pragma once
+
+#ifndef BATTERY_EKF_ENABLED
+#define BATTERY_EKF_ENABLED (BOARD_FLASH_SIZE > 1024)
+#endif

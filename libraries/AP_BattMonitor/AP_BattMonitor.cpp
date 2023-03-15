@@ -307,7 +307,11 @@ void AP_BattMonitor::read()
         if (drivers[i] != nullptr && get_type(i) != Type::NONE) {
             drivers[i]->read();
             drivers[i]->update_resistance_estimate();
-            
+
+#if BATTERY_EKF_ENABLED
+            drivers[i]->run_ekf_battery_estimation(i);
+#endif
+
 #ifndef HAL_BUILD_AP_PERIPH
             if (logger != nullptr && logger->should_log(_log_battery_bit)) {
                 const uint64_t time_us = AP_HAL::micros64();

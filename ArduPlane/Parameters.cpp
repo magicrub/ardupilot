@@ -1277,6 +1277,36 @@ const AP_Param::GroupInfo ParametersG2::var_info[] = {
     // @User: Advanced
     AP_GROUPINFO("TKOFF_ROTATE_ELE", 33, ParametersG2, takeoff_rotate_elev, 0),
     
+    // @Param: MASS
+    // @DisplayName: Mass of vehicle
+    // @Description: Mass of vehicle
+    // @User: Advanced
+    AP_GROUPINFO("MASS", 63, ParametersG2, vehicle_mass, 0),
+    
+    // @Param: ENDURE_PWR
+    // @DisplayName: Propulsive power consumption at nominal flight condition
+    // @Description: Used for endurance estimation. Specifies the power consumption of the vehicle in level flight condition at sea level altitude at ENDURE_ARSP and ENDURE_MASS.
+    // @User: Advanced
+    AP_GROUPINFO("ENDURE_PWR", 62, ParametersG2, nom_level_flight_power, 0),
+    
+    // @Param: ENDURE_AUX_PWR
+    // @DisplayName: Average non-propulsive power consumption
+    // @Description: Used for endurance estimation. Specifies the non-propulsive component of power consumption in flight.
+    // @User: Advanced
+    AP_GROUPINFO("ENDURE_AUX_PWR", 61, ParametersG2, auxiliary_power_consumption, 0),
+    
+    // @Param: ENDURE_ARSP
+    // @DisplayName: Airspeed at which ENDURE_PWR was measured
+    // @Description: Used for endurance estimation. Specifies the airspeed at which the propulsive power consumption was measured
+    // @User: Advanced
+    AP_GROUPINFO("ENDURE_ARSP", 60, ParametersG2, nom_level_flight_airspeed, 0),
+    
+    // @Param: ENDURE_MASS
+    // @DisplayName: Vehicle mass at which ENDURE_PWR was measured
+    // @Description: Used for endurance estimation. Specifies the mass at which the propulsive power consumption was measured
+    // @User: Advanced
+    AP_GROUPINFO("ENDURE_MASS", 59, ParametersG2, nom_level_flight_mass, 0),
+    
     AP_GROUPEND
 };
 
