@@ -43,7 +43,6 @@
 #include <AP_VisualOdom/AP_VisualOdom.h>
 #include <AP_VideoTX/AP_VideoTX.h>
 #include <AP_MSP/AP_MSP.h>
-#include <AP_NMEA_XML/AP_NMEA_XML.h>
 #include <AP_Frsky_Telem/AP_Frsky_Parameters.h>
 #include <AP_ExternalAHRS/AP_ExternalAHRS.h>
 #include <AP_VideoTX/AP_SmartAudio.h>
@@ -303,10 +302,6 @@ protected:
     // notification object for LEDs, buzzers etc (parameter set to
     // false disables external leds)
     AP_Notify notify;
-
-#if AP_NMEA_XML_ENABLED
-    AP_NMEA_XML nmea_xml;
-#endif
 
     // Inertial Navigation EKF
 #if AP_AHRS_NAVEKF_AVAILABLE

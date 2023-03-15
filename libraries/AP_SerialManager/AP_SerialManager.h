@@ -152,7 +152,6 @@ public:
         SerialProtocol_AHRS = 36,
         SerialProtocol_SmartAudio = 37,
         SerialProtocol_FETtecOneWire = 38,
-        SerialProtocol_NMEA_XML = 55,
         SerialProtocol_NumProtocols                    // must be the last value
     };
 
