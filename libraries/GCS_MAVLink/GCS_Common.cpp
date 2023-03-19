@@ -2696,17 +2696,26 @@ void GCS_MAVLINK::send_named_float(const char *name, float value) const
     mavlink_msg_named_value_float_send(chan, AP_HAL::millis(), float_name, value);
 }
 
-void GCS_MAVLINK::send_home_position() const
+bool GCS_MAVLINK::send_home_position_check(Location &home, Vector3f &home_pos_neu_cm) const
 {
     if (!AP::ahrs().home_is_set()) {
-        return;
+        return false;
     }
 
-    const Location &home = AP::ahrs().get_home();
+    home = AP::ahrs().get_home();
 
     // get home position from origin
-    Vector3f home_pos_neu_cm;
     if (!home.get_vector_from_origin_NEU(home_pos_neu_cm)) {
+        return false;
+    }
+    return true;
+}
+
+void GCS_MAVLINK::send_home_position() const
+{
+    Location home;
+    Vector3f home_pos_neu_cm;
+    if (!send_home_position_check(home, home_pos_neu_cm)) {
         return;
     }
 
@@ -4485,7 +4494,9 @@ MAV_RESULT GCS_MAVLINK::handle_command_do_set_mode(const mavlink_command_long_t 
 
 MAV_RESULT GCS_MAVLINK::handle_command_get_home_position(const mavlink_command_long_t &packet)
 {
-    if (!AP::ahrs().home_is_set()) {
+    Location home;
+    Vector3f home_pos_neu_cm;
+    if (!send_home_position_check(home, home_pos_neu_cm)) {
         return MAV_RESULT_FAILED;
     }
     if (!try_send_message(MSG_HOME)) {

@@ -367,6 +367,7 @@ public:
     void send_gimbal_device_attitude_status() const;
     void send_named_float(const char *name, float value) const;
     void send_home_position() const;
+    bool send_home_position_check(Location &home, Vector3f &home_pos_neu_cm) const;
     void send_gps_global_origin() const;
     virtual void send_attitude_target() {};
     virtual void send_position_target_global_int() { };
