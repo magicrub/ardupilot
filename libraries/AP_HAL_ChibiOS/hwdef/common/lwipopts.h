@@ -51,6 +51,8 @@
 #define SNTP_SERVER_ADDRESS "pool.ntp.org"
 #define SNTP_SERVER_DNS 1
 
+#define LWIP_ERRNO_STDINCLUDE
+
 /*
    -----------------------------------------------
    ---------- Platform specific locking ----------
