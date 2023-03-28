@@ -87,7 +87,7 @@ cscope.out
 cscope.po.out
 dataflash.bin
 eeprom.bin
-index.html
+!index.html
 logs/
 mav.log
 mav.log.raw
@@ -136,7 +136,6 @@ way.txt
 *.wbproj
 *.wbproj
 segv_*out
-/scripts/
 /repl/
 /Rover/scripts/
 /Rover/repl/
