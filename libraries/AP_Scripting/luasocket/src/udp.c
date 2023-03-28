@@ -80,9 +80,6 @@ static t_opt optset[] = {
     {"ip-multicast-loop",    opt_set_ip_multicast_loop},
     {"ip-add-membership",    opt_set_ip_add_membership},
     {"ip-drop-membership",   opt_set_ip_drop_membersip},
-    {"ipv6-unicast-hops",    opt_set_ip6_unicast_hops},
-    {"ipv6-multicast-hops",  opt_set_ip6_unicast_hops},
-    {"ipv6-multicast-loop",  opt_set_ip6_multicast_loop},
     {"ipv6-add-membership",  opt_set_ip6_add_membership},
     {"ipv6-drop-membership", opt_set_ip6_drop_membersip},
     {"ipv6-v6only",          opt_set_ip6_v6only},
@@ -100,9 +97,6 @@ static t_opt optget[] = {
     {"ip-multicast-if",      opt_get_ip_multicast_if},
     {"ip-multicast-loop",    opt_get_ip_multicast_loop},
     {"error",                opt_get_error},
-    {"ipv6-unicast-hops",    opt_get_ip6_unicast_hops},
-    {"ipv6-multicast-hops",  opt_get_ip6_unicast_hops},
-    {"ipv6-multicast-loop",  opt_get_ip6_multicast_loop},
     {"ipv6-v6only",          opt_get_ip6_v6only},
 	{"recv-buffer-size",     opt_get_recv_buf_size},
 	{"send-buffer-size",     opt_get_send_buf_size},
@@ -231,6 +225,8 @@ static int meth_sendto(lua_State *L) {
 /*-------------------------------------------------------------------------*\
 * Receives data from a UDP socket
 \*-------------------------------------------------------------------------*/
+#pragma GCC diagnostic push
+#pragma GCC diagnostic error "-Wframe-larger-than=9000"
 static int meth_receive(lua_State *L) {
     p_udp udp = (p_udp) auxiliar_checkgroup(L, "udp{any}", 1);
     char buf[UDP_DATAGRAMSIZE];
@@ -300,6 +296,7 @@ static int meth_receivefrom(lua_State *L) {
     if (wanted > sizeof(buf)) free(dgram);
     return 3;
 }
+#pragma GCC diagnostic pop
 
 /*-------------------------------------------------------------------------*\
 * Returns family as string

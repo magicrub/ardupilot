@@ -210,6 +210,7 @@ int timeout_lua_sleep(lua_State *L)
 int timeout_lua_sleep(lua_State *L)
 {
     double n = luaL_checknumber(L, 1);
+#if CONFIG_HAL_BOARD != HAL_BOARD_CHIBIOS
     struct timespec t, r;
     if (n < 0.0) n = 0.0;
     if (n > INT_MAX) n = INT_MAX;
@@ -221,6 +222,9 @@ int timeout_lua_sleep(lua_State *L)
         t.tv_sec = r.tv_sec;
         t.tv_nsec = r.tv_nsec;
     }
+#else
+    chThdSleepMicroseconds(1000000ULL * n);
+#endif
     return 0;
 }
 #endif
