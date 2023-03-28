@@ -191,28 +191,6 @@ int opt_set_send_buf_size(lua_State *L, p_socket ps)
 }
 
 // -------------------------------------------------------
-int opt_set_ip6_unicast_hops(lua_State *L, p_socket ps)
-{
-  return opt_setint(L, ps, IPPROTO_IPV6, IPV6_UNICAST_HOPS);
-}
-
-int opt_get_ip6_unicast_hops(lua_State *L, p_socket ps)
-{
-  return opt_getint(L, ps, IPPROTO_IPV6, IPV6_UNICAST_HOPS);
-}
-
-// -------------------------------------------------------
-int opt_set_ip6_multicast_hops(lua_State *L, p_socket ps)
-{
-  return opt_setint(L, ps, IPPROTO_IPV6, IPV6_MULTICAST_HOPS);
-}
-
-int opt_get_ip6_multicast_hops(lua_State *L, p_socket ps)
-{
-  return opt_getint(L, ps, IPPROTO_IPV6, IPV6_MULTICAST_HOPS);
-}
-
-// -------------------------------------------------------
 int opt_set_ip_multicast_loop(lua_State *L, p_socket ps)
 {
     return opt_setboolean(L, ps, IPPROTO_IP, IP_MULTICAST_LOOP);
@@ -224,17 +202,6 @@ int opt_get_ip_multicast_loop(lua_State *L, p_socket ps)
 }
 
 // -------------------------------------------------------
-int opt_set_ip6_multicast_loop(lua_State *L, p_socket ps)
-{
-    return opt_setboolean(L, ps, IPPROTO_IPV6, IPV6_MULTICAST_LOOP);
-}
-
-int opt_get_ip6_multicast_loop(lua_State *L, p_socket ps)
-{
-    return opt_getboolean(L, ps, IPPROTO_IPV6, IPV6_MULTICAST_LOOP);
-}
-
-// -------------------------------------------------------
 int opt_set_linger(lua_State *L, p_socket ps)
 {
     struct linger li;                      /* obj, name, table */
@@ -243,12 +210,12 @@ int opt_set_linger(lua_State *L, p_socket ps)
     lua_gettable(L, 3);
     if (!lua_isboolean(L, -1))
         luaL_argerror(L, 3, "boolean 'on' field expected");
-    li.l_onoff = (u_short) lua_toboolean(L, -1);
+    li.l_onoff = (unsigned short) lua_toboolean(L, -1);
     lua_pushstring(L, "timeout");
     lua_gettable(L, 3);
     if (!lua_isnumber(L, -1))
         luaL_argerror(L, 3, "number 'timeout' field expected");
-    li.l_linger = (u_short) lua_tonumber(L, -1);
+    li.l_linger = (unsigned short) lua_tonumber(L, -1);
     return opt_set(L, ps, SOL_SOCKET, SO_LINGER, (char *) &li, sizeof(li));
 }
 

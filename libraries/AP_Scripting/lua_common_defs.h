@@ -1,6 +1,7 @@
 #pragma once
 
 #include <AP_HAL/AP_HAL_Boards.h>
+#include <AP_Filesystem/posix_compat.h>
 
 #ifndef REPL_DIRECTORY
   #if HAL_OS_FATFS_IO

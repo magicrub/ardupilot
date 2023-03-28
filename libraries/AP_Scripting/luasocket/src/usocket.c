@@ -79,7 +79,9 @@ int socket_waitfd(p_socket ps, int sw, p_timeout tm) {
 \*-------------------------------------------------------------------------*/
 int socket_open(void) {
     /* installs a handler to ignore sigpipe or it will crash us */
+#if CONFIG_HAL_BOARD != HAL_BOARD_CHIBIOS
     signal(SIGPIPE, SIG_IGN);
+#endif
     return 1;
 }
 
@@ -282,7 +284,7 @@ int socket_recvfrom(p_socket ps, char *data, size_t count, size_t *got,
     *got = 0;
     if (*ps == SOCKET_INVALID) return IO_CLOSED;
     for ( ;; ) {
-        long taken = (long) recvfrom(*ps, data, count, 0, addr, len);
+        long taken = (long) recvfrom(*ps, data, count, MSG_DONTWAIT, addr, len);
         if (taken > 0) {
             *got = taken;
             return IO_DONE;
