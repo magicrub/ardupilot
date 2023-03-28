@@ -11,10 +11,8 @@ local socket = require("socket")
 local url = require("socket.url")
 local ltn12 = require("ltn12")
 local mime = require("mime")
-local string = require("string")
 local headers = require("socket.headers")
 local base = _G
-local table = require("table")
 socket.http = {}
 local _M = socket.http
 
