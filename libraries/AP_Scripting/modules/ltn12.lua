@@ -7,8 +7,6 @@
 -----------------------------------------------------------------------------
 -- Declare module
 -----------------------------------------------------------------------------
-local string = require("string")
-local table = require("table")
 local unpack = unpack or table.unpack
 local base = _G
 local _M = {}
