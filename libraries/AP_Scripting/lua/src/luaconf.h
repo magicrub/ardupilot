@@ -10,6 +10,7 @@
 
 #include <limits.h>
 #include <stddef.h>
+#include <AP_Scripting/lua_common_defs.h>
 
 /*
   don't support binary load() by default
@@ -207,7 +208,7 @@
 #else			/* }{ */
 
 #define LUA_ROOT	"/usr/local/"
-#define LUA_LDIR	LUA_ROOT "share/lua/" LUA_VDIR "/"
+#define LUA_LDIR	SCRIPTING_DIRECTORY "/modules/"
 #define LUA_CDIR	LUA_ROOT "lib/lua/" LUA_VDIR "/"
 #define LUA_PATH_DEFAULT  \
 		LUA_LDIR"?.lua;"  LUA_LDIR"?/init.lua;" \
