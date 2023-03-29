@@ -1,5 +1,4 @@
 #include "AP_Networking_Serial.h"
-#include "AP_Networking.h"
 
 #if AP_SERIAL_EXTENSION_ENABLED
 extern const AP_HAL::HAL& hal;

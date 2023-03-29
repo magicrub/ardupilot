@@ -4,8 +4,9 @@
 #include <AP_HAL/Semaphores.h>
 #if AP_SERIAL_EXTENSION_ENABLED || HAL_ENABLE_SERIAL_TUNNEL
 #include <AP_SerialManager/AP_SerialManager.h>
-#include <lwip/udp.h>
-#include <lwip/ip_addr.h>
+// #include <lwip/udp.h>
+// #include <lwip/ip_addr.h>
+#include "AP_Networking.h"
 
 #ifndef AP_NETWORKING_UDP_RX_BUF_SIZE
 #define AP_NETWORKING_UDP_RX_BUF_SIZE 1024
@@ -20,7 +21,7 @@ public:
     AP_Networking_Serial(AP_SerialManager::SerialExtState::IP_Params &ip_params) :
         dst_port(ip_params.port)
     {
-        dst_addr = IPADDR4_INIT_BYTES(ip_params.ip[0], ip_params.ip[1], ip_params.ip[2], ip_params.ip[3]);
+        IP_ADDR_FROM_ARRAY(&dst_addr, ip_params.ip);
     }
 
     /* Implementations of UARTDriver virtual methods */

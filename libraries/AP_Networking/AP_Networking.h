@@ -31,6 +31,7 @@
 
 #define IP4_ADDR_VALUE_FROM_ARRAY(array) IP4_ADDR_VALUE(array[0],array[1],array[2],array[3])
 #define IP4_ADDR_FROM_ARRAY(dest_ip, array) IP4_ADDR(dest_ip, array[0],array[1],array[2],array[3])
+#define IP_ADDR_FROM_ARRAY(dest_ip, array) IP4_ADDR_FROM_ARRAY(dest_ip.u_addr.ip4, array)
 
 
 // declare backend class
