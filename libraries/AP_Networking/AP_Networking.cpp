@@ -35,6 +35,10 @@
     #include <lwip/apps/netbiosns.h>
     #endif
 
+    #if AP_NETWORKING_TFTP_ENABLED
+    #include <lwip/apps/tftp_server.h>
+    #endif
+    
 #else
     #include <arpa/inet.h>
     // #include <sys/ioctl.h>
@@ -178,7 +182,7 @@ const AP_Param::GroupInfo AP_Networking::var_info[] = {
     // @Param: _OPTIONS
     // @DisplayName: Network Options
     // @Description: Network Options
-    // @Bitmask: 0:SNTP, 1:NetBIOS
+    // @Bitmask: 0:TFTP, 1:NetBIOS, 2:SNTP, 
     // @User: Advanced
     AP_GROUPINFO("_OPTIONS", 17,  AP_Networking,    _param.options,   AP_NETWORKING_DEFAULT_OPTIONS),
 
@@ -406,15 +410,33 @@ void AP_Networking::init()
         sntp_setoperatingmode(SNTP_OPMODE_POLL);
         sntp_setservername(0, AP_NETWORKING_SNTP_SERVERNAME);
         sntp_init();
+        GCS_SEND_TEXT(MAV_SEVERITY_INFO,"NET: SNTP Ready: %s", AP_NETWORKING_SNTP_SERVERNAME);
     }
 #endif
 
 #if AP_NETWORKING_NETBIOS_ENABLED
     if (option_is_set(Options::NETBIOS)) {
         netbiosns_init();
-        #ifdef AP_NETWORKING_NETBIOS_NAME
         netbiosns_set_name(AP_NETWORKING_NETBIOS_NAME);
-        #endif
+        GCS_SEND_TEXT(MAV_SEVERITY_INFO,"NET: NETBIOS Ready: %s", AP_NETWORKING_NETBIOS_NAME);
+    }
+#endif
+
+#if AP_NETWORKING_TFTP_ENABLED
+    if (option_is_set(Options::TFTP)) {
+        const struct tftp_context *ctx {};
+            // ctx.open = &AP::FS().open();
+            // ctx.open(const char* fname, const char* mode, u8_t write);
+            // ctx.close(void* handle);
+            // ctx.read(void* handle, void* buf, int bytes);
+            // ctx.write(void* handle, struct pbuf* p);
+
+        const err_t err = tftp_init(ctx);
+        if (err == ERR_OK) {
+            GCS_SEND_TEXT(MAV_SEVERITY_INFO,"NET: TFTP Ready");
+        } else {
+            GCS_SEND_TEXT(MAV_SEVERITY_ERROR,"NET: TFTP init failed: %d", (int)err);
+        }
     }
 #endif
 

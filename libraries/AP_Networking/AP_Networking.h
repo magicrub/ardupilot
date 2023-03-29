@@ -62,8 +62,9 @@ public:
 
     // options bitmask
     enum class Options : uint32_t {
-        SNTP                        = (1U<<0),
+        TFTP                        = (1U<<0),
         NETBIOS                     = (1U<<1),
+        SNTP                        = (1U<<2),
     };
 
     // check if a option is set
