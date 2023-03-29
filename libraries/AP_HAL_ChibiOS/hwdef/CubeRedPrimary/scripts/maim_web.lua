@@ -60,13 +60,13 @@ local configuration = {
         maintenancePort = "none"
     },
     payload1 = {
-        enabled = mod_payload:get_enable(1),
-        ip = "127.0.0.1", -- tostring(mod_payload:get_udp_out_ip(1)),
+        enabled = false,
+        ip = "127.0.0.1",
         netmask = "255.0.0.0",
         gateway = "1.1.1.1"
     },
     payload2 = {
-        enabled = mod_payload:get_enable(2),
+        enabled = false,
         ip = "127.0.0.1",
         netmask = "255.0.0.0",
         gateway = "2.2.2.2"
@@ -113,18 +113,36 @@ local function update() -- this is the loop which periodically runs
             elseif path == "/state" then
                 local state = {
                     system = {
-                        voltage = mod_payload:get_voltage(batt_instance_system),
-                        current = mod_payload:get_current(batt_instance_system)
+                        voltage = battery:voltage(batt_instance_system),
+                        current = battery:current_amps(batt_instance_system)
                     },
                     payload1 = {
-                        voltage = mod_payload:get_voltage(batt_instance_payload1),
-                        current = mod_payload:get_current(batt_instance_payload1)
+                        voltage = battery:voltage(batt_instance_payload1),
+                        current = battery:current_amps(batt_instance_payload1)
                     },
                     payload2 = {
-                        voltage = mod_payload:get_voltage(batt_instance_payload2),
-                        current = mod_payload:get_current(batt_instance_payload2)
+                        voltage = battery:voltage(batt_instance_payload2),
+                        current = battery:current_amps(batt_instance_payload2)
                     }
                 }
+                if state.system.voltage == nil then
+                    state.system.voltage = 25.23
+                end
+                if state.system.current == nil then
+                    state.system.current = 0.1
+                end
+                if state.payload1.voltage == nil then
+                    state.payload1.voltage = 28
+                end
+                if state.payload1.current == nil then
+                    state.payload1.current = 0
+                end
+                if state.payload2.voltage == nil then
+                    state.payload2.voltage = 28
+                end
+                if state.payload2.current == nil then
+                    state.payload2.current = 0
+                end
 
                 connection:send("HTTP/1.0 200 OK\r\nContent-Type: application/json\r\nConnection: close\r\n\r\n")
                 connection:send('{ "system": { "voltage": ' .. state.system.voltage .. ', "current": ' ..
@@ -165,9 +183,7 @@ local function update() -- this is the loop which periodically runs
                     payload2.netmask = updates["payload2.netmask"] or payload2.netmask
                     payload2.gateway = updates["payload2.gateway"] or payload2.gateway
 
-                    mod_payload:set_enable(1, payload1.enabled)
-                    mod_payload:set_enable(2, payload2.enabled)
-
+                    
                     -- TODO: Tom, configuration has been updated. Use it
                 end
 
@@ -182,6 +198,14 @@ local function update() -- this is the loop which periodically runs
                                     (payload2.enabled and 'true' or 'false') .. ', "ip": "' .. payload2.ip ..
                                     '", "netmask": "' .. payload2.netmask .. '", "gateway": "' .. payload2.gateway ..
                                     '" } }')
+
+            elseif path == "/zeroize" then
+                -- TODO
+                gcs:send_text(0, "Zeroize") 
+
+            elseif path == "/calibrate" then
+                -- TODO
+                gcs:send_text(0, "Calibrate INS") 
 
             else
                 -- send 404 if file not found
