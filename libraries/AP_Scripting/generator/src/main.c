@@ -2444,9 +2444,6 @@ void emit_sandbox(void) {
   fprintf(source, "        lua_settable(L, -3);\n");
   fprintf(source, "    }\n");
 
-  fprintf(source, "\n");
-  fprintf(source, "    load_boxed_numerics_sandbox(L);\n");
-
   // load the userdata complex functions
   fprintf(source, "}\n\n");
 }
