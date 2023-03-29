@@ -2,7 +2,7 @@
 <html lang="en">
     <head>
         <meta charset="UTF-8" />
-        <title>K1000 MAIM</title>
+        <title>Kraus Aerospace K-1000</title>
         <meta
             name="viewport"
             content="viewport-fit=cover, width=device-width, initial-scale=1.0, user-scalable=no"
@@ -16,7 +16,7 @@
                     fill="white"
                 />
             </svg>
-            <h1>K1000 MAIM2</h1>
+            <h1>Kraus Aerospace K-1000</h1>
         </header>
         <main>
             <section id="system">
@@ -29,6 +29,10 @@
                     <dt>Power</dt>
                     <dd class="power"></dd>
                 </dl>
+
+                <button id="zeroize">Zeroize</button>
+                <button id="calibrate">Calibrate INS</button>
+
                 <form>
                     <dl>
                         <dt>Console Forward</dt>
@@ -299,6 +303,18 @@
             initializePayload2();
 
             function initializeSystem() {
+                document.querySelector("#zeroize").addEventListener("click", async event => {
+                    event.preventDefault();
+                    await fetch("zeroize");
+                    update();
+                });
+
+                document.querySelector("#calibrate").addEventListener("click", async event => {
+                    event.preventDefault();
+                    await fetch("calibrate");
+                    update();
+                });
+
                 const form = document.querySelector("#system form");
 
                 form.consoleForward.onchange = (event) => {
