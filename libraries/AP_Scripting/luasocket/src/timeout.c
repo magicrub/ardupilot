@@ -18,6 +18,10 @@
 #include <sys/time.h>
 #endif
 
+#if CONFIG_HAL_BOARD == HAL_BOARD_CHIBIOS
+#include <hal.h>
+#endif
+
 /* min and max macros */
 #ifndef MIN
 #define MIN(x, y) ((x) < (y) ? x : y)
@@ -223,7 +227,7 @@ int timeout_lua_sleep(lua_State *L)
         t.tv_nsec = r.tv_nsec;
     }
 #else
-    chThdSleepMicroseconds(1000000ULL * n);
+    chThdSleep(chTimeUS2I(1000000ULL * n));
 #endif
     return 0;
 }
