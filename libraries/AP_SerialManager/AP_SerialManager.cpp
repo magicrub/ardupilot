@@ -965,7 +965,11 @@ AP_SerialManager::SerialProtocol AP_SerialManager::SerialExtState::get_protocol(
     if (params == nullptr) {
         return AP_SerialManager::SerialProtocol_None;
     }
-
+#if AP_NETWORKING_ENABLED
+    if (phy_type == (int8_t)SerialPhysical_IP) {
+        return (AP_SerialManager::SerialProtocol)ip_params().protocol.get();
+    }
+#endif
     return AP_SerialManager::SerialProtocol_None;
 }
 

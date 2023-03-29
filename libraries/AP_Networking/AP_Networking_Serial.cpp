@@ -5,6 +5,9 @@ extern const AP_HAL::HAL& hal;
 
 void AP_Networking_Serial::begin(uint32_t b, uint16_t rxS, uint16_t txS)
 {
+    if (_initialized) {
+        return;
+    }
     if (rxS == 0) {
         rxS = AP_NETWORKING_UDP_RX_BUF_SIZE;
     }
@@ -30,7 +33,7 @@ void AP_Networking_Serial::begin(uint32_t b, uint16_t rxS, uint16_t txS)
     if (thread_ctx == nullptr) {
         // create thread name
         snprintf(thread_name, sizeof(thread_name), "UDP-%u", dst_port);
-        if(!hal.scheduler->thread_create(FUNCTOR_BIND_MEMBER(&AP_Networking_Serial::update, void), thread_name, 512, AP_HAL::Scheduler::PRIORITY_UART, 0)) {
+        if(!hal.scheduler->thread_create(FUNCTOR_BIND_MEMBER(&AP_Networking_Serial::update, void), thread_name, 512, AP_HAL::Scheduler::PRIORITY_IO, 0)) {
             AP_HAL::panic("Failed to create AP_Networking_Serial thread");
         }
     }
@@ -42,7 +45,7 @@ void AP_Networking_Serial::udp_recv_callback(void *arg, struct udp_pcb *pcb, str
     AP_Networking_Serial* driver = (AP_Networking_Serial*)arg;
     if (driver != nullptr)
     {
-        WITH_SEMAPHORE(driver->_sem);
+        WITH_SEMAPHORE(driver->_rx_sem);
         driver->_readbuf.write((uint8_t*)p->payload, p->len);
     }
     pbuf_free(p);
@@ -68,13 +71,13 @@ void AP_Networking_Serial::set_blocking_writes(bool blocking)
 
 bool AP_Networking_Serial::read(uint8_t &b)
 {
-    WITH_SEMAPHORE(_sem);
+    WITH_SEMAPHORE(_rx_sem);
     return (_readbuf.read(&b, 1) == 1) ? true : false;
 }
 
 ssize_t AP_Networking_Serial::read(uint8_t *buffer, uint16_t count)
 {
-    WITH_SEMAPHORE(_sem);
+    WITH_SEMAPHORE(_rx_sem);
     return _readbuf.read(buffer, count);
 }
 
@@ -85,7 +88,6 @@ size_t AP_Networking_Serial::write(uint8_t c)
 
 size_t AP_Networking_Serial::write(const uint8_t *buffer, size_t size)
 {
-    WITH_SEMAPHORE(_sem);
     if (pcb == nullptr) {
         return 0;
     }
@@ -103,6 +105,7 @@ size_t AP_Networking_Serial::write(const uint8_t *buffer, size_t size)
             return 0;
         }
     } else {
+        WITH_SEMAPHORE(_tx_sem);
         if (_writebuf.space() < size) {
             return 0;
         }
@@ -113,26 +116,28 @@ size_t AP_Networking_Serial::write(const uint8_t *buffer, size_t size)
 
 void AP_Networking_Serial::update()
 {
-    // send any pending data
-    WITH_SEMAPHORE(_sem);
-    if (pcb == nullptr) {
-        return;
-    }
-    if (_writebuf.available()) {
-        ByteBuffer::IoVec vec[2];
-        const auto n_vec = _writebuf.peekiovec(vec, 2);
-        for (uint8_t i=0; i<n_vec; i++) {
-            struct pbuf *p = pbuf_alloc_reference((void*)vec[i].data, vec[i].len, PBUF_REF);
-            if (p == nullptr) {
-                break;
+    while(true) {
+        if (_writebuf.available()) {
+            ByteBuffer::IoVec vec[2];
+            const auto n_vec = _writebuf.peekiovec(vec, _writebuf.available());
+            for (uint8_t i=0; i<n_vec; i++) {
+                struct pbuf *p = pbuf_alloc_reference((void*)vec[i].data, vec[i].len, PBUF_REF);
+                if (p == nullptr) {
+                    break;
+                }
+                const err_t err = udp_sendto(pcb, p, &dst_addr, dst_port);
+                pbuf_free(p);
+                if (err != ERR_OK) {
+                    break;
+                }
+
+                {
+                    WITH_SEMAPHORE(_tx_sem);
+                    _writebuf.advance(vec[i].len);
+                }
             }
-            const err_t err = udp_sendto(pcb, p, &dst_addr, dst_port);
-            pbuf_free(p);
-            if (err != ERR_OK) {
-                break;
-            }
-            _writebuf.advance(vec[i].len);
         }
+        hal.scheduler->delay(5);
     }
 }
 

@@ -72,7 +72,7 @@ SECTIONS
     .extflash : ALIGN(4) SUBALIGN(4)
     {
         *(.ap_romfs*)
-        lib/lib*.a:GCS*.*(.text* .rodata*)
+        /* lib/lib*.a:GCS*.*(.text* .rodata*) */
         lib/lib*.a:*EKF*.*(.text* .rodata*)
         lib/lib*.a:AC_Sprayer*.*(.text* .rodata*)
         lib/lib*.a:AC_PrecLand*.*(.text* .rodata*)

@@ -2,6 +2,7 @@
     "cSpell.language": "en-GB",
     "astyle.astylerc": "${workspaceFolder}/Tools/CodeStyle/astylerc",
     "files.associations": {
-        "array": "cpp"
+        "array": "cpp",
+        "iterator": "cpp"
     }
 }

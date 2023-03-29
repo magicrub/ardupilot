@@ -318,7 +318,7 @@ public:
 #if AP_NETWORKING_ENABLED
         struct IP_Params : Params {
             AP_Int16 port;
-            AP_Int8 ip[4];
+            AP_Int16 ip[4];
             AP_Int8 passthru;
             static const struct AP_Param::GroupInfo var_info[];
             IP_Params() {

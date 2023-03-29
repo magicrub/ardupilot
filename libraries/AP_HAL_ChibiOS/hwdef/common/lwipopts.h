@@ -60,7 +60,7 @@
 */
 
 #define LWIP_PLATFORM_DIAG(x)    do {__wrap_printf x; } while(0)
-#define LWIP_DEBUG
+// #define LWIP_DEBUG
 #define U16_F "u"
 #define X8_F  "x"
 #define X16_F  "x"

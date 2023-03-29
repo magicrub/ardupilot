@@ -202,6 +202,10 @@ void AP_Vehicle::setup()
     // which may get used very early on.
     gcs().init();
 
+#if AP_NETWORKING_ENABLED
+    networking.init();
+#endif
+
     // initialise serial ports
     serial_manager.init();
     gcs().setup_console();
@@ -283,10 +287,6 @@ void AP_Vehicle::setup()
 // init EFI monitoring
 #if HAL_EFI_ENABLED
     efi.init();
-#endif
-
-#if AP_NETWORKING_ENABLED
-    networking.init();
 #endif
 
 #if AP_TEMPERATURE_SENSOR_ENABLED

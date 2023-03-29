@@ -9,10 +9,10 @@
 #include "AP_Networking.h"
 
 #ifndef AP_NETWORKING_UDP_RX_BUF_SIZE
-#define AP_NETWORKING_UDP_RX_BUF_SIZE 1024
+#define AP_NETWORKING_UDP_RX_BUF_SIZE AP_NETWORKING_ETHERNET_UDP_PAYLOAD_MAX_SIZE
 #endif
 #ifndef AP_NETWORKING_UDP_TX_BUF_SIZE
-#define AP_NETWORKING_UDP_TX_BUF_SIZE 1024
+#define AP_NETWORKING_UDP_TX_BUF_SIZE (AP_NETWORKING_ETHERNET_UDP_PAYLOAD_MAX_SIZE*10)
 #endif
 
 class AP_Networking_Serial : public AP_HAL::UARTDriver {
@@ -70,7 +70,8 @@ private:
     ByteBuffer _readbuf{0};
     ByteBuffer _writebuf{0};
 
-    HAL_Semaphore _sem;
+    HAL_Semaphore _rx_sem;
+    HAL_Semaphore _tx_sem;
 
     struct udp_pcb *pcb;
     bool blocking_writes = false;
