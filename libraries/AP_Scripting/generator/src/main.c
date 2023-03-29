@@ -97,7 +97,7 @@ enum trace_level {
   TRACE_USERDATA  = (1 << 3),
   TRACE_SINGLETON = (1 << 4),
   TRACE_DEPENDS   = (1 << 5),
-  TRACE_MODULE   = (1 << 5),
+  TRACE_MODULE    = (1 << 6),
 };
 
 enum access_flags {
