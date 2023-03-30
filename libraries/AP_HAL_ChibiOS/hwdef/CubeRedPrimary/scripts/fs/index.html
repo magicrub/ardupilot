@@ -16,7 +16,8 @@
                     fill="white"
                 />
             </svg>
-            <h1>Kraus Aerospace K-1000</h1>
+            <img id="cubepilot" src="images/cubepilot_logo.png" style="float: right; width: 8rem;"/>
+            <img id="ardupilot" src="images/ardupilot_logo.png" style="display: block; margin-left: auto; margin-right: auto; width: 8rem;"/>
         </header>
         <main>
             <section id="system">
@@ -28,10 +29,14 @@
                     <dd class="current"></dd>
                     <dt>Power</dt>
                     <dd class="power"></dd>
+                    <dt>CPU Time</dt>
+                    <dd class="time"></dd>
+
                 </dl>
 
-                <button id="zeroize">Zeroize</button>
                 <button id="calibrate">Calibrate INS</button>
+                <!-- button to open image in new tab -->
+                <button id="missionplanner" onclick="window.open('images/MissionPlannerLite_image.png', '_blank')">Mission Planner Xpress</button>
 
                 <form>
                     <dl>
@@ -74,30 +79,9 @@
                             <label
                                 ><input
                                     type="radio"
-                                    value="payload 1"
-                                    name="maintenancePort"
-                                />Payload 1</label
-                            >
-                            <label
-                                ><input
-                                    type="radio"
-                                    value="payload 2"
-                                    name="maintenancePort"
-                                />Payload 2</label
-                            >
-                            <label
-                                ><input
-                                    type="radio"
                                     value="aircraft"
                                     name="maintenancePort"
                                 />Aircraft</label
-                            >
-                            <label
-                                ><input
-                                    type="radio"
-                                    value="ahrs"
-                                    name="maintenancePort"
-                                />AHRS</label
                             >
                             <label
                                 ><input
@@ -106,80 +90,6 @@
                                     name="maintenancePort"
                                 />SLCAN</label
                             >
-                        </dd>
-                        <dt></dt>
-                        <dd><button type="submit">Save</button></dd>
-                    </dl>
-                </form>
-            </section>
-            <section id="payload1">
-                <h2>Payload 1</h2>
-                <dl>
-                    <dt>Voltage</dt>
-                    <dd class="voltage">12V</dd>
-                    <dt>Current</dt>
-                    <dd class="current">1.2A</dd>
-                    <dt>Power</dt>
-                    <dd class="power">10W</dd>
-                </dl>
-                <form>
-                    <dl>
-                        <dt>Enabled</dt>
-                        <dd>
-                            <input type="checkbox" checked name="enabled" />
-                        </dd>
-                        <dt>IP</dt>
-                        <dd>
-                            <input type="text" value="127.0.0.1" name="ip" />
-                        </dd>
-                        <dt>Netmask</dt>
-                        <dd>
-                            <input
-                                type="text"
-                                value="255.0.0.0"
-                                name="netmask"
-                            />
-                        </dd>
-                        <dt>Gateway</dt>
-                        <dd>
-                            <input type="text" value="1.2.3.4" name="gateway" />
-                        </dd>
-                        <dt></dt>
-                        <dd><button type="submit">Save</button></dd>
-                    </dl>
-                </form>
-            </section>
-            <section id="payload2">
-                <h2>Payload 2</h2>
-                <dl>
-                    <dt>Voltage</dt>
-                    <dd class="voltage">12V</dd>
-                    <dt>Current</dt>
-                    <dd class="current">1.2A</dd>
-                    <dt>Power</dt>
-                    <dd class="power">10W</dd>
-                </dl>
-                <form>
-                    <dl>
-                        <dt>Enabled</dt>
-                        <dd>
-                            <input type="checkbox" checked name="enabled" />
-                        </dd>
-                        <dt>IP</dt>
-                        <dd>
-                            <input type="text" value="127.0.0.1" name="ip" />
-                        </dd>
-                        <dt>Netmask</dt>
-                        <dd>
-                            <input
-                                type="text"
-                                value="255.0.0.0"
-                                name="netmask"
-                            />
-                        </dd>
-                        <dt>Gateway</dt>
-                        <dd>
-                            <input type="text" value="1.2.3.4" name="gateway" />
                         </dd>
                         <dt></dt>
                         <dd><button type="submit">Save</button></dd>
@@ -198,6 +108,13 @@
 
             #logo {
                 width: 8rem;
+            }
+            /* center image */
+            center {
+                display: block;
+                margin-left: auto;
+                margin-right: auto;
+                width: 50%;
             }
 
             h1 {
@@ -264,14 +181,7 @@
                 system: {
                     voltage: 0,
                     current: 0,
-                },
-                payload1: {
-                    voltage: 0,
-                    current: 0,
-                },
-                payload2: {
-                    voltage: 0,
-                    current: 0,
+                    time: 0,
                 },
             };
 
@@ -283,32 +193,12 @@
                         ip: "0.0.0.0",
                         port: 0,
                     },
-                },
-                payload1: {
-                    enabled: false,
-                    ip: "0.0.0.0",
-                    netmask: "0.0.0.0",
-                    gateway: "0.0.0.0",
-                },
-                payload2: {
-                    enabled: false,
-                    ip: "0.0.0.0",
-                    netmask: "0.0.0.0",
-                    gateway: "0.0.0.0",
-                },
+                }
             };
 
             initializeSystem();
-            initializePayload1();
-            initializePayload2();
 
             function initializeSystem() {
-                document.querySelector("#zeroize").addEventListener("click", async event => {
-                    event.preventDefault();
-                    await fetch("zeroize");
-                    update();
-                });
-
                 document.querySelector("#calibrate").addEventListener("click", async event => {
                     event.preventDefault();
                     await fetch("calibrate");
@@ -346,56 +236,6 @@
                 };
             }
 
-            function initializePayload1() {
-                const form = document.querySelector("#payload1 form");
-
-                form.enabled.onchange = (event) => {
-                    configuration.payload1.enabled = event.target.checked;
-                    update();
-                };
-                form.ip.onchange = (event) => {
-                    configuration.payload1.ip = event.target.value;
-                    update();
-                };
-                form.netmask.onchange = (event) => {
-                    configuration.payload1.netmask = event.target.value;
-                    update();
-                };
-                form.gateway.onchange = (event) => {
-                    configuration.payload1.gateway = event.target.value;
-                    update();
-                };
-                form.onsubmit = (event) => {
-                    event.preventDefault();
-                    save();
-                };
-            }
-
-            function initializePayload2() {
-                const form = document.querySelector("#payload2 form");
-
-                form.enabled.onchange = (event) => {
-                    configuration.payload2.enabled = event.target.checked;
-                    update();
-                };
-                form.ip.onchange = (event) => {
-                    configuration.payload2.ip = event.target.value;
-                    update();
-                };
-                form.netmask.onchange = (event) => {
-                    configuration.payload2.netmask = event.target.value;
-                    update();
-                };
-                form.gateway.onchange = (event) => {
-                    configuration.payload2.gateway = event.target.value;
-                    update();
-                };
-                form.onsubmit = (event) => {
-                    event.preventDefault();
-                    save();
-                };
-            }
-
             async function load() {
                 const response = await fetch("configuration");
                 configuration = await response.json();
@@ -426,18 +266,14 @@
 
             function update() {
                 updateSystem();
-                updatePayload1();
-                updatePayload2();
             }
 
             function updateState() {
                 updateSystemState();
-                updatePayload1State();
-                updatePayload2State();
             }
 
             function updateSystemState() {
-                const { voltage, current } = state.system;
+                const { voltage, current, time } = state.system;
                 const power = voltage * current;
                 const system = document.querySelector("#system");
                 system.querySelector(
@@ -446,6 +282,7 @@
                 system.querySelector(
                     ".current"
                 ).textContent = `${current.toFixed(3)}A`;
+                system.querySelector(".time").textContent = `${time.toFixed(3)}s`;
                 system.querySelector(".power").textContent = `${power.toFixed(3)}W`;
             }
 
@@ -462,59 +299,6 @@
                     _.checked = maintenancePort === _.value;
                 });
             }
-
-            function updatePayload1State() {
-                const { voltage, current } = state.payload1;
-                const power = voltage * current;
-                const payload1 = document.querySelector("#payload1");
-                payload1.querySelector(
-                    ".voltage"
-                ).textContent = `${voltage.toFixed(3)}V`;
-                payload1.querySelector(
-                    ".current"
-                ).textContent = `${current.toFixed(3)}A`;
-                payload1.querySelector(".power").textContent = `${power.toFixed(3)}W`;
-            }
-
-            function updatePayload1() {
-                const { enabled, ip, netmask, gateway } =
-                    configuration.payload1;
-                const form = payload1.querySelector("#payload1 form");
-                form.enabled.checked = enabled;
-                form.ip.disabled = !enabled;
-                form.netmask.disabled = !enabled;
-                form.gateway.disabled = !enabled;
-                form.ip.value = ip;
-                form.netmask.value = netmask;
-                form.gateway.value = gateway;
-            }
-
-            function updatePayload2State() {
-                const { voltage, current } = state.payload2;
-                const power = voltage * current;
-                const payload2 = document.querySelector("#payload2");
-                payload2.querySelector(
-                    ".voltage"
-                ).textContent = `${voltage.toFixed(3)}V`;
-                payload2.querySelector(
-                    ".current"
-                ).textContent = `${current.toFixed(3)}A`;
-                payload2.querySelector(".power").textContent = `${power.toFixed(3)}W`;
-            }
-
-            function updatePayload2() {
-                const { enabled, ip, netmask, gateway } =
-                    configuration.payload2;
-                const form = payload2.querySelector("#payload2 form");
-                form.enabled.checked = enabled;
-                form.ip.disabled = !enabled;
-                form.netmask.disabled = !enabled;
-                form.gateway.disabled = !enabled;
-                form.ip.value = ip;
-                form.netmask.value = netmask;
-                form.gateway.value = gateway;
-            }
-
             setInterval(refresh, 200);
 
             load();

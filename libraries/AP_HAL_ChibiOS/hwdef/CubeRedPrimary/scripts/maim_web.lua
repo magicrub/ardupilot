@@ -4,8 +4,6 @@ local host = "*"
 local port = 80
 
 local batt_instance_system = 0
-local batt_instance_payload1 = 1
-local batt_instance_payload2 = 2
 
 gcs:send_text(0, "Binding to host '" .. host .. "' and port " .. port .. "...")
 
@@ -58,18 +56,6 @@ local configuration = {
             port = 1234
         },
         maintenancePort = "none"
-    },
-    payload1 = {
-        enabled = false,
-        ip = "127.0.0.1",
-        netmask = "255.0.0.0",
-        gateway = "1.1.1.1"
-    },
-    payload2 = {
-        enabled = false,
-        ip = "127.0.0.1",
-        netmask = "255.0.0.0",
-        gateway = "2.2.2.2"
     }
 }
 
@@ -89,16 +75,17 @@ local function update() -- this is the loop which periodically runs
             end
 
             local path, query = request_uri:match("(.*)(?.*)")
+            gcs:send_text(0, "Request: " .. request_uri)
             if not path then
                 path = request_uri
             end
 
             -- send response
-            local file = io.open("./scripts/fs" .. path, "r")
+            local file = io.open("/APM/scripts/fs" .. path, "r")
             if not file then
+                gcs:send_text(0, "Opening file: " .. "@ROMFS/scripts/fs" .. path)
                 file = io.open("@ROMFS/scripts/fs" .. path, "r")
             end
-
             -- send html file if exists
             if file and path:match(".html") then
                 connection:send("HTTP/1.0 200 OK\r\nContent-Type: text/html\r\nConnection: close\r\n\r\n")
@@ -109,20 +96,22 @@ local function update() -- this is the loop which periodically runs
                     end
                     connection:send(data)
                 end
-
+            elseif file and path:match(".png") then
+                connection:send("HTTP/1.0 200 OK\r\nContent-Type: image/png\r\nConnection: close\r\n\r\n")
+                local count = 0
+                while true do
+                    count = count + 1
+                    local data = file:read(1024)
+                    if not data then break end
+                    connection:send(data)
+                end
+                gcs:send_text(6, "Sent " .. count .. "KB")
             elseif path == "/state" then
                 local state = {
                     system = {
                         voltage = battery:voltage(batt_instance_system),
-                        current = battery:current_amps(batt_instance_system)
-                    },
-                    payload1 = {
-                        voltage = battery:voltage(batt_instance_payload1),
-                        current = battery:current_amps(batt_instance_payload1)
-                    },
-                    payload2 = {
-                        voltage = battery:voltage(batt_instance_payload2),
-                        current = battery:current_amps(batt_instance_payload2)
+                        current = battery:current_amps(batt_instance_system),
+                        time = millis():tofloat() * 0.001
                     }
                 }
                 if state.system.voltage == nil then
@@ -131,30 +120,12 @@ local function update() -- this is the loop which periodically runs
                 if state.system.current == nil then
                     state.system.current = 0.1
                 end
-                if state.payload1.voltage == nil then
-                    state.payload1.voltage = 28
-                end
-                if state.payload1.current == nil then
-                    state.payload1.current = 0
-                end
-                if state.payload2.voltage == nil then
-                    state.payload2.voltage = 28
-                end
-                if state.payload2.current == nil then
-                    state.payload2.current = 0
-                end
-
                 connection:send("HTTP/1.0 200 OK\r\nContent-Type: application/json\r\nConnection: close\r\n\r\n")
                 connection:send('{ "system": { "voltage": ' .. state.system.voltage .. ', "current": ' ..
-                                    state.system.current .. ' }, "payload1": { "voltage": ' .. state.payload1.voltage ..
-                                    ', "current": ' .. state.payload1.current .. ' }, "payload2": { "voltage": ' ..
-                                    state.payload2.voltage .. ', "current": ' .. state.payload2.current .. ' } }')
+                                    state.system.current .. ', "time": ' .. state.system.time .. ' } }')
 
             elseif path == "/configuration" then
                 local system = configuration.system
-                local payload1 = configuration.payload1
-                local payload2 = configuration.payload2
-
                 if query then
                     local updates = parse(string.sub(query, 2))
                     if updates["system.consoleForward.enabled"] == "true" then
@@ -166,24 +137,6 @@ local function update() -- this is the loop which periodically runs
                     system.consoleForward.port = tostring(updates["system.consoleForward.port"]) or
                                                      system.consoleForward.port
                     system.maintenancePort = updates["system.maintenancePort"] or system.maintenancePort
-                    if updates["payload1.enabled"] == "true" then
-                        payload1.enabled = true
-                    elseif updates["payload1.enabled"] == "false" then
-                        payload1.enabled = false;
-                    end
-                    payload1.ip = updates["payload1.ip"] or payload1.ip
-                    payload1.netmask = updates["payload1.netmask"] or payload1.netmask
-                    payload1.gateway = updates["payload1.gateway"] or payload1.gateway
-                    if updates["payload2.enabled"] == "true" then
-                        payload2.enabled = true
-                    elseif updates["payload2.enabled"] == "false" then
-                        payload2.enabled = false;
-                    end
-                    payload2.ip = updates["payload2.ip"] or payload2.ip
-                    payload2.netmask = updates["payload2.netmask"] or payload2.netmask
-                    payload2.gateway = updates["payload2.gateway"] or payload2.gateway
-
-                    
                     -- TODO: Tom, configuration has been updated. Use it
                 end
 
@@ -192,16 +145,7 @@ local function update() -- this is the loop which periodically runs
                                     (system.consoleForward.enabled and 'true' or 'false') .. ', "ip": "' ..
                                     system.consoleForward.ip .. '", "port": ' .. system.consoleForward.port ..
                                     ' }, "maintenancePort": "' .. system.maintenancePort ..
-                                    '" }, "payload1": { "enabled": ' .. (payload1.enabled and 'true' or 'false') ..
-                                    ', "ip": "' .. payload1.ip .. '", "netmask": "' .. payload1.netmask ..
-                                    '", "gateway": "' .. payload1.gateway .. '" }, "payload2": { "enabled": ' ..
-                                    (payload2.enabled and 'true' or 'false') .. ', "ip": "' .. payload2.ip ..
-                                    '", "netmask": "' .. payload2.netmask .. '", "gateway": "' .. payload2.gateway ..
                                     '" } }')
-
-            elseif path == "/zeroize" then
-                -- TODO
-                gcs:send_text(0, "Zeroize") 
 
             elseif path == "/calibrate" then
                 -- TODO
