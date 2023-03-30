@@ -167,9 +167,8 @@ bool AP_Networking_SpeedTest::report_stats()
         _stats.gcs_send_ms = now_ms;
 
         // Post stats at 1Hz
-        GCS_SEND_TEXT(MAV_SEVERITY_INFO,"NET: data %.3f MB, %.3f MB/s, wire %.3f Mb/s",
-            (double)_stats.bytes_total,
-            (double)_stats.bytes_per_sec,
+        GCS_SEND_TEXT(MAV_SEVERITY_INFO,"NET: %.3f MB/s, wire %.3f Mb/s",
+            (double)_stats.bytes_per_sec * 1.0E-6f,
             (double)(((_stats.packets_per_sec*AP_NETWORKING_ETH_IP_UDP_OVERHEAD) + _stats.bytes_per_sec) * 8 * 1.0E-6f));
 
         if (_stats.packets_per_sec_max < _stats.packets_per_sec) {
