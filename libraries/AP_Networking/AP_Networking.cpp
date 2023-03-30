@@ -318,9 +318,9 @@ void AP_Networking::init()
     uint8_t uuid[12];
     uint8_t uuid_len = sizeof(uuid);
     if (hal.util->get_system_id_unformatted(uuid, uuid_len) && (uuid_len >= 3)) {
-        _param.macaddr[3].set_default(uuid[uuid_len-3]);
-        _param.macaddr[4].set_default(uuid[uuid_len-2]);
-        _param.macaddr[5].set_default(uuid[uuid_len-1]);
+        _param.macaddr[3].set_default(uuid[uuid_len-2]);
+        _param.macaddr[4].set_default(uuid[uuid_len-1]);
+        _param.macaddr[5].set_default(uuid[uuid_len-0]);
     }
 
     if (!_param.enabled) {

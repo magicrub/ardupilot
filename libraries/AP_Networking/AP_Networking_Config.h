@@ -101,7 +101,7 @@
 // Default MAC Address: 2C:AF:51:03:CF:46
 // Note, lower 3 bytes (ADDR3,4,5) will be replaced with the platform UUID 
 #ifndef AP_NETWORKING_DEFAULT_MAC_ADDR0
-    #define AP_NETWORKING_DEFAULT_MAC_ADDR0     0x2C //LWIP_ETHADDR_0
+    #define AP_NETWORKING_DEFAULT_MAC_ADDR0     0xC2 //LWIP_ETHADDR_0
 #endif
 #ifndef AP_NETWORKING_DEFAULT_MAC_ADDR1
     #define AP_NETWORKING_DEFAULT_MAC_ADDR1     0xAF //LWIP_ETHADDR_1
