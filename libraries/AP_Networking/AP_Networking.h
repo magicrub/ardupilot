@@ -133,11 +133,17 @@ public:
 
     static const struct AP_Param::GroupInfo        var_info[];
 
+    // tftp wrappers for AP::Filesystem
+    static void* tftp_open(const char* fname, const char* mode, u8_t write);
+    static void tftp_close(void* handle);
+    static int tftp_read(void* handle, void* buf, int bytes);
+    static int tftp_write(void* handle, struct pbuf* p);
 protected:
     // parameters
     AP_Networking_Params _params[AP_NETWORKING_MAX_INSTANCES];
 
 private:
+    static int tftp_fd;
     static AP_Networking *_singleton;
 
     AP_Networking_State _state[AP_NETWORKING_MAX_INSTANCES];

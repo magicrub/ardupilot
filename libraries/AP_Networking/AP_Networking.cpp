@@ -1,6 +1,6 @@
 
 #include "AP_Networking.h"
-
+#include <AP_Filesystem/AP_Filesystem.h>
 #if AP_NETWORKING_ENABLED
 
 #if CONFIG_HAL_BOARD == HAL_BOARD_CHIBIOS
@@ -57,6 +57,7 @@
 #include "AP_Networking_Ping.h"
 
 extern const AP_HAL::HAL& hal;
+int AP_Networking::tftp_fd = -1;
 
 const AP_Param::GroupInfo AP_Networking::var_info[] = {
 
@@ -424,14 +425,12 @@ void AP_Networking::init()
 
 #if AP_NETWORKING_TFTP_ENABLED
     if (option_is_set(Options::TFTP)) {
-        const struct tftp_context *ctx {};
-            // ctx.open = &AP::FS().open();
-            // ctx.open(const char* fname, const char* mode, u8_t write);
-            // ctx.close(void* handle);
-            // ctx.read(void* handle, void* buf, int bytes);
-            // ctx.write(void* handle, struct pbuf* p);
+        static const struct tftp_context ctx { .open = tftp_open,
+                                                .close = tftp_close,
+                                                .read = tftp_read,
+                                                .write = tftp_write};
 
-        const err_t err = tftp_init(ctx);
+        const err_t err = tftp_init(&ctx);
         if (err == ERR_OK) {
             GCS_SEND_TEXT(MAV_SEVERITY_INFO,"NET: TFTP Ready");
         } else {
@@ -667,6 +666,56 @@ int32_t AP_Networking::send_udp(struct udp_pcb *pcb, const ip4_addr_t &ip4_addr,
     pbuf_free(p);
 
     return err == ERR_OK ? data_len : err;
+}
+
+// tftp wrappers for AP::Filesystem
+void* AP_Networking::tftp_open(const char* fname, const char* mode, u8_t write)
+{
+    if (fname == nullptr || mode == nullptr) {
+        return nullptr;
+    }
+    if (strcmp(mode, "octet") != 0) {
+        return nullptr;
+    }
+    if (write) {
+        tftp_fd = AP::FS().open(fname, O_WRONLY | O_CREAT | O_TRUNC);
+    } else {
+        tftp_fd = AP::FS().open(fname, O_RDONLY);
+    }
+    return &tftp_fd;
+}
+
+void AP_Networking::tftp_close(void* handle)
+{
+    if (&tftp_fd != handle) {
+        return;
+    }
+    if (tftp_fd == -1) {
+        return;
+    }
+    AP::FS().close(tftp_fd);
+}
+
+int AP_Networking::tftp_read(void* handle, void* buf, int bytes)
+{
+    if ((&tftp_fd != handle) || buf == nullptr) {
+        return -1;
+    }
+    if (tftp_fd == -1) {
+        return -1;
+    }
+    return AP::FS().read(tftp_fd, buf, bytes);
+}
+
+int AP_Networking::tftp_write(void* handle, struct pbuf* p)
+{
+    if ((&tftp_fd != handle) || p == nullptr) {
+        return -1;
+    }
+    if (tftp_fd == -1) {
+        return -1;
+    }
+    return AP::FS().write(tftp_fd, p->payload, p->len);
 }
 
 AP_Networking *AP_Networking::_singleton;
