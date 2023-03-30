@@ -2,7 +2,7 @@
 #include <AP_HAL/AP_HAL.h>
 #include <AP_HAL/AP_HAL_Boards.h>
 #include <AP_HAL/Semaphores.h>
-#if AP_SERIAL_EXTENSION_ENABLED || HAL_ENABLE_SERIAL_TUNNEL
+#if AP_SERIAL_EXTENSION_ENABLED
 #include <AP_SerialManager/AP_SerialManager.h>
 // #include <lwip/udp.h>
 // #include <lwip/ip_addr.h>
