@@ -3,6 +3,7 @@
     "astyle.astylerc": "${workspaceFolder}/Tools/CodeStyle/astylerc",
     "files.associations": {
         "array": "cpp",
-        "iterator": "cpp"
+        "iterator": "cpp",
+        "locale": "cpp"
     }
 }

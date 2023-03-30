@@ -75,7 +75,6 @@ local function update() -- this is the loop which periodically runs
             end
 
             local path, query = request_uri:match("(.*)(?.*)")
-            gcs:send_text(0, "Request: " .. request_uri)
             if not path then
                 path = request_uri
             end
@@ -83,7 +82,6 @@ local function update() -- this is the loop which periodically runs
             -- send response
             local file = io.open("/APM/scripts/fs" .. path, "r")
             if not file then
-                gcs:send_text(0, "Opening file: " .. "@ROMFS/scripts/fs" .. path)
                 file = io.open("@ROMFS/scripts/fs" .. path, "r")
             end
             -- send html file if exists
@@ -105,7 +103,6 @@ local function update() -- this is the loop which periodically runs
                     if not data then break end
                     connection:send(data)
                 end
-                gcs:send_text(6, "Sent " .. count .. "KB")
             elseif path == "/state" then
                 local state = {
                     system = {
