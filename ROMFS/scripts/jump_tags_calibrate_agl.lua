@@ -56,6 +56,7 @@ local agl_samples_count = 0
 local agl_samples_sum = 0
 local calibration_alt_m = 0
 
+local START_STRING = "LUA: AGL measurements started" -- GCS triggers on this string
 
 function sample_rangefinder_to_get_AGL()
     if (not rangefinder:has_data_orient(ROTATION_PITCH_270)) then
@@ -74,7 +75,8 @@ function sample_rangefinder_to_get_AGL()
         agl_samples_count = 0 -- divide-by-zero sanity check in case it somehow wrapped or initialized wrong
         agl_samples_sum = 0
         calibration_alt_m = get_calibration_alt_m()
-        gcs:send_text(MAV_SEVERITY.INFO, string.format("LUA: AGL measurements started, expecting %fm", calibration_alt_m))
+        gcs:send_text(MAV_SEVERITY.INFO, string.format("%s", START_STRING))
+        gcs:send_text(MAV_SEVERITY.INFO, string.format("LUA: expecting %.2fm", calibration_alt_m))
     end
 
     agl_samples_sum = agl_samples_sum + agl_corrected_for_attitude_m
@@ -118,7 +120,13 @@ function update()
         -- finished sampling, use the result to offset baro
         local agl_average_final_m = agl_samples_sum / agl_samples_count
         gcs:send_text(MAV_SEVERITY.INFO, string.format("LUA: AGL measurements stopped: samples = %d, avg = %.2fm", agl_samples_count, agl_average_final_m))
-        update_baro(agl_average_final_m)
+
+        if (calibration_alt_m <= 0) then
+            gcs:send_text(MAV_SEVERITY.CRITICAL, "LUA: AGL calibration failed, aborting")
+        else    
+            update_baro(agl_average_final_m)
+        end
+
         agl_samples_count = 0
     else
         agl_samples_count = 0
@@ -128,13 +136,12 @@ function update()
 end
 
 function get_calibration_alt_m()
-    local default_alt_m = 59
-
+    
     local current_index = mission:get_current_nav_index()
     local current_mitem = mission:get_item(current_index)
     if (not current_mitem) then
         gcs:send_text(MAV_SEVERITY.DEBUG, string.format("LUA: current_mitem is nil index %d", current_index))
-        return 59
+        return 0
     end
 
     -- TODO: convert current_mitem to Location and convert frame to ABSOLUTE
@@ -142,7 +149,7 @@ function get_calibration_alt_m()
         local mitem = mission:get_item(index)
         if (not mitem) then
             gcs:send_text(MAV_SEVERITY.DEBUG, string.format("LUA: mitem nil index %df", index))
-            return 58
+            return 0
         end
         if (mitem:command() == MAV_CMD_NAV_LAND or mitem:command() == MAV_CMD_NAV_VTOL_LAND) then
             -- TODO: convert mitem to Location and convert frame to ABSOLUTE
@@ -151,7 +158,7 @@ function get_calibration_alt_m()
     end
 
     gcs:send_text(MAV_SEVERITY.DEBUG, string.format("LUA: mitem land not found"))
-    return 57
+    return 0
 end
 
 
