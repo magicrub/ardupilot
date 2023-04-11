@@ -56,7 +56,6 @@ local agl_samples_count = 0
 local agl_samples_sum = 0
 local calibration_alt_m = 0
 
-local START_STRING = "LUA: AGL measurements started" -- GCS triggers on this string
 
 function sample_rangefinder_to_get_AGL()
     if (not rangefinder:has_data_orient(ROTATION_PITCH_270)) then
@@ -74,8 +73,8 @@ function sample_rangefinder_to_get_AGL()
     if (agl_samples_count <= 0) then
         agl_samples_count = 0 -- divide-by-zero sanity check in case it somehow wrapped or initialized wrong
         agl_samples_sum = 0
+        gcs:send_text(MAV_SEVERITY.INFO, string.format("LUA: AGL measurements started"))
         calibration_alt_m = get_calibration_alt_m()
-        gcs:send_text(MAV_SEVERITY.INFO, string.format("%s", START_STRING))
         gcs:send_text(MAV_SEVERITY.INFO, string.format("LUA: expecting %.2fm", calibration_alt_m))
     end
 
