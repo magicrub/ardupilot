@@ -43,6 +43,8 @@ QGC WPL 110
 
 
 local MAV_SEVERITY = {EMERGENCY=0, ALERT=1, CRITICAL=2, ERROR=3, WARNING=4, NOTICE=5, INFO=6, DEBUG=7}
+local MAV_CMD_NAV_LAND = 21
+local MAV_CMD_NAV_VTOL_LAND = 85
 
 
 local ROTATION_PITCH_270 = 25
@@ -126,18 +128,30 @@ function update()
 end
 
 function get_calibration_alt_m()
-    local wp = vehicle:get_target_location()
-    if (not wp or wp == nil) then
-        gcs:send_text(MAV_SEVERITY.INFO, string.format("LUA: AGL: no target location"))
-        return 58
-    end
+    local default_alt_m = 59
 
-    if (not wp:change_alt_frame(Location.ALT_FRAME_ABOVE_HOME)) then
-        gcs:send_text(MAV_SEVERITY.INFO, string.format("LUA: AGL: can not convert target alt to relative: %d", wp:alt()))
+    local current_index = mission:get_current_nav_index()
+    local current_mitem = mission:get_item(current_index)
+    if (not current_mitem) then
+        gcs:send_text(MAV_SEVERITY.DEBUG, string.format("LUA: current_mitem is nil index %d", current_index))
         return 59
     end
 
-    return wp:alt() * 0.01
+    -- TODO: convert current_mitem to Location and convert frame to ABSOLUTE
+    for index = current_index+1, mission:num_commands()-1 do
+        local mitem = mission:get_item(index)
+        if (not mitem) then
+            gcs:send_text(MAV_SEVERITY.DEBUG, string.format("LUA: mitem nil index %df", index))
+            return 58
+        end
+        if (mitem:command() == MAV_CMD_NAV_LAND or mitem:command() == MAV_CMD_NAV_VTOL_LAND) then
+            -- TODO: convert mitem to Location and convert frame to ABSOLUTE
+            return current_mitem:z() - mitem:z()
+        end
+    end
+
+    gcs:send_text(MAV_SEVERITY.DEBUG, string.format("LUA: mitem land not found"))
+    return 57
 end
 
 
