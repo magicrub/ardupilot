@@ -52,6 +52,7 @@ local MISSION_TAG_CALIBRATE_BARO            = 401
 
 local agl_samples_count = 0
 local agl_samples_sum = 0
+local calibration_alt_m = 0
 
 
 function sample_rangefinder_to_get_AGL()
@@ -70,7 +71,8 @@ function sample_rangefinder_to_get_AGL()
     if (agl_samples_count <= 0) then
         agl_samples_count = 0 -- divide-by-zero sanity check in case it somehow wrapped or initialized wrong
         agl_samples_sum = 0
-        gcs:send_text(MAV_SEVERITY.INFO, string.format("LUA: AGL measurements started"))
+        calibration_alt_m = get_calibration_alt_m()
+        gcs:send_text(MAV_SEVERITY.INFO, string.format("LUA: AGL measurements started, expecting %fm", calibration_alt_m))
     end
 
     agl_samples_sum = agl_samples_sum + agl_corrected_for_attitude_m
@@ -82,10 +84,8 @@ end
 
 
 function update_baro(new_agl_m)
-    
-    local current_baro_agl_m = baro:get_altitude()
-    local alt_error_m = new_agl_m - current_baro_agl_m
-    gcs:send_text(MAV_SEVERITY.INFO, string.format("LUA: AGL alt_error is: %.2f - %.2f = %.2f", new_agl_m, current_baro_agl_m, alt_error_m))
+    local alt_error_m = new_agl_m - calibration_alt_m
+    gcs:send_text(MAV_SEVERITY.INFO, string.format("LUA: AGL alt_error is: %.2f - %.2f = %.2f", new_agl_m, calibration_alt_m, alt_error_m))
 
     local baro_alt_offset = param:get('BARO_ALT_OFFSET')
     local baro_alt_offset_new_value = baro_alt_offset + alt_error_m
@@ -125,8 +125,24 @@ function update()
     return update, 1000
 end
 
+function get_calibration_alt_m()
+    local wp = vehicle:get_target_location()
+    if (not wp or wp == nil) then
+        gcs:send_text(MAV_SEVERITY.INFO, string.format("LUA: AGL: no target location"))
+        return 58
+    end
 
-gcs:send_text(MAV_SEVERITY.INFO, "LUA: SCRIPT START: Check AGL to calibrate Baro")
+    if (not wp:change_alt_frame(Location.ALT_FRAME_ABOVE_HOME)) then
+        gcs:send_text(MAV_SEVERITY.INFO, string.format("LUA: AGL: can not convert target alt to relative: %d", wp:alt()))
+        return 59
+    end
+
+    return wp:alt() * 0.01
+end
+
+
+
+gcs:send_text(MAV_SEVERITY.INFO, "LUA: START: Check AGL to calibrate Baro")
 return update()
 
 
