@@ -46,6 +46,9 @@ local MAV_SEVERITY = {EMERGENCY=0, ALERT=1, CRITICAL=2, ERROR=3, WARNING=4, NOTI
 local MAV_CMD_NAV_LAND = 21
 local MAV_CMD_NAV_VTOL_LAND = 85
 
+local MAV_FRAME = {GLOBAL=0, MISSION=2, GLOBAL_RELATIVE_ALT=3, GLOBAL_INT=5 , GLOBAL_RELATIVE_ALT_INT=6, GLOBAL_TERRAIN_ALT=10, GLOBAL_TERRAIN_ALT_INT=11}
+local ALTFRAME = {ABSOLUTE=0, ABOVE_HOME=1, ABOVE_ORIGIN=2, ABOVE_TERRAIN=3}
+
 
 local ROTATION_PITCH_270 = 25
 
@@ -143,7 +146,14 @@ function get_calibration_alt_m()
         return 0
     end
 
-    -- TODO: convert current_mitem to Location and convert frame to ABSOLUTE
+    local current_loc = mItem_to_Location(current_mitem)
+    -- convert current_mitem to Location and convert frame to ABSOLUTE
+    if (not current_loc:change_alt_frame(ALTFRAME.ABSOLUTE)) then
+        -- There's no way changing to ABSOLUTE can fail, this is just a sanity check
+        gcs:send_text(MAV_SEVERITY.CRITICAL, string.format("LUA: can not convert current_loc.frame to Absolute"))
+        return 0
+    end
+    
     for index = current_index+1, mission:num_commands()-1 do
         local mitem = mission:get_item(index)
         if (not mitem) then
@@ -151,8 +161,14 @@ function get_calibration_alt_m()
             return 0
         end
         if (mitem:command() == MAV_CMD_NAV_LAND or mitem:command() == MAV_CMD_NAV_VTOL_LAND) then
-            -- TODO: convert mitem to Location and convert frame to ABSOLUTE
-            return current_mitem:z() - mitem:z()
+            -- convert mitem to Location and convert frame to ABSOLUTE
+            local mItem_loc = mItem_to_Location(current_mitem)
+            if (not mItem_loc:change_alt_frame(ALTFRAME.ABSOLUTE)) then
+                -- There's no way changing to ABSOLUTE can fail, this is just a sanity check
+                gcs:send_text(MAV_SEVERITY.CRITICAL, string.format("LUA: can not convert mItem_loc[%d].frame to Absolute", index))
+                return 0
+            end
+            return current_loc:alt() - mItem_loc:alt()
         end
     end
 
@@ -160,6 +176,28 @@ function get_calibration_alt_m()
     return 0
 end
 
+function mItem_to_Location(mItem)
+    local loc = Location()
+    loc:lat(mItem:x())
+    loc:lng(mItem:y())
+    loc:alt(mItem:z() * 100)
+
+    if (mItem:frame() == MAV_FRAME.MISSION or mItem:frame() == MAV_FRAME.GLOBAL or mItem:frame() == MAV_FRAME.GLOBAL_ALT) then
+        loc.relative_alt(0)
+        loc.terrain_alt(0)
+    elseif (mItem:frame() == MAV_FRAME.GLOBAL_RELATIVE_ALT or mItem:frame() == MAV_FRAME.GLOBAL_RELATIVE_ALT_INT) then
+        loc.relative_alt(1)
+        loc.terrain_alt(0)
+    elseif (mItem:frame() == MAV_FRAME.GLOBAL_TERRAIN_ALT or mItem:frame() == MAV_FRAME.GLOBAL_TERRAIN_ALT_INT) then
+        -- we mark it as a relative altitude, as it doesn't have
+        -- home alt added
+        loc.relative_alt(1)
+        -- mark altitude as above terrain, not above home
+        loc.terrain_alt(1)
+    end
+
+    return loc
+end
 
 
 gcs:send_text(MAV_SEVERITY.INFO, "LUA: START: Check AGL to calibrate Baro")
