@@ -91,15 +91,15 @@ function check_wind_and_jump_to_INTO_wind_landing()
     local wind = ahrs:wind_estimate()
     local tail_wind = (math.sin(reverse_land_bearing) * wind:y()) + (math.cos(reverse_land_bearing) * wind:x())
 
-    -- we need at least 10 cm/s of tailwind. With very little wind (or a noisy 0 value) we don't want to flip around.
-    local tail_wind_threshold = 0.1
+    -- we need at least 1 m/s of tailwind. With very little wind (or a noisy 0 value) we don't want to flip around.
+    local tail_wind_threshold = 1
 
     local tag
     if (tail_wind > tail_wind_threshold) then
         gcs:send_text(MAV_SEVERITY.INFO, "LUA: continuing with normal landing direction")
         tag = MISSION_TAG_LAND1_DIRECTION_NORMAL
     else
-        gcs:send_text(MAV_SEVERITY.INFO, "LUA: jump mission to other into-wind landing direction")
+        gcs:send_text(MAV_SEVERITY.INFO, "LUA: jump mission to reverse direction")
         tag = MISSION_TAG_LAND1_DIRECTION_REVERSE
     end
 
@@ -125,5 +125,5 @@ function update()
 end
 
 
-gcs:send_text(MAV_SEVERITY.INFO, "LUA: SCRIPT START: Jump_Tag into wind landing")
+gcs:send_text(MAV_SEVERITY.INFO, "LUA: START: Jump_Tag into wind landing")
 return update() -- run immediately before starting to reschedule
