@@ -60,6 +60,12 @@ public:
         int16_t num_times;      // num times to repeat.  -1 = repeat forever
     };
 
+    struct PACKED Jump_Tag_Args {
+        float p2;               // user-defined argument, param2
+        float p3;               // user-defined argument, param3
+        float p4;               // user-defined argument, param4
+    };
+
     // condition delay command structure
     struct PACKED Conditional_Delay_Command {
         float seconds;          // period of delay in seconds
@@ -218,6 +224,9 @@ public:
     union Content {
         // jump structure
         Jump_Command jump;
+
+        // jump tag structure to store user id and user-defined arguments
+        Jump_Tag_Args jump_tag;
 
         // conditional delay
         Conditional_Delay_Command delay;
@@ -597,6 +606,7 @@ public:
     // progressed since the tag was seen. While executing the tag, the
     // age will be 1. The next NAV command after it will tick the age to 2, and so on.
     bool get_last_jump_tag(uint16_t &tag, uint16_t &age) const;
+    bool get_last_jump_tag_args(float &p2, float &p3, float &p4) const;
 
     // Set the mission index to the first JUMP_TAG with this tag.
     // Returns true on success, else false if no appropriate JUMP_TAG match can be found or if setting the index failed
@@ -611,6 +621,9 @@ public:
         _jump_tag.age = 0;
     }
 
+    // initialize jump tag
+    void jump_tag_init(const Mission_Command& cmd);
+
 private:
     static AP_Mission *_singleton;
 
@@ -621,6 +634,7 @@ private:
     struct {
         uint16_t age;   // a value of 0 means we have never seen a tag. Once a tag is seen, age will increment every time the mission index changes.
         uint16_t tag;   // most recent tag that was successfully jumped to. Only valid if age > 0
+        Jump_Tag_Args args;   // User-defined p2, p3, p4
     } _jump_tag;
 
     struct Mission_Flags {
