@@ -140,17 +140,23 @@ end
 function get_calibration_alt_m()
     
     local current_index = mission:get_current_nav_index()
+
     local current_mitem = mission:get_item(current_index)
     if (not current_mitem) then
         gcs:send_text(MAV_SEVERITY.DEBUG, string.format("LUA: current_mitem is nil index %d", current_index))
         return 0
     end
+    local curr_loc = mItem_to_Location(current_mitem)
 
-    local current_loc = mItem_to_Location(current_mitem)
-    -- convert current_mitem to Location and convert frame to ABSOLUTE
-    if (not current_loc:change_alt_frame(ALTFRAME.ABSOLUTE)) then
+    if (not curr_loc) then
+        gcs:send_text(MAV_SEVERITY.CRITICAL, string.format("LUA: can not detect current altitude"))
+        return 0
+    end
+    
+    -- convert curr_loc to Location and convert frame to ABSOLUTE
+    if (not curr_loc:change_alt_frame(ALTFRAME.ABSOLUTE)) then
         -- There's no way changing to ABSOLUTE can fail, this is just a sanity check
-        gcs:send_text(MAV_SEVERITY.CRITICAL, string.format("LUA: can not convert current_loc.frame to Absolute"))
+        gcs:send_text(MAV_SEVERITY.CRITICAL, string.format("LUA: can not convert curr_loc.frame to Absolute"))
         return 0
     end
     
@@ -162,13 +168,13 @@ function get_calibration_alt_m()
         end
         if (mitem:command() == MAV_CMD_NAV_LAND or mitem:command() == MAV_CMD_NAV_VTOL_LAND) then
             -- convert mitem to Location and convert frame to ABSOLUTE
-            local mItem_loc = mItem_to_Location(current_mitem)
+            local mItem_loc = mItem_to_Location(mitem)
             if (not mItem_loc:change_alt_frame(ALTFRAME.ABSOLUTE)) then
                 -- There's no way changing to ABSOLUTE can fail, this is just a sanity check
                 gcs:send_text(MAV_SEVERITY.CRITICAL, string.format("LUA: can not convert mItem_loc[%d].frame to Absolute", index))
                 return 0
             end
-            return current_loc:alt() - mItem_loc:alt()
+            return (curr_loc:alt() - mItem_loc:alt()) * 0.01
         end
     end
 
