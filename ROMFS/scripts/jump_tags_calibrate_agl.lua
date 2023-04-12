@@ -183,17 +183,17 @@ function mItem_to_Location(mItem)
     loc:alt(mItem:z() * 100)
 
     if (mItem:frame() == MAV_FRAME.MISSION or mItem:frame() == MAV_FRAME.GLOBAL or mItem:frame() == MAV_FRAME.GLOBAL_ALT) then
-        loc.relative_alt(0)
-        loc.terrain_alt(0)
+        loc:relative_alt(0)
+        loc:terrain_alt(0)
     elseif (mItem:frame() == MAV_FRAME.GLOBAL_RELATIVE_ALT or mItem:frame() == MAV_FRAME.GLOBAL_RELATIVE_ALT_INT) then
-        loc.relative_alt(1)
-        loc.terrain_alt(0)
+        loc:relative_alt(1)
+        loc:terrain_alt(0)
     elseif (mItem:frame() == MAV_FRAME.GLOBAL_TERRAIN_ALT or mItem:frame() == MAV_FRAME.GLOBAL_TERRAIN_ALT_INT) then
         -- we mark it as a relative altitude, as it doesn't have
         -- home alt added
-        loc.relative_alt(1)
+        loc:relative_alt(1)
         -- mark altitude as above terrain, not above home
-        loc.terrain_alt(1)
+        loc:terrain_alt(1)
     end
 
     return loc
