@@ -99,7 +99,7 @@ function check_wind_and_jump_to_INTO_wind_landing()
         gcs:send_text(MAV_SEVERITY.INFO, "LUA: continuing with normal landing direction")
         tag = MISSION_TAG_LAND1_DIRECTION_NORMAL
     else
-        gcs:send_text(MAV_SEVERITY.INFO, "LUA: jump mission to other into-wind landing direction")
+        gcs:send_text(MAV_SEVERITY.INFO, "LUA: jump mission to reverse direction")
         tag = MISSION_TAG_LAND1_DIRECTION_REVERSE
     end
 
