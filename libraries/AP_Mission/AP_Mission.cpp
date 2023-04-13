@@ -358,8 +358,7 @@ bool AP_Mission::start_command(const Mission_Command& cmd)
     case MAV_CMD_DO_SET_RESUME_REPEAT_DIST:
         return command_do_set_repeat_dist(cmd);
     case MAV_CMD_JUMP_TAG:
-        _jump_tag.tag = cmd.content.jump.target;
-        _jump_tag.age = 1;
+        jump_tag_init(cmd);
         FALLTHROUGH; // fall through in case the vehicle handles tag events
     default:
         return _cmd_start_fn(cmd);
@@ -1005,7 +1004,10 @@ MAV_MISSION_RESULT AP_Mission::mavlink_int_to_mission_cmd(const mavlink_mission_
         break;
 
     case MAV_CMD_JUMP_TAG:                              // MAV ID: 600
-        cmd.content.jump.target = packet.param1;        // jump-to tag number
+        cmd.p1 = packet.param1;                         // jump-to tag number
+        cmd.content.jump_tag.p2 = packet.param2;        // user-defined argument
+        cmd.content.jump_tag.p3 = packet.param3;        // user-defined argument
+        cmd.content.jump_tag.p4 = packet.param4;        // user-defined argument
         break;
 
     case MAV_CMD_DO_CHANGE_SPEED:                       // MAV ID: 178
@@ -1466,7 +1468,10 @@ bool AP_Mission::mission_cmd_to_mavlink_int(const AP_Mission::Mission_Command& c
         break;
 
     case MAV_CMD_JUMP_TAG:                              // MAV ID: 600
-        packet.param1 = cmd.content.jump.target;        // jump-to tag number
+        packet.param1 = cmd.p1;                         // jump-to tag number
+        packet.param2 = cmd.content.jump_tag.p2;        // user-defined argument
+        packet.param3 = cmd.content.jump_tag.p3;        // user-defined argument
+        packet.param4 = cmd.content.jump_tag.p4;        // user-defined argument
         break;
 
     case MAV_CMD_DO_CHANGE_SPEED:                       // MAV ID: 178
@@ -1958,7 +1963,7 @@ uint16_t AP_Mission::get_index_of_jump_tag(const uint16_t tag) const
         if (!read_cmd_from_storage(i, tmp)) {
             continue;
         }
-        if (tmp.id == MAV_CMD_JUMP_TAG && tmp.content.jump.target == tag) {
+        if (tmp.id == MAV_CMD_JUMP_TAG && tmp.p1 == tag) {
             return i;
         }
     }
@@ -1973,6 +1978,28 @@ bool AP_Mission::get_last_jump_tag(uint16_t &tag, uint16_t &age) const
     tag = _jump_tag.tag;
     age = _jump_tag.age;
     return true;
+}
+
+bool AP_Mission::get_last_jump_tag_args(float &p2, float &p3, float &p4) const
+{
+    if (_jump_tag.age == 0) {
+        return false;
+    }
+    p2 = _jump_tag.args.p2;
+    p3 = _jump_tag.args.p3;
+    p4 = _jump_tag.args.p4;
+    return true;
+}
+
+void AP_Mission::jump_tag_init(const Mission_Command& cmd)
+{
+    jump_tag_reset();
+    _jump_tag.tag = cmd.p1;
+    _jump_tag.args.p2 = cmd.content.jump_tag.p2;
+    _jump_tag.args.p3 = cmd.content.jump_tag.p3;
+    _jump_tag.args.p4 = cmd.content.jump_tag.p4;
+
+    _jump_tag.age = 1;
 }
 
 // init_jump_tracking - initialise jump_tracking variables

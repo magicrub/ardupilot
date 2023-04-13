@@ -44,7 +44,6 @@ QGC WPL 110
 
 local MAV_SEVERITY = {EMERGENCY=0, ALERT=1, CRITICAL=2, ERROR=3, WARNING=4, NOTICE=5, INFO=6, DEBUG=7}
 
-
 local ROTATION_PITCH_270 = 25
 
 local MISSION_TAG_MEASURE_AGL_START         = 400
@@ -52,14 +51,32 @@ local MISSION_TAG_CALIBRATE_BARO            = 401
 
 local agl_samples_count = 0
 local agl_samples_sum = 0
+local calibration_alt_m = 0
 
 
-function sample_rangefinder_to_get_AGL()
+function init()
     if (not rangefinder:has_data_orient(ROTATION_PITCH_270)) then
-        -- rangefinder not ready
+        gcs:send_text(MAV_SEVERITY.ERROR, string.format("LUA: AGL Rangefinder not ready"))
+        agl_samples_count = -1;
         return
     end
 
+    local p2 = mission:get_last_jump_tag_args()
+    if (not p2 or p2 <= 0) then
+        gcs:send_text(MAV_SEVERITY.CRITICAL, string.format("LUA: Jump Tag (%d) requires p2 > 0", MISSION_TAG_MEASURE_AGL_START))
+        agl_samples_count = -1
+        return
+    end
+
+    calibration_alt_m = p2
+    agl_samples_count = 0
+    agl_samples_sum = 0
+    gcs:send_text(MAV_SEVERITY.INFO, string.format("LUA: AGL measurements started"))
+    gcs:send_text(MAV_SEVERITY.DEBUG, string.format("LUA: expecting %.2fm", calibration_alt_m))
+end
+
+function sample_rangefinder_to_get_AGL()
+    
     -- we're actively sampling rangefinder distance to ground
     local distance_raw_m = rangefinder:distance_cm_orient(ROTATION_PITCH_270) * 0.01
 
@@ -67,32 +84,22 @@ function sample_rangefinder_to_get_AGL()
     local ahrs_get_rotation_body_to_ned_c_z = math.cos(ahrs:get_roll())*math.cos(ahrs:get_pitch())
     local agl_corrected_for_attitude_m = distance_raw_m * ahrs_get_rotation_body_to_ned_c_z
 
-    if (agl_samples_count <= 0) then
-        agl_samples_count = 0 -- divide-by-zero sanity check in case it somehow wrapped or initialized wrong
-        agl_samples_sum = 0
-        gcs:send_text(MAV_SEVERITY.INFO, string.format("LUA: AGL measurements started"))
-    end
-
     agl_samples_sum = agl_samples_sum + agl_corrected_for_attitude_m
     agl_samples_count = agl_samples_count + 1
 
     local agl_average = agl_samples_sum / agl_samples_count
-    gcs:send_text(MAV_SEVERITY.INFO, string.format("LUA: AGL measurement %u: %.2fm, avg: %.2f", agl_samples_count, agl_corrected_for_attitude_m, agl_average))
+    gcs:send_text(MAV_SEVERITY.DEBUG, string.format("LUA: AGL measurement %u: %.2fm, avg: %.2f", agl_samples_count, agl_corrected_for_attitude_m, agl_average))
 end
 
-
 function update_baro(new_agl_m)
-    
-    local current_baro_agl_m = baro:get_altitude()
-    local alt_error_m = new_agl_m - current_baro_agl_m
-    gcs:send_text(MAV_SEVERITY.INFO, string.format("LUA: AGL alt_error is: %.2f - %.2f = %.2f", new_agl_m, current_baro_agl_m, alt_error_m))
+    local alt_error_m = new_agl_m - calibration_alt_m
+    gcs:send_text(MAV_SEVERITY.INFO, string.format("LUA: AGL alt_error is: %.2f - %.2f = %.2f", new_agl_m, calibration_alt_m, alt_error_m))
 
     local baro_alt_offset = param:get('BARO_ALT_OFFSET')
     local baro_alt_offset_new_value = baro_alt_offset + alt_error_m
     gcs:send_text(MAV_SEVERITY.INFO, string.format("LUA: BARO_ALT_OFFSET changed from %.2f to %.2f", baro_alt_offset, baro_alt_offset_new_value))
     param:set('BARO_ALT_OFFSET', baro_alt_offset_new_value)
 end
-
 
 function update()
     if (mission:state() ~= mission.MISSION_RUNNING) or (not arming:is_armed()) or (not vehicle:get_likely_flying()) then
@@ -108,7 +115,15 @@ function update()
 
     if ((tag == MISSION_TAG_MEASURE_AGL_START) and (age <= 5)) then
         -- we're at or currently on waypoints after the tag so lets start gathering samples
-        sample_rangefinder_to_get_AGL()
+        if (agl_samples_count == 0) then
+            init()
+            -- an init failure will set agl_samples_count to -1
+        end
+
+        if (agl_samples_count >= 0) then
+            sample_rangefinder_to_get_AGL()
+        end
+
         -- lets sample at 2 Hz
         return update, 500
 
@@ -116,7 +131,13 @@ function update()
         -- finished sampling, use the result to offset baro
         local agl_average_final_m = agl_samples_sum / agl_samples_count
         gcs:send_text(MAV_SEVERITY.INFO, string.format("LUA: AGL measurements stopped: samples = %d, avg = %.2fm", agl_samples_count, agl_average_final_m))
-        update_baro(agl_average_final_m)
+
+        if (calibration_alt_m <= 0) then
+            gcs:send_text(MAV_SEVERITY.CRITICAL, "LUA: AGL calibration failed, aborting")
+        else    
+            update_baro(agl_average_final_m)
+        end
+
         agl_samples_count = 0
     else
         agl_samples_count = 0
@@ -125,8 +146,7 @@ function update()
     return update, 1000
 end
 
-
-gcs:send_text(MAV_SEVERITY.INFO, "LUA: SCRIPT START: Check AGL to calibrate Baro")
+gcs:send_text(MAV_SEVERITY.INFO, "LUA: START: Check AGL to calibrate Baro")
 return update()
 
 
