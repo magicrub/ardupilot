@@ -298,6 +298,7 @@ singleton AP_Mission method clear boolean
 singleton AP_Mission method jump_to_tag boolean uint16_t 0 UINT16_MAX
 singleton AP_Mission method get_index_of_jump_tag uint16_t uint16_t 0 UINT16_MAX
 singleton AP_Mission method get_last_jump_tag boolean uint16_t'Null uint16_t'Null
+singleton AP_Mission method get_last_jump_tag_args boolean float'Null float'Null float'Null
 
 userdata mavlink_mission_item_int_t field param1 float read write -FLT_MAX FLT_MAX
 userdata mavlink_mission_item_int_t field param2 float read write -FLT_MAX FLT_MAX
