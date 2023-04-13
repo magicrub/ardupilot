@@ -50,6 +50,8 @@ local MAV_FRAME = {GLOBAL=0, MISSION=2, GLOBAL_RELATIVE_ALT=3, GLOBAL_INT=5 , GL
 local ALTFRAME = {ABSOLUTE=0, ABOVE_HOME=1, ABOVE_ORIGIN=2, ABOVE_TERRAIN=3}
 
 
+local AP_MISSION_CMD_ID_NONE                = 0
+local AP_MISSION_CMD_INDEX_NONE             = 65535
 local ROTATION_PITCH_270 = 25
 
 local MISSION_TAG_MEASURE_AGL_START         = 400
@@ -100,6 +102,89 @@ function update_baro(new_agl_m)
 end
 
 
+function get_calibration_alt_m()
+    -- if the Jump_Tag has an argument containing an altitude, use that.
+    local p2, p3, p4 = mission:get_last_jump_tag_args()
+    if (p2 and p2 > 0) then
+        return p2
+    end
+
+    -- no argument, so we have to figure it out by figuring out the difference between the (prev to next) avg alt to the LAND alt
+    local current_index = mission:get_current_nav_index()
+    local current_mitem = mission:get_item(current_index)
+
+    if (not current_mitem) then
+        gcs:send_text(MAV_SEVERITY.DEBUG, string.format("LUA: current_mitem is nil index %d", current_index))
+        return 0
+    end
+    local curr_loc = mItem_to_Location(current_mitem)
+    if (not curr_loc:change_alt_frame(ALTFRAME.ABSOLUTE)) then
+        -- There's no way changing to ABSOLUTE can fail, this is just a sanity check
+        gcs:send_text(MAV_SEVERITY.CRITICAL, string.format("LUA: can not convert curr_loc.frame to Absolute"))
+        return 0
+    end
+
+    local fly_over_alt = curr_loc:alt()
+    
+    -- get current mission avg altitude on this leg if we can. If not, silently fail
+    local prev_index = mission:get_prev_nav_cmd_index()
+    if (prev_index ~= AP_MISSION_CMD_ID_NONE and prev_index ~= AP_MISSION_CMD_INDEX_NONE) then
+        local prev_mitem = mission:get_item(prev_index)
+        if (prev_mitem) then
+            local prev_loc = mItem_to_Location(prev_mitem)
+            if (prev_loc:change_alt_frame(ALTFRAME.ABSOLUTE)) then
+                fly_over_alt = (curr_loc:alt() + prev_loc:alt()) / 2
+            end
+        end
+    end
+    
+    -- convert curr_loc to Location and convert frame to ABSOLUTE
+    
+    for index = current_index+1, mission:num_commands()-1 do
+        local mitem = mission:get_item(index)
+        if (not mitem) then
+            gcs:send_text(MAV_SEVERITY.DEBUG, string.format("LUA: mitem nil index %df", index))
+            return 0
+        end
+        if (mitem:command() == MAV_CMD_NAV_LAND or mitem:command() == MAV_CMD_NAV_VTOL_LAND) then
+            -- convert mitem to Location and convert frame to ABSOLUTE
+            local mItem_loc = mItem_to_Location(mitem)
+            if (not mItem_loc:change_alt_frame(ALTFRAME.ABSOLUTE)) then
+                -- There's no way changing to ABSOLUTE can fail, this is just a sanity check
+                gcs:send_text(MAV_SEVERITY.CRITICAL, string.format("LUA: can not convert mItem_loc[%d].frame to Absolute", index))
+                return 0
+            end
+            return (fly_over_alt - mItem_loc:alt()) * 0.01
+        end
+    end
+
+    gcs:send_text(MAV_SEVERITY.DEBUG, string.format("LUA: mitem land not found"))
+    return 0
+end
+
+function mItem_to_Location(mItem)
+    local loc = Location()
+    loc:lat(mItem:x())
+    loc:lng(mItem:y())
+    loc:alt(mItem:z() * 100)
+
+    if (mItem:frame() == MAV_FRAME.MISSION or mItem:frame() == MAV_FRAME.GLOBAL or mItem:frame() == MAV_FRAME.GLOBAL_ALT) then
+        loc:relative_alt(0)
+        loc:terrain_alt(0)
+    elseif (mItem:frame() == MAV_FRAME.GLOBAL_RELATIVE_ALT or mItem:frame() == MAV_FRAME.GLOBAL_RELATIVE_ALT_INT) then
+        loc:relative_alt(1)
+        loc:terrain_alt(0)
+    elseif (mItem:frame() == MAV_FRAME.GLOBAL_TERRAIN_ALT or mItem:frame() == MAV_FRAME.GLOBAL_TERRAIN_ALT_INT) then
+        -- we mark it as a relative altitude, as it doesn't have
+        -- home alt added
+        loc:relative_alt(1)
+        -- mark altitude as above terrain, not above home
+        loc:terrain_alt(1)
+    end
+
+    return loc
+end
+
 function update()
     if (mission:state() ~= mission.MISSION_RUNNING) or (not arming:is_armed()) or (not vehicle:get_likely_flying()) then
         -- only run landing mission checks if in auto with a valid mission and armed and flying.
@@ -136,75 +221,6 @@ function update()
 
     return update, 1000
 end
-
-function get_calibration_alt_m()
-    
-    local current_index = mission:get_current_nav_index()
-
-    local current_mitem = mission:get_item(current_index)
-    if (not current_mitem) then
-        gcs:send_text(MAV_SEVERITY.DEBUG, string.format("LUA: current_mitem is nil index %d", current_index))
-        return 0
-    end
-    local curr_loc = mItem_to_Location(current_mitem)
-
-    if (not curr_loc) then
-        gcs:send_text(MAV_SEVERITY.CRITICAL, string.format("LUA: can not detect current altitude"))
-        return 0
-    end
-    
-    -- convert curr_loc to Location and convert frame to ABSOLUTE
-    if (not curr_loc:change_alt_frame(ALTFRAME.ABSOLUTE)) then
-        -- There's no way changing to ABSOLUTE can fail, this is just a sanity check
-        gcs:send_text(MAV_SEVERITY.CRITICAL, string.format("LUA: can not convert curr_loc.frame to Absolute"))
-        return 0
-    end
-    
-    for index = current_index+1, mission:num_commands()-1 do
-        local mitem = mission:get_item(index)
-        if (not mitem) then
-            gcs:send_text(MAV_SEVERITY.DEBUG, string.format("LUA: mitem nil index %df", index))
-            return 0
-        end
-        if (mitem:command() == MAV_CMD_NAV_LAND or mitem:command() == MAV_CMD_NAV_VTOL_LAND) then
-            -- convert mitem to Location and convert frame to ABSOLUTE
-            local mItem_loc = mItem_to_Location(mitem)
-            if (not mItem_loc:change_alt_frame(ALTFRAME.ABSOLUTE)) then
-                -- There's no way changing to ABSOLUTE can fail, this is just a sanity check
-                gcs:send_text(MAV_SEVERITY.CRITICAL, string.format("LUA: can not convert mItem_loc[%d].frame to Absolute", index))
-                return 0
-            end
-            return (curr_loc:alt() - mItem_loc:alt()) * 0.01
-        end
-    end
-
-    gcs:send_text(MAV_SEVERITY.DEBUG, string.format("LUA: mitem land not found"))
-    return 0
-end
-
-function mItem_to_Location(mItem)
-    local loc = Location()
-    loc:lat(mItem:x())
-    loc:lng(mItem:y())
-    loc:alt(mItem:z() * 100)
-
-    if (mItem:frame() == MAV_FRAME.MISSION or mItem:frame() == MAV_FRAME.GLOBAL or mItem:frame() == MAV_FRAME.GLOBAL_ALT) then
-        loc:relative_alt(0)
-        loc:terrain_alt(0)
-    elseif (mItem:frame() == MAV_FRAME.GLOBAL_RELATIVE_ALT or mItem:frame() == MAV_FRAME.GLOBAL_RELATIVE_ALT_INT) then
-        loc:relative_alt(1)
-        loc:terrain_alt(0)
-    elseif (mItem:frame() == MAV_FRAME.GLOBAL_TERRAIN_ALT or mItem:frame() == MAV_FRAME.GLOBAL_TERRAIN_ALT_INT) then
-        -- we mark it as a relative altitude, as it doesn't have
-        -- home alt added
-        loc:relative_alt(1)
-        -- mark altitude as above terrain, not above home
-        loc:terrain_alt(1)
-    end
-
-    return loc
-end
-
 
 gcs:send_text(MAV_SEVERITY.INFO, "LUA: START: Check AGL to calibrate Baro")
 return update()
