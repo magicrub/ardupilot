@@ -93,7 +93,7 @@ end
 
 function update_baro(new_agl_m)
     local alt_error_m = new_agl_m - calibration_alt_m
-    gcs:send_text(MAV_SEVERITY.DEBUG, string.format("LUA: AGL alt_error is: %.2f - %.2f = %.2f", new_agl_m, calibration_alt_m, alt_error_m))
+    gcs:send_text(MAV_SEVERITY.INFO, string.format("LUA: AGL alt_error is: %.2f - %.2f = %.2f", new_agl_m, calibration_alt_m, alt_error_m))
 
     local baro_alt_offset = param:get('BARO_ALT_OFFSET')
     local baro_alt_offset_new_value = baro_alt_offset + alt_error_m
