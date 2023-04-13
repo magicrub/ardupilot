@@ -43,15 +43,7 @@ QGC WPL 110
 
 
 local MAV_SEVERITY = {EMERGENCY=0, ALERT=1, CRITICAL=2, ERROR=3, WARNING=4, NOTICE=5, INFO=6, DEBUG=7}
-local MAV_CMD_NAV_LAND = 21
-local MAV_CMD_NAV_VTOL_LAND = 85
 
-local MAV_FRAME = {GLOBAL=0, MISSION=2, GLOBAL_RELATIVE_ALT=3, GLOBAL_INT=5 , GLOBAL_RELATIVE_ALT_INT=6, GLOBAL_TERRAIN_ALT=10, GLOBAL_TERRAIN_ALT_INT=11}
-local ALTFRAME = {ABSOLUTE=0, ABOVE_HOME=1, ABOVE_ORIGIN=2, ABOVE_TERRAIN=3}
-
-
-local AP_MISSION_CMD_ID_NONE                = 0
-local AP_MISSION_CMD_INDEX_NONE             = 65535
 local ROTATION_PITCH_270 = 25
 
 local MISSION_TAG_MEASURE_AGL_START         = 400
@@ -62,12 +54,29 @@ local agl_samples_sum = 0
 local calibration_alt_m = 0
 
 
-function sample_rangefinder_to_get_AGL()
+function init()
     if (not rangefinder:has_data_orient(ROTATION_PITCH_270)) then
-        -- rangefinder not ready
+        gcs:send_text(MAV_SEVERITY.ERROR, string.format("LUA: AGL Rangefinder not ready"))
+        agl_samples_count = -1;
         return
     end
 
+    local p2, p3, p4 = mission:get_last_jump_tag_args()
+    if (not p2 or p2 <= 0) then
+        gcs:send_text(MAV_SEVERITY.CRITICAL, string.format("LUA: Jump Tag (%d) requires p2 > 0", MISSION_TAG_MEASURE_AGL_START))
+        agl_samples_count = -1
+        return
+    end
+
+    calibration_alt_m = p2
+    agl_samples_count = 0
+    agl_samples_sum = 0
+    gcs:send_text(MAV_SEVERITY.INFO, string.format("LUA: AGL measurements started"))
+    gcs:send_text(MAV_SEVERITY.DEBUG, string.format("LUA: expecting %.2fm", calibration_alt_m))
+end
+
+function sample_rangefinder_to_get_AGL()
+    
     -- we're actively sampling rangefinder distance to ground
     local distance_raw_m = rangefinder:distance_cm_orient(ROTATION_PITCH_270) * 0.01
 
@@ -75,114 +84,21 @@ function sample_rangefinder_to_get_AGL()
     local ahrs_get_rotation_body_to_ned_c_z = math.cos(ahrs:get_roll())*math.cos(ahrs:get_pitch())
     local agl_corrected_for_attitude_m = distance_raw_m * ahrs_get_rotation_body_to_ned_c_z
 
-    if (agl_samples_count <= 0) then
-        agl_samples_count = 0 -- divide-by-zero sanity check in case it somehow wrapped or initialized wrong
-        agl_samples_sum = 0
-        gcs:send_text(MAV_SEVERITY.INFO, string.format("LUA: AGL measurements started"))
-        calibration_alt_m = get_calibration_alt_m()
-        gcs:send_text(MAV_SEVERITY.INFO, string.format("LUA: expecting %.2fm", calibration_alt_m))
-    end
-
     agl_samples_sum = agl_samples_sum + agl_corrected_for_attitude_m
     agl_samples_count = agl_samples_count + 1
 
     local agl_average = agl_samples_sum / agl_samples_count
-    gcs:send_text(MAV_SEVERITY.INFO, string.format("LUA: AGL measurement %u: %.2fm, avg: %.2f", agl_samples_count, agl_corrected_for_attitude_m, agl_average))
+    gcs:send_text(MAV_SEVERITY.DEBUG, string.format("LUA: AGL measurement %u: %.2fm, avg: %.2f", agl_samples_count, agl_corrected_for_attitude_m, agl_average))
 end
-
 
 function update_baro(new_agl_m)
     local alt_error_m = new_agl_m - calibration_alt_m
-    gcs:send_text(MAV_SEVERITY.INFO, string.format("LUA: AGL alt_error is: %.2f - %.2f = %.2f", new_agl_m, calibration_alt_m, alt_error_m))
+    gcs:send_text(MAV_SEVERITY.DEBUG, string.format("LUA: AGL alt_error is: %.2f - %.2f = %.2f", new_agl_m, calibration_alt_m, alt_error_m))
 
     local baro_alt_offset = param:get('BARO_ALT_OFFSET')
     local baro_alt_offset_new_value = baro_alt_offset + alt_error_m
     gcs:send_text(MAV_SEVERITY.INFO, string.format("LUA: BARO_ALT_OFFSET changed from %.2f to %.2f", baro_alt_offset, baro_alt_offset_new_value))
     param:set('BARO_ALT_OFFSET', baro_alt_offset_new_value)
-end
-
-
-function get_calibration_alt_m()
-    -- if the Jump_Tag has an argument containing an altitude, use that.
-    local p2, p3, p4 = mission:get_last_jump_tag_args()
-    if (p2 and p2 > 0) then
-        return p2
-    end
-
-    -- no argument, so we have to figure it out by figuring out the difference between the (prev to next) avg alt to the LAND alt
-    local current_index = mission:get_current_nav_index()
-    local current_mitem = mission:get_item(current_index)
-
-    if (not current_mitem) then
-        gcs:send_text(MAV_SEVERITY.DEBUG, string.format("LUA: current_mitem is nil index %d", current_index))
-        return 0
-    end
-    local curr_loc = mItem_to_Location(current_mitem)
-    if (not curr_loc:change_alt_frame(ALTFRAME.ABSOLUTE)) then
-        -- There's no way changing to ABSOLUTE can fail, this is just a sanity check
-        gcs:send_text(MAV_SEVERITY.CRITICAL, string.format("LUA: can not convert curr_loc.frame to Absolute"))
-        return 0
-    end
-
-    local fly_over_alt = curr_loc:alt()
-    
-    -- get current mission avg altitude on this leg if we can. If not, silently fail
-    local prev_index = mission:get_prev_nav_cmd_index()
-    if (prev_index ~= AP_MISSION_CMD_ID_NONE and prev_index ~= AP_MISSION_CMD_INDEX_NONE) then
-        local prev_mitem = mission:get_item(prev_index)
-        if (prev_mitem) then
-            local prev_loc = mItem_to_Location(prev_mitem)
-            if (prev_loc:change_alt_frame(ALTFRAME.ABSOLUTE)) then
-                fly_over_alt = (curr_loc:alt() + prev_loc:alt()) / 2
-            end
-        end
-    end
-    
-    -- convert curr_loc to Location and convert frame to ABSOLUTE
-    
-    for index = current_index+1, mission:num_commands()-1 do
-        local mitem = mission:get_item(index)
-        if (not mitem) then
-            gcs:send_text(MAV_SEVERITY.DEBUG, string.format("LUA: mitem nil index %df", index))
-            return 0
-        end
-        if (mitem:command() == MAV_CMD_NAV_LAND or mitem:command() == MAV_CMD_NAV_VTOL_LAND) then
-            -- convert mitem to Location and convert frame to ABSOLUTE
-            local mItem_loc = mItem_to_Location(mitem)
-            if (not mItem_loc:change_alt_frame(ALTFRAME.ABSOLUTE)) then
-                -- There's no way changing to ABSOLUTE can fail, this is just a sanity check
-                gcs:send_text(MAV_SEVERITY.CRITICAL, string.format("LUA: can not convert mItem_loc[%d].frame to Absolute", index))
-                return 0
-            end
-            return (fly_over_alt - mItem_loc:alt()) * 0.01
-        end
-    end
-
-    gcs:send_text(MAV_SEVERITY.DEBUG, string.format("LUA: mitem land not found"))
-    return 0
-end
-
-function mItem_to_Location(mItem)
-    local loc = Location()
-    loc:lat(mItem:x())
-    loc:lng(mItem:y())
-    loc:alt(mItem:z() * 100)
-
-    if (mItem:frame() == MAV_FRAME.MISSION or mItem:frame() == MAV_FRAME.GLOBAL or mItem:frame() == MAV_FRAME.GLOBAL_ALT) then
-        loc:relative_alt(0)
-        loc:terrain_alt(0)
-    elseif (mItem:frame() == MAV_FRAME.GLOBAL_RELATIVE_ALT or mItem:frame() == MAV_FRAME.GLOBAL_RELATIVE_ALT_INT) then
-        loc:relative_alt(1)
-        loc:terrain_alt(0)
-    elseif (mItem:frame() == MAV_FRAME.GLOBAL_TERRAIN_ALT or mItem:frame() == MAV_FRAME.GLOBAL_TERRAIN_ALT_INT) then
-        -- we mark it as a relative altitude, as it doesn't have
-        -- home alt added
-        loc:relative_alt(1)
-        -- mark altitude as above terrain, not above home
-        loc:terrain_alt(1)
-    end
-
-    return loc
 end
 
 function update()
@@ -199,7 +115,15 @@ function update()
 
     if ((tag == MISSION_TAG_MEASURE_AGL_START) and (age <= 5)) then
         -- we're at or currently on waypoints after the tag so lets start gathering samples
-        sample_rangefinder_to_get_AGL()
+        if (agl_samples_count == 0) then
+            init()
+            -- an init failure will set agl_samples_count to -1
+        end
+
+        if (agl_samples_count >= 0) then
+            sample_rangefinder_to_get_AGL()
+        end
+
         -- lets sample at 2 Hz
         return update, 500
 
