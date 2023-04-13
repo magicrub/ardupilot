@@ -61,7 +61,7 @@ function init()
         return
     end
 
-    local p2, p3, p4 = mission:get_last_jump_tag_args()
+    local p2 = mission:get_last_jump_tag_args()
     if (not p2 or p2 <= 0) then
         gcs:send_text(MAV_SEVERITY.CRITICAL, string.format("LUA: Jump Tag (%d) requires p2 > 0", MISSION_TAG_MEASURE_AGL_START))
         agl_samples_count = -1
