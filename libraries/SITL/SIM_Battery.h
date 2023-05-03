@@ -19,6 +19,7 @@
 #pragma once
 
 #include <Filter/LowPassFilter.h>
+#include <AP_BattMonitor/BatteryChemistryModel.h>
 
 namespace SITL {
 
@@ -35,17 +36,20 @@ public:
     float get_voltage(void) const;
 
 private:
-    float capacity_Ah;
-    float resistance;
-    float max_voltage;
-    float voltage_set;
-    float remaining_Ah;
+    bool initialized;
+    float SOC; // state of charge
+    float V1;  // polarization voltage 1
+    float V2;  // polarization voltage 2
+    float R0;
+    float Q;
+    float I;
+    float num_cells;
+    
+    const float R1 {.001};
+    const float R2 {.001};
+    const float RC1 {40};
+    const float RC2 {4};
+    
     uint64_t last_us;
-
-    // 10Hz filter for battery voltage
-    LowPassFilterFloat voltage_filter{10};
-
-    float get_resting_voltage(float charge_pct) const;
-    void set_initial_SoC(float voltage);
 };
 }

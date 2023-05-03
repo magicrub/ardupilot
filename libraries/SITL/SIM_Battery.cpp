@@ -20,112 +20,25 @@
 
 using namespace SITL;
 
-/*
-  state of charge table for a single cell battery.
- */
-static const struct {
-    float volt_per_cell;
-    float soc_pct;
-} soc_table[] = {
-    { 4.173, 100 },
-    { 4.112, 96.15 },
-    { 4.085, 92.31 },
-    { 4.071, 88.46 },
-    { 4.039, 84.62 },
-    { 3.987, 80.77 },
-    { 3.943, 76.92 },
-    { 3.908, 73.08 },
-    { 3.887, 69.23 },
-    { 3.854, 65.38 },
-    { 3.833, 61.54 },
-    { 3.801, 57.69 },
-    { 3.783, 53.85 },
-    { 3.742, 50 },
-    { 3.715, 46.15 },
-    { 3.679, 42.31 },
-    { 3.636, 38.46 },
-    { 3.588, 34.62 },
-    { 3.543, 30.77 },
-    { 3.503, 26.92 },
-    { 3.462, 23.08 },
-    { 3.379, 19.23 },
-    { 3.296, 15.38 },
-    { 3.218, 11.54 },
-    { 3.165, 7.69 },
-    { 3.091, 3.85 },
-    { 2.977, 2.0 },
-    { 2.8,   1.5 },
-    { 2.7,   1.3 },
-    { 2.5,   1.2 },
-    { 2.3,   1.1 },
-    { 2.1,   1.0 },
-    { 1.9,   0.9 },
-    { 1.6,   0.8 },
-    { 1.3,   0.7 },
-    { 1.0,   0.6 },
-    { 0.6,   0.4 },
-    { 0.3,   0.2 },
-    { 0.01,  0.01},
-    { 0.001, 0.001 }};
+static const float soc_ocv_x[] = {0.0, 0.005063014925373088, 0.01613838805970147, 0.02905964179104481, 0.04382680597014932, 0.060439850746268675, 0.07705289552238803, 0.09920364179104468, 0.1268920298507462, 0.15642635820895523, 0.19334423880597018, 0.2357997910447761, 0.2708717910447762, 0.2967142985074628, 0.3244027164179104, 0.34839934328358213, 0.3779336417910447, 0.4037761791044776, 0.4388481492537314, 0.462844776119403, 0.4868414029850746, 0.5182216119402985, 0.5551394925373134, 0.5920573731343284, 0.6289752537313433, 0.6695849253731343, 0.7194240895522388, 0.7581878507462687, 0.7932598507462687, 0.8283318507462687, 0.8615579402985074, 0.9058594029850746, 0.9446231641791045, 0.9815410447761194, 1.0};
 
-/*
-  use table to get resting voltage from remaining capacity
- */
-float Battery::get_resting_voltage(float charge_pct) const
-{
-    const float max_cell_voltage = soc_table[0].volt_per_cell;
-    for (uint8_t i=1; i<ARRAY_SIZE(soc_table); i++) {
-        if (charge_pct >= soc_table[i].soc_pct) {
-            // linear interpolation between table rows
-            float dv1 = charge_pct - soc_table[i].soc_pct;
-            float dv2 = soc_table[i-1].soc_pct - soc_table[i].soc_pct;
-            float vpc1 = soc_table[i].volt_per_cell;
-            float vpc2 = soc_table[i-1].volt_per_cell;
-            float cell_volt = vpc1 + (dv1 / dv2) * (vpc2 - vpc1);
-            return (cell_volt / max_cell_voltage) * max_voltage;
-        }
-    }
-    // off the bottom of the table, return a small non-zero to prevent math errors
-    return 0.001;
-}
+static const float soc_ocv_y[] = {2.5180000000000002, 2.6487000000000003, 2.75, 2.8668, 2.9681, 3.0693, 3.1550000000000002, 3.2406, 3.3107, 3.373, 3.4198, 3.4587, 3.4899, 3.5132, 3.5288, 3.5444, 3.5678, 3.5911, 3.6145, 3.6456, 3.6612, 3.7001, 3.7313, 3.7702, 3.8014, 3.8403, 3.8793, 3.9104, 3.9494000000000002, 3.9961, 4.027299999999999, 4.0584, 4.074, 4.1051, 4.158};
 
-/*
-  use table to set initial state of charge from voltage
- */
-void Battery::set_initial_SoC(float voltage)
-{
-    const float max_cell_voltage = soc_table[0].volt_per_cell;
-    float cell_volt = (voltage / max_voltage) * max_cell_voltage;
 
-    for (uint8_t i=1; i<ARRAY_SIZE(soc_table); i++) {
-        if (cell_volt >= soc_table[i].volt_per_cell) {
-            // linear interpolation between table rows
-            float dv1 = cell_volt - soc_table[i].volt_per_cell;
-            float dv2 = soc_table[i-1].volt_per_cell - soc_table[i].volt_per_cell;
-            float soc1 = soc_table[i].soc_pct;
-            float soc2 = soc_table[i-1].soc_pct;
-            float soc = soc1 + (dv1 / dv2) * (soc2 - soc1);
-            remaining_Ah = capacity_Ah * soc * 0.01;
-            return;
-        }
-    }
-
-    // off the bottom of the table
-    remaining_Ah = 0;
-}
+static BatteryChemistryModelLinearInterpolated chemistry_model{soc_ocv_x, soc_ocv_y, ARRAY_SIZE(soc_ocv_x)};
 
 void Battery::setup(float _capacity_Ah, float _resistance, float _max_voltage)
 {
-    capacity_Ah = _capacity_Ah;
-    resistance = _resistance;
-    max_voltage = _max_voltage;
+    initialized = true;
+    SOC = 1;
+    Q = _capacity_Ah*3600;
+    num_cells = _max_voltage/chemistry_model.OCV_from_SOC(1.0,25);
+    R0 = _resistance/num_cells;
 }
 
 void Battery::init_voltage(float voltage)
-{
-    voltage_filter.reset(voltage);
-    voltage_set = voltage;
-    set_initial_SoC(voltage);
+{        
+    SOC = chemistry_model.SOC_from_OCV(voltage/num_cells,25);
 }
 
 void Battery::set_current(float current)
@@ -137,22 +50,22 @@ void Battery::set_current(float current)
         dt = 0;
     }
     last_us = now;
-    float delta_Ah = current * dt / 3600;
-    remaining_Ah -= delta_Ah;
-    remaining_Ah = MAX(0, remaining_Ah);
 
-    float voltage_delta = current * resistance;
-    float voltage;
-    if (!is_positive(capacity_Ah)) {
-        voltage = voltage_set;
-    } else {
-        voltage = get_resting_voltage(100 * remaining_Ah / capacity_Ah) - voltage_delta;
+    I = current;
+    
+    if (!is_equal(Q,0.0f)) {
+        SOC = MAX(SOC-I*dt/Q,0);
     }
-
-    voltage_filter.apply(voltage);
+    V1 = I*R1*(1 - exp(-dt/RC1)) + V1*exp(-dt/RC1);
+    V2 = I*R2*(1 - exp(-dt/RC2)) + V2*exp(-dt/RC2);
 }
 
 float Battery::get_voltage(void) const
 {
-    return voltage_filter.get();
+    if (!initialized) {
+        return 0;
+    }
+    
+    float V = chemistry_model.OCV_from_SOC(SOC,25)-R0*I-V1-V2;
+    return V*num_cells;
 }
