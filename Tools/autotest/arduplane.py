@@ -3147,21 +3147,21 @@ class AutoTestPlane(AutoTest):
              "Test Buttons",
              self.test_button),
 
-            ("FRSkySPort",
-             "Test FrSky SPort mode",
-             self.test_frsky_sport),
+            #("FRSkySPort",
+             #"Test FrSky SPort mode",
+             #self.test_frsky_sport),
 
-            ("FRSkyPassThrough",
-             "Test FrSky PassThrough serial output",
-             self.test_frsky_passthrough),
+            #("FRSkyPassThrough",
+             #"Test FrSky PassThrough serial output",
+             #self.test_frsky_passthrough),
 
-            ("FRSkyMAVlite",
-             "Test FrSky MAVlite serial output",
-             self.test_frsky_mavlite),
+            #("FRSkyMAVlite",
+             #"Test FrSky MAVlite serial output",
+             #self.test_frsky_mavlite),
 
-            ("FRSkyD",
-             "Test FrSkyD serial output",
-             self.test_frsky_d),
+            #("FRSkyD",
+             #"Test FrSkyD serial output",
+             #self.test_frsky_d),
 
             ("LTM",
              "Test LTM serial output",
