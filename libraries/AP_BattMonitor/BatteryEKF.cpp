@@ -12,6 +12,10 @@
 #if BATTERY_EKF_ENABLED
 using namespace Eigen;
 
+float BatteryEKF::get_SOE(float temp_C) const {
+    return _model.OCV_from_SOC_integral(x(STATE_IDX_SOC), temp_C)/_model.OCV_from_SOC_integral(1.0f, temp_C);
+}
+
 float BatteryEKF::get_remaining_energy_J(float temp_C) const {
     return _params.Q*_model.OCV_from_SOC_integral(x(STATE_IDX_SOC), temp_C)/x(STATE_IDX_SOH_INV);
 }

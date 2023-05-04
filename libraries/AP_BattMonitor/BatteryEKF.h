@@ -107,6 +107,8 @@ public:
     bool initialized() const {
         return _is_initialized;
     }
+    
+    float get_SOE(float temp_C) const;
 
     float get_remaining_energy_J(float temp_C) const;
     float get_remaining_energy_Wh(float temp_C) const {

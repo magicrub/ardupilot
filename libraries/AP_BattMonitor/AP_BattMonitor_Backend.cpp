@@ -49,6 +49,20 @@ AP_BattMonitor_Backend::AP_BattMonitor_Backend(AP_BattMonitor &mon, AP_BattMonit
 /// capacity_remaining_pct - returns the % battery capacity remaining (0 ~ 100)
 uint8_t AP_BattMonitor_Backend::capacity_remaining_pct() const
 {
+#if BATTERY_EKF_ENABLED
+    if (option_is_set(AP_BattMonitor_Params::Options::Enable_EKF_SoC_Estimation)) {
+        if (_ekf.initialized()) {
+            float temp_C = 25;
+            if (has_temperature()) {
+                temp_C = _state.temperature;
+            }
+            return 100*constrain_float(_ekf.get_SOE(temp_C), 0, 1);
+        } else {
+            return 0;
+        }
+    }
+#endif
+        
     float mah_remaining = _params._pack_capacity - _state.consumed_mah;
     if ( _params._pack_capacity > 10 ) { // a very very small battery
         return MIN(MAX((100 * (mah_remaining) / _params._pack_capacity), 0), UINT8_MAX);
