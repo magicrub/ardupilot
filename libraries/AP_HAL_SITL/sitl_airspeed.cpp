@@ -113,8 +113,8 @@ void SITL_State::_update_airspeed(float airspeed)
         airspeed2_raw = buffer_wind_2[best_index_wind].data;
     }
 
-    airspeed_pin_value = airspeed_raw / 4;
-    airspeed_2_pin_value = airspeed2_raw / 4;
+    airspeed_pin_value = airspeed_raw * 16;
+    airspeed_2_pin_value = airspeed2_raw * 16;
 }
 
 #endif

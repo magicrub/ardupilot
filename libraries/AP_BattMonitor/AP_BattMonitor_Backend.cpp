@@ -27,7 +27,7 @@ static float soc_ocv_x[] = {0.0, 0.005063014925373088, 0.01613838805970147, 0.02
 
 static float soc_ocv_y[] = {2.5180000000000002, 2.6487000000000003, 2.75, 2.8668, 2.9681, 3.0693, 3.1550000000000002, 3.2406, 3.3107, 3.373, 3.4198, 3.4587, 3.4899, 3.5132, 3.5288, 3.5444, 3.5678, 3.5911, 3.6145, 3.6456, 3.6612, 3.7001, 3.7313, 3.7702, 3.8014, 3.8403, 3.8793, 3.9104, 3.9494000000000002, 3.9961, 4.027299999999999, 4.0584, 4.074, 4.1051, 4.158};
 
-BatteryChemistryModelLinearInterpolated chemistry_model(soc_ocv_x, soc_ocv_y, ARRAY_SIZE(soc_ocv_x));
+static BatteryChemistryModelLinearInterpolated chemistry_model(soc_ocv_x, soc_ocv_y, ARRAY_SIZE(soc_ocv_x));
 #endif
 
 

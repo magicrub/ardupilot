@@ -3,7 +3,7 @@
 template<typename T>
 class LinearInterpolator {
 public:
-    LinearInterpolator(T* x_points, T* y_points, size_t num_points):
+    LinearInterpolator(const T* x_points, const T* y_points, size_t num_points):
     _x_points(x_points),
     _y_points(y_points),
     _num_points(num_points)
@@ -82,7 +82,7 @@ private:
     }
 
 
-    T* _x_points;
-    T* _y_points;
+    const T* _x_points;
+    const T* _y_points;
     size_t _num_points;
 };

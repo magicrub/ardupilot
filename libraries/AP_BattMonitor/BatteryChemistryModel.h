@@ -15,7 +15,7 @@ public:
 
 class BatteryChemistryModelLinearInterpolated : public BatteryChemistryModel {
 public:
-    BatteryChemistryModelLinearInterpolated(float* x_points, float* y_points, size_t num_points) :
+    BatteryChemistryModelLinearInterpolated(const float* x_points, const float* y_points, size_t num_points) :
     _interpolator_OCV_from_SOC(x_points, y_points, num_points),
     _interpolator_SOC_from_OCV(y_points, x_points, num_points),
     _minv(y_points[0]),
