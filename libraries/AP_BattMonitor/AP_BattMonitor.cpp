@@ -396,7 +396,7 @@ uint8_t AP_BattMonitor::capacity_remaining_pct(uint8_t instance) const
 /// time_remaining - returns remaining battery time
 bool AP_BattMonitor::time_remaining(uint32_t &seconds, uint8_t instance) const
 {
-    if (instance < _num_instances && drivers[instance] != nullptr && state[instance].time_remaining > 0) {
+    if (instance < _num_instances && drivers[instance] != nullptr && state[instance].has_time_remaining) {
         seconds = state[instance].time_remaining;
         return true;
     }
