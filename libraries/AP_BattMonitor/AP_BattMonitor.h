@@ -137,6 +137,7 @@ public:
         PoweredState powered_state;            // either reported, desired or actual powered state: on or off
         bool        powered_state_changed;     // only send powering state change notifications once per change
         uint32_t    time_remaining;            // remaining battery time in seconds
+        uint32_t    time_remaining_external;   // remaining battery time in seconds, set externally such as scripting. Zero means not available
         bool        has_time_remaining;        // time_remaining is valid if this is true
     };
 
@@ -177,6 +178,9 @@ public:
 
     /// time_remaining - returns remaining battery time
     bool time_remaining(uint32_t &seconds, const uint8_t instance = AP_BATT_PRIMARY_INSTANCE) const WARN_IF_UNUSED;
+
+    /// time_remaining set by an external algorithm or library such as scripting. This overrides the internal time_remaining value
+    void set_time_remaining_external(const uint32_t seconds, const uint8_t instance = AP_BATT_PRIMARY_INSTANCE);
 
     /// pack_capacity_mah - returns the capacity of the battery pack in mAh when the pack is full
     int32_t pack_capacity_mah(uint8_t instance) const;
