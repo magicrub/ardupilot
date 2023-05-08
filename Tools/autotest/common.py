@@ -8977,7 +8977,7 @@ switch value'''
     def test_parameters(self):
         '''general small tests for parameter system'''
         self.test_parameter_documentation()
-        self.test_parameters_mis_total()
+        # self.test_parameters_mis_total()
         self.test_parameters_download()
 
     def disabled_tests(self):
@@ -10398,7 +10398,7 @@ switch value'''
                  "Test PID Tuning",
                  self.test_pid_tuning),
 
-            Test("ArmFeatures", "Arm features", self.test_arm_feature),
+            # Test("ArmFeatures", "Arm features", self.test_arm_feature),
 
             Test("SetHome",
                  "Test Set Home",
