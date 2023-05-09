@@ -3,14 +3,29 @@ local MAV_SEVERITY = {EMERGENCY=0, ALERT=1, CRITICAL=2, ERROR=3, WARNING=4, NOTI
 
 local lpf_coef = 0.001
 local current_amps_very_filtered = { }
-local init_needed = true
+local time_remaining_s = { }
+local SECONDS_MAX = 2*24*3600 -- 2 days
+local SECONDS_MIN = 1
 
+-- constrain a value between limits
+function constrain(v, vmin, vmax)
+    if v < vmin then
+       v = vmin
+    end
+    if v > vmax then
+       v = vmax
+    end
+    return v
+ end
+ 
 function init()
     gcs:send_text(MAV_SEVERITY.INFO, "LUA: START: Battery Time Remaning")
        
     for i=0, battery:num_instances() do
         current_amps_very_filtered[i] = 0.0
+        time_remaining_s[i] = 0
     end
+    return update, 1000 -- 1Hz
 end
 
 
@@ -29,9 +44,19 @@ function update_battery_instance_1Hz(instance)
         return
     end
 
-    local coef = lpf_coef
     if not vehicle:get_likely_flying() then
-        -- when not flying, speed up the filter to get to the new current_amps value faster
+        -- when not flying, disable the LPF so it doesn't go crazy
+        battery:set_time_remaining_external(0, instance)
+        time_remaining_s[instance] = 0
+    elseif time_remaining_s[instance] == 0 then
+        -- first time we are flying, init the LPF
+        current_amps_very_filtered[instance] = current_amps
+    end
+    
+
+    local coef = lpf_coef
+    if time_remaining_s[instance] >= SECONDS_MAX then
+        -- if the estimate is already very large, speed things up
         coef = lpf_coef * 10
     end
 
@@ -40,31 +65,32 @@ function update_battery_instance_1Hz(instance)
     -- create a time-constant very very long (like a few minutes)
     current_amps_very_filtered[instance] = (current_amps_very_filtered[instance] * (1.0-coef)) + (current_amps * coef)
     if current_amps_very_filtered[instance] == nil or current_amps_very_filtered[instance] == 0.0 then
-        -- divide-by-zero check
+        -- divide-by-zero check. Best to just not update it and keep old value
         -- gcs:send_text(MAV_SEVERITY.DEBUG, string.format('LUA: DBZ'))
         return
     end
 
-    local mAh_remaining = math.max(0, capacity - consumed_mah)
+    local mAh_remaining = constrain((capacity - consumed_mah), 0, capacity)
     local AmpSec_remaining = mAh_remaining * 3.6 -- == 3600 * 0.001 == AP_SEC_PER_HOUR * mAh_TO_Ah
-    local time_remaining_s = AmpSec_remaining / current_amps_very_filtered[instance]
+    time_remaining_s[instance] = math.floor((AmpSec_remaining / current_amps_very_filtered[instance]) + 0.5)
 
-    time_remaining_s = math.max(1, time_remaining_s) -- don't go to zero, show 1s as lowest time so it stays valid
+    local time_remaining_s_constrained = constrain(time_remaining_s[instance], SECONDS_MIN, SECONDS_MAX)
 
-    battery:set_time_remaining_external(time_remaining_s, instance)
-    local minutes = (time_remaining_s/60) % 60
-    local hours = time_remaining_s/3600
-    local days = hours / 24
-    -- gcs:send_text(MAV_SEVERITY.DEBUG, string.format('LUA: time_remaining_s[%d] = %.0fd %.0fh %2.0fm', instance, days, hours, minutes))
+    battery:set_time_remaining_external(time_remaining_s_constrained, instance)
+    gcs:send_text(MAV_SEVERITY.DEBUG, string.format('LUA: batt[%d] = %d, %s', instance, time_remaining_s[instance], disp_time(time_remaining_s[instance])))
 end
 
+function disp_time(time)
+    -- stolen from https://stackoverflow.com/questions/45364628/lua-4-script-to-convert-seconds-elapsed-to-days-hours-minutes-seconds
+    local days = math.floor(time/86400)
+    local hours = math.floor(math.fmod(time, 86400)/3600)
+    local minutes = math.floor(math.fmod(time,3600)/60)
+    local seconds = math.floor(math.fmod(time,60))
+    -- result in D:HH:MM:SS format.
+    return string.format("%d:%02d:%02d:%02d",days,hours,minutes,seconds)
+end
 
 function update()
-    if init_needed then
-        init_needed = false
-        init()
-    end
-
     -- for instance = 0, battery:num_instances() do
     --     update_battery_instance_1Hz(instance)
     -- end
@@ -74,6 +100,6 @@ function update()
     return update, 1000 -- 1Hz
 end
 
-return update, 2000
+return init, 2000
 
 
