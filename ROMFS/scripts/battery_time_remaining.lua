@@ -77,7 +77,7 @@ function update_battery_instance_1Hz(instance)
     local time_remaining_s_constrained = constrain(time_remaining_s[instance], SECONDS_MIN, SECONDS_MAX)
 
     battery:set_time_remaining_external(time_remaining_s_constrained, instance)
-    gcs:send_text(MAV_SEVERITY.DEBUG, string.format('LUA: batt[%d] = %d, %s', instance, time_remaining_s[instance], disp_time(time_remaining_s[instance])))
+    -- gcs:send_text(MAV_SEVERITY.DEBUG, string.format('LUA: batt[%d] = %d, %s', instance, time_remaining_s[instance], disp_time(time_remaining_s[instance])))
 end
 
 function disp_time(time)
