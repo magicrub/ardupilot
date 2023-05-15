@@ -99,7 +99,7 @@ size_t AP_Networking_Serial::write(const uint8_t *buffer, size_t size)
         if (p == nullptr) {
             return 0;
         }
-        const err_t err = udp_sendto(pcb, p, &dst_addr, dst_port);
+        const err_t err = udp_sendto(pcb, p, &dst_addr, _params.port);
         pbuf_free(p);
         if (err != ERR_OK) {
             return 0;
@@ -125,7 +125,7 @@ void AP_Networking_Serial::thread()
                 if (p == nullptr) {
                     break;
                 }
-                const err_t err = udp_sendto(pcb, p, &dst_addr, dst_port);
+                const err_t err = udp_sendto(pcb, p, &dst_addr, _params.port);
                 pbuf_free(p);
                 if (err != ERR_OK) {
                     break;

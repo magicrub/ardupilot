@@ -19,9 +19,9 @@ class AP_Networking_Serial : public AP_HAL::UARTDriver {
 public:
 
     AP_Networking_Serial(AP_SerialManager::SerialExtState::IP_Params &ip_params) :
-        dst_port(ip_params.port)
+        _params(ip_params)
     {
-        IP_ADDR_FROM_ARRAY(&dst_addr, ip_params.ip);
+        IP_ADDR_FROM_ARRAY(&dst_addr, _params.ip);
     }
 
     /* Implementations of UARTDriver virtual methods */
@@ -66,6 +66,8 @@ private:
 
     ip_addr_t dst_addr;
     uint16_t dst_port;
+
+    AP_SerialManager::SerialExtState::IP_Params _params;
 
     ByteBuffer _readbuf{0};
     ByteBuffer _writebuf{0};
