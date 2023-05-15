@@ -1,6 +1,8 @@
 #include "AP_Networking_Serial.h"
 
 #if AP_SERIAL_EXTENSION_ENABLED
+#include "AP_Math/AP_Math.h"
+
 extern const AP_HAL::HAL& hal;
 
 void AP_Networking_Serial::begin(uint32_t b, uint16_t rxS, uint16_t txS)
@@ -32,8 +34,8 @@ void AP_Networking_Serial::begin(uint32_t b, uint16_t rxS, uint16_t txS)
     // start a thread to send data
     if (thread_ctx == nullptr) {
         // create thread name
-        snprintf(thread_name, sizeof(thread_name), "UDP-%u", dst_port);
-        if(!hal.scheduler->thread_create(FUNCTOR_BIND_MEMBER(&AP_Networking_Serial::thread, void), thread_name, 512, AP_HAL::Scheduler::PRIORITY_IO, 0)) {
+        snprintf(thread_name, sizeof(thread_name), "UDP-%u", (unsigned)_params.port.get());
+        if(!hal.scheduler->thread_create(FUNCTOR_BIND_MEMBER(&AP_Networking_Serial::thread, void), thread_name, 1024, AP_HAL::Scheduler::PRIORITY_IO, 0)) {
             AP_HAL::panic("Failed to create AP_Networking_Serial thread");
         }
     }
@@ -117,28 +119,82 @@ size_t AP_Networking_Serial::write(const uint8_t *buffer, size_t size)
 void AP_Networking_Serial::thread()
 {
     while(true) {
-        if (_writebuf.available()) {
-            ByteBuffer::IoVec vec[2];
-            const auto n_vec = _writebuf.peekiovec(vec, _writebuf.available());
-            for (uint8_t i=0; i<n_vec; i++) {
-                struct pbuf *p = pbuf_alloc_reference((void*)vec[i].data, vec[i].len, PBUF_REF);
-                if (p == nullptr) {
-                    break;
-                }
-                const err_t err = udp_sendto(pcb, p, &dst_addr, _params.port);
-                pbuf_free(p);
-                if (err != ERR_OK) {
-                    break;
+
+        if (_params.protocol == 0 && _params.passthru > 0) {
+            // serial passthrough mode
+            auto uart = hal.serial(_params.passthru);
+            if (uart != nullptr && uart->is_initialized()) {
+                uint8_t buf[32];
+
+                // uart -> IP buffer queue transfer
+                const uint32_t uart_to_ip_min_len = MIN(uart->available(), _writebuf.space());
+                if (uart_to_ip_min_len > 0) {
+                    const ssize_t uart_to_ip_count = uart->read(buf, MIN(sizeof(buf), uart_to_ip_min_len));
+                    if (uart_to_ip_count > 0) {
+                        write(buf, uart_to_ip_count);
+                    }
                 }
 
-                {
-                    WITH_SEMAPHORE(_tx_sem);
-                    _writebuf.advance(vec[i].len);
+                // IP -> uart buffer queue transfer
+                const uint32_t ip_to_uart_min_len = MIN(_readbuf.available(), uart->txspace());
+                if (ip_to_uart_min_len > 0) {
+                    const ssize_t ip_to_uart_count = read(buf, MIN(sizeof(buf), ip_to_uart_min_len));
+                    if (ip_to_uart_count > 0) {
+                        uart->write(buf, ip_to_uart_count);
+                    }
                 }
             }
         }
-        hal.scheduler->delay(5);
+        
+        
+
+        const uint32_t available = _writebuf.available();
+        if (available > 0) {
+            uint16_t bytes_already_queued = (_p_tx != nullptr) ? _p_tx->tot_len : 0;
+            const uint32_t len = MIN(available, AP_NETWORKING_UDP_TX_BUF_SIZE - bytes_already_queued);
+
+            ByteBuffer::IoVec vec[2];
+            const auto n_vec = _writebuf.peekiovec(vec, len);
+            for (uint8_t i=0; i<n_vec; i++) {
+                if (_p_tx == nullptr) {
+                    // create new pbuf chain
+                    _p_tx = pbuf_alloc_reference((void*)vec[i].data, vec[i].len, PBUF_REF);
+                    if (_p_tx == nullptr) {
+                        break;
+                    }
+                } else {
+                    // append to existing pbuf chain
+                    pbuf_chain(_p_tx, pbuf_alloc_reference((void*)vec[i].data, vec[i].len, PBUF_REF));
+                }
+            }
+
+            if (_p_tx != nullptr) {
+                WITH_SEMAPHORE(_tx_sem);
+                _writebuf.advance(len);
+            }
+        }
+
+        if ((_p_tx != nullptr) && _p_tx->tot_len > 0) {
+            // a packet buffer has been filled, send it!
+
+            const uint64_t now_us = AP_HAL::micros64();
+            bool send_it = (_p_tx->tot_len >= AP_NETWORKING_UDP_TX_BUF_SIZE); // packet is full
+            send_it |= (now_us - _last_ip_send_us) >= 5*1000;               // 5ms since last send
+            //TODO: send_it |= end_of_packet_detected; // protocol aware packetization
+
+            if (send_it) {
+                const err_t err = udp_sendto(pcb, _p_tx, &dst_addr, _params.port);
+                pbuf_free(_p_tx);
+                if (err == ERR_OK) {
+                    _last_ip_send_us = now_us;
+                }
+            }
+        }
+
+        hal.scheduler->delay_microseconds(1000);
     }
 }
 
+
 #endif
+            // AP_NETWORKING_ETHERNET_UDP_PAYLOAD_MAX_SIZE

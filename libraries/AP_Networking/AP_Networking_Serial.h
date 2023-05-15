@@ -9,7 +9,7 @@
 #include "AP_Networking.h"
 
 #ifndef AP_NETWORKING_UDP_RX_BUF_SIZE
-#define AP_NETWORKING_UDP_RX_BUF_SIZE AP_NETWORKING_ETHERNET_UDP_PAYLOAD_MAX_SIZE
+#define AP_NETWORKING_UDP_RX_BUF_SIZE (AP_NETWORKING_ETHERNET_UDP_PAYLOAD_MAX_SIZE*2)
 #endif
 #ifndef AP_NETWORKING_UDP_TX_BUF_SIZE
 #define AP_NETWORKING_UDP_TX_BUF_SIZE (AP_NETWORKING_ETHERNET_UDP_PAYLOAD_MAX_SIZE*5)
@@ -82,6 +82,8 @@ private:
     char thread_name[10];
 
     uint8_t ins;
+    uint64_t _last_ip_send_us;
+    struct pbuf *_p_tx;
 
     static void udp_recv_callback(void *arg, struct udp_pcb *pcb, struct pbuf *p, const ip_addr_t *addr, u16_t port);
     void thread();
