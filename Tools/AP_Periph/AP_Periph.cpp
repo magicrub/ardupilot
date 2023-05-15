@@ -100,6 +100,10 @@ void AP_Periph_FW::init()
 
     can_start();
 
+#if AP_NETWORKING_ENABLED
+    networking.init();
+#endif
+
 #if HAL_GCS_ENABLED
     stm32_watchdog_pat();
     gcs().init();
@@ -134,10 +138,6 @@ void AP_Periph_FW::init()
 
 #if AP_STATS_ENABLED
     node_stats.init();
-#endif
-
-#if AP_NETWORKING_ENABLED
-    networking.init();
 #endif
 
 #ifdef HAL_PERIPH_ENABLE_GPS
