@@ -2,7 +2,7 @@
 #include "AP_Networking.h"
 
 #if AP_NETWORKING_ENABLED
-#include <AP_Filesystem/AP_Filesystem.h>
+
 #include "AP_Math/definitions.h"
 #include <GCS_MAVLink/GCS.h>
 
@@ -43,6 +43,7 @@
     #endif // AP_NETWORKING_NETBIOS_ENABLED
 
     #if AP_NETWORKING_TFTP_ENABLED
+    #include <AP_Filesystem/AP_Filesystem.h>
     #include <lwip/apps/tftp_server.h>
     #endif
     

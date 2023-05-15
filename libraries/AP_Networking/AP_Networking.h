@@ -6,8 +6,6 @@
 #if AP_NETWORKING_ENABLED
 #include <AP_HAL/AP_HAL.h>
 #include "AP_Networking_Params.h"
-#include <AP_SerialManager/AP_SerialManager.h>
-#include <AP_HAL/utility/RingBuffer.h>
 
 
 #if CONFIG_HAL_BOARD == HAL_BOARD_CHIBIOS
