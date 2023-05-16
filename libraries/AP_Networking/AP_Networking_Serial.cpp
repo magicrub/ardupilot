@@ -2,6 +2,7 @@
 
 #if AP_SERIAL_EXTENSION_ENABLED
 #include "AP_Math/AP_Math.h"
+#include <GCS_MAVLink/GCS.h>
 
 extern const AP_HAL::HAL& hal;
 
@@ -101,7 +102,7 @@ size_t AP_Networking_Serial::write(const uint8_t *buffer, size_t size)
         if (p == nullptr) {
             return 0;
         }
-        const err_t err = udp_sendto(pcb, p, &dst_addr, _params.port);
+        const err_t err = udp_sendto(pcb, p, &dst_addr, _params.port.get());
         pbuf_free(p);
         if (err != ERR_OK) {
             return 0;
@@ -120,9 +121,9 @@ void AP_Networking_Serial::thread()
 {
     while(true) {
 
-        if (_params.protocol == 0 && _params.passthru > 0) {
+        if (_params.protocol.get() <= 0 && _params.passthru.get() > 0) {
             // serial passthrough mode
-            auto uart = hal.serial(_params.passthru);
+            auto uart = hal.serial(_params.passthru.get());
             if (uart != nullptr && uart->is_initialized()) {
                 uint8_t buf[32];
 
@@ -143,53 +144,49 @@ void AP_Networking_Serial::thread()
                         uart->write(buf, ip_to_uart_count);
                     }
                 }
+
+                // re-init UART if we haven't seen any data yet
+                // This should not be needed.. but it does for some reason and it can't be done at the beginning of the thread and/or init
+                if (!_passthrough_has_seen_data) {
+                    if (uart_to_ip_min_len > 0) {
+                        // we've seen data!
+                        _passthrough_has_seen_data = true;
+                        GCS_SEND_TEXT(MAV_SEVERITY_DEBUG,"NET: Serial %d <-> UDP:%d", _params.passthru.get(), _params.port.get());
+                    } else {
+                        // still haven't seen data. re-init the UART until we do
+                        uart->begin(uart->get_baud_rate());
+                        hal.scheduler->delay(1000);
+                    }
+                } // !_passthrough_has_seen_data
             }
         }
         
-        
-
         const uint32_t available = _writebuf.available();
         if (available > 0) {
-            uint16_t bytes_already_queued = (_p_tx != nullptr) ? _p_tx->tot_len : 0;
-            const uint32_t len = MIN(available, AP_NETWORKING_UDP_TX_BUF_SIZE - bytes_already_queued);
-
-            ByteBuffer::IoVec vec[2];
-            const auto n_vec = _writebuf.peekiovec(vec, len);
-            for (uint8_t i=0; i<n_vec; i++) {
-                if (_p_tx == nullptr) {
-                    // create new pbuf chain
-                    _p_tx = pbuf_alloc_reference((void*)vec[i].data, vec[i].len, PBUF_REF);
-                    if (_p_tx == nullptr) {
-                        break;
-                    }
-                } else {
-                    // append to existing pbuf chain
-                    pbuf_chain(_p_tx, pbuf_alloc_reference((void*)vec[i].data, vec[i].len, PBUF_REF));
-                }
-            }
-
-            if (_p_tx != nullptr) {
-                WITH_SEMAPHORE(_tx_sem);
-                _writebuf.advance(len);
-            }
-        }
-
-        if ((_p_tx != nullptr) && _p_tx->tot_len > 0) {
             // a packet buffer has been filled, send it!
-
             const uint64_t now_us = AP_HAL::micros64();
-            bool send_it = (_p_tx->tot_len >= AP_NETWORKING_UDP_TX_BUF_SIZE); // packet is full
-            send_it |= (now_us - _last_ip_send_us) >= 5*1000;               // 5ms since last send
+            bool send_it = (available >= AP_NETWORKING_ETHERNET_UDP_PAYLOAD_MAX_SIZE); // packet is full
+            send_it |= (now_us - _last_ip_send_us) >= 5*1000;               // a few ms since last send
             //TODO: send_it |= end_of_packet_detected; // protocol aware packetization
 
             if (send_it) {
-                const err_t err = udp_sendto(pcb, _p_tx, &dst_addr, _params.port);
-                pbuf_free(_p_tx);
-                if (err == ERR_OK) {
-                    _last_ip_send_us = now_us;
+                const uint32_t len = MIN(AP_NETWORKING_ETHERNET_UDP_PAYLOAD_MAX_SIZE, available);
+
+                ByteBuffer::IoVec vec[2] {};
+                const auto n_vec = _writebuf.peekiovec(vec, len);
+                if (n_vec > 0) {
+                    const int32_t bytes_sent = AP_Networking::send_udp(pcb, dst_addr, _params.port.get(), vec[0].data, vec[0].len, vec[1].data, vec[1].len);
+                    if (bytes_sent >= 0) {
+                        _last_ip_send_us = now_us;
+                        WITH_SEMAPHORE(_tx_sem);
+                        _writebuf.advance(bytes_sent);
+                    } else {
+                        // TODO: send failure error handling
+                        // GCS_SEND_TEXT(MAV_SEVERITY_DEBUG,"NET: send_udp err: %d", bytes_sent);
+                    }
                 }
-            }
-        }
+            } // send_it
+        } // available
 
         hal.scheduler->delay_microseconds(1000);
     }

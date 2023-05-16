@@ -67,10 +67,11 @@ private:
     ip_addr_t dst_addr;
     uint16_t dst_port;
 
-    AP_SerialManager::SerialExtState::IP_Params _params;
+    AP_SerialManager::SerialExtState::IP_Params &_params;
 
     ByteBuffer _readbuf{0};
     ByteBuffer _writebuf{0};
+    bool _passthrough_has_seen_data;
 
     HAL_Semaphore _rx_sem;
     HAL_Semaphore _tx_sem;
@@ -83,7 +84,6 @@ private:
 
     uint8_t ins;
     uint64_t _last_ip_send_us;
-    struct pbuf *_p_tx;
 
     static void udp_recv_callback(void *arg, struct udp_pcb *pcb, struct pbuf *p, const ip_addr_t *addr, u16_t port);
     void thread();

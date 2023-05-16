@@ -130,10 +130,10 @@ public:
     static uint8_t convert_netmask_ip_to_bitcount(const uint32_t netmask_ip);
 
 
-    static int32_t send_udp(struct udp_pcb *pcb, const ip4_addr_t &ip4_addr, const uint16_t port, const uint8_t* data, uint16_t data_len);
+    static int32_t send_udp(struct udp_pcb *pcb, const ip4_addr_t &ip4_addr, const uint16_t port, const uint8_t* data, uint16_t data_len, const uint8_t* data2 = nullptr, uint16_t data2_len = 0);
 #if LWIP_IPV6
-    static int32_t send_udp(struct udp_pcb *pcb, const ip_addr_t &ip_addr, const uint16_t port, const uint8_t* data, uint16_t data_len) {
-        return send_udp(pcb, ip_addr.u_addr.ip4, port, data, data_len);
+    static int32_t send_udp(struct udp_pcb *pcb, const ip_addr_t &ip_addr, const uint16_t port, const uint8_t* data, uint16_t data_len, const uint8_t* data2 = nullptr, uint16_t data2_len = 0) {
+        return send_udp(pcb, ip_addr.u_addr.ip4, port, data, data_len, data2, data2_len);
     }
 #endif
 

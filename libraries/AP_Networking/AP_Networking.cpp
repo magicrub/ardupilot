@@ -621,16 +621,16 @@ char* AP_Networking::convert_ip_to_str(const uint32_t ip)
     return convert_ip_to_str(ip_array);
 }
 
-int32_t AP_Networking::send_udp(struct udp_pcb *pcb, const ip4_addr_t &ip4_addr, const uint16_t port, const uint8_t* data, uint16_t data_len)
+int32_t AP_Networking::send_udp(struct udp_pcb *pcb, const ip4_addr_t &ip4_addr, const uint16_t port, const uint8_t* data, uint16_t data_len, const uint8_t* data2, uint16_t data2_len)
 {
-    if (data == nullptr || pcb == nullptr) {
+    if (pcb == nullptr) {
         return ERR_ARG;
     }
-    // if (data_len == 0) {
-    //     return 0;
-    // }
     
-    struct pbuf *p = pbuf_alloc(PBUF_TRANSPORT, data_len , PBUF_RAM);
+    data_len = (data == nullptr) ? 0 : data_len;
+    data2_len = (data2 == nullptr) ? 0 : data2_len;
+
+    struct pbuf *p = pbuf_alloc(PBUF_TRANSPORT, data_len + data2_len, PBUF_RAM);
     if (p == nullptr) {
         return ERR_MEM;
     }
@@ -638,11 +638,18 @@ int32_t AP_Networking::send_udp(struct udp_pcb *pcb, const ip4_addr_t &ip4_addr,
     ip_addr_t dst;
     ip_addr_copy_from_ip4(dst, ip4_addr);
 
-    memcpy(p->payload, data, data_len);
+    if (data_len > 0) {
+        // memcpy(p->payload, data, data_len);
+        memcpy(&((uint8_t*)p->payload)[0], data, data_len);
+    }
+    if (data2_len > 0) {
+        memcpy(&((uint8_t*)p->payload)[data_len], data2, data2_len);
+    }
+
     const err_t err = udp_sendto(pcb, p, &dst, port);
     pbuf_free(p);
 
-    return err == ERR_OK ? data_len : err;
+    return err == ERR_OK ? (data_len + data2_len) : err;
 }
 
 #if AP_NETWORKING_TFTP_ENABLED
