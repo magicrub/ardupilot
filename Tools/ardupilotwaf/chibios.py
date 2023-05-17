@@ -70,7 +70,7 @@ class upload_fw(Task.Task):
             # 7) doing steps 3 and 4 will most likely take several seconds and in many cases the bootlaoder has moved on into the app
             #
             # Solution: simply call "python.exe" instead of 'python' which magically calls it from the windows system using the same absolute path back into the WSL's user's directory
-            cmd = "{} '{}/uploader.py' '{}'".format('python.exe', upload_tools, src)
+            cmd = "{} -u '{}/uploader.py' '{}'".format('python.exe', upload_tools, src)
         else:
             cmd = "{} '{}/uploader.py' '{}'".format(self.env.get_flat('PYTHON'), upload_tools, src)
         if upload_port is not None:
