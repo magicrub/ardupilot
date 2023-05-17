@@ -4,7 +4,7 @@ local MAV_SEVERITY = {EMERGENCY=0, ALERT=1, CRITICAL=2, ERROR=3, WARNING=4, NOTI
 local lpf_coef = 0.001
 local current_amps_very_filtered = { }
 local time_remaining_s = { }
-local SECONDS_MAX = 2*24*3600 -- 2 days
+local SECONDS_MAX = 1*24*3600 -- 1 day
 local SECONDS_MIN = 1
 
 -- constrain a value between limits
@@ -48,6 +48,7 @@ function update_battery_instance_1Hz(instance)
         -- when not flying, disable the LPF so it doesn't go crazy
         battery:set_time_remaining_external(0, instance)
         time_remaining_s[instance] = 0
+        return
     elseif time_remaining_s[instance] == 0 then
         -- first time we are flying, init the LPF
         current_amps_very_filtered[instance] = current_amps
