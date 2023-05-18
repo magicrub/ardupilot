@@ -230,6 +230,11 @@ class VehicleInfo(object):
                 "waf_target" : "bin/arduplane",
                 "default_params_filename": "default_params/quadplane-cl84.parm",
             },
+            "quadplane-k1000": {
+                "waf_target": "bin/arduplane",
+                "default_params_filename": ["default_params/plane.parm", "default_params/plane-soaring-k1000.parm", "default_params/quadplane.parm", "default_params/quadplane-k1000.parm"],
+                "model":"quadplane"
+            },
             "quadplane": {
                 "waf_target": "bin/arduplane",
                 "default_params_filename": "default_params/quadplane.parm",
