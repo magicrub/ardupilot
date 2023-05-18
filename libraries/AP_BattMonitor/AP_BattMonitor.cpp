@@ -393,6 +393,32 @@ uint8_t AP_BattMonitor::capacity_remaining_pct(uint8_t instance) const
     }
 }
 
+/// time_remaining - returns remaining battery time
+bool AP_BattMonitor::time_remaining(uint32_t &seconds, uint8_t instance) const
+{
+    if (instance >= _num_instances || drivers[instance] == nullptr) {
+        return false;
+    }
+
+    if (state[instance].time_remaining_external > 0) {
+        seconds = state[instance].time_remaining_external;
+        return true;
+    }
+    if (state[instance].has_time_remaining) {
+        seconds = state[instance].time_remaining;
+        return true;
+    }
+    return false;
+}
+
+/// time_remaining set by an external algorithm or library such as scripting. This overrides the internal time_remaining value
+void AP_BattMonitor::set_time_remaining_external(const uint32_t seconds, const uint8_t instance)
+{
+    if (instance < _num_instances && drivers[instance] != nullptr) {
+        state[instance].time_remaining_external = seconds;
+    }
+}
+
 /// pack_capacity_mah - returns the capacity of the battery pack in mAh when the pack is full
 int32_t AP_BattMonitor::pack_capacity_mah(uint8_t instance) const
 {
