@@ -272,6 +272,8 @@ void GCS_MAVLINK::handle_param_set(const mavlink_message_t &msg)
     uint16_t parameter_flags = 0;
     vp = AP_Param::find(key, &var_type, &parameter_flags);
     if (vp == nullptr || isnan(packet.param_value) || isinf(packet.param_value)) {
+        mavlink_msg_command_ack_send(chan, MAVLINK_MSG_ID_PARAM_SET, MAV_RESULT_DENIED);
+        gcs().send_text(MAV_SEVERITY_WARNING, "Param write error (%s)", key);
         return;
     }
 
@@ -390,6 +392,8 @@ void GCS_MAVLINK::param_io_timer(void)
         strncpy(reply.param_name, req.param_name, AP_MAX_NAME_SIZE+1);
         vp = AP_Param::find(req.param_name, &reply.p_type);
         if (vp == nullptr) {
+            mavlink_msg_command_ack_send(chan, MAVLINK_MSG_ID_PARAM_REQUEST_READ, MAV_RESULT_DENIED);
+            gcs().send_text(MAV_SEVERITY_WARNING, "Param read error (%s)", reply.param_name);
             return;
         }
     }
