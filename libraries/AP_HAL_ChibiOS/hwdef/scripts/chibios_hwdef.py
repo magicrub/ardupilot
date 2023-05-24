@@ -33,7 +33,7 @@ f4f7_vtypes = ['MODER', 'OTYPER', 'OSPEEDR', 'PUPDR', 'ODR', 'AFRL', 'AFRH']
 f1_vtypes = ['CRL', 'CRH', 'ODR']
 f1_input_sigs = ['RX', 'MISO', 'CTS']
 f1_output_sigs = ['TX', 'MOSI', 'SCK', 'RTS', 'CH1', 'CH2', 'CH3', 'CH4']
-af_labels = ['USART', 'UART', 'SPI', 'I2C', 'SDIO', 'SDMMC', 'OTG', 'JT', 'TIM', 'CAN', 'QUADSPI']
+af_labels = ['USART', 'UART', 'SPI', 'I2C', 'SDIO', 'SDMMC', 'OTG', 'JT', 'TIM', 'CAN', 'QUADSPI', 'ETH']
 
 default_gpio = ['INPUT', 'FLOATING']
 
@@ -890,6 +890,20 @@ def write_mcu_config(f):
         f.write('#define HAL_USE_SERIAL_USB TRUE\n')
     if 'OTG2' in bytype:
         f.write('#define STM32_USB_USE_OTG2                  TRUE\n')
+
+    if 'ETH1' in bytype:
+        f.write('// Configure for Ethernet support\n')
+        f.write('#define CH_CFG_USE_MAILBOXES                TRUE\n')
+        f.write('#define HAL_USE_MAC                         TRUE\n')
+        f.write('#define MAC_USE_EVENTS                      TRUE\n')
+        f.write('#define STM32_NOCACHE_SRAM3                 TRUE\n')
+        f.write('#define AP_NETWORKING_ENABLED               TRUE\n')
+        build_flags.append('USE_LWIP=yes')
+        env_vars['WITH_NETWORKING'] = True
+    else:
+        f.write('#define AP_NETWORKING_ENABLED               FALSE\n')
+        build_flags.append('USE_LWIP=no')
+        env_vars['WITH_NETWORKING'] = False
 
     defines = get_mcu_config('DEFINES', False)
     if defines is not None:

@@ -458,7 +458,9 @@
 #define STM32_MAC_RECEIVE_BUFFERS           4
 #define STM32_MAC_BUFFERS_SIZE              1522
 #define STM32_MAC_PHY_TIMEOUT               100
+#ifndef STM32_MAC_ETH1_CHANGE_PHY_STATE
 #define STM32_MAC_ETH1_CHANGE_PHY_STATE     TRUE
+#endif
 #define STM32_MAC_ETH1_IRQ_PRIORITY         13
 #define STM32_MAC_IP_CHECKSUM_OFFLOAD       0
 
@@ -547,6 +549,11 @@
 #ifndef STM32_ST_USE_TIMER
 #define STM32_ST_USE_TIMER                  5
 #endif
+
+/*
+ * TRNG driver system settings.
+ */
+#define STM32_TRNG_USE_RNG1                 FALSE
 
 /*
  * UART driver system settings.

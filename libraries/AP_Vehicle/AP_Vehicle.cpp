@@ -131,6 +131,12 @@ const AP_Param::GroupInfo AP_Vehicle::var_info[] = {
     AP_SUBGROUPPTR(dds_client, "XRCE_", 18, AP_Vehicle, AP_DDS_Client),
 #endif
 
+#if AP_NETWORKING_ENABLED
+    // @Group: NET
+    // @Path: ../AP_Networking/AP_Networking.cpp
+    AP_SUBGROUPINFO(networking, "NET", 19, AP_Vehicle, AP_Networking),
+#endif
+
     AP_GROUPEND
 };
 
@@ -195,6 +201,10 @@ void AP_Vehicle::setup()
     // the GCS singleton first as it sets the global mavlink system ID
     // which may get used very early on.
     gcs().init();
+
+#if AP_NETWORKING_ENABLED
+    networking.init();
+#endif
 
     // initialise serial ports
     serial_manager.init();
@@ -408,6 +418,9 @@ const AP_Scheduler::Task AP_Vehicle::scheduler_tasks[] = {
 #endif
 #if AP_OPENDRONEID_ENABLED
     SCHED_TASK_CLASS(AP_OpenDroneID, &vehicle.opendroneid,  update,                   10,  50, 236),
+#endif
+#if AP_NETWORKING_ENABLED
+    SCHED_TASK_CLASS(AP_Networking, &vehicle.networking,    update,                 1000,  50, 238),
 #endif
 #if OSD_ENABLED
     SCHED_TASK(publish_osd_info, 1, 10, 240),

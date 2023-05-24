@@ -11,15 +11,8 @@ build = {
 
 # MCU parameters
 mcu = {
-    # DMA peripheral capabilities:
-    # - can't use ITCM or DTCM for any DMA
-    # - SPI1 to SPI5 can use AXI SRAM, SRAM1 to SRAM3 and SRAM4 for DMA
-    # - SPI6, I2C4 and ADC3 can use SRAM4 on BDMA
-    # - UARTS can use AXI SRAM, SRAM1 to SRAM3 and SRAM4 for DMA
-    # - I2C1, I2C2 and I2C3 can use AXI SRAM, SRAM1 to SRAM3 and SRAM4 with DMA
-    # - timers can use AXI SRAM, SRAM1 to SRAM3 and SRAM4 with DMA
-    # - ADC12 can use AXI SRAM, SRAM1 to SRAM3 and SRAM4
-    # - SDMMC can use AXI SRAM, SRAM1 to SRAM3 with IDMA (cannot use SRAM4)
+    # location of MCU serial number
+    'UDID_START' : 0x1FF1E800,
 
     # ram map, as list of (address, size-kb, flags)
     # flags of 1 means DMA-capable (DMA and BDMA)
@@ -28,21 +21,24 @@ mcu = {
     'RAM_MAP' : [
         (0x30000000, 256, 0), # SRAM1, SRAM2
         (0x20000000, 128, 2), # DTCM, tightly coupled, no DMA, fast
-        (0x24000000, 512, 4), # AXI SRAM. Use this for SDMMC IDMA ops
+        (0x24000000, 512, 4), # AXI SRAM.
 		(0x00000400,  63, 2), # ITCM (first 1k removed, to keep address 0 unused)
-        (0x30040000,  32, 0), # SRAM3.
+        #(0x30040000,  32, 0), # SRAM3.
         (0x38000000,  64, 1), # SRAM4.
     ],
 
     # alternative RAM_MAP needed for px4 bootloader compatibility
     'ALT_RAM_MAP' : [
-        (0x24000000, 512, 4), # AXI SRAM. Use this for SDMMC IDMA ops
+        (0x24000000, 512, 4), # AXI SRAM.
         (0x30000000, 256, 0), # SRAM1, SRAM2
         (0x20000000, 128, 2), # DTCM, tightly coupled, no DMA, fast
-        (0x00000400,  63, 2), # ITCM (first 1k removed, to keep address 0 unused)
-        (0x30040000,  32, 0), # SRAM3.
         (0x38000000,  64, 1), # SRAM4.
+        (0x24000000, 512, 4), # AXI SRAM. Use this for SDMMC IDMA ops
+        #(0x00000400,  63, 2), # ITCM (first 1k removed, to keep address 0 unused)
+        #(0x30040000,  32, 0), # SRAM3.
     ],
+
+    'INSTRUCTION_RAM' : (0x00000400, 63), # ITCM (first 1k removed, to keep address 0 unused)
 
     # avoid a problem in the bootloader by making DTCM first. The DCache init
     # when using SRAM1 as primary memory gets a hard fault in bootloader
@@ -52,11 +48,20 @@ mcu = {
         (0x30000000, 256, 0), # SRAM1, SRAM2
         (0x24000000, 512, 4), # AXI SRAM. Use this for SDMMC IDMA ops
         (0x00000400,  63, 2), # ITCM (first 1k removed, to keep address 0 unused)
-        (0x30040000,  32, 0), # SRAM3.
+        #(0x30040000,  32, 0), # SRAM3.
         (0x38000000,  64, 1), # SRAM4.
     ],
     
+    'ETHERNET_RAM' : (0x30040000, 256, 0), # SRAM3
     'EXPECTED_CLOCK' : 400000000,
+
+	'EXPECTED_CLOCKS' : [
+		('STM32_SYS_CK',	400000000),
+		('STM32_QSPICLK', 	200000000),
+		('STM32_SDMMC1CLK',  80000000),
+		('STM32_SPI45CLK',  100000000),
+		('STM32_FDCANCLK',   80000000),
+	],
 
     # this MCU has M7 instructions and hardware double precision
     'CORTEX'    : 'cortex-m7',
