@@ -59,6 +59,10 @@ void memory_flush_all(void);
 void stm32_set_utc_usec(uint64_t time_utc_usec);
 uint64_t stm32_get_utc_usec(void);
 
+void sntp_set_system_time_us(uint32_t sec, uint32_t us);
+void sntp_get_system_time_us(uint32_t* sec_, uint32_t* usec_);
+
+
 // hook for FAT timestamps    
 uint32_t get_fattime(void);
 
