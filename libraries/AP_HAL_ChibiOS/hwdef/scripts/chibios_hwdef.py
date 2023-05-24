@@ -840,7 +840,7 @@ def write_mcu_config(f):
     f.write('// MCU type (ChibiOS define)\n')
     f.write('#define %s_MCUCONF\n' % get_config('MCU'))
     mcu_subtype = get_config('MCU', 1)
-    if mcu_subtype.endswith('xx'):
+    if mcu_subtype[-1:] == 'x' or mcu_subtype[-2:-1] == 'x':
         f.write('#define %s_MCUCONF\n\n' % mcu_subtype[:-2])
     f.write('#define %s\n\n' % mcu_subtype)
     f.write('// crystal frequency\n')
@@ -1272,6 +1272,12 @@ def write_ldscript(fname):
 
     # get external flash if any
     ext_flash_size = get_config('EXT_FLASH_SIZE_MB', default=0, type=int)
+    ethernet_ram = get_mcu_config('ETHERNET_RAM', False)
+    if ethernet_ram is None and env_vars['WITH_NETWORKING']:
+        raise Exception("No ethernet ram defined in mcu config")
+    elif env_vars['WITH_NETWORKING']:
+        ethernet_ram_base = ethernet_ram[0]
+        ethernet_ram_length = ethernet_ram[1]
 
     if not args.bootloader:
         flash_length = flash_size - (flash_reserve_start + flash_reserve_end)
@@ -1323,6 +1329,16 @@ INCLUDE common_extf.ld
        ram0_start, ram0_len,
        ram1_start, ram1_len,
        ram2_start, ram2_len))
+    if env_vars['WITH_NETWORKING']:
+        f.write('''
+/* Ethernet RAM */
+MEMORY
+{
+    eth_ram : org = 0x%08x, len = %uK
+}
+INCLUDE common_eth.ld
+''' % (ethernet_ram_base, ethernet_ram_length))
+    f.close()
 
 def copy_common_linkerscript(outdir):
     dirpath = os.path.dirname(os.path.realpath(__file__))
@@ -2652,7 +2668,7 @@ def valid_type(ptype, label):
     '''check type of a pin line is valid'''
     patterns = [ 'INPUT', 'OUTPUT', 'TIM\d+', 'USART\d+', 'UART\d+', 'ADC\d+',
                 'SPI\d+', 'OTG\d+', 'SWD', 'CAN\d?', 'I2C\d+', 'CS',
-                'SDMMC\d+', 'SDIO', 'QUADSPI\d' ]
+                'SDMMC\d+', 'SDIO', 'QUADSPI\d', 'ETH\d' ]
     matches = False
     for p in patterns:
         if re.match(p, ptype):
