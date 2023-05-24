@@ -1,0 +1,27 @@
+SERIAL5_OPTIONS 8
+BRD_OPTIONS 8
+
+# ------------
+# Networking
+# ------------
+NET_ENABLED      1
+NET_DHCP         0
+
+NET_IPADDR0      172
+NET_IPADDR1      20
+NET_IPADDR2      13
+NET_IPADDR3      210
+
+NET_GWADDR0      172
+NET_GWADDR1      20
+NET_GWADDR2      13
+NET_GWADDR3      1
+
+NET_NETMASK      16
+
+SERIAL_EXT_EN    1
+SERIALA_PHY_TYPE 1
+# ------------
+
+
+

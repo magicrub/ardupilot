@@ -417,7 +417,7 @@ bool Util::was_watchdog_reset() const
 __RAMFUNC__ void Util::thread_info(ExpandingString &str)
 {
 #if HAL_ENABLE_THREAD_STATISTICS
-    uint64_t cumulative_cycles = ch.kernel_stats.m_crit_isr.cumulative;
+    uint64_t cumulative_cycles = currcore->kernel_stats.m_crit_isr.cumulative;
     for (thread_t *tp = chRegFirstThread(); tp; tp = chRegNextThread(tp)) {
         if (tp->stats.best > 0) { // not run
             cumulative_cycles += (uint64_t)tp->stats.cumulative;
@@ -430,8 +430,8 @@ __RAMFUNC__ void Util::thread_info(ExpandingString &str)
     str.printf("ThreadsV2\nISR           PRI=255 sp=%p STACK=%u/%u LOAD=%4.1f%%\n",
                 &__main_stack_base__,
                 unsigned(stack_free(&__main_stack_base__)),
-                unsigned(isr_stack_size), 100.0f * float(ch.kernel_stats.m_crit_isr.cumulative) / float(cumulative_cycles));
-    ch.kernel_stats.m_crit_isr.cumulative = 0U;
+                unsigned(isr_stack_size), 100.0f * float(currcore->kernel_stats.m_crit_isr.cumulative) / float(cumulative_cycles));
+    currcore->kernel_stats.m_crit_isr.cumulative = 0U;
 #else
     str.printf("ThreadsV2\nISR           PRI=255 sp=%p STACK=%u/%u\n",
                 &__main_stack_base__,
@@ -660,9 +660,7 @@ bool Util::get_random_vals(uint8_t* data, size_t size)
 {
 #if HAL_USE_HW_RNG && defined(RNG)
     size_t true_random_vals = stm32_rand_generate_nonblocking(data, size);
-    if (true_random_vals == size) {
-        return true;
-    } else {
+    if (true_random_vals != size) {
         if (!(true_random_vals % 2)) {
             data[true_random_vals] = (uint8_t)(get_random16() & 0xFF);
             true_random_vals++;
@@ -673,10 +671,18 @@ bool Util::get_random_vals(uint8_t* data, size_t size)
             true_random_vals+=sizeof(uint16_t);
         }
     }
-    return true;
 #else
-    return false;
+    size_t true_random_vals = 0;
+    while(true_random_vals < size) {
+        uint16_t val = get_random16();
+        memcpy(&data[true_random_vals], &val, sizeof(uint16_t));
+        true_random_vals+=sizeof(uint16_t);
+    }
+    if (size % 2) {
+        data[size-1] = get_random16() & 0xFF;
+    }
 #endif
+    return true;
 }
 
 /**

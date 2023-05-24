@@ -33,7 +33,7 @@ f4f7_vtypes = ['MODER', 'OTYPER', 'OSPEEDR', 'PUPDR', 'ODR', 'AFRL', 'AFRH']
 f1_vtypes = ['CRL', 'CRH', 'ODR']
 f1_input_sigs = ['RX', 'MISO', 'CTS']
 f1_output_sigs = ['TX', 'MOSI', 'SCK', 'RTS', 'CH1', 'CH2', 'CH3', 'CH4']
-af_labels = ['USART', 'UART', 'SPI', 'I2C', 'SDIO', 'SDMMC', 'OTG', 'JT', 'TIM', 'CAN', 'QUADSPI']
+af_labels = ['USART', 'UART', 'SPI', 'I2C', 'SDIO', 'SDMMC', 'OTG', 'JT', 'TIM', 'CAN', 'QUADSPI', 'ETH']
 
 default_gpio = ['INPUT', 'FLOATING']
 
@@ -218,6 +218,32 @@ def get_ADC1_chan(mcu, pin):
     if pin not in ADC1_map:
         error("Unable to find ADC1 channel for pin %s" % pin)
     return ADC1_map[pin]
+
+def get_ADC2_chan(mcu, pin):
+    '''return ADC2 channel for an analog pin'''
+    import importlib
+    try:
+        lib = importlib.import_module(mcu)
+        ADC2_map = lib.ADC2_map
+    except ImportError:
+        error("Unable to find ADC2_Map for MCU %s" % mcu)
+
+    if pin not in ADC2_map:
+        error("Unable to find ADC2 channel for pin %s" % pin)
+    return ADC2_map[pin]
+
+def get_ADC3_chan(mcu, pin):
+    '''return ADC3 channel for an analog pin'''
+    import importlib
+    try:
+        lib = importlib.import_module(mcu)
+        ADC3_map = lib.ADC3_map
+    except ImportError:
+        error("Unable to find ADC3_Map for MCU %s" % mcu)
+
+    if pin not in ADC3_map:
+        error("Unable to find ADC3 channel for pin %s" % pin)
+    return ADC3_map[pin]
 
 
 class generic_pin(object):
@@ -586,6 +612,10 @@ class generic_pin(object):
             str += " AF%u" % self.af
         if self.type.startswith('ADC1'):
             str += " ADC1_IN%u" % get_ADC1_chan(mcu_type, self.portpin)
+        if self.type.startswith('ADC2'):
+            str += " ADC2_IN%u" % get_ADC2_chan(mcu_type, self.portpin)
+        if self.type.startswith('ADC3'):
+            str += " ADC3_IN%u" % get_ADC3_chan(mcu_type, self.portpin)
         if self.extra_value('PWM', type=int):
             str += " PWM%u" % self.extra_value('PWM', type=int)
         return "P%s%u %s %s%s" % (self.port, self.pin, self.label, self.type,
@@ -723,7 +753,7 @@ def get_ram_map():
                     if app_ram_map[0][0] == ram_map[i][0]:
                         env_vars['APP_RAM_START'] = i
             return ram_map
-    elif env_vars['EXT_FLASH_SIZE_MB']:
+    elif env_vars['EXT_FLASH_SIZE_MB'] and not env_vars['INT_FLASH_PRIMARY']:
         ram_map = get_mcu_config('RAM_MAP_EXTERNAL_FLASH', False)
         if ram_map is not None:
             return ram_map
@@ -840,7 +870,7 @@ def write_mcu_config(f):
     f.write('// MCU type (ChibiOS define)\n')
     f.write('#define %s_MCUCONF\n' % get_config('MCU'))
     mcu_subtype = get_config('MCU', 1)
-    if mcu_subtype.endswith('xx'):
+    if mcu_subtype[-1:] == 'x' or mcu_subtype[-2:-1] == 'x':
         f.write('#define %s_MCUCONF\n\n' % mcu_subtype[:-2])
     f.write('#define %s\n\n' % mcu_subtype)
     f.write('// crystal frequency\n')
@@ -855,7 +885,7 @@ def write_mcu_config(f):
         f.write('#define USE_POSIX\n\n')
         f.write('#define HAL_USE_SDC TRUE\n')
         build_flags.append('USE_FATFS=yes')
-        env_vars['WITH_FATFS'] = "1"
+        env_vars['WITH_FATFS'] = True
     elif have_type_prefix('SDMMC2'):
         f.write('// SDMMC2 available, enable POSIX filesystem support\n')
         f.write('#define USE_POSIX\n\n')
@@ -863,7 +893,7 @@ def write_mcu_config(f):
         f.write('#define STM32_SDC_USE_SDMMC2 TRUE\n')
         f.write('#define HAL_USE_SDMMC 1\n')
         build_flags.append('USE_FATFS=yes')
-        env_vars['WITH_FATFS'] = "1"
+        env_vars['WITH_FATFS'] = True
     elif have_type_prefix('SDMMC'):
         f.write('// SDMMC available, enable POSIX filesystem support\n')
         f.write('#define USE_POSIX\n\n')
@@ -871,7 +901,7 @@ def write_mcu_config(f):
         f.write('#define STM32_SDC_USE_SDMMC1 TRUE\n')
         f.write('#define HAL_USE_SDMMC 1\n')
         build_flags.append('USE_FATFS=yes')
-        env_vars['WITH_FATFS'] = "1"
+        env_vars['WITH_FATFS'] = True
     elif has_sdcard_spi():
         f.write('// MMC via SPI available, enable POSIX filesystem support\n')
         f.write('#define USE_POSIX\n\n')
@@ -879,7 +909,7 @@ def write_mcu_config(f):
         f.write('#define HAL_USE_SDC FALSE\n')
         f.write('#define HAL_SDCARD_SPI_HOOK TRUE\n')
         build_flags.append('USE_FATFS=yes')
-        env_vars['WITH_FATFS'] = "1"
+        env_vars['WITH_FATFS'] = True
     else:
         f.write('#define HAL_USE_SDC FALSE\n')
         build_flags.append('USE_FATFS=no')
@@ -890,6 +920,20 @@ def write_mcu_config(f):
         f.write('#define HAL_USE_SERIAL_USB TRUE\n')
     if 'OTG2' in bytype:
         f.write('#define STM32_USB_USE_OTG2                  TRUE\n')
+
+    if 'ETH1' in bytype:
+        f.write('// Configure for Ethernet support\n')
+        f.write('#define CH_CFG_USE_MAILBOXES                TRUE\n')
+        f.write('#define HAL_USE_MAC                         TRUE\n')
+        f.write('#define MAC_USE_EVENTS                      TRUE\n')
+        f.write('#define STM32_NOCACHE_SRAM3                 TRUE\n')
+        f.write('#define AP_NETWORKING_ENABLED               TRUE\n')
+        build_flags.append('USE_LWIP=yes')
+        env_vars['WITH_NETWORKING'] = True
+    else:
+        f.write('#define AP_NETWORKING_ENABLED               FALSE\n')
+        build_flags.append('USE_LWIP=no')
+        env_vars['WITH_NETWORKING'] = False
 
     defines = get_mcu_config('DEFINES', False)
     if defines is not None:
@@ -942,6 +986,9 @@ def write_mcu_config(f):
             if result:
                 intdefines[result.group(1)] = int(result.group(2))
 
+    if intdefines.get('HAL_USE_USB_MSD',0) == 1:
+        build_flags.append('USE_USB_MSD=yes')
+
     if have_type_prefix('CAN') and not using_chibios_can:
         enable_can(f)
     flash_size = get_config('FLASH_SIZE_KB', type=int)
@@ -961,16 +1008,23 @@ def write_mcu_config(f):
     f.write('#define EXT_FLASH_RESERVE_END_KB %u\n' % get_config('EXT_FLASH_RESERVE_END_KB', default=0, type=int))
 
     env_vars['EXT_FLASH_SIZE_MB'] = get_config('EXT_FLASH_SIZE_MB', default=0, type=int)
-
-    if env_vars['EXT_FLASH_SIZE_MB'] and not args.bootloader:
-        f.write('#define CRT1_AREAS_NUMBER 3\n')
+    env_vars['INT_FLASH_PRIMARY'] = get_config('INT_FLASH_PRIMARY', default=False, type=bool)
+    if env_vars['EXT_FLASH_SIZE_MB'] and not args.bootloader and not env_vars['INT_FLASH_PRIMARY']:
+        f.write('#define CRT0_AREAS_NUMBER 3\n')
         f.write('#define CRT1_RAMFUNC_ENABLE TRUE\n') # this will enable loading program sections to RAM
         f.write('#define __FASTRAMFUNC__ __attribute__ ((__section__(".fastramfunc")))\n')
         f.write('#define __RAMFUNC__ __attribute__ ((__section__(".ramfunc")))\n')
         f.write('#define PORT_IRQ_ATTRIBUTES __FASTRAMFUNC__\n')
     else:
-        f.write('#define CRT1_AREAS_NUMBER 1\n')
+        f.write('#define CRT0_AREAS_NUMBER 1\n')
         f.write('#define CRT1_RAMFUNC_ENABLE FALSE\n')
+
+    if env_vars['INT_FLASH_PRIMARY']:
+         # this will put methods with low latency requirements into external flash
+         # and save internal flash space
+        f.write('#define __EXTFLASHFUNC__ __attribute__ ((__section__(".extflash")))\n')
+    else:
+        f.write('#define __EXTFLASHFUNC__\n')
 
     storage_flash_page = get_storage_flash_page()
     flash_reserve_end = get_config('FLASH_RESERVE_END_KB', default=0, type=int)
@@ -995,7 +1049,7 @@ def write_mcu_config(f):
         env_vars['ENABLE_CRASHDUMP'] = 0
 
     if args.bootloader:
-        if env_vars['EXT_FLASH_SIZE_MB']:
+        if env_vars['EXT_FLASH_SIZE_MB'] and not env_vars['INT_FLASH_PRIMARY']:
             f.write('\n// location of loaded firmware in external flash\n')
             f.write('#define APP_START_ADDRESS 0x%08x\n' % (0x90000000 + get_config(
                 'EXT_FLASH_RESERVE_START_KB', default=0, type=int)*1024))
@@ -1082,6 +1136,14 @@ def write_mcu_config(f):
     elif get_mcu_config('EXPECTED_CLOCK', required=True):
         f.write('#define HAL_EXPECTED_SYSCLOCK %u\n' % get_mcu_config('EXPECTED_CLOCK'))
 
+    if get_mcu_config('EXPECTED_CLOCKS', required=False):
+        clockrate = get_config('MCU_CLOCKRATE_MHZ', required=False)
+        for mcu_clock, mcu_clock_speed in get_mcu_config('EXPECTED_CLOCKS'):
+            if (mcu_clock == 'STM32_HCLK' or mcu_clock == 'STM32_SYS_CK') and clockrate:
+                f.write('#define HAL_EXPECTED_%s %u\n' % (mcu_clock, int(clockrate) * 1000000))
+            else:
+                f.write('#define HAL_EXPECTED_%s %u\n' % (mcu_clock, mcu_clock_speed))
+
     env_vars['CORTEX'] = cortex
 
     if not args.bootloader:
@@ -1153,6 +1215,7 @@ def write_mcu_config(f):
 #endif
 #define CH_CFG_USE_EVENTS FALSE
 #define CH_CFG_USE_EVENTS_TIMEOUT FALSE
+#define CH_CFG_OPTIMIZE_SPEED FALSE
 #define HAL_USE_EMPTY_STORAGE 1
 #ifndef HAL_STORAGE_SIZE
 #define HAL_STORAGE_SIZE 16384
@@ -1258,6 +1321,14 @@ def write_ldscript(fname):
 
     # get external flash if any
     ext_flash_size = get_config('EXT_FLASH_SIZE_MB', default=0, type=int)
+    int_flash_primary = get_config('INT_FLASH_PRIMARY', default=False, type=int)
+
+    ethernet_ram = get_mcu_config('ETHERNET_RAM', False)
+    if ethernet_ram is None and env_vars['WITH_NETWORKING']:
+        raise Exception("No ethernet ram defined in mcu config")
+    elif env_vars['WITH_NETWORKING']:
+        ethernet_ram_base = ethernet_ram[0]
+        ethernet_ram_length = ethernet_ram[1]
 
     if not args.bootloader:
         flash_length = flash_size - (flash_reserve_start + flash_reserve_end)
@@ -1272,6 +1343,9 @@ def write_ldscript(fname):
     f = open(fname, 'w')
     ram0_start = ram_map[0][0]
     ram0_len = ram_map[0][1] * 1024
+    if ext_flash_size > 32:
+        error("We only support 24bit addressing over external flash")
+
     if env_vars['APP_RAM_START'] is None:
         # default to start of ram for shared ram
         # possibly reserve some memory for app/bootloader comms
@@ -1289,9 +1363,19 @@ MEMORY
 
 INCLUDE common.ld
 ''' % (flash_base, flash_length, ram0_start, ram0_len))
+    elif int_flash_primary:
+        env_vars['HAS_EXTERNAL_FLASH_SECTIONS'] = 1
+        f.write('''/* generated ldscript.ld */
+MEMORY
+{
+    flash : org = 0x%08x, len = %uK
+    ext_flash : org = 0x%08x, len = %uK
+    ram0  : org = 0x%08x, len = %u
+}
+
+INCLUDE common_mixf.ld
+''' % (flash_base, flash_length, ext_flash_base, ext_flash_length, ram0_start, ram0_len))
     else:
-        if ext_flash_size > 32:
-            error("We only support 24bit addressing over external flash")
         env_vars['HAS_EXTERNAL_FLASH_SECTIONS'] = 1
         f.write('''/* generated ldscript.ld */
 MEMORY
@@ -1309,12 +1393,25 @@ INCLUDE common_extf.ld
        ram0_start, ram0_len,
        ram1_start, ram1_len,
        ram2_start, ram2_len))
+    if env_vars['WITH_NETWORKING']:
+        f.write('''
+/* Ethernet RAM */
+MEMORY
+{
+    eth_ram : org = 0x%08x, len = %uK
+}
+INCLUDE common_eth.ld
+''' % (ethernet_ram_base, ethernet_ram_length))
+    f.close()
 
 def copy_common_linkerscript(outdir):
     dirpath = os.path.dirname(os.path.realpath(__file__))
     if not get_config('EXT_FLASH_SIZE_MB', default=0, type=int) or args.bootloader:
         shutil.copy(os.path.join(dirpath, "../common/common.ld"),
                     os.path.join(outdir, "common.ld"))
+    elif get_config('INT_FLASH_PRIMARY', default=False, type=int):
+        shutil.copy(os.path.join(dirpath, "../common/common_mixf.ld"),
+                    os.path.join(outdir, "common_mixf.ld"))
     else:
         shutil.copy(os.path.join(dirpath, "../common/common_extf.ld"),
                     os.path.join(outdir, "common_extf.ld"))
@@ -1451,6 +1548,11 @@ def write_QSPI_table(f):
 def write_QSPI_config(f):
     '''write SPI config defines'''
     global qspi_list
+    # only the bootloader must reset the QSPI clock otherwise it is not possible to 
+    # bootstrap into external flash
+    if not args.bootloader:
+        f.write('#define STM32_QSPI_NO_RESET TRUE\n')
+
     if len(qspidev) == 0:
         # nothing to do
         return
@@ -2129,34 +2231,65 @@ def write_PWM_config(f, ordered_timers):
 def write_ADC_config(f):
     '''write ADC config defines'''
     f.write('// ADC config\n')
-    adc_chans = []
+    adc_chans = [[], [], []]
+    index = 0
     for l in bylabel:
         p = bylabel[l]
         if not p.type.startswith('ADC'):
             continue
-        chan = get_ADC1_chan(mcu_type, p.portpin)
+        if p.type.startswith('ADC1'):
+            index = 0
+            chan = get_ADC1_chan(mcu_type, p.portpin)
+        elif p.type.startswith('ADC2'):
+            index = 1
+            chan = get_ADC2_chan(mcu_type, p.portpin)
+        elif p.type.startswith('ADC3'):
+            index = 2
+            chan = get_ADC3_chan(mcu_type, p.portpin)
+        else:
+            raise ValueError("Unknown ADC type %s" % p.type)
         scale = p.extra_value('SCALE', default=None)
         if p.label == 'VDD_5V_SENS':
-            f.write('#define ANALOG_VCC_5V_PIN %u\n' % chan)
+            f.write('#define ANALOG_VCC_5V_PIN %u\n' % (chan + index*20))
             f.write('#define HAL_HAVE_BOARD_VOLTAGE 1\n')
         if p.label == 'FMU_SERVORAIL_VCC_SENS':
-            f.write('#define FMU_SERVORAIL_ADC_CHAN %u\n' % chan)
+            f.write('#define FMU_SERVORAIL_ADC_CHAN %u\n' % (chan + index*20))
             f.write('#define HAL_HAVE_SERVO_VOLTAGE 1\n')
-        adc_chans.append((chan, scale, p.label, p.portpin))
-    adc_chans = sorted(adc_chans)
+        adc_chans[index].append((chan, scale, p.label, p.portpin))
+    adc_chans[index] = sorted(adc_chans[index])
     vdd = get_config('STM32_VDD', default='330U')
     if vdd[-1] == 'U':
         vdd = vdd[:-1]
     vdd = float(vdd) * 0.01
-    f.write('#define HAL_ANALOG_PINS { \\\n')
-    for (chan, scale, label, portpin) in adc_chans:
+    f.write('#define HAL_ANALOG_PINS \\\n')
+    for (chan, scale, label, portpin) in adc_chans[0]:
         scale_str = '%.2f/4096' % vdd
         if scale is not None and scale != '1':
             scale_str = scale + '*' + scale_str
         f.write('{ %2u, %12s }, /* %s %s */ \\\n' % (chan, scale_str, portpin,
                                                      label))
-    f.write('}\n\n')
-
+    f.write('\n\n')
+    if len(adc_chans[1]) > 0:
+        f.write('#define STM32_ADC_SAMPLES_SIZE 32\n')
+        f.write('#define STM32_ADC_DUAL_MODE TRUE\n')
+        f.write('#define HAL_ANALOG2_PINS \\\n')
+        for (chan, scale, label, portpin) in adc_chans[1]:
+            scale_str = '%.2f/4096' % vdd
+            if scale is not None and scale != '1':
+                scale_str = scale + '*' + scale_str
+            f.write('{ %2u, %12s }, /* %s %s */ \\\n' % (chan, scale_str, portpin,
+                                                        label))
+        f.write('\n\n')
+    if len(adc_chans[2]) > 0:
+        f.write('#define STM32_ADC_USE_ADC3 TRUE\n')    
+        f.write('#define HAL_ANALOG3_PINS \\\n')
+        for (chan, scale, label, portpin) in adc_chans[2]:
+            scale_str = '%.2f/4096' % vdd
+            if scale is not None and scale != '1':
+                scale_str = scale + '*' + scale_str
+            f.write('{ %2u, %12s }, /* %s %s */ \\\n' % (chan, scale_str, portpin,
+                                                        label))
+        f.write('\n\n')
 
 def write_GPIO_config(f):
     '''write GPIO config defines'''
@@ -2638,7 +2771,7 @@ def valid_type(ptype, label):
     '''check type of a pin line is valid'''
     patterns = [ 'INPUT', 'OUTPUT', 'TIM\d+', 'USART\d+', 'UART\d+', 'ADC\d+',
                 'SPI\d+', 'OTG\d+', 'SWD', 'CAN\d?', 'I2C\d+', 'CS',
-                'SDMMC\d+', 'SDIO', 'QUADSPI\d' ]
+                'SDMMC\d+', 'SDIO', 'QUADSPI\d', 'ETH\d' ]
     matches = False
     for p in patterns:
         if re.match(p, ptype):

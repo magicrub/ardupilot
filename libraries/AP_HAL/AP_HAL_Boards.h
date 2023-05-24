@@ -236,6 +236,9 @@
 #define HAL_SUPPORT_RCOUT_SERIAL 0
 #endif
 
+#ifndef HAL_FORWARD_OTG2_SERIAL
+#define HAL_FORWARD_OTG2_SERIAL 0
+#endif
 
 #ifndef HAL_HAVE_DUAL_USB_CDC
 #define HAL_HAVE_DUAL_USB_CDC 0
@@ -312,6 +315,10 @@
 #define __FASTRAMFUNC__
 #endif
 
+#ifndef __EXTFLASHFUNC__
+#define __EXTFLASHFUNC__
+#endif
+
 #ifndef HAL_ENABLE_DFU_BOOT
 #define HAL_ENABLE_DFU_BOOT 0
 #endif
@@ -322,4 +329,8 @@
 // things:
 #if HAL_MINIMIZE_FEATURES && BOARD_FLASH_SIZE > 1024
 #error "2MB board with minimize features?!"
+#endif
+
+#ifndef AP_SERIAL_EXTENSION_ENABLED
+#define AP_SERIAL_EXTENSION_ENABLED AP_NETWORKING_ENABLED
 #endif

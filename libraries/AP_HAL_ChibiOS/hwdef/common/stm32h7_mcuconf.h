@@ -63,10 +63,18 @@
 /*
  * Memory attributes settings.
  */
+#define STM32_NOCACHE_ENABLE                TRUE
 #define STM32_NOCACHE_MPU_REGION            MPU_REGION_6
-#define STM32_NOCACHE_SRAM1_SRAM2           FALSE
-#define STM32_NOCACHE_SRAM3                 FALSE
+#define STM32_NOCACHE_RBAR                  0x30040000U
+#define STM32_NOCACHE_RASR                  MPU_RASR_SIZE_32K
 
+/*
+{TYPE = 0x1000, CTRL = 0x0, RNR = 0x6, RBAR = 0x30040006, RASR = 0x30c001d, RBAR_A1 = 0x30040006,
+  RASR_A1 = 0x30c001d, RBAR_A2 = 0x30040006, RASR_A2 = 0x30c001d, RBAR_A3 = 0x30040006, RASR_A3 = 0x30c001d}
+
+  {TYPE = 0x1000, CTRL = 0x0, RNR = 0x6, RBAR = 0x30040006, RASR = 0x30c001d, RBAR_A1 = 0x30040006,
+  RASR_A1 = 0x30c001d, RBAR_A2 = 0x30040006, RASR_A2 = 0x30c001d, RBAR_A3 = 0x30040006, RASR_A3 = 0x30c001d}
+*/
 /*
  * PWR system settings.
  * Reading STM32 Reference Manual is required, settings in PWR_CR3 are
@@ -152,10 +160,9 @@
 #define STM32_PLL2_DIVN_VALUE               45
 #define STM32_PLL2_DIVP_VALUE               2
 #define STM32_PLL2_DIVQ_VALUE               5
-#define STM32_PLL2_DIVR_VALUE               1
+#define STM32_PLL2_DIVR_VALUE               8
 
 #define STM32_PLL3_DIVN_VALUE               15
-#define STM32_PLL3_DIVP_VALUE               3
 #define STM32_PLL3_DIVQ_VALUE               5
 #define STM32_PLL3_DIVR_VALUE               8
 
@@ -164,23 +171,23 @@
 #ifdef HAL_CUSTOM_MCU_CLOCKRATE
 #if HAL_CUSTOM_MCU_CLOCKRATE == 480000000
 #define STM32_PLL1_DIVN_VALUE               120
+#define STM32_PLL1_DIVQ_VALUE               12
 #else
 #error "Unable to configure custom clockrate"
 #endif
 #else
 #define STM32_PLL1_DIVN_VALUE               100
+#define STM32_PLL1_DIVQ_VALUE               10
 #endif
 #define STM32_PLL1_DIVP_VALUE               2
-#define STM32_PLL1_DIVQ_VALUE               10
 #define STM32_PLL1_DIVR_VALUE               2
 
-#define STM32_PLL2_DIVN_VALUE               45
-#define STM32_PLL2_DIVP_VALUE               2
-#define STM32_PLL2_DIVQ_VALUE               5
-#define STM32_PLL2_DIVR_VALUE               1
+#define STM32_PLL2_DIVN_VALUE               75
+#define STM32_PLL2_DIVP_VALUE               3
+#define STM32_PLL2_DIVQ_VALUE               6
+#define STM32_PLL2_DIVR_VALUE               3
 
 #define STM32_PLL3_DIVN_VALUE               72
-#define STM32_PLL3_DIVP_VALUE               3
 #define STM32_PLL3_DIVQ_VALUE               6
 #define STM32_PLL3_DIVR_VALUE               9
 
@@ -198,13 +205,12 @@
 #define STM32_PLL1_DIVQ_VALUE               10
 #define STM32_PLL1_DIVR_VALUE               2
 
-#define STM32_PLL2_DIVN_VALUE               30
-#define STM32_PLL2_DIVP_VALUE               2
-#define STM32_PLL2_DIVQ_VALUE               5
-#define STM32_PLL2_DIVR_VALUE               1
+#define STM32_PLL2_DIVN_VALUE               50
+#define STM32_PLL2_DIVP_VALUE               3
+#define STM32_PLL2_DIVQ_VALUE               6
+#define STM32_PLL2_DIVR_VALUE               3
 
 #define STM32_PLL3_DIVN_VALUE               72
-#define STM32_PLL3_DIVP_VALUE               3
 #define STM32_PLL3_DIVQ_VALUE               6
 #define STM32_PLL3_DIVR_VALUE               9
 
@@ -217,13 +223,12 @@
 #define STM32_PLL1_DIVQ_VALUE               10
 #define STM32_PLL1_DIVR_VALUE               2
 
-#define STM32_PLL2_DIVN_VALUE               72
-#define STM32_PLL2_DIVP_VALUE               2
-#define STM32_PLL2_DIVQ_VALUE               5
-#define STM32_PLL2_DIVR_VALUE               1
+#define STM32_PLL2_DIVN_VALUE               120
+#define STM32_PLL2_DIVP_VALUE               3
+#define STM32_PLL2_DIVQ_VALUE               6
+#define STM32_PLL2_DIVR_VALUE               3
 
 #define STM32_PLL3_DIVN_VALUE               48
-#define STM32_PLL3_DIVP_VALUE               3
 #define STM32_PLL3_DIVQ_VALUE               5
 #define STM32_PLL3_DIVR_VALUE               8
 #endif // clock selection
@@ -251,7 +256,7 @@
 #define STM32_PLL2_FRACN_VALUE              0
 
 #define STM32_PLL3_ENABLED                  TRUE
-#define STM32_PLL3_P_ENABLED                TRUE
+#define STM32_PLL3_P_ENABLED                FALSE
 #define STM32_PLL3_Q_ENABLED                TRUE
 #define STM32_PLL3_R_ENABLED                TRUE
 #define STM32_PLL3_FRACN_VALUE              0
@@ -294,7 +299,7 @@
 #define STM32_FDCANSEL                      STM32_FDCANSEL_PLL1_Q_CK
 #define STM32_DFSDM1SEL                     STM32_DFSDM1SEL_PCLK2
 #define STM32_SPDIFSEL                      STM32_SPDIFSEL_PLL1_Q_CK
-#define STM32_SPI45SEL                      STM32_SPI45SEL_PCLK2
+#define STM32_SPI45SEL                      STM32_SPI45SEL_PLL2_Q_CK
 #define STM32_SPI123SEL                     STM32_SPI123SEL_PLL1_Q_CK
 #define STM32_SAI23SEL                      STM32_SAI23SEL_PLL1_Q_CK
 #define STM32_SAI1SEL                       STM32_SAI1SEL_PLL1_Q_CK
@@ -303,9 +308,9 @@
 #define STM32_USBSEL                        STM32_USBSEL_PLL3_Q_CK
 #define STM32_I2C123SEL                     STM32_I2C123SEL_PLL3_R_CK
 #define STM32_RNGSEL                        STM32_RNGSEL_HSI48_CK
-#define STM32_USART16SEL                    STM32_USART16SEL_PCLK2
-#define STM32_USART234578SEL                STM32_USART234578SEL_PCLK1
-#define STM32_SPI6SEL                       STM32_SPI6SEL_PCLK4
+#define STM32_USART16SEL                    STM32_USART16SEL_PLL2_Q_CK
+#define STM32_USART234578SEL                STM32_USART234578SEL_PLL2_Q_CK
+#define STM32_SPI6SEL                       STM32_SPI6SEL_PLL2_Q_CK
 #define STM32_SAI4BSEL                      STM32_SAI4BSEL_PLL1_Q_CK
 #define STM32_SAI4ASEL                      STM32_SAI4ASEL_PLL1_Q_CK
 #define STM32_ADCSEL                        STM32_ADCSEL_PLL3_R_CK
@@ -367,11 +372,18 @@
 /*
  * ADC driver system settings.
  */
+#ifndef STM32_ADC_DUAL_MODE
 #define STM32_ADC_DUAL_MODE                 FALSE
+#endif
+#ifndef STM32_ADC_SAMPLES_SIZE
+#define STM32_ADC_SAMPLES_SIZE              16
+#endif
 #define STM32_ADC_COMPACT_SAMPLES           FALSE
 #define STM32_ADC_USE_ADC12                 TRUE
 #ifndef STM32H750xx
+#ifndef STM32_ADC_USE_ADC3
 #define STM32_ADC_USE_ADC3                  TRUE
+#endif
 #endif
 #define STM32_ADC_ADC12_DMA_PRIORITY        2
 #define STM32_ADC_ADC3_DMA_PRIORITY         2
@@ -458,7 +470,9 @@
 #define STM32_MAC_RECEIVE_BUFFERS           4
 #define STM32_MAC_BUFFERS_SIZE              1522
 #define STM32_MAC_PHY_TIMEOUT               100
+#ifndef STM32_MAC_ETH1_CHANGE_PHY_STATE
 #define STM32_MAC_ETH1_CHANGE_PHY_STATE     TRUE
+#endif
 #define STM32_MAC_ETH1_IRQ_PRIORITY         13
 #define STM32_MAC_IP_CHECKSUM_OFFLOAD       0
 
@@ -483,6 +497,7 @@
 #define STM32_SDC_SDMMC_CLOCK_DELAY         10
 #define STM32_SDC_SDMMC1_DMA_PRIORITY       3
 #define STM32_SDC_SDMMC1_IRQ_PRIORITY       9
+#define STM32_SDC_SDMMC_PWRSAV              TRUE
 
 /*
  * SERIAL driver system settings.
@@ -496,14 +511,18 @@
 #define STM32_SERIAL_UART7_PRIORITY         12
 #define STM32_SERIAL_UART8_PRIORITY         12
 
-#define STM32_UART1CLK STM32_PCLK1
-#define STM32_UART2CLK STM32_PCLK1
-#define STM32_UART3CLK STM32_PCLK1
-#define STM32_UART4CLK STM32_PCLK1
-#define STM32_UART5CLK STM32_PCLK1
-#define STM32_UART6CLK STM32_PCLK1
-#define STM32_UART7CLK STM32_PCLK1
-#define STM32_UART8CLK STM32_PCLK1
+/*
+ * SIO driver system settings.
+ */
+#define STM32_SIO_USE_USART1                FALSE
+#define STM32_SIO_USE_USART2                FALSE
+#define STM32_SIO_USE_USART3                FALSE
+#define STM32_SIO_USE_UART4                 FALSE
+#define STM32_SIO_USE_UART5                 FALSE
+#define STM32_SIO_USE_USART6                FALSE
+#define STM32_SIO_USE_UART7                 FALSE
+#define STM32_SIO_USE_UART8                 FALSE
+#define STM32_SIO_USE_LPUART1               FALSE
 
 /*
  * SPI driver system settings.
@@ -547,6 +566,11 @@
 #ifndef STM32_ST_USE_TIMER
 #define STM32_ST_USE_TIMER                  5
 #endif
+
+/*
+ * TRNG driver system settings.
+ */
+#define STM32_TRNG_USE_RNG1                 FALSE
 
 /*
  * UART driver system settings.
@@ -603,7 +627,7 @@
 #if STM32_WSPI_USE_QUADSPI1
 #define STM32_WSPI_QUADSPI1_MDMA_CHANNEL    STM32_MDMA_CHANNEL_ID_ANY
 #define STM32_WSPI_QUADSPI1_MDMA_PRIORITY   1
-#define STM32_WSPI_QUADSPI1_PRESCALER_VALUE ((STM32_QSPICLK / HAL_QSPI1_CLK) - 1)
+#define STM32_WSPI_QUADSPI1_PRESCALER_VALUE (STM32_QSPICLK / HAL_QSPI1_CLK)
 #endif
 
 /*

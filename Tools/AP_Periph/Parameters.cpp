@@ -523,6 +523,12 @@ const AP_Param::Info AP_Periph_FW::var_info[] = {
     GOBJECT(nmea, "NMEA_",   AP_NMEA_Output),
 #endif
 
+#if AP_NETWORKING_ENABLED
+    // @Group: NET
+    // @Path: ../libraries/AP_Networking/AP_Networking.cpp
+    GOBJECT(networking, "NET", AP_Networking),
+#endif
+
     AP_VAREND
 };
 

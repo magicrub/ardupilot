@@ -35,8 +35,11 @@
 #endif
 #include <AP_Vehicle/AP_Vehicle_Type.h>
 #include <AP_HAL/SIMState.h>
-
 #include <hwdef.h>
+
+#ifndef HAL_SERIAL0_BAUD_DEFAULT
+#define HAL_SERIAL0_BAUD_DEFAULT 115200
+#endif
 
 #ifndef HAL_NO_UARTDRIVER
 static HAL_UARTA_DRIVER;
@@ -219,7 +222,7 @@ static void main_loop()
 
     peripheral_power_enable();
 
-    hal.serial(0)->begin(115200);
+    hal.serial(0)->begin(HAL_SERIAL0_BAUD_DEFAULT);
 
 #ifdef HAL_SPI_CHECK_CLOCK_FREQ
     // optional test of SPI clock frequencies
