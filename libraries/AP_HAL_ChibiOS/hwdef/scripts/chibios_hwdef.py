@@ -3048,6 +3048,13 @@ INCLUDE common.ld
 #define AP_KDECAN_ENABLED 0
 #endif
 
+#ifndef AP_APD_ESC_ENABLED
+#define AP_APD_ESC_ENABLED 0
+#endif
+#ifdef AP_APD_ESC_ENABLED
+#define HAL_WITH_ESC_TELEM 1
+#endif
+
 #ifndef HAL_GENERATOR_ENABLED
 #define HAL_GENERATOR_ENABLED 0
 #endif
