@@ -4,33 +4,34 @@
   Protocol is here: https://docs.powerdrives.net/products/hv_pro/uart-telemetry-output
  */
 #include "esc_apd_telem.h"
+
+#if AP_APD_ESC_ENABLED
+
+#ifndef HAL_WITH_ESC_TELEM
+#define HAL_WITH_ESC_TELEM 1
+#elif HAL_WITH_ESC_TELEM == 0
+#error "AP_APD_ESC_ENABLED requires HAL_WITH_ESC_TELEM" 
+#endif
+
 #include <AP_HAL/utility/sparse-endian.h>
 #include <AP_Math/crc.h>
+#include <AP_Math/AP_Math.h>
 #include <AP_Math/definitions.h>
 #include <string.h>
 
-#ifdef HAL_PERIPH_ENABLE_ESC_APD
-
 extern const AP_HAL::HAL& hal;
 
-#define TELEM_HEADER 0x9B
-#define TELEM_LEN    0x16
-
-ESC_APD_Telem::ESC_APD_Telem (AP_HAL::UARTDriver *_uart, float num_poles) :
-    pole_count(num_poles),
+AP_APD_ESC_Telem::AP_APD_ESC_Telem(AP_HAL::UARTDriver *_uart, const int8_t _num_poles, const uint8_t _esc_index) :
+    pole_count(_num_poles),
+    esc_index(_esc_index),    
     uart(_uart) {
     uart->begin(115200);
 }
 
-bool ESC_APD_Telem::update() {
-    uint32_t n = uart->available();
+bool AP_APD_ESC_Telem::update() {
+    uint32_t n = MIN(uart->available(), 50);
     if (n == 0) {
         return false;
-    }
-
-    // don't read too much in one loop to prevent too high CPU load
-    if (n > 50) {
-        n = 50;
     }
 
     bool ret = false;
@@ -46,11 +47,7 @@ bool ESC_APD_Telem::update() {
                 // valid stop byte, check the CRC
                 if (crc_fletcher16(received.bytes, 18) == received.packet.checksum) {
                     // valid packet, copy the data we need and reset length
-                    decoded.voltage = le16toh(received.packet.voltage) * 1e-2f;
-                    decoded.temperature = convert_temperature(le16toh(received.packet.temperature));
-                    decoded.current = le16toh(received.packet.bus_current) * (1 / 12.5f);
-                    decoded.rpm = le32toh(received.packet.erpm) / pole_count;
-                    decoded.power_rating_pct = le16toh(received.packet.motor_duty) * 1e-2f;
+                    handle_packet();
                     ret = true;
                     len = 0;
                 } else {
@@ -67,15 +64,35 @@ bool ESC_APD_Telem::update() {
     return ret;
 }
 
+// handle a full received.bytes packet and update AP_ESC_Telem
+void AP_APD_ESC_Telem::handle_packet()
+{
+    const int32_t rpm = le32toh(received.packet.erpm) / pole_count;
+    update_rpm(esc_index, rpm);
+
+    const float temperature_k = convert_temperature(le16toh(received.packet.temperature));
+    TelemetryData t {
+        .temperature_cdeg = (int16_t)(KELVIN_TO_C(temperature_k) * 100.0),
+        .voltage = le16toh(received.packet.voltage) * 1e-2f,
+        //.power_rating_pct = le16toh(received.packet.motor_duty) * 1e-2f,
+        .current = le16toh(received.packet.bus_current) * (1 / 12.5f),
+    };
+
+    update_telem_data(esc_index, t,
+        AP_ESC_Telem_Backend::TelemetryType::CURRENT
+        | AP_ESC_Telem_Backend::TelemetryType::VOLTAGE
+        | AP_ESC_Telem_Backend::TelemetryType::TEMPERATURE);
+}
+
 // shift the decode buffer left by 1 byte, and rewind the progress
-void ESC_APD_Telem::shift_buffer(void) {
+void AP_APD_ESC_Telem::shift_buffer(void) {
     memmove(received.bytes, received.bytes + 1, sizeof(received.bytes) - 1);
     len--;
 }
 
 // convert the raw ESC temperature to a useful value (in Kelvin)
 // based on the 1.1 example C code found here https://docs.powerdrives.net/products/hv_pro/uart-telemetry-output
-float ESC_APD_Telem::convert_temperature(uint16_t raw) const {
+float AP_APD_ESC_Telem::convert_temperature(uint16_t raw) const {
     const float series_resistor     = 10000;
     const float nominal_resistance  = 10000;
     const float nominal_temperature = 25;
@@ -94,4 +111,4 @@ float ESC_APD_Telem::convert_temperature(uint16_t raw) const {
     return temperature;
 }
 
-#endif // HAL_PERIPH_ENABLE_ESC_APD
+#endif // AP_APD_ESC_ENABLED

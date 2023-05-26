@@ -126,15 +126,15 @@ public:
     AP_Int8 hardpoint_rate;
 #endif
 
-#if defined(HAL_PERIPH_ENABLE_HWESC) || defined(HAL_PERIPH_ENABLE_ESC_APD)
+#if defined(HAL_PERIPH_ENABLE_HWESC) || AP_APD_ESC_ENABLED
     #if defined ESC_NUMBERS
         #error "ESC_NUMBERS should not have been previously defined"
     #endif
-    #if defined(APD_ESC_INSTANCES)
-        #define ESC_NUMBERS APD_ESC_INSTANCES
+    #if defined(AP_APD_ESC_INSTANCES)
+        #define ESC_NUMBERS AP_APD_ESC_INSTANCES
     #else
         #define ESC_NUMBERS 2
-    #endif // defined(APD_ESC_INSTANCES)
+    #endif // defined(AP_APD_ESC_INSTANCES)
     AP_Int8 esc_number[ESC_NUMBERS];
     AP_Int8 esc_serial_port[ESC_NUMBERS];
 #endif

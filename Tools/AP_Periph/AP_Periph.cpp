@@ -242,11 +242,11 @@ void AP_Periph_FW::init()
     hwesc_telem.init(hal.serial(HAL_PERIPH_HWESC_SERIAL_PORT));
 #endif
 
-#ifdef HAL_PERIPH_ENABLE_ESC_APD
+#if AP_APD_ESC_ENABLED
     for (uint8_t i = 0; i < ESC_NUMBERS; i++) {
-        const uint8_t port = g.esc_serial_port[i];
-        if (port < SERIALMANAGER_NUM_PORTS) { // skip bad ports
-            apd_esc_telem[i] = new ESC_APD_Telem (hal.serial(port), g.pole_count[i]);
+        auto uart = hal.serial(g.esc_serial_port[i]);
+        if (uart != nullptr) {
+            apd_esc_telem[i] = new AP_APD_ESC_Telem(uart, g.pole_count[i], g.esc_number[i]);
         }
     }
 #endif
