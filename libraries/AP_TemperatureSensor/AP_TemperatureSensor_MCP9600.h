@@ -56,6 +56,8 @@ private:
     bool read_temperature(float &temperature);
 
     bool set_config(const ThermocoupleType type, const uint8_t filter);
+
+    bool _is_mcp9601; // this variant of the device has more status available
 };
 
 #endif // AP_TEMPERATURE_SENSOR_MCP9600_ENABLED
