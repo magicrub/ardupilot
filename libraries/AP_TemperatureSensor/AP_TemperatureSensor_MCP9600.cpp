@@ -115,9 +115,16 @@ void AP_TemperatureSensor_MCP9600::init()
 
 void AP_TemperatureSensor_MCP9600::_timer()
 {
-    float temperature;
+    float temperature = -99;
     if (read_temperature(temperature)) {
         set_temperature(temperature);
+    }
+
+    uint8_t data[1];
+    if (_dev->read_registers(MCP9600_CMD_STATUS, &data[0], 1)) {
+        GCS_SEND_TEXT(MAV_SEVERITY_DEBUG, "Temp: temp: %.2f C, status 0x%02X", temperature, data[0]);
+    } else {
+        GCS_SEND_TEXT(MAV_SEVERITY_DEBUG, "Temp: status read error");
     }
 }
 
