@@ -584,6 +584,9 @@ public:
     AP_Float        auxiliary_power_consumption;
     AP_Float        nom_level_flight_airspeed;
     AP_Float        nom_level_flight_mass;
+
+    AP_Float        aircraft_tow_kg;    // aircraft takeoff weight (mass). Used by LUA to tweak other parameters to better characterize the aircraft
+    AP_Float        aircraft_span_m;    // aircraft wingspan. Used by LUA to tweak other parameters to better characterize the aircraft    
 };
 
 extern const AP_Param::Info var_info[];

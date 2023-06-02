@@ -1307,6 +1307,21 @@ const AP_Param::GroupInfo ParametersG2::var_info[] = {
     // @User: Advanced
     AP_GROUPINFO("ENDURE_MASS", 59, ParametersG2, nom_level_flight_mass, 0),
     
+
+    // @Param: AIRCRAFT_TOW
+    // @DisplayName: Aircraft TakeOff Weight
+    // @Description: Aircraft TakeOff Weight in Kilograms (kg) - Total Mass of vehicle, including payload and fuel/battery.
+    // @Units: kg
+    // @User: Advanced
+    AP_GROUPINFO("AIRCRAFT_TOW", 58, ParametersG2, aircraft_tow_kg, 0),
+
+    // @Param: AIRCRAFT_SPAN
+    // @DisplayName: Aircraft wingspan
+    // @Description: Aircraft wingspan in meters.
+    // @Units: m
+    // @User: Advanced
+    AP_GROUPINFO("AIRCRAFT_SPAN", 57, ParametersG2, aircraft_span_m, 5.0f),
+
     AP_GROUPEND
 };
 
