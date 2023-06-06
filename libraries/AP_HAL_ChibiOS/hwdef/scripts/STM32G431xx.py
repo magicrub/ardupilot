@@ -144,6 +144,8 @@ AltFunction_map = {
 	"PA11:TIM4_CH1"     	:	10,
 	"PA11:USART1_CTS"   	:	7,
 	"PA11:USART1_NSS"   	:	7,
+	"PA11:OTG_FS_DM"    	:	10,
+	"PA12:OTG_FS_DP"    	:	10,
 	"PA12:COMP2_OUT"    	:	8,
 	"PA12:EVENTOUT"     	:	15,
 	"PA12:CAN1_TX"    	:	9,

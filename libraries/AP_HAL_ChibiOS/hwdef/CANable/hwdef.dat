@@ -1,0 +1,70 @@
+###########################################################################################################################################################
+# MKS CANable v2.0
+###########################################################################################################################################################
+
+MCU STM32G4xx STM32G431xx
+
+FLASH_RESERVE_START_KB 0
+FLASH_SIZE_KB 64
+
+#STORAGE_FLASH_PAGE 16
+define HAL_STORAGE_SIZE 800
+
+# board ID for firmware load
+APJ_BOARD_ID 1304
+
+OSCILLATOR_HZ 0
+
+# setup build for a peripheral firmware
+env AP_PERIPH 1
+
+
+# LEDs
+#PA15 LED OUTPUT HIGH  # status
+PA0 LED2 OUTPUT HIGH  # work
+
+
+# SWD debugging
+#PA13 JTMS-SWDIO SWD
+#PA14 JTCK-SWCLK SWD
+
+define HAL_USE_ADC FALSE
+define STM32_ADC_USE_ADC1 FALSE
+define HAL_DISABLE_ADC_DRIVER TRUE
+
+define HAL_NO_GPIO_IRQ
+
+# avoid RCIN thread to save memory
+define HAL_NO_RCIN_THREAD
+
+define HAL_USE_RTC FALSE
+
+#define DMA_RESERVE_SIZE 2048
+
+define HAL_DISABLE_LOOP_DELAY
+
+# enable CAN support
+#PB8 CAN1_RX CAN1
+#PB9 CAN1_TX CAN1
+#CAN_ORDER 1
+
+# USB
+PA11 OTG_FS_DM OTG1
+PA12 OTG_FS_DP OTG1
+
+#PA14 USART2_TX USART2 NODMA
+#PA15 USART2_RX USART2 NODMA
+
+# order of UARTs
+SERIAL_ORDER OTG1 EMPTY
+#SERIAL_ORDER OTG1 USART2
+#SERIAL_ORDER USART2
+
+define STM32_USB_USE_USB1 1
+
+# keep ROMFS uncompressed as we don't have enough RAM
+# to uncompress the bootloader at runtime
+env ROMFS_UNCOMPRESSED True
+
+define CAN_APP_NODE_NAME "com.mks.CANable"
+
