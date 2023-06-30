@@ -32,6 +32,7 @@ define HAL_PERIPH_ENABLE_ADSB
 # ADS-B Out via Ping200X
 define HAL_PERIPH_ENABLE_ADSB_OUT
 define HAL_ADSB_UAVIONIX_MAVLINK_ENABLED 0 # requires heavy build
+define ADSB_STATIC_CALLSIGN "K1000"
 
 # use the app descriptor needed by MissionPlanner for CAN upload
 env APP_DESCRIPTOR MissionPlanner
