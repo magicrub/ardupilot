@@ -258,6 +258,7 @@ private:
             float       maxAircraftSpeed_knots;
             AP_Int8     rf_capable;
             bool        was_set_externally;
+            AP_Int8     mode3AC_only;
         } cfg;
 
     } out_state;

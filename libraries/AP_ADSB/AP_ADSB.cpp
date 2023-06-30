@@ -163,6 +163,12 @@ const AP_Param::GroupInfo AP_ADSB::var_info[] = {
     // @User: Advanced
     AP_GROUPINFO("OPTIONS",  15, AP_ADSB, _options, 0),
 
+    // @Param: MODE3_ONLY
+    // @DisplayName: Transmit in Mode 3A/C only
+    // @Values: 0:Transmit all Modes (3A, 3C, S, ES),2:Transmit Mode 3A/C only (no ADSB)
+    // @User: Advanced
+    AP_GROUPINFO("MODE3_ONLY",  16, AP_ADSB, out_state.cfg.mode3AC_only, 0),
+
     AP_GROUPEND
 };
 

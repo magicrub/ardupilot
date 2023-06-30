@@ -417,8 +417,8 @@ void AP_ADSB_uAvionix_UCP::send_Transponder_Control()
     const bool tx_enabled = (_frontend.out_state.cfg.rfSelect & UAVIONIX_ADSB_OUT_RF_SELECT_TX_ENABLED) != 0;
     msg.modeAEnabled = tx_enabled;
     msg.modeCEnabled = tx_enabled;
-    msg.modeSEnabled = tx_enabled;
-    msg.es1090TxEnabled = tx_enabled;
+    msg.modeSEnabled = _frontend.out_state.cfg.mode3AC_only ? 0 : tx_enabled;
+    msg.es1090TxEnabled = _frontend.out_state.cfg.mode3AC_only ? 0 : tx_enabled;
 
     msg.externalBaroAltitude_mm = INT32_MAX;
 
