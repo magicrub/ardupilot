@@ -207,7 +207,7 @@ public:
         mavlink_status_t status;
     } adsb;
 #endif
-#ifdef HAL_PERIPH_ENABLE_ADSB_OUT
+#if HAL_PERIPH_ENABLE_ADSB_OUT
     AP_ADSB adsb_lib;
 #endif
 

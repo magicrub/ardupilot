@@ -713,7 +713,7 @@ static void handle_gps_status(CanardInstance* ins, CanardRxTransfer* transfer)
 }
 #endif // HAL_PERIPH_ENABLE_GPS_IN
 
-#ifdef HAL_PERIPH_ENABLE_ADSB_OUT
+#if HAL_PERIPH_ENABLE_ADSB_OUT
 static void handle_adsb_out_config(CanardInstance* ins, CanardRxTransfer* transfer)
 {
     ardupilot_equipment_trafficmonitor_ADSBOutConfig pkt;
@@ -1106,7 +1106,7 @@ static void onTransferReceived(CanardInstance* ins,
         break;
 #endif
 
-#ifdef HAL_PERIPH_ENABLE_ADSB_OUT
+#if HAL_PERIPH_ENABLE_ADSB_OUT
     case ARDUPILOT_EQUIPMENT_TRAFFICMONITOR_ADSBOUTCONFIG_ID:
         handle_adsb_out_config(ins, transfer);
         break;
@@ -1224,7 +1224,7 @@ static bool shouldAcceptTransfer(const CanardInstance* ins,
         *out_data_type_signature = UAVCAN_EQUIPMENT_ACTUATOR_ARRAYCOMMAND_SIGNATURE;
         return true;
 #endif
-#ifdef HAL_PERIPH_ENABLE_ADSB_OUT
+#if HAL_PERIPH_ENABLE_ADSB_OUT
     case ARDUPILOT_EQUIPMENT_TRAFFICMONITOR_ADSBOUTCONFIG_ID:
         *out_data_type_signature = ARDUPILOT_EQUIPMENT_TRAFFICMONITOR_ADSBOUTCONFIG_SIGNATURE;
         return true;
