@@ -1,0 +1,14 @@
+include ../f303-periph/hwdef.inc
+
+define HAL_CAN_DEFAULT_NODE_ID 0
+
+define CAN_APP_NODE_NAME "com.kha.mRo_ADSB"
+
+
+define HAL_PERIPH_ENABLE_GPS_IN
+
+# ADS-B Out via Ping200X
+define HAL_PERIPH_ENABLE_ADSB_OUT
+define HAL_ADSB_UAVIONIX_MAVLINK_ENABLED 0 # requires heavy build
+define ADSB_STATIC_CALLSIGN "K1000"
+define AP_ADSB_UAVIONIX_UCP_SET_CONFIG 1
