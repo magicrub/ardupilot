@@ -330,18 +330,16 @@ void AP_ADSB::update(void)
 
     const uint32_t now = AP_HAL::millis();
 
-#if !defined(HAL_BUILD_AP_PERIPH) || defined(HAL_PERIPH_ENABLE_AHRS)
+#if AP_AHRS_ENABLED
     if (!AP::ahrs().get_location(_my_loc)) {
         _my_loc.zero();
     }
-#elif defined(HAL_PERIPH_ENABLE_GPS) || defined(HAL_PERIPH_ENABLE_GPS_IN)
+#elif !defined(HAL_BUILD_AP_PERIPH) || defined(HAL_PERIPH_ENABLE_GPS) || defined(HAL_PERIPH_ENABLE_GPS_IN)
     if (AP::gps().status() >= AP_GPS::GPS_OK_FIX_3D) {
         _my_loc = AP::gps().location();
     } else {
         _my_loc.zero();
     }
-#else
-#error "ADS-B is missing an AHRS or GPS system"
 #endif
 
     // check current list for vehicles that time out

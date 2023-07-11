@@ -20,11 +20,19 @@
 
 #include <AP_Common/AP_Common.h>
 #include <AP_HAL/AP_HAL.h>
-#if HAL_ENABLE_DRONECAN_DRIVERS
+#if 1 //HAL_ENABLE_DRONECAN_DRIVERS
 #include "AP_GPS.h"
 #include "GPS_Backend.h"
 #include "RTCM3_Parser.h"
 #include <AP_DroneCAN/AP_DroneCAN.h>
+
+#if !HAL_ENABLE_DRONECAN_DRIVERS
+class AP_DroneCAN {
+public:
+    typedef struct CanardRxTransfer CanardRxTransfer;
+    uint8_t get_driver_index() const { return 0; }
+};
+#endif
 
 class AP_GPS_DroneCAN : public AP_GPS_Backend {
 public:
@@ -63,9 +71,7 @@ public:
     void clear_RTCMV3() override;
 #endif
 
-#if AP_DRONECAN_SEND_GPS
     static bool instance_exists(const AP_DroneCAN* ap_dronecan);
-#endif
 
 private:
 
@@ -132,6 +138,7 @@ private:
     // the role set from GPS_TYPE
     AP_GPS::GPS_Role role;
 
+#if HAL_ENABLE_DRONECAN_DRIVERS
     FUNCTOR_DECLARE(param_int_cb, bool, AP_DroneCAN*, const uint8_t, const char*, int32_t &);
     FUNCTOR_DECLARE(param_float_cb, bool, AP_DroneCAN*, const uint8_t, const char*, float &);
     FUNCTOR_DECLARE(param_save_cb, void, AP_DroneCAN*, const uint8_t, bool);
@@ -146,5 +153,6 @@ private:
         uint32_t last_send_ms;
         ByteBuffer *buf;
     } _rtcm_stream;
+#endif
 };
 #endif

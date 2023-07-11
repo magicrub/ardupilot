@@ -17,6 +17,7 @@
 #pragma once
 
 #include <AP_HAL/AP_HAL.h>
+#include <dronecan_msgs.h>
 
 #if HAL_ENABLE_DRONECAN_DRIVERS
 
@@ -33,7 +34,6 @@
 #include <stdio.h>
 #include "AP_DroneCAN_DNA_Server.h"
 #include <canard.h>
-#include <dronecan_msgs.h>
 
 #ifndef DRONECAN_SRV_NUMBER
 #define DRONECAN_SRV_NUMBER NUM_SERVO_CHANNELS
