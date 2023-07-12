@@ -765,6 +765,28 @@ static void handle_lightscommand(CanardInstance* ins, CanardRxTransfer* transfer
 }
 #endif // AP_PERIPH_HAVE_LED_WITHOUT_NOTIFY
 
+#if defined(HAL_ADSB_TUNNEL_HACK_ENABLED) && HAL_ADSB_TUNNEL_HACK_ENABLED
+static void handle_tunnel_broadcast(CanardInstance* ins, CanardRxTransfer* transfer)
+{
+    uavcan_tunnel_Broadcast msg;
+    if (uavcan_tunnel_Broadcast_decode(transfer, &msg)) {
+        return;
+    }
+
+    auto uart = AP::serialmanager().find_serial(AP_SerialManager::SerialProtocol_ADSB, 0);
+    if (uart == nullptr) {
+        return;
+    }
+    // if (msg.protocol != (uavcan_tunnel_Protocol)13) {
+    //     return;
+    // }
+    if (msg.channel_id != 13) {
+        return;
+    }
+    uart->write(msg.buffer.data, msg.buffer.len);
+}
+#endif
+
 #ifdef HAL_PERIPH_ENABLE_RC_OUT
 static void handle_esc_rawcommand(CanardInstance* ins, CanardRxTransfer* transfer)
 {
@@ -982,6 +1004,13 @@ static void onTransferReceived(CanardInstance* ins,
         break;
 #endif
 
+
+#if defined(HAL_ADSB_TUNNEL_HACK_ENABLED) && HAL_ADSB_TUNNEL_HACK_ENABLED
+    case UAVCAN_TUNNEL_BROADCAST_ID:
+        handle_tunnel_broadcast(ins, transfer);
+        break;
+#endif
+
 #ifdef HAL_PERIPH_ENABLE_RC_OUT
     case UAVCAN_EQUIPMENT_ESC_RAWCOMMAND_ID:
         handle_esc_rawcommand(ins, transfer);
@@ -1079,6 +1108,12 @@ static bool shouldAcceptTransfer(const CanardInstance* ins,
 #if AP_UART_MONITOR_ENABLED
     case UAVCAN_TUNNEL_TARGETTED_ID:
         *out_data_type_signature = UAVCAN_TUNNEL_TARGETTED_SIGNATURE;
+        return true;
+#endif
+
+#if defined(HAL_ADSB_TUNNEL_HACK_ENABLED) && HAL_ADSB_TUNNEL_HACK_ENABLED
+    case UAVCAN_TUNNEL_BROADCAST_ID:
+        *out_data_type_signature = UAVCAN_TUNNEL_BROADCAST_SIGNATURE;
         return true;
 #endif
 
@@ -1886,6 +1921,23 @@ void AP_Periph_FW::can_update()
 #endif
     #ifdef HAL_PERIPH_ENABLE_MSP
         msp_sensor_update();
+    #endif
+    #if defined(HAL_ADSB_TUNNEL_HACK_ENABLED) && HAL_ADSB_TUNNEL_HACK_ENABLED
+        auto uart = AP::serialmanager().find_serial(AP_SerialManager::SerialProtocol_ADSB, 0);
+        if (uart != nullptr && uart->available() > 0) {
+            uavcan_tunnel_Broadcast tunnel_msg {};
+            //tunnel_msg.protocol = (uavcan_tunnel_Protocol)13;
+            tunnel_msg.channel_id = 13;
+            tunnel_msg.buffer.len = uart->read(tunnel_msg.buffer.data, sizeof(tunnel_msg.buffer.data));
+
+            uint8_t buffer[UAVCAN_TUNNEL_BROADCAST_MAX_SIZE] {};
+            const uint16_t total_size = uavcan_tunnel_Broadcast_encode(&tunnel_msg, buffer, !periph.canfdout());
+            canard_broadcast(UAVCAN_TUNNEL_BROADCAST_SIGNATURE,
+                            UAVCAN_TUNNEL_BROADCAST_ID,
+                            CANARD_TRANSFER_PRIORITY_LOW,
+                            &buffer[0],
+                            total_size);
+        }
     #endif
     #ifdef HAL_PERIPH_ENABLE_RC_OUT
         rcout_update();
