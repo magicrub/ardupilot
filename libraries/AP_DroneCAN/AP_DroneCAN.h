@@ -24,6 +24,7 @@
 #include <AP_CANManager/AP_CANManager.h>
 #include <AP_HAL/Semaphores.h>
 #include <AP_Param/AP_Param.h>
+#include <AP_ADSB/AP_ADSB_Tunnel_Hack.h>
 #include <AP_ESC_Telem/AP_ESC_Telem_Backend.h>
 #include <SRV_Channel/SRV_Channel_config.h>
 #include <canard/publisher.h>
@@ -234,6 +235,13 @@ private:
     uavcan_protocol_NodeStatus node_status_msg;
 
     CanardInterface canard_iface;
+
+#if HAL_ADSB_TUNNEL_HACK_ENABLED
+    Canard::Publisher<uavcan_tunnel_Broadcast> tunnel_hack_broadcast{canard_iface};
+    void handle_tunnel_hack_broadcast(const CanardRxTransfer& transfer, const uavcan_tunnel_Broadcast& msg);
+    Canard::ObjCallback<AP_DroneCAN, uavcan_tunnel_Broadcast> tunnel_hack_broadcast_cb{this, &AP_DroneCAN::handle_tunnel_hack_broadcast};
+    Canard::Subscriber<uavcan_tunnel_Broadcast> tunnel_hack_broadcast_listener{tunnel_hack_broadcast_cb, _driver_index};
+#endif
 
     Canard::Publisher<uavcan_protocol_NodeStatus> node_status{canard_iface};
     Canard::Publisher<dronecan_protocol_CanStats> can_stats{canard_iface};
