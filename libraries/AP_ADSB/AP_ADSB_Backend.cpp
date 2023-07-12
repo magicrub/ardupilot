@@ -24,6 +24,9 @@ AP_ADSB_Backend::AP_ADSB_Backend(AP_ADSB &frontend, uint8_t instance) :
     _frontend(frontend),
     _instance(instance)
 {
+#if HAL_ADSB_TUNNEL_HACK_ENABLED
+    _port = new ADSB_Tunnel_Hack();
+#endif
 }
 
 #endif // HAL_ADSB_ENABLED

@@ -52,7 +52,11 @@ bool AP_ADSB_uAvionix_UCP::detect()
 // Init, called once after class is constructed
 bool AP_ADSB_uAvionix_UCP::init()
 {
+#if HAL_ADSB_TUNNEL_HACK_ENABLED
+    _port->uart = AP::serialmanager().find_serial(AP_SerialManager::SerialProtocol_ADSB, 0);
+#else
     _port = AP::serialmanager().find_serial(AP_SerialManager::SerialProtocol_ADSB, 0);
+#endif
     if (_port == nullptr) {
         return false;
     }

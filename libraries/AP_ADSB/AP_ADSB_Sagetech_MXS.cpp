@@ -60,7 +60,11 @@ bool AP_ADSB_Sagetech_MXS::detect()
 
 bool AP_ADSB_Sagetech_MXS::init() 
 {
+#if HAL_ADSB_TUNNEL_HACK_ENABLED
+    _port->uart = AP::serialmanager().find_serial(AP_SerialManager::SerialProtocol_ADSB, 0);
+#else
     _port = AP::serialmanager().find_serial(AP_SerialManager::SerialProtocol_ADSB, 0);
+#endif
     if (_port == nullptr) {
         return false;
     }

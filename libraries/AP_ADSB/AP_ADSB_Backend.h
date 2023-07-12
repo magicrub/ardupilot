@@ -15,6 +15,7 @@
 #pragma once
 
 #include "AP_ADSB.h"
+#include "AP_ADSB_Tunnel_Hack.h"
 
 #if HAL_ADSB_ENABLED
 class AP_ADSB_Backend
@@ -38,7 +39,11 @@ protected:
 
     uint8_t _instance;
 
+#if HAL_ADSB_TUNNEL_HACK_ENABLED
+    ADSB_Tunnel_Hack* _port;
+#else
     AP_HAL::UARTDriver *_port;
+#endif
 
     // references
     AP_ADSB &_frontend;
