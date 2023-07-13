@@ -47,6 +47,9 @@
 #include <AP_CANManager/AP_CANSensor.h>
 #endif
 
+#ifndef HAL_ADSB_TUNNEL_HACK_ENABLED
+#define HAL_ADSB_TUNNEL_HACK_ENABLED 1
+#endif
 
 #if CONFIG_HAL_BOARD == HAL_BOARD_SITL
 extern const HAL_SITL &hal;
@@ -765,7 +768,7 @@ static void handle_lightscommand(CanardInstance* ins, CanardRxTransfer* transfer
 }
 #endif // AP_PERIPH_HAVE_LED_WITHOUT_NOTIFY
 
-#if defined(HAL_ADSB_TUNNEL_HACK_ENABLED) && HAL_ADSB_TUNNEL_HACK_ENABLED
+#if HAL_ADSB_TUNNEL_HACK_ENABLED
 static void handle_tunnel_broadcast(CanardInstance* ins, CanardRxTransfer* transfer)
 {
     uavcan_tunnel_Broadcast msg;
@@ -1001,7 +1004,7 @@ static void onTransferReceived(CanardInstance* ins,
 #endif
 
 
-#if defined(HAL_ADSB_TUNNEL_HACK_ENABLED) && HAL_ADSB_TUNNEL_HACK_ENABLED
+#if HAL_ADSB_TUNNEL_HACK_ENABLED
     case UAVCAN_TUNNEL_BROADCAST_ID:
         handle_tunnel_broadcast(ins, transfer);
         break;
@@ -1107,7 +1110,7 @@ static bool shouldAcceptTransfer(const CanardInstance* ins,
         return true;
 #endif
 
-#if defined(HAL_ADSB_TUNNEL_HACK_ENABLED) && HAL_ADSB_TUNNEL_HACK_ENABLED
+#if HAL_ADSB_TUNNEL_HACK_ENABLED
     case UAVCAN_TUNNEL_BROADCAST_ID:
         *out_data_type_signature = UAVCAN_TUNNEL_BROADCAST_SIGNATURE;
         return true;
@@ -1918,7 +1921,7 @@ void AP_Periph_FW::can_update()
     #ifdef HAL_PERIPH_ENABLE_MSP
         msp_sensor_update();
     #endif
-    #if defined(HAL_ADSB_TUNNEL_HACK_ENABLED) && HAL_ADSB_TUNNEL_HACK_ENABLED
+    #if HAL_ADSB_TUNNEL_HACK_ENABLED
         auto uart = AP::serialmanager().find_serial(AP_SerialManager::SerialProtocol_ADSB, 0);
         if (uart != nullptr && uart->available() > 0) {
             uavcan_tunnel_Broadcast tunnel_msg {};
