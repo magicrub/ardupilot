@@ -777,13 +777,9 @@ static void handle_tunnel_broadcast(CanardInstance* ins, CanardRxTransfer* trans
     if (uart == nullptr) {
         return;
     }
-    // if (msg.protocol != (uavcan_tunnel_Protocol)13) {
-    //     return;
-    // }
-    if (msg.channel_id != 13) {
-        return;
+    if (msg.protocol.protocol == 13 && msg.channel_id == 14) {
+        uart->write(msg.buffer.data, msg.buffer.len);
     }
-    uart->write(msg.buffer.data, msg.buffer.len);
 }
 #endif
 
@@ -1926,8 +1922,8 @@ void AP_Periph_FW::can_update()
         auto uart = AP::serialmanager().find_serial(AP_SerialManager::SerialProtocol_ADSB, 0);
         if (uart != nullptr && uart->available() > 0) {
             uavcan_tunnel_Broadcast tunnel_msg {};
-            //tunnel_msg.protocol = (uavcan_tunnel_Protocol)13;
-            tunnel_msg.channel_id = 13;
+            tunnel_msg.protocol.protocol = 13;
+            tunnel_msg.channel_id = 14;
             tunnel_msg.buffer.len = uart->read(tunnel_msg.buffer.data, sizeof(tunnel_msg.buffer.data));
 
             uint8_t buffer[UAVCAN_TUNNEL_BROADCAST_MAX_SIZE] {};
