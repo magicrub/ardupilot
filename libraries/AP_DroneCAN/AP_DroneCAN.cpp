@@ -370,10 +370,12 @@ void AP_DroneCAN::loop(void)
         ADSB_Tunnel_Hack *tunnel_hack = ADSB_Tunnel_Hack::get_singleton();
         if (tunnel_hack != nullptr && tunnel_hack->available_can_outbound() > 0) {
             uavcan_tunnel_Broadcast tunnel_msg {};
-            //tunnel_msg.protocol = (uavcan_tunnel_Protocol)13;
-            tunnel_msg.channel_id = 13;
+            tunnel_msg.protocol.protocol = 13;
+            tunnel_msg.channel_id = 14;
             tunnel_msg.buffer.len = tunnel_hack->read_can_outbound(tunnel_msg.buffer.data, sizeof(tunnel_msg.buffer.data));
-            tunnel_hack_broadcast.broadcast(tunnel_msg);
+            if (tunnel_msg.buffer.len > 0) {
+                tunnel_hack_broadcast.broadcast(tunnel_msg);
+            }
         }
 #endif
 
@@ -496,13 +498,9 @@ void AP_DroneCAN::handle_tunnel_hack_broadcast(const CanardRxTransfer& transfer,
     if (tunnel_hack == nullptr) {
         return;
     }
-    // if (msg.protocol != (uavcan_tunnel_Protocol)13) {
-    //     return;
-    // }
-    if (msg.channel_id != 13) {
-        return;
+    if (msg.protocol.protocol == 13 && msg.channel_id == 14) {
+        tunnel_hack->handle_can_msg(msg.buffer.data, msg.buffer.len);
     }
-    tunnel_hack->handle_can_msg(msg.buffer.data, msg.buffer.len);
 }
 #endif
 
