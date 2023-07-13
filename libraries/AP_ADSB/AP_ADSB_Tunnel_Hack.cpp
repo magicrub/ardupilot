@@ -65,10 +65,10 @@ uint32_t ADSB_Tunnel_Hack::available()
     return readbuf.available();
 }
 
-uint32_t ADSB_Tunnel_Hack::read_can_outbound(uint8_t *data, const uint32_t len)
+void ADSB_Tunnel_Hack::handle_can_msg(const uint8_t *data, const uint16_t len)
 {
     WITH_SEMAPHORE(sem_read);
-    return readbuf.read(data, len);
+    (void)readbuf.write((uint8_t*)data, len);
 }
 
 // ======================================================================================================
@@ -100,10 +100,10 @@ uint32_t ADSB_Tunnel_Hack::available_can_outbound()
     return writebuf.available();
 }
 
-void ADSB_Tunnel_Hack::handle_can_msg(const uint8_t *data, const uint16_t len)
+uint32_t ADSB_Tunnel_Hack::read_can_outbound(uint8_t *data, const uint32_t len)
 {
     WITH_SEMAPHORE(sem_write);
-    (void)writebuf.read((uint8_t*)data, len);
+    return writebuf.read(data, len);
 }
 
 #endif // HAL_ADSB_TUNNEL_HACK_ENABLED
