@@ -163,7 +163,7 @@ void AP_ADSB_uAvionix_UCP::handle_msg(const GDL90_RX_MESSAGE &msg)
             memcpy(&primaryFwPartNumber, rx.decoded.identification.primaryFwPartNumber, str_len);
             primaryFwPartNumber[str_len] = 0;
             
-            GCS_SEND_TEXT(MAV_SEVERITY_DEBUG,"ADSB:Detected %s v%u.%u.%u SN:%u %s",
+            GCS_SEND_TEXT(MAV_SEVERITY_DEBUG,"ADSB: Detected %s v%u.%u.%u SN:%u %s",
                 get_hardware_name(rx.decoded.identification.primary.hwId),
                 (unsigned)rx.decoded.identification.primary.fwMajorVersion,
                 (unsigned)rx.decoded.identification.primary.fwMinorVersion,
@@ -253,7 +253,9 @@ void AP_ADSB_uAvionix_UCP::handle_msg(const GDL90_RX_MESSAGE &msg)
             _frontend.out_state.ctrl.x_bit = rx.decoded.transponder_status.x_bit;
         }
         run_state.last_packet_Transponder_Status_ms = AP_HAL::millis();
+#if HAL_GCS_ENABLED
         gcs().send_message(MSG_UAVIONIX_ADSB_OUT_STATUS);
+#endif
         break;
 #endif // AP_ADSB_UAVIONIX_UCP_CAPTURE_ALL_RX_PACKETS
 

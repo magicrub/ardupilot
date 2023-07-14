@@ -109,7 +109,7 @@ void AP_ADSB_Sagetech_MXS::update()
             }
 
         } else if (last.packet_initialize_ms > MXS_INIT_TIMEOUT && !mxs_state.init_failed) {
-            gcs().send_text(MAV_SEVERITY_CRITICAL, "ADSB Sagetech MXS: Initialization Timeout. Failed to initialize.");
+            GCS_SEND_TEXT(MAV_SEVERITY_CRITICAL, "ADSB Sagetech MXS: Initialization Timeout. Failed to initialize.");
             mxs_state.init_failed = true;
         }
 
@@ -414,15 +414,15 @@ void AP_ADSB_Sagetech_MXS::auto_config_flightid()
 void AP_ADSB_Sagetech_MXS::handle_ack(const sg_ack_t ack)
 {
     if ((ack.ackId != last.msg.id) || (ack.ackType != last.msg.type)) {
-        // gcs().send_text(MAV_SEVERITY_WARNING, "ADSB Sagetech MXS: ACK: Message %d of type %02x not acknowledged.", last.msg.id, last.msg.type);
+        // GCS_SEND_TEXT(MAV_SEVERITY_WARNING, "ADSB Sagetech MXS: ACK: Message %d of type %02x not acknowledged.", last.msg.id, last.msg.type);
     }
     // System health
     if (ack.failXpdr && !last.failXpdr) {
-        gcs().send_text(MAV_SEVERITY_WARNING, "ADSB Sagetech MXS: Transponder Failure");
+        GCS_SEND_TEXT(MAV_SEVERITY_WARNING, "ADSB Sagetech MXS: Transponder Failure");
         _frontend.out_state.tx_status.fault |= UAVIONIX_ADSB_OUT_STATUS_FAULT_TX_SYSTEM_FAIL;
     }
     if (ack.failSystem && !last.failSystem) {
-        gcs().send_text(MAV_SEVERITY_WARNING, "ADSB Sagetech MXS: System Failure");
+        GCS_SEND_TEXT(MAV_SEVERITY_WARNING, "ADSB Sagetech MXS: System Failure");
         _frontend.out_state.tx_status.fault |= UAVIONIX_ADSB_OUT_STATUS_FAULT_TX_SYSTEM_FAIL;
     }
     last.failXpdr = ack.failXpdr;
@@ -522,7 +522,7 @@ void AP_ADSB_Sagetech_MXS::send_install_msg()
 {
     // MXS must be in OFF mode to change ICAO or Registration
     if (mxs_state.op.opMode != modeOff) {
-        // gcs().send_text(MAV_SEVERITY_WARNING, "ADSB Sagetech MXS: unable to send installation data while not in OFF mode.");
+        // GCS_SEND_TEXT(MAV_SEVERITY_WARNING, "ADSB Sagetech MXS: unable to send installation data while not in OFF mode.");
         return;
     }
 

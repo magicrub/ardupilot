@@ -1,6 +1,7 @@
 #pragma once
 
 #include <AP_HAL/AP_HAL_Boards.h>
+#include <GCS_MAVLink/GCS_config.h>
 
 
 #ifndef HAL_ADSB_ENABLED
@@ -8,7 +9,7 @@
 #endif
 
 #ifndef HAL_ADSB_UAVIONIX_MAVLINK_ENABLED
-#define HAL_ADSB_UAVIONIX_MAVLINK_ENABLED HAL_ADSB_ENABLED
+#define HAL_ADSB_UAVIONIX_MAVLINK_ENABLED HAL_ADSB_ENABLED && HAL_GCS_ENABLED
 #endif
 
 #ifndef HAL_ADSB_SAGETECH_ENABLED
