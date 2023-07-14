@@ -36,6 +36,7 @@ def build(bld):
                      'AP_HAL_Empty',
                      'AP_Math',
                      'AP_ADSB',
+                     'AP_ADSB/sagetech-sdk',
                      'AP_BoardConfig',
                      'AP_BattMonitor',
                      'AP_CANManager',
