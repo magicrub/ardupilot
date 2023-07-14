@@ -310,6 +310,8 @@ void AP_ADSB_uAvionix_UCP::send_Transponder_Control()
     msg.modeSEnabled = _frontend.out_state.ctrl.modeSEnabled;
     msg.es1090TxEnabled = _frontend.out_state.ctrl.es1090TxEnabled;
 
+    msg.externalBaroAltitude_mm = INT32_MAX;
+
     // if enabled via param ADSB_OPTIONS, use squawk 7400 while in any Loss-Comms related failsafe
     // https://www.faa.gov/documentLibrary/media/Notice/N_JO_7110.724_5-2-9_UAS_Lost_Link_2.pdf
     const AP_Notify& notify = AP::notify();
