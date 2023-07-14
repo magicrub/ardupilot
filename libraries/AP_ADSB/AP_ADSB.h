@@ -45,6 +45,7 @@ public:
     friend class AP_ADSB_uAvionix_UCP;
     friend class AP_ADSB_Sagetech;
     friend class AP_ADSB_Sagetech_MXS;
+    friend class AP_ADSB_DroneCAN;
 
     // constructor
     AP_ADSB();
@@ -64,6 +65,7 @@ public:
         Sagetech            = 2,
         uAvionix_UCP        = 3,
         Sagetech_MXS        = 4,
+        DroneCAN            = 5,
     };
 
     struct adsb_vehicle_t {

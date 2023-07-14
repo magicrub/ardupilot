@@ -27,6 +27,7 @@
 #include "AP_ADSB_uAvionix_UCP.h"
 #include "AP_ADSB_Sagetech.h"
 #include "AP_ADSB_Sagetech_MXS.h"
+#include "AP_ADSB_DroneCAN.h"
 #include <GCS_MAVLink/GCS.h>
 #include <AP_Logger/AP_Logger.h>
 #include <AP_Vehicle/AP_Vehicle_Type.h>
@@ -279,6 +280,12 @@ void AP_ADSB::detect_instance(uint8_t instance)
     case Type::Sagetech_MXS:
 #if HAL_ADSB_SAGETECH_MXS_ENABLED
         _backend[instance] = new AP_ADSB_Sagetech_MXS(*this, instance);
+#endif
+        break;
+
+    case Type::DroneCAN:
+#if HAL_ADSB_DRONECAN_ENABLED
+        _backend[instance] = new AP_ADSB_DroneCAN(*this, instance);
 #endif
         break;
     }

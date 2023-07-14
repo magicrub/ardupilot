@@ -24,3 +24,7 @@
     // this feature is only enabled by default by select hardware
     #define HAL_ADSB_SAGETECH_MXS_ENABLED HAL_ADSB_ENABLED && CONFIG_HAL_BOARD == HAL_BOARD_SITL
 #endif
+
+#ifndef HAL_ADSB_DRONECAN_ENABLED
+#define HAL_ADSB_DRONECAN_ENABLED HAL_ADSB_ENABLED && HAL_ENABLE_DRONECAN_DRIVERS
+#endif
