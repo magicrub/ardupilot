@@ -42,19 +42,6 @@
 #define SAGETECH_VALIDFLAG_EST_LATLNG       (1U<<7)
 #define SAGETECH_VALIDFLAG_EST_VELOCITY     (1U<<8)
 
-// detect if any port is configured as Sagetech
-bool AP_ADSB_Sagetech::detect()
-{
-    return AP::serialmanager().have_serial(AP_SerialManager::SerialProtocol_ADSB, 0);
-}
-
-// Init, called once after class is constructed
-bool AP_ADSB_Sagetech::init()
-{
-    _port = AP::serialmanager().find_serial(AP_SerialManager::SerialProtocol_ADSB, 0);
-
-    return (_port != nullptr);
-}
 
 void AP_ADSB_Sagetech::update()
 {

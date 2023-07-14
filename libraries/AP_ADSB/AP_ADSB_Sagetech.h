@@ -22,14 +22,8 @@ class AP_ADSB_Sagetech : public AP_ADSB_Backend {
 public:
     using AP_ADSB_Backend::AP_ADSB_Backend;
 
-    // init - performs any required initialisation for this instance
-    bool init() override;
-
     // update - should be called periodically
     void update() override;
-
-    // static detection function
-    static bool detect();
 
 private:
 

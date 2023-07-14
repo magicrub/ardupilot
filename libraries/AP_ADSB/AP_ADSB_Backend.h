@@ -27,12 +27,9 @@ public:
     // override with a custom destructor if need be
     virtual ~AP_ADSB_Backend(void) {}
 
-    // static detection function
-    static bool detect();
-
     virtual void update() = 0;
 
-    virtual bool init() { return true; }
+    bool init();
 
 protected:
 

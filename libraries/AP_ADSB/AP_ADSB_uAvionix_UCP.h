@@ -36,14 +36,8 @@ class AP_ADSB_uAvionix_UCP : public AP_ADSB_Backend {
 public:
     using AP_ADSB_Backend::AP_ADSB_Backend;
 
-    // init - performs any required initialisation for this instance
-    bool init() override;
-
     // update - should be called periodically
     void update() override;
-
-    // static detection function
-    static bool detect();
 
 private:
 
@@ -85,6 +79,7 @@ private:
         uint32_t last_packet_Transponder_Ownship_ms;
     } run_state;
 
+    bool init_done;
 };
 #endif // HAL_ADSB_UCP_ENABLED
 

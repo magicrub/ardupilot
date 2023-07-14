@@ -52,21 +52,6 @@
 #define SAGETECH_VFOM_UNKNOWN                       (151.0f)
 #define SAGETECH_HPL_UNKNOWN                        (38000.0f)
 
-bool AP_ADSB_Sagetech_MXS::detect() 
-{
-    return AP::serialmanager().have_serial(AP_SerialManager::SerialProtocol_ADSB, 0);
-}
-
-
-bool AP_ADSB_Sagetech_MXS::init() 
-{
-    _port = AP::serialmanager().find_serial(AP_SerialManager::SerialProtocol_ADSB, 0);
-    if (_port == nullptr) {
-        return false;
-    }
-    return true;
-}
-
 void AP_ADSB_Sagetech_MXS::update() 
 {
     if (_port == nullptr) {

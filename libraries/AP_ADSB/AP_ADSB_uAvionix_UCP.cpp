@@ -24,7 +24,6 @@
 
 #if HAL_ADSB_UCP_ENABLED
 
-#include <AP_SerialManager/AP_SerialManager.h>
 #include <GCS_MAVLink/GCS.h>
 #include <AP_HAL/AP_HAL.h>
 #include <AP_Math/AP_Math.h>
@@ -42,30 +41,16 @@ extern const AP_HAL::HAL &hal;
 #define AP_ADSB_UAVIONIX_DETECT_GROUNDSTATE                     0
 #define AP_ADSB_UAVIONIX_EMERGENCY_STATUS_ON_LOST_LINK          0
 
-// detect if any port is configured as uAvionix_UCP
-bool AP_ADSB_uAvionix_UCP::detect()
-{
-    return AP::serialmanager().have_serial(AP_SerialManager::SerialProtocol_ADSB, 0);
-}
-
-
-// Init, called once after class is constructed
-bool AP_ADSB_uAvionix_UCP::init()
-{
-    _port = AP::serialmanager().find_serial(AP_SerialManager::SerialProtocol_ADSB, 0);
-    if (_port == nullptr) {
-        return false;
-    }
-
-    request_msg(GDL90_ID_IDENTIFICATION);
-    request_msg(GDL90_ID_TRANSPONDER_CONFIG);
-    return true;
-}
-
-
 void AP_ADSB_uAvionix_UCP::update()
 {
     if (_port == nullptr) {
+        return;
+    }
+
+    if (!init_done) {
+        init_done = true;
+        request_msg(GDL90_ID_IDENTIFICATION);
+        request_msg(GDL90_ID_TRANSPONDER_CONFIG);
         return;
     }
 

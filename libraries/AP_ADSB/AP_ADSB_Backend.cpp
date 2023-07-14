@@ -16,6 +16,8 @@
 #include "AP_ADSB_Backend.h"
 
 #if HAL_ADSB_ENABLED
+#include <GCS_MAVLink/GCS_config.h>
+#include <AP_SerialManager/AP_SerialManager.h>
 
 /*
   base class constructor.
@@ -24,6 +26,17 @@ AP_ADSB_Backend::AP_ADSB_Backend(AP_ADSB &frontend, uint8_t instance) :
     _frontend(frontend),
     _instance(instance)
 {
+}
+
+// Init, called once after class is constructed
+bool AP_ADSB_Backend::init()
+{
+#if HAL_GCS_ENABLED
+    _port = AP::serialmanager().find_serial(AP_SerialManager::SerialProtocol_ADSB, 0);
+    return (_port != nullptr);
+#else
+    return true;
+#endif
 }
 
 #endif // HAL_ADSB_ENABLED

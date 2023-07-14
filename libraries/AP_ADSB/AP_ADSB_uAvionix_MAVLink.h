@@ -24,9 +24,6 @@ public:
 
     void update() override;
 
-    // static detection function
-    static bool detect();
-
 private:
     // send static and dynamic data to ADSB transceiver
     void send_configure(const mavlink_channel_t chan);

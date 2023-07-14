@@ -260,33 +260,25 @@ void AP_ADSB::detect_instance(uint8_t instance)
 
     case Type::uAvionix_MAVLink:
 #if HAL_ADSB_UAVIONIX_MAVLINK_ENABLED
-        if (AP_ADSB_uAvionix_MAVLink::detect()) {
-            _backend[instance] = new AP_ADSB_uAvionix_MAVLink(*this, instance);
-        }
+        _backend[instance] = new AP_ADSB_uAvionix_MAVLink(*this, instance);
 #endif
         break;
 
     case Type::uAvionix_UCP:
 #if HAL_ADSB_UCP_ENABLED
-        if (AP_ADSB_uAvionix_UCP::detect()) {
-            _backend[instance] = new AP_ADSB_uAvionix_UCP(*this, instance);
-        }
+        _backend[instance] = new AP_ADSB_uAvionix_UCP(*this, instance);
 #endif
         break;
 
     case Type::Sagetech:
 #if HAL_ADSB_SAGETECH_ENABLED
-        if (AP_ADSB_Sagetech::detect()) {
-            _backend[instance] = new AP_ADSB_Sagetech(*this, instance);
-        }
+        _backend[instance] = new AP_ADSB_Sagetech(*this, instance);
 #endif
         break;
 
     case Type::Sagetech_MXS:
 #if HAL_ADSB_SAGETECH_MXS_ENABLED
-        if (AP_ADSB_Sagetech_MXS::detect()) {
-            _backend[instance] = new AP_ADSB_Sagetech_MXS(*this, instance);
-        }
+        _backend[instance] = new AP_ADSB_Sagetech_MXS(*this, instance);
 #endif
         break;
     }

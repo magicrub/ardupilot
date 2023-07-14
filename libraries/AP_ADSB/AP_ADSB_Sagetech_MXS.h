@@ -33,13 +33,6 @@ public:
     using AP_ADSB_Backend::AP_ADSB_Backend;
 
     /**
-     * @brief Performs required initialization for this instance
-     * 
-     * @return true if initialization successful
-     */
-    bool init() override;
-
-    /**
      * @brief The main callback function (Called with freq of 10Hz) that sends 
      * appropriate message types at specific times.
      * 
@@ -51,14 +44,6 @@ public:
      * 
      */
     void update() override;
-
-    /**
-     * @brief Detect if a port is configured as Sagetech
-     * 
-     * @return true 
-     * @return false 
-     */
-    static bool detect();
 
 private:
 
