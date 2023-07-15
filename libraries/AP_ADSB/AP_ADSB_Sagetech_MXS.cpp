@@ -25,7 +25,7 @@
 
 #if HAL_ADSB_SAGETECH_MXS_ENABLED
 #include <GCS_MAVLink/GCS.h>
-#include <AP_AHRS/AP_AHRS.h>
+#include <AP_GPS/AP_GPS.h>
 #include <AP_RTC/AP_RTC.h>
 #include <stdio.h>
 #include <time.h>
@@ -325,37 +325,30 @@ void AP_ADSB_Sagetech_MXS::auto_config_operating()
     mxs_state.op.altHostAvlbl = false;
     mxs_state.op.altRes25 = !mxs_state.inst.altRes100;               // Host Altitude Resolution from install
 
-    int32_t height;
-    if (_frontend._my_loc.initialised() && _frontend._my_loc.get_alt_cm(Location::AltFrame::ABSOLUTE, height)) {
-        mxs_state.op.altitude = height * SAGETECH_SCALE_CM_TO_FEET;         // Height above sealevel in feet
-    } else {
-        mxs_state.op.altitude = 0;
-    }
+    mxs_state.op.altitude = _frontend._my_loc.alt * SAGETECH_SCALE_CM_TO_FEET;         // Height above sealevel in feet
 
     mxs_state.op.identOn = false;
 
-    float vertRateD;
-    if (AP::ahrs().get_vert_pos_rate_D(vertRateD)) {
+    const bool gpsValid = (AP::gps().status() >= AP_GPS::GPS_OK_FIX_3D);
+
+    if (gpsValid && AP::gps().have_vertical_velocity()) {
         // convert from down to up, and scale appropriately:
-        mxs_state.op.climbRate = -1 * vertRateD * SAGETECH_SCALE_M_PER_SEC_TO_FT_PER_MIN;
+        mxs_state.op.climbRate = -1 * AP::gps().velocity().z * SAGETECH_SCALE_M_PER_SEC_TO_FT_PER_MIN;
         mxs_state.op.climbValid = true;
     } else {
         mxs_state.op.climbValid = false;
         mxs_state.op.climbRate = -CLIMB_RATE_LIMIT;
     }
 
-    const Vector2f speed = AP::ahrs().groundspeed_vector();
-    if (!speed.is_nan() && !speed.is_zero()) {
+    if (gpsValid) {
         mxs_state.op.headingValid = true;
         mxs_state.op.airspdValid = true;
     } else {
         mxs_state.op.headingValid = false;
         mxs_state.op.airspdValid = false;
     }
-    const uint16_t speed_knots = speed.length() * M_PER_SEC_TO_KNOTS;
-    double heading = wrap_360(degrees(speed.angle()));
-    mxs_state.op.airspd = speed_knots;
-    mxs_state.op.heading = heading;
+    mxs_state.op.airspd = AP::gps().ground_speed() * M_PER_SEC_TO_KNOTS;
+    mxs_state.op.heading = AP::gps().ground_course();
 
     last.msg.type = SG_MSG_TYPE_HOST_OPMSG;
 
@@ -585,35 +578,28 @@ void AP_ADSB_Sagetech_MXS::send_operating_msg()
     mxs_state.op.squawk = AP_ADSB::convert_base_to_decimal(8, last.operating_squawk);
     mxs_state.op.emergcType = (sg_emergc_t) _frontend.out_state.ctrl.emergencyState;
 
-    int32_t height;
-    if (_frontend._my_loc.initialised() && _frontend._my_loc.get_alt_cm(Location::AltFrame::ABSOLUTE, height)) {
-        mxs_state.op.altitude = height * SAGETECH_SCALE_CM_TO_FEET;         // Height above sealevel in feet
-    } else {
-        mxs_state.op.altitude = 0;
-    }
+    mxs_state.op.altitude = _frontend._my_loc.alt * SAGETECH_SCALE_CM_TO_FEET;         // Height above sealevel in feet
 
-    float vertRateD;
-    if (AP::ahrs().get_vert_pos_rate_D(vertRateD)) {
-        mxs_state.op.climbRate = -1 * vertRateD * SAGETECH_SCALE_M_PER_SEC_TO_FT_PER_MIN;
+    const bool gpsValid = (AP::gps().status() >= AP_GPS::GPS_OK_FIX_3D);
+
+    if (gpsValid && AP::gps().have_vertical_velocity()) {
+        mxs_state.op.climbRate = -1 * AP::gps().velocity().z * SAGETECH_SCALE_M_PER_SEC_TO_FT_PER_MIN;
         mxs_state.op.climbValid = true;
     } else {
         mxs_state.op.climbValid = false;
         mxs_state.op.climbRate = -CLIMB_RATE_LIMIT;
     }
 
-    const Vector2f speed = AP::ahrs().groundspeed_vector();
-    if (!speed.is_nan() && !speed.is_zero()) {
+    if (gpsValid) {
         mxs_state.op.headingValid = true;
         mxs_state.op.airspdValid = true;
     } else {
         mxs_state.op.headingValid = false;
         mxs_state.op.airspdValid = false;
     }
-    const uint16_t speed_knots = (speed.length() * M_PER_SEC_TO_KNOTS);
-    const double heading = wrap_360(degrees(speed.angle()));
 
-    mxs_state.op.airspd = speed_knots;
-    mxs_state.op.heading = heading;
+    mxs_state.op.airspd = AP::gps().ground_speed() * M_PER_SEC_TO_KNOTS;
+    mxs_state.op.heading = AP::gps().ground_course();
 
     mxs_state.op.identOn = _frontend.out_state.ctrl.identActive;
     _frontend.out_state.ctrl.identActive = false;                           // only send identButtonActive once per request
@@ -666,11 +652,10 @@ void AP_ADSB_Sagetech_MXS::send_gps_msg()
     const double lat_minutes = (lat_deg - int(lat_deg)) * 60;
     snprintf((char*)&gps.latitude, 11, "%02u%02u.%05u", (unsigned)lat_deg, (unsigned)lat_minutes, unsigned((lat_minutes - (int)lat_minutes) * 1.0E5));
 
-    const Vector2f speed = AP::ahrs().groundspeed_vector();
-    const float speed_knots = speed.length() * M_PER_SEC_TO_KNOTS;
+    const float speed_knots = AP::gps().ground_speed() * M_PER_SEC_TO_KNOTS;
     snprintf((char*)&gps.grdSpeed, 7, "%03u.%02u", (unsigned)speed_knots, unsigned((speed_knots - (int)speed_knots) * 1.0E2));
 
-    const float heading = wrap_360(degrees(speed.angle()));
+    const float heading = AP::gps().ground_course();
     snprintf((char*)&gps.grdTrack, 9, "%03u.%04u", unsigned(heading), unsigned((heading - (int)heading) * 1.0E4));
 
 
@@ -689,12 +674,7 @@ void AP_ADSB_Sagetech_MXS::send_gps_msg()
         strncpy(gps.timeOfFix, "      .   ", 11);
     }
 
-    int32_t height;
-    if (_frontend._my_loc.initialised() && _frontend._my_loc.get_alt_cm(Location::AltFrame::ABOVE_TERRAIN, height)) {
-        gps.height = height * 0.01;
-    } else {
-        gps.height = 0.0;
-    }
+    gps.height = _frontend._my_loc.alt * 0.01; //  The height above the WGS-84 ellipsoid (meters)
 
     last.msg.type = SG_MSG_TYPE_HOST_GPS;
 

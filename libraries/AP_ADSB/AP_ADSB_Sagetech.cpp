@@ -19,7 +19,7 @@
 
 #if HAL_ADSB_SAGETECH_ENABLED
 #include <GCS_MAVLink/GCS.h>
-#include <AP_AHRS/AP_AHRS.h>
+#include <AP_GPS/AP_GPS.h>
 #include <AP_RTC/AP_RTC.h>
 #include <AP_HAL/utility/sparse-endian.h>
 #include <stdio.h>
@@ -495,12 +495,11 @@ void AP_ADSB_Sagetech::send_msg_GPS()
     snprintf((char*)&pkt.payload[11], 11, "%02u%02u.%05u", (unsigned)lat_deg, (unsigned)lat_minutes, unsigned((lat_minutes - (int)lat_minutes) * 1.0E5));
 
     // ground speed
-    const Vector2f speed = AP::ahrs().groundspeed_vector();
-    float speed_knots = speed.length() * M_PER_SEC_TO_KNOTS;
+    const float speed_knots = AP::gps().ground_speed() * M_PER_SEC_TO_KNOTS;
     snprintf((char*)&pkt.payload[21], 7, "%03u.%02u", (unsigned)speed_knots, unsigned((speed_knots - (int)speed_knots) * 1.0E2));
 
     // heading
-    float heading = wrap_360(degrees(speed.angle()));
+    const float heading = AP::gps().ground_course();
     snprintf((char*)&pkt.payload[27], 10, "%03u.%04u", unsigned(heading), unsigned((heading - (int)heading) * 1.0E4));
 
     // hemisphere

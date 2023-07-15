@@ -330,7 +330,9 @@ void AP_ADSB::update(void)
 
     const uint32_t now = AP_HAL::millis();
 
-    if (!AP::ahrs().get_location(_my_loc)) {
+    if (AP::gps().status() >= AP_GPS::GPS_OK_FIX_3D) {
+        _my_loc = AP::gps().location(); // GPS location is always absolute
+    } else {
         _my_loc.zero();
     }
 
