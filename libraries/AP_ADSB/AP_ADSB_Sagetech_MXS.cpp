@@ -31,7 +31,9 @@
 #include <time.h>
 #include <AP_Vehicle/AP_Vehicle_Type.h>
 
+#ifndef SAGETECH_USE_MXS_SDK
 #define SAGETECH_USE_MXS_SDK        !APM_BUILD_TYPE(APM_BUILD_UNKNOWN)
+#endif
 
 #define MXS_INIT_TIMEOUT                            20000
 

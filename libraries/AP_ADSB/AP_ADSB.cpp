@@ -888,6 +888,7 @@ bool AP_ADSB::get_vehicle_by_ICAO(const uint32_t icao, adsb_vehicle_t &vehicle) 
  */
 void AP_ADSB::write_log(const adsb_vehicle_t &vehicle) const
 {
+#if HAL_LOGGING_ENABLED
     switch (_log) {
         case logging::SPECIAL_ONLY:
             if (!is_special_vehicle(vehicle.info.ICAO_address)) {
@@ -916,6 +917,7 @@ void AP_ADSB::write_log(const adsb_vehicle_t &vehicle) const
         squawk        : vehicle.info.squawk,
     };
     AP::logger().WriteBlock(&pkt, sizeof(pkt));
+#endif
 }
 
 /**
