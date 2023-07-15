@@ -19,6 +19,11 @@
 #include <GCS_MAVLink/GCS_config.h>
 #include <AP_SerialManager/AP_SerialManager.h>
 
+#if defined(HAL_BUILD_AP_PERIPH)
+#include "../Tools/AP_Periph/AP_Periph.h"
+extern const AP_HAL::HAL &hal;
+#endif
+
 /*
   base class constructor.
 */
@@ -33,10 +38,11 @@ bool AP_ADSB_Backend::init()
 {
 #if HAL_GCS_ENABLED
     _port = AP::serialmanager().find_serial(AP_SerialManager::SerialProtocol_ADSB, 0);
-    return (_port != nullptr);
-#else
-    return true;
+#elif defined(HAL_BUILD_AP_PERIPH)
+    _port = hal.serial(periph.g.adsb_port);
 #endif
+
+    return (_port != nullptr);
 }
 
 #endif // HAL_ADSB_ENABLED
