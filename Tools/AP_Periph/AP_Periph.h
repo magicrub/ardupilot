@@ -63,6 +63,10 @@
     #endif
 #endif
 
+#if defined(HAL_PERIPH_ENABLE_ADSB_OUT) && !defined(HAL_PERIPH_ENABLE_ADSB)
+#define HAL_PERIPH_ENABLE_ADSB
+#endif
+
 #include "Parameters.h"
 
 #if CONFIG_HAL_BOARD == HAL_BOARD_SITL
@@ -197,14 +201,15 @@ public:
 #ifdef HAL_PERIPH_ENABLE_ADSB
     void adsb_init();
     void adsb_update();
+#ifdef HAL_PERIPH_ENABLE_ADSB_OUT
+    AP_ADSB adsb_lib;
+#else
     void can_send_ADSB(struct __mavlink_adsb_vehicle_t &msg);
     struct {
         mavlink_message_t msg;
         mavlink_status_t status;
     } adsb;
 #endif
-#ifdef HAL_PERIPH_ENABLE_ADSB_OUT
-    AP_ADSB adsb_lib;
 #endif
 
 #ifdef HAL_PERIPH_ENABLE_AIRSPEED

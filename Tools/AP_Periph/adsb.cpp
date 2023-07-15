@@ -53,6 +53,13 @@ void AP_Periph_FW::adsb_init(void)
     }
 }
 
+#ifdef HAL_PERIPH_ENABLE_ADSB_OUT
+void AP_Periph_FW::adsb_update(void)
+{
+    adsb_lib.update();
+}
+#else
+
 static mavlink_message_t chan_buffer;
 mavlink_message_t* mavlink_get_channel_buffer(uint8_t chan) {
     return &chan_buffer;
@@ -152,4 +159,5 @@ void AP_Periph_FW::can_send_ADSB(struct __mavlink_adsb_vehicle_t &msg)
                     total_size);
 }
 
+#endif // HAL_PERIPH_ENABLE_ADSB_OUT
 #endif // HAL_PERIPH_ENABLE_ADSB
