@@ -401,7 +401,11 @@ static void handle_param_executeopcode(CanardInstance* ins, CanardRxTransfer* tr
 #ifdef HAL_PERIPH_ENABLE_RANGEFINDER
         AP_Param::setup_object_defaults(&periph.rangefinder, periph.rangefinder.var_info);
 #endif
+#ifdef HAL_PERIPH_ENABLE_ADSB_OUT
+        AP_Param::setup_object_defaults(&periph.adsb_lib, periph.adsb_lib.var_info);
+#endif
     }
+
 
     uavcan_protocol_param_ExecuteOpcodeResponse pkt {};
 
@@ -545,6 +549,21 @@ static void handle_allocation_response(CanardInstance* ins, CanardRxTransfer* tr
 #endif
     }
 }
+
+#ifdef HAL_PERIPH_ENABLE_ADSB_OUT
+static void handle_adsb_out(CanardInstance* ins, CanardRxTransfer* transfer, const uint16_t msg_id)
+{
+    if (AP::ADSB() == nullptr || !AP::ADSB()->enabled()) {
+        return;
+    }
+    
+    switch (msg_id) {
+    case ARDUPILOT_EQUIPMENT_ADSB_OUTCONFIG_ID:
+    case ARDUPILOT_EQUIPMENT_ADSB_OUTCONTROL_ID:
+        break;
+    }
+}
+#endif
 
 #if defined(HAL_PERIPH_ENABLE_NOTIFY) || defined(HAL_PERIPH_ENABLE_BUZZER_WITHOUT_NOTIFY)
 static uint32_t buzzer_start_ms;
@@ -989,6 +1008,13 @@ static void onTransferReceived(CanardInstance* ins,
 
     case UAVCAN_EQUIPMENT_ACTUATOR_ARRAYCOMMAND_ID:
         handle_act_command(ins, transfer);
+        break;
+#endif
+
+#ifdef HAL_PERIPH_ENABLE_ADSB_OUT
+    case ARDUPILOT_EQUIPMENT_ADSB_OUTCONFIG_ID:
+    case ARDUPILOT_EQUIPMENT_ADSB_OUTCONTROL_ID:
+        handle_adsb_out(ins, transfer, transfer->data_type_id);
         break;
 #endif
 
@@ -2571,7 +2597,6 @@ void AP_Periph_FW::can_proximity_update()
     }
 #endif
 }
-
 
 #ifdef HAL_PERIPH_ENABLE_EFI
 /*

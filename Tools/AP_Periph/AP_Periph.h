@@ -201,14 +201,13 @@ public:
 #ifdef HAL_PERIPH_ENABLE_ADSB
     void adsb_init();
     void adsb_update();
-#ifdef HAL_PERIPH_ENABLE_ADSB_OUT
-    AP_ADSB adsb_lib;
-#else
     void can_send_ADSB(struct __mavlink_adsb_vehicle_t &msg);
     struct {
         mavlink_message_t msg;
         mavlink_status_t status;
     } adsb;
+#ifdef HAL_PERIPH_ENABLE_ADSB_OUT
+    AP_ADSB adsb_lib;
 #endif
 #endif
 

@@ -205,6 +205,8 @@ private:
     // mavlink handler
     void handle_transceiver_report(const mavlink_channel_t chan, const mavlink_uavionix_adsb_transceiver_health_report_t &packet);
 
+    void handle_out_status(const mavlink_uavionix_adsb_out_status_t& new_tx_status);
+
     void detect_instance(uint8_t instance);
 
     AP_Int8 _type[ADSB_MAX_INSTANCES];

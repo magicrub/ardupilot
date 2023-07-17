@@ -658,68 +658,7 @@ void AP_ADSB::handle_out_control(const mavlink_uavionix_adsb_out_control_t &pack
     out_state.ctrl.emergencyState = packet.emergencyStatus;
     memcpy(out_state.ctrl.callsign, packet.flight_id, sizeof(out_state.ctrl.callsign));
     out_state.ctrl.x_bit = packet.x_bit;
-    
-    
-    // out_state.cfg.was_set_externally = true;
-
-    // if ((packet.state & UAVIONIX_ADSB_OUT_CONTROL_STATE::UAVIONIX_ADSB_OUT_CONTROL_STATE_MODE_A_ENABLED) ||
-    //     (packet.state & UAVIONIX_ADSB_OUT_CONTROL_STATE::UAVIONIX_ADSB_OUT_CONTROL_STATE_MODE_C_ENABLED) ||
-    //     (packet.state & UAVIONIX_ADSB_OUT_CONTROL_STATE::UAVIONIX_ADSB_OUT_CONTROL_STATE_MODE_S_ENABLED) ||
-    //     (packet.state & UAVIONIX_ADSB_OUT_CONTROL_STATE::UAVIONIX_ADSB_OUT_CONTROL_STATE_1090ES_TX_ENABLED))
-    // {
-    //     out_state.cfg.rfSelect |= UAVIONIX_ADSB_OUT_RF_SELECT_TX_ENABLED;
-    // } else {
-    //     out_state.cfg.rfSelect &= ~UAVIONIX_ADSB_OUT_RF_SELECT_TX_ENABLED;
-    // }
-
-    // if (packet.state & UAVIONIX_ADSB_OUT_CONTROL_STATE::UAVIONIX_ADSB_OUT_CONTROL_STATE_IDENT_BUTTON_ACTIVE) {
-    //     ident_start();
-    // }
-
-    // out_state.cfg.squawk_octal_param = packet.squawk;
-    // memcpy(out_state.cfg.callsign, packet.flight_id, sizeof(out_state.cfg.callsign));
 }
-
-// void AP_ADSB::populate_out_cfg(mavlink_uavionix_adsb_out_cfg_t &packet)
-// {
-//     packet.ICAO = out_state.cfg.ICAO_id;
-
-//     // May contain a non-null value at the end so accept it as-is with memcpy instead of strcpy
-//     memcpy(packet.callsign, out_state.cfg.callsign, sizeof(packet.callsign));
-
-//     packet.emitterType = out_state.cfg.emitterType;
-//     packet.aircraftSize = out_state.cfg.lengthWidth;
-//     packet.gpsOffsetLat = out_state.cfg.gpsOffsetLat;
-//     packet.gpsOffsetLon = out_state.cfg.gpsOffsetLon;
-//     packet.rfSelect = out_state.cfg.rfSelect;
-//     packet.stallSpeed = out_state.cfg.stall_speed_cm;
-// }
-
-// void AP_ADSB::populate_out_control(mavlink_uavionix_adsb_out_control_t &packet)
-// {
-//     const uint8_t state_txOn = UAVIONIX_ADSB_OUT_CONTROL_STATE::UAVIONIX_ADSB_OUT_CONTROL_STATE_MODE_A_ENABLED |
-//                                 UAVIONIX_ADSB_OUT_CONTROL_STATE::UAVIONIX_ADSB_OUT_CONTROL_STATE_MODE_C_ENABLED |
-//                                 UAVIONIX_ADSB_OUT_CONTROL_STATE::UAVIONIX_ADSB_OUT_CONTROL_STATE_MODE_S_ENABLED |
-//                                 UAVIONIX_ADSB_OUT_CONTROL_STATE::UAVIONIX_ADSB_OUT_CONTROL_STATE_1090ES_TX_ENABLED;
-
-//     if (out_state.cfg.rfSelect & UAVIONIX_ADSB_OUT_RF_SELECT_TX_ENABLED) {
-//         packet.state |= state_txOn;
-//     } else {
-//         packet.state &= ~state_txOn;
-//     }
-
-
-//     if (out_state.ctrl.identActive) {
-//         packet.state |= UAVIONIX_ADSB_OUT_CONTROL_STATE::UAVIONIX_ADSB_OUT_CONTROL_STATE_IDENT_BUTTON_ACTIVE;
-//         out_state.ctrl.identActive = false;
-//     } else {
-//         packet.state &= ~UAVIONIX_ADSB_OUT_CONTROL_STATE::UAVIONIX_ADSB_OUT_CONTROL_STATE_IDENT_BUTTON_ACTIVE;
-//     }
-
-
-//     packet.squawk = out_state.cfg.squawk_octal_param;
-//     memcpy(packet.flight_id, out_state.cfg.callsign, sizeof(packet.flight_id));
-// }
 
 
 /*
@@ -743,11 +682,25 @@ void AP_ADSB::handle_transceiver_report(const mavlink_channel_t chan, const mavl
 void AP_ADSB::send_adsb_out_status(const mavlink_channel_t chan) const
 {
     for (uint8_t i=0; i < ADSB_MAX_INSTANCES; i++) {
-        if (_type[i] == (int8_t)(AP_ADSB::Type::uAvionix_UCP) || _type[i] == (int8_t)(AP_ADSB::Type::Sagetech_MXS)) {
+        if (_type[i] == (int8_t)(AP_ADSB::Type::uAvionix_UCP) || _type[i] == (int8_t)(AP_ADSB::Type::Sagetech_MXS) || _type[i] == (int8_t)(AP_ADSB::Type::DroneCAN)) {
             mavlink_msg_uavionix_adsb_out_status_send_struct(chan, &out_state.tx_status);
             return;
         }
     }
+}
+
+void AP_ADSB::handle_out_status(const mavlink_uavionix_adsb_out_status_t& new_tx_status)
+{
+    if (get_type(0) != AP_ADSB::Type::DroneCAN) {
+        // this should only be received when using DroneCAN
+        return;
+    }
+
+    memcpy(&out_state.tx_status, &new_tx_status, sizeof(out_state.tx_status));
+#if HAL_GCS_ENABLED
+    gcs().send_message(MSG_UAVIONIX_ADSB_OUT_STATUS);
+#endif
+
 }
 
 /*
