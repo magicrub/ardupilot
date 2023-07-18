@@ -236,11 +236,7 @@ void AP_ADSB_uAvionix_UCP::handle_msg(const GDL90_RX_MESSAGE &msg)
             _frontend.out_state.ctrl.squawkCode = rx.decoded.transponder_status.squawkCode;
             _frontend.out_state.ctrl.x_bit = rx.decoded.transponder_status.x_bit;
         }
-        _frontend.status_msg_received();
-
-#if HAL_GCS_ENABLED
-        gcs().send_message(MSG_UAVIONIX_ADSB_OUT_STATUS);
-#endif
+        _frontend.status_msg_received(true);
         break;
 #endif // AP_ADSB_UAVIONIX_UCP_CAPTURE_ALL_RX_PACKETS
 

@@ -156,8 +156,6 @@ void AP_ADSB_Sagetech_MXS::update()
 
 void AP_ADSB_Sagetech_MXS::handle_packet(const Packet &msg) 
 {
-    _frontend.status_msg_received();
-
 #if SAGETECH_USE_MXS_SDK
     switch (msg.type) {
         case MsgType::ACK:
@@ -244,6 +242,8 @@ void AP_ADSB_Sagetech_MXS::handle_packet(const Packet &msg)
             break;
     }
 #endif // SAGETECH_USE_MXS_SDK
+
+    _frontend.status_msg_received(false);
 }
 
 bool AP_ADSB_Sagetech_MXS::parse_byte(const uint8_t data) 

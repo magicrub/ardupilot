@@ -351,6 +351,7 @@ void AP_ADSB::update(void)
 
     if (now - out_state.last_status_msg_received_ms >= 10000 && out_state.last_status_msg_received_ms != 0) {
         out_state.tx_status.fault |= UAVIONIX_ADSB_OUT_STATUS_FAULT_STATUS_MESSAGE_UNAVAIL;
+        status_msg_received(true);
     }
 
     for (uint8_t i=0; i<detected_num_instances; i++) {
@@ -693,10 +694,8 @@ void AP_ADSB::handle_out_status(const mavlink_uavionix_adsb_out_status_t& new_tx
     }
 
     memcpy(&out_state.tx_status, &new_tx_status, sizeof(out_state.tx_status));
-#if HAL_GCS_ENABLED
-    gcs().send_message(MSG_UAVIONIX_ADSB_OUT_STATUS);
-#endif
 
+    status_msg_received(true);
 }
 
 /*
@@ -890,6 +889,17 @@ uint32_t AP_ADSB::convert_base_to_decimal(const uint8_t baseIn, uint32_t inputNu
         if (inputNumber == 0) break;
     }
     return outputNumber;
+}
+
+void AP_ADSB::status_msg_received(const bool announce)
+{
+    out_state.last_status_msg_received_ms = AP_HAL::millis();
+
+#if HAL_GCS_ENABLED
+    if (announce) {
+        gcs().send_message(MSG_UAVIONIX_ADSB_OUT_STATUS);
+    }
+#endif
 }
 
 AP_ADSB *AP::ADSB()

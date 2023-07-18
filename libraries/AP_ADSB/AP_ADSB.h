@@ -111,6 +111,7 @@ public:
     void set_is_flying(const bool is_flying) { out_state.is_flying = is_flying; }
 
     UAVIONIX_ADSB_RF_HEALTH get_transceiver_status(void) const { return out_state.status; }
+    uint32_t get_last_status_msg_received_ms() const { return out_state.last_status_msg_received_ms; }
 
     // extract a location out of a vehicle item
     Location get_location(const adsb_vehicle_t &vehicle) const;
@@ -176,7 +177,9 @@ public:
 
     AP_ADSB::Type get_type(uint8_t instance) const { return (instance < ADSB_MAX_INSTANCES) ? _type[instance] : Type::None; }
 
-    void status_msg_received() { out_state.last_status_msg_received_ms = AP_HAL::millis(); }
+    void status_msg_received(const bool announce);
+
+    mavlink_uavionix_adsb_out_status_t get_status() const { return out_state.tx_status; }
 
 private:
     static AP_ADSB *_singleton;

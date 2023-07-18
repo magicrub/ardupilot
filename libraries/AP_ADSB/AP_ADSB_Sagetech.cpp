@@ -135,8 +135,6 @@ void AP_ADSB_Sagetech::request_packet(const MsgType_XP type)
 
 void AP_ADSB_Sagetech::handle_packet_XP(const Packet_XP &msg)
 {
-    _frontend.status_msg_received();
-
     switch (msg.type) {
     case MsgType_XP::ACK:
         handle_ack(msg);
@@ -166,6 +164,7 @@ void AP_ADSB_Sagetech::handle_packet_XP(const Packet_XP &msg)
     case MsgType_XP::INVALID:
         break;
     }
+    _frontend.status_msg_received(false);
 }
 
 void AP_ADSB_Sagetech::handle_ack(const Packet_XP &msg)

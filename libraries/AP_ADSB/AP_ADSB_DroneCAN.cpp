@@ -83,11 +83,7 @@ void AP_ADSB_DroneCAN::handle_out_status(AP_DroneCAN *ap_dronecan, const CanardR
     // copy the packet to the local state
     memcpy(&adsb->out_state.tx_status, &msg_mavlink, sizeof(adsb->out_state.tx_status));
 
-    adsb->status_msg_received();
-
-#if HAL_GCS_ENABLED
-    gcs().send_message(MSG_UAVIONIX_ADSB_OUT_STATUS);
-#endif
+    adsb->status_msg_received(true);
 }
 
 
