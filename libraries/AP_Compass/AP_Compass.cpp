@@ -11,6 +11,7 @@
 #include <GCS_MAVLink/GCS.h>
 
 #include "AP_Compass_config.h"
+#if AP_COMPASS_ENABLED
 
 #include "AP_Compass_SITL.h"
 #include "AP_Compass_AK8963.h"
@@ -2144,3 +2145,4 @@ Compass &compass()
 }
 
 }
+#endif // AP_COMPASS_ENABLED
