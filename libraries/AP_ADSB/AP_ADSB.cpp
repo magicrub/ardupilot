@@ -284,6 +284,12 @@ bool AP_ADSB::is_valid_squawk(uint16_t octal)
  */
 void AP_ADSB::update(void)
 {
+    if (!_lazy_init_done) {
+        _lazy_init_done = true;
+        init();
+        return;
+    }
+
     if (_init_failed) {
         return;
     }

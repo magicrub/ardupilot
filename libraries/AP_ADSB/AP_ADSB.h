@@ -87,9 +87,6 @@ public:
     // periodic task that maintains vehicle_list
     void update(void);
 
-    // initialize vehicle_list and backends
-    void init();
-
     // send ADSB_VEHICLE mavlink message, usually as a StreamRate
     void send_adsb_vehicle(mavlink_channel_t chan);
 
@@ -184,6 +181,9 @@ public:
 private:
     static AP_ADSB *_singleton;
 
+    // initialize vehicle_list and backends
+    void init();
+
     // compares current vector against vehicle_list to detect threats
     void determine_furthest_aircraft(void);
 
@@ -211,6 +211,7 @@ private:
     Location  _my_loc;
 
     bool _init_failed;
+    bool _lazy_init_done;
 
     // ADSB-IN state. Maintains list of external vehicles
     struct {
