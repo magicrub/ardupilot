@@ -29,7 +29,7 @@ public:
 
     virtual void update() = 0;
 
-    bool init();
+    virtual bool init();
 
 protected:
 

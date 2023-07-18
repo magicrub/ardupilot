@@ -60,7 +60,7 @@ const AP_Param::GroupInfo AP_ADSB::var_info[] = {
     // @Values: 0:Disabled,1:uAvionix-MAVLink,2:Sagetech,3:uAvionix-UCP,4:Sagetech MX Series
     // @User: Standard
     // @RebootRequired: True
-    AP_GROUPINFO_FLAGS("TYPE",     0, AP_ADSB, _type[0],    0, AP_PARAM_FLAG_ENABLE),
+    AP_GROUPINFO_FLAGS("TYPE",     0, AP_ADSB, _type_param[0],    0, AP_PARAM_FLAG_ENABLE),
 
     // index 1 is reserved - was BEHAVIOR
 
@@ -190,35 +190,70 @@ AP_ADSB::AP_ADSB()
  */
 void AP_ADSB::init(void)
 {
-    if (in_state.vehicle_list == nullptr) {
-        // sanity check param
-        in_state.list_size_param.set(constrain_int16(in_state.list_size_param, 1, INT16_MAX));
-
-        in_state.vehicle_list = new adsb_vehicle_t[in_state.list_size_param];
-
-        if (in_state.vehicle_list == nullptr) {
-            // dynamic RAM allocation of in_state.vehicle_list[] failed
-            _init_failed = true; // this keeps us from constantly trying to init forever in main update
-            GCS_SEND_TEXT(MAV_SEVERITY_INFO, "ADSB: Unable to initialize ADSB vehicle list");
-            return;
-        }
-        in_state.list_size_allocated = in_state.list_size_param;
+    if (_init_failed || in_state.vehicle_list != nullptr || detected_num_instances > 0) {
+        // init has already been run
+        return;
     }
 
-    if (detected_num_instances == 0) {
-        for (uint8_t i=0; i<ADSB_MAX_INSTANCES; i++) {
-            detect_instance(i);
-            if (_backend[i] == nullptr) {
-                continue;
-            }
-            if (!_backend[i]->init()) {
-                delete _backend[i];
-                _backend[i] = nullptr;
-                continue;
-            }
-            // success
-            detected_num_instances = i+1;
+    // sanity check param
+    in_state.list_size_param.set(constrain_int16(in_state.list_size_param, 1, INT16_MAX));
+    in_state.vehicle_list = new adsb_vehicle_t[in_state.list_size_param];
+    if (in_state.vehicle_list == nullptr) {
+        // dynamic RAM allocation of in_state.vehicle_list[] failed
+        _init_failed = true; // this keeps us from constantly trying to init forever in main update
+        GCS_SEND_TEXT(MAV_SEVERITY_INFO, "ADSB: Unable to initialize ADSB vehicle list");
+        return;
+    }
+    in_state.list_size_allocated = in_state.list_size_param;
+
+    for (uint8_t i=0; i<ADSB_MAX_INSTANCES; i++) {
+        const Type type = (Type)_type_param[i].get();
+        switch (type) {
+        case Type::None:
+            break;
+
+        case Type::uAvionix_MAVLink:
+#if HAL_ADSB_UAVIONIX_MAVLINK_ENABLED
+            _backend[i] = new AP_ADSB_uAvionix_MAVLink(*this, i);
+#endif
+            break;
+
+        case Type::uAvionix_UCP:
+#if HAL_ADSB_UCP_ENABLED
+            _backend[i] = new AP_ADSB_uAvionix_UCP(*this, i);
+#endif
+            break;
+
+        case Type::Sagetech:
+#if HAL_ADSB_SAGETECH_ENABLED
+            _backend[i] = new AP_ADSB_Sagetech(*this, i);
+#endif
+            break;
+
+        case Type::Sagetech_MXS:
+#if HAL_ADSB_SAGETECH_MXS_ENABLED
+            _backend[i] = new AP_ADSB_Sagetech_MXS(*this, i);
+#endif
+            break;
+
+        case Type::DroneCAN:
+#if AP_ADSB_DRONECAN_ENABLED
+            _backend[i] = new AP_ADSB_DroneCAN(*this, i);
+#endif
+            break;
         }
+
+        if (_backend[i] == nullptr) {
+            continue;
+        }
+        if (!_backend[i]->init()) {
+            delete _backend[i];
+            _backend[i] = nullptr;
+            continue;
+        }
+        // success
+        detected_num_instances = i+1;
+        _type[i] = type; // cache the type so _type[] is non-None only for initialized backends
     }
 
     if (detected_num_instances == 0) {
@@ -227,81 +262,7 @@ void AP_ADSB::init(void)
     }
 }
 
-bool AP_ADSB::check_startup()
-{
-    if (_init_failed) {
-        return false;
-    }
-
-    bool all_backends_disabled = true;
-    for (uint8_t instance=0; instance<ADSB_MAX_INSTANCES; instance++) {
-        if (_type[instance] > 0) {
-            all_backends_disabled = false;
-            break;
-        }
-    }
-
-    if (all_backends_disabled) {
-        // nothing to do
-        return false;
-    }
-    if (in_state.vehicle_list == nullptr)  {
-        init();
-    }
-    return in_state.vehicle_list != nullptr;
-}
-
-
-//  detect if an instance of an ADSB sensor is connected.
-void AP_ADSB::detect_instance(uint8_t instance)
-{
-    switch (get_type(instance)) {
-    case Type::None:
-        return;
-
-    case Type::uAvionix_MAVLink:
-#if HAL_ADSB_UAVIONIX_MAVLINK_ENABLED
-        _backend[instance] = new AP_ADSB_uAvionix_MAVLink(*this, instance);
-#endif
-        break;
-
-    case Type::uAvionix_UCP:
-#if HAL_ADSB_UCP_ENABLED
-        _backend[instance] = new AP_ADSB_uAvionix_UCP(*this, instance);
-#endif
-        break;
-
-    case Type::Sagetech:
-#if HAL_ADSB_SAGETECH_ENABLED
-        _backend[instance] = new AP_ADSB_Sagetech(*this, instance);
-#endif
-        break;
-
-    case Type::Sagetech_MXS:
-#if HAL_ADSB_SAGETECH_MXS_ENABLED
-        _backend[instance] = new AP_ADSB_Sagetech_MXS(*this, instance);
-#endif
-        break;
-
-    case Type::DroneCAN:
-#if HAL_ADSB_DRONECAN_ENABLED
-        _backend[instance] = new AP_ADSB_DroneCAN(*this, instance);
-#endif
-        break;
-    }
-
-}
-
-// get instance type from instance
-AP_ADSB::Type AP_ADSB::get_type(uint8_t instance) const
-{
-    if (instance < ADSB_MAX_INSTANCES) {
-        return (Type)(_type[instance].get());
-    }
-    return Type::None;
-}
-
-bool AP_ADSB::is_valid_callsign(uint16_t octal)
+bool AP_ADSB::is_valid_squawk(uint16_t octal)
 {
     // treat "octal" as decimal and test if any decimal digit is > 7
     if (octal > 7777) {
@@ -323,7 +284,7 @@ bool AP_ADSB::is_valid_callsign(uint16_t octal)
  */
 void AP_ADSB::update(void)
 {
-    if (!check_startup()) {
+    if (_init_failed) {
         return;
     }
 
@@ -350,7 +311,7 @@ void AP_ADSB::update(void)
 
     if (out_state.cfg.squawk_octal_param != out_state.cfg.squawk_octal) {
         // param changed, check that it's a valid octal
-        if (!is_valid_callsign(out_state.cfg.squawk_octal_param)) {
+        if (!is_valid_squawk(out_state.cfg.squawk_octal_param)) {
             // invalid, reset it to default
             out_state.cfg.squawk_octal_param.set(ADSB_SQUAWK_OCTAL_DEFAULT);
         }
@@ -382,8 +343,12 @@ void AP_ADSB::update(void)
         out_state.last_config_ms = 0; // send now
     }
 
+    if (now - out_state.last_status_msg_received_ms >= 10000 && out_state.last_status_msg_received_ms != 0) {
+        out_state.tx_status.fault |= UAVIONIX_ADSB_OUT_STATUS_FAULT_STATUS_MESSAGE_UNAVAIL;
+    }
+
     for (uint8_t i=0; i<detected_num_instances; i++) {
-        if (_backend[i] != nullptr && _type[i].get() != (int8_t)Type::None) {
+        if (_backend[i] != nullptr) {
             _backend[i]->update();
         }
     }
@@ -474,7 +439,7 @@ bool AP_ADSB::find_index(const adsb_vehicle_t &vehicle, uint16_t *index) const
  */
 void AP_ADSB::handle_adsb_vehicle(const adsb_vehicle_t &vehicle)
 {
-    if (!check_startup()) {
+    if (!enabled() || in_state.vehicle_list == nullptr) {
         return;
     }
 
@@ -569,7 +534,7 @@ void AP_ADSB::set_vehicle(const uint16_t index, const adsb_vehicle_t &vehicle)
 
 void AP_ADSB::send_adsb_vehicle(const mavlink_channel_t chan)
 {
-    if (!check_startup() || in_state.vehicle_count == 0) {
+    if (!enabled() || in_state.vehicle_count == 0) {
         return;
     }
 
@@ -638,6 +603,15 @@ void AP_ADSB::handle_out_cfg(const mavlink_uavionix_adsb_out_cfg_t &packet)
 
     // send now
     out_state.last_config_ms = 0;
+
+#if AP_ADSB_DRONECAN_ENABLED
+    for (uint8_t i=0; i<detected_num_instances; i++) {
+        if (get_type(i) == AP_ADSB::Type::DroneCAN) {
+            ((AP_ADSB_DroneCAN *)_backend)->send_out_config(packet);
+            break;
+        }
+    }
+#endif
 }
 
 /*
@@ -658,6 +632,15 @@ void AP_ADSB::handle_out_control(const mavlink_uavionix_adsb_out_control_t &pack
     out_state.ctrl.emergencyState = packet.emergencyStatus;
     memcpy(out_state.ctrl.callsign, packet.flight_id, sizeof(out_state.ctrl.callsign));
     out_state.ctrl.x_bit = packet.x_bit;
+
+#if AP_ADSB_DRONECAN_ENABLED
+    for (uint8_t i=0; i<detected_num_instances; i++) {
+        if (get_type(i) == AP_ADSB::Type::DroneCAN) {
+            ((AP_ADSB_DroneCAN *)_backend)->send_out_control(packet);
+            break;
+        }
+    }
+#endif
 }
 
 
@@ -681,19 +664,26 @@ void AP_ADSB::handle_transceiver_report(const mavlink_channel_t chan, const mavl
  */
 void AP_ADSB::send_adsb_out_status(const mavlink_channel_t chan) const
 {
-    for (uint8_t i=0; i < ADSB_MAX_INSTANCES; i++) {
-        if (_type[i] == (int8_t)(AP_ADSB::Type::uAvionix_UCP) || _type[i] == (int8_t)(AP_ADSB::Type::Sagetech_MXS) || _type[i] == (int8_t)(AP_ADSB::Type::DroneCAN)) {
-            mavlink_msg_uavionix_adsb_out_status_send_struct(chan, &out_state.tx_status);
-            return;
+    for (uint8_t i=0; i < detected_num_instances; i++) {
+        switch (_type[i]) {
+            case AP_ADSB::Type::uAvionix_UCP:
+            case AP_ADSB::Type::Sagetech_MXS:
+            case AP_ADSB::Type::DroneCAN:
+                mavlink_msg_uavionix_adsb_out_status_send_struct(chan, &out_state.tx_status);
+                return;
+            default:
+                break;
         }
     }
 }
 
 void AP_ADSB::handle_out_status(const mavlink_uavionix_adsb_out_status_t& new_tx_status)
 {
-    if (get_type(0) != AP_ADSB::Type::DroneCAN) {
-        // this should only be received when using DroneCAN
-        return;
+    for (uint8_t i=0; i < detected_num_instances; i++) {
+        if (get_type(i) != AP_ADSB::Type::DroneCAN) {
+            // this should only be received when using DroneCAN
+            return;
+        }
     }
 
     memcpy(&out_state.tx_status, &new_tx_status, sizeof(out_state.tx_status));

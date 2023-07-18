@@ -17,30 +17,25 @@
 
 #include "AP_ADSB_Backend.h"
 
-#if HAL_ADSB_DRONECAN_ENABLED
+#if AP_ADSB_DRONECAN_ENABLED
 
 #include <AP_DroneCAN/AP_DroneCAN.h>
+#include <dronecan_msgs.h>
 
 class AP_ADSB_DroneCAN : public AP_ADSB_Backend {
 public:
     using AP_ADSB_Backend::AP_ADSB_Backend;
 
-    void update() override;
+    void update() override {};
 
-    static void subscribe_msgs(AP_DroneCAN* ap_dronecan);
+    bool init() override;
 
-    static void handle_out_config(AP_DroneCAN *ap_dronecan, const CanardRxTransfer& transfer, const ardupilot_equipment_adsb_OutConfig& msg_can);
-    static void handle_transceiver_health_report(AP_DroneCAN *ap_dronecan, const CanardRxTransfer& transfer, const ardupilot_equipment_adsb_TransceiverHealthReport& msg_can);
-    static void handle_out_control(AP_DroneCAN *ap_dronecan, const CanardRxTransfer& transfer, const ardupilot_equipment_adsb_OutControl& msg_can);
-    static void handle_out_status(AP_DroneCAN *ap_dronecan, const CanardRxTransfer& transfer, const ardupilot_equipment_adsb_OutStatus& msg_can);
+    void send_out_config(const mavlink_uavionix_adsb_out_cfg_t &msg_mavlink);
+    void send_out_control(const mavlink_uavionix_adsb_out_control_t &msg_mavlink);
 
 private:
-    static bool is_adsb_droneCan_ready();
 
-    struct {
-        uint32_t last_packet_Transponder_Status_ms;
-    } run_state;
-
+    static void handle_out_status(AP_DroneCAN *ap_dronecan, const CanardRxTransfer& transfer, const ardupilot_equipment_adsb_OutStatus& msg_can);
 };
 
-#endif // HAL_ADSB_DRONECAN_ENABLED
+#endif // AP_ADSB_DRONECAN_ENABLED

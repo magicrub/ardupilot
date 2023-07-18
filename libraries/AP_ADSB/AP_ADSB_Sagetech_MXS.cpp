@@ -156,6 +156,8 @@ void AP_ADSB_Sagetech_MXS::update()
 
 void AP_ADSB_Sagetech_MXS::handle_packet(const Packet &msg) 
 {
+    _frontend.status_msg_received();
+
 #if SAGETECH_USE_MXS_SDK
     switch (msg.type) {
         case MsgType::ACK:

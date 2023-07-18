@@ -83,9 +83,8 @@ void AP_ADSB_uAvionix_UCP::update()
 
     // if the transponder has stopped giving us the data needed to 
     // fill the transponder status mavlink message, reset that data.
-    if ((now_ms - run_state.last_packet_Transponder_Status_ms >= 10000 && run_state.last_packet_Transponder_Status_ms != 0)
-        && (now_ms - run_state.last_packet_Transponder_Heartbeat_ms >= 10000 && run_state.last_packet_Transponder_Heartbeat_ms != 0)
-        && (now_ms - run_state.last_packet_Transponder_Ownship_ms >= 10000 && run_state.last_packet_Transponder_Ownship_ms != 0))
+    if ((now_ms - run_state.last_packet_Transponder_Heartbeat_ms >= 10000 && run_state.last_packet_Transponder_Heartbeat_ms != 0) &&
+        (now_ms - run_state.last_packet_Transponder_Ownship_ms >= 10000 && run_state.last_packet_Transponder_Ownship_ms != 0))
     {
         _frontend.out_state.tx_status.fault |= UAVIONIX_ADSB_OUT_STATUS_FAULT_STATUS_MESSAGE_UNAVAIL;
     }
@@ -228,7 +227,7 @@ void AP_ADSB_uAvionix_UCP::handle_msg(const GDL90_RX_MESSAGE &msg)
 
         _frontend.out_state.tx_status.fault &= ~UAVIONIX_ADSB_OUT_STATUS_FAULT_STATUS_MESSAGE_UNAVAIL;
 
-        if (run_state.last_packet_Transponder_Status_ms == 0) {
+        if (_frontend.out_state.last_status_msg_received_ms == 0) {
             // set initial control message contents to transponder defaults
             _frontend.out_state.ctrl.modeAEnabled = rx.decoded.transponder_status.modeAEnabled;
             _frontend.out_state.ctrl.modeCEnabled = rx.decoded.transponder_status.modeCEnabled;
@@ -237,7 +236,8 @@ void AP_ADSB_uAvionix_UCP::handle_msg(const GDL90_RX_MESSAGE &msg)
             _frontend.out_state.ctrl.squawkCode = rx.decoded.transponder_status.squawkCode;
             _frontend.out_state.ctrl.x_bit = rx.decoded.transponder_status.x_bit;
         }
-        run_state.last_packet_Transponder_Status_ms = AP_HAL::millis();
+        _frontend.status_msg_received();
+
 #if HAL_GCS_ENABLED
         gcs().send_message(MSG_UAVIONIX_ADSB_OUT_STATUS);
 #endif

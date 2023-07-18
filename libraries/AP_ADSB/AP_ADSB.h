@@ -87,6 +87,9 @@ public:
     // periodic task that maintains vehicle_list
     void update(void);
 
+    // initialize vehicle_list and backends
+    void init();
+
     // send ADSB_VEHICLE mavlink message, usually as a StreamRate
     void send_adsb_vehicle(mavlink_channel_t chan);
 
@@ -118,7 +121,7 @@ public:
     // ADSB is considered enabled if there are any configured backends
     bool enabled() const {
         for (uint8_t instance=0; instance<detected_num_instances; instance++) {
-            if (_type[instance] > 0) {
+            if (get_type(instance) != Type::None) {
                 return true;
             }
         }
@@ -130,13 +133,19 @@ public:
     }
 
     bool healthy() {
-        return check_startup();
+        return enabled() && !init_failed();
     }
 
     bool next_sample(adsb_vehicle_t &obstacle);
 
     // handle a adsb_vehicle_t from an external source
     void handle_adsb_vehicle(const adsb_vehicle_t &vehicle);
+
+    // configure ADSB-out transceivers
+    void handle_out_cfg(const mavlink_uavionix_adsb_out_cfg_t &packet);
+
+    // control ADSB-out transcievers
+    void handle_out_control(const mavlink_uavionix_adsb_out_control_t &packet);
 
     // mavlink message handler
     void handle_message(const mavlink_channel_t chan, const mavlink_message_t &msg);
@@ -150,8 +159,8 @@ public:
     void set_special_ICAO_target(const uint32_t new_icao_target) { _special_ICAO_target.set((int32_t)new_icao_target); };
     bool is_special_vehicle(uint32_t icao) const { return _special_ICAO_target != 0 && (_special_ICAO_target == (int32_t)icao); }
 
-    // confirm a value is a valid callsign
-    static bool is_valid_callsign(uint16_t octal) WARN_IF_UNUSED;
+    // confirm a value is a valid squawk
+    static bool is_valid_squawk(uint16_t octal) WARN_IF_UNUSED;
 
     // Convert base 8 or 16 to decimal. Used to convert an octal/hexadecimal value
     // stored on a GCS as a string field in different format, but then transmitted
@@ -168,16 +177,12 @@ public:
         return true;
     }
 
-    AP_ADSB::Type get_type(uint8_t instance) const;
+    AP_ADSB::Type get_type(uint8_t instance) const { return (instance < ADSB_MAX_INSTANCES) ? _type[instance] : Type::None; }
+
+    void status_msg_received() { out_state.last_status_msg_received_ms = AP_HAL::millis(); }
 
 private:
     static AP_ADSB *_singleton;
-
-    // initialize vehicle_list
-    void init();
-
-    // check to see if we are initialized (and possibly do initialization)
-    bool check_startup();
 
     // compares current vector against vehicle_list to detect threats
     void determine_furthest_aircraft(void);
@@ -196,20 +201,12 @@ private:
     // set callsign: 8char string (plus null termination) then optionally append last 4 digits of icao
     void set_callsign(const char* str, const bool append_icao);
 
-    // configure ADSB-out transceivers
-    void handle_out_cfg(const mavlink_uavionix_adsb_out_cfg_t &packet);
-
-    // control ADSB-out transcievers
-    void handle_out_control(const mavlink_uavionix_adsb_out_control_t &packet);
-
     // mavlink handler
     void handle_transceiver_report(const mavlink_channel_t chan, const mavlink_uavionix_adsb_transceiver_health_report_t &packet);
 
     void handle_out_status(const mavlink_uavionix_adsb_out_status_t& new_tx_status);
 
     void detect_instance(uint8_t instance);
-
-    AP_Int8 _type[ADSB_MAX_INSTANCES];
 
     Location  _my_loc;
 
@@ -238,6 +235,7 @@ private:
     struct {
         uint32_t    last_config_ms; // send once every 10s
         uint32_t    last_report_ms; // send at 5Hz
+        uint32_t    last_status_msg_received_ms;
         int8_t      chan = -1; // channel that contains an ADS-b Transceiver. -1 means transceiver is not detected
         uint32_t    chan_last_ms;
         UAVIONIX_ADSB_RF_HEALTH status;     // transceiver status
@@ -301,6 +299,9 @@ private:
         SPECIAL_ONLY    = 1,
         ALL             = 2
     };
+
+    AP_Int8 _type_param[ADSB_MAX_INSTANCES];
+    AP_ADSB::Type _type[ADSB_MAX_INSTANCES];
 
     // reference to backend
     AP_ADSB_Backend *_backend[ADSB_MAX_INSTANCES];

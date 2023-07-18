@@ -43,7 +43,6 @@
 #include <AP_Proximity/AP_Proximity_DroneCAN.h>
 #include <SRV_Channel/SRV_Channel.h>
 #include <AP_ADSB/AP_ADSB.h>
-#include <AP_ADSB/AP_ADSB_DroneCAN.h>
 #include "AP_DroneCAN_DNA_Server.h"
 #include <AP_Logger/AP_Logger.h>
 #include <AP_Notify/AP_Notify.h>
@@ -247,9 +246,6 @@ void AP_DroneCAN::init(uint8_t driver_index, bool enable_filters)
 #endif
 #if AP_RANGEFINDER_DRONECAN_ENABLED
     AP_RangeFinder_DroneCAN::subscribe_msgs(this);
-#endif
-#if HAL_ADSB_DRONECAN_ENABLED
-    AP_ADSB_DroneCAN::subscribe_msgs(this);
 #endif
 #if AP_EFI_DRONECAN_ENABLED
     AP_EFI_DroneCAN::subscribe_msgs(this);
