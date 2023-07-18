@@ -207,6 +207,7 @@ public:
         mavlink_status_t status;
 #ifdef HAL_PERIPH_ENABLE_ADSB_OUT
         AP_ADSB lib;
+        uint32_t last_status_msg_received_ms;
 #endif
     } adsb;
 #endif
