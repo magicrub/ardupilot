@@ -73,7 +73,7 @@ void AP_Periph_FW::adsb_update(void)
     }
 
 #ifdef HAL_PERIPH_ENABLE_ADSB_OUT
-    adsb_lib.update();
+    adsb.lib.update();
 #else
     auto *uart = hal.serial(g.adsb_port);
     if (uart == nullptr) {

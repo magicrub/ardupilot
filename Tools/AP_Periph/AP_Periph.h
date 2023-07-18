@@ -205,10 +205,10 @@ public:
     struct {
         mavlink_message_t msg;
         mavlink_status_t status;
-    } adsb;
 #ifdef HAL_PERIPH_ENABLE_ADSB_OUT
-    AP_ADSB adsb_lib;
+        AP_ADSB lib;
 #endif
+    } adsb;
 #endif
 
 #ifdef HAL_PERIPH_ENABLE_AIRSPEED

@@ -402,7 +402,7 @@ static void handle_param_executeopcode(CanardInstance* ins, CanardRxTransfer* tr
         AP_Param::setup_object_defaults(&periph.rangefinder, periph.rangefinder.var_info);
 #endif
 #ifdef HAL_PERIPH_ENABLE_ADSB_OUT
-        AP_Param::setup_object_defaults(&periph.adsb_lib, periph.adsb_lib.var_info);
+        AP_Param::setup_object_defaults(&periph.adsb.lib, periph.adsb.lib.var_info);
 #endif
     }
 
@@ -551,19 +551,43 @@ static void handle_allocation_response(CanardInstance* ins, CanardRxTransfer* tr
 }
 
 #ifdef HAL_PERIPH_ENABLE_ADSB_OUT
-static void handle_adsb_out(CanardInstance* ins, CanardRxTransfer* transfer, const uint16_t msg_id)
+static void handle_adsb_out_config(CanardInstance* ins, CanardRxTransfer* transfer)
 {
-    if (AP::ADSB() == nullptr || !AP::ADSB()->enabled()) {
+    ardupilot_equipment_adsb_OutConfig msg_can;
+    if (!ardupilot_equipment_adsb_OutConfig_decode(transfer, &msg_can)) {
         return;
     }
+    mavlink_uavionix_adsb_out_cfg_t msg_mavlink {};
+    msg_mavlink.ICAO = msg_can.ICAO;
+    memcpy(msg_mavlink.callsign, msg_can.callsign, sizeof(msg_mavlink.callsign));
+    msg_mavlink.emitterType = msg_can.emitterType;
+    msg_mavlink.aircraftSize = msg_can.aircraftSize;
+    msg_mavlink.gpsOffsetLat = msg_can.gpsOffsetLat;
+    msg_mavlink.gpsOffsetLon = msg_can.gpsOffsetLon;
+    msg_mavlink.stallSpeed = msg_can.stallSpeed;
+    msg_mavlink.rfSelect = msg_can.rfSelect;
+    msg_mavlink.ICAO = msg_can.ICAO;
     
-    switch (msg_id) {
-    case ARDUPILOT_EQUIPMENT_ADSB_OUTCONFIG_ID:
-    case ARDUPILOT_EQUIPMENT_ADSB_OUTCONTROL_ID:
-        break;
-    }
+    periph.adsb.lib.handle_out_cfg(msg_mavlink);
 }
-#endif
+
+static void handle_adsb_out_control(CanardInstance* ins, CanardRxTransfer* transfer)
+{
+    ardupilot_equipment_adsb_OutControl msg_can;
+    if (!ardupilot_equipment_adsb_OutControl_decode(transfer, &msg_can)) {
+        return;
+    }
+    mavlink_uavionix_adsb_out_control_t msg_mavlink {};
+    msg_mavlink.state = msg_can.state;
+    msg_mavlink.baroAltMSL = msg_can.baroAltMSL;
+    msg_mavlink.squawk = msg_can.squawk;
+    msg_mavlink.emergencyStatus = msg_can.emergencyStatus;
+    memcpy(msg_mavlink.flight_id, msg_can.flight_id, sizeof(msg_mavlink.flight_id));
+    msg_mavlink.x_bit = msg_can.x_bit;
+
+    periph.adsb.lib.handle_out_control(msg_mavlink);
+}
+#endif // HAL_PERIPH_ENABLE_ADSB_OUT
 
 #if defined(HAL_PERIPH_ENABLE_NOTIFY) || defined(HAL_PERIPH_ENABLE_BUZZER_WITHOUT_NOTIFY)
 static uint32_t buzzer_start_ms;
@@ -1013,8 +1037,10 @@ static void onTransferReceived(CanardInstance* ins,
 
 #ifdef HAL_PERIPH_ENABLE_ADSB_OUT
     case ARDUPILOT_EQUIPMENT_ADSB_OUTCONFIG_ID:
+        handle_adsb_out_config(ins, transfer);
+        break;
     case ARDUPILOT_EQUIPMENT_ADSB_OUTCONTROL_ID:
-        handle_adsb_out(ins, transfer, transfer->data_type_id);
+        handle_adsb_out_control(ins, transfer);
         break;
 #endif
 

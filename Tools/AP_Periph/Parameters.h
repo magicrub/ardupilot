@@ -76,7 +76,7 @@ public:
         k_param_esc_number1,
         k_param_pole_count1,
         k_param_esc_serial_port1,
-        k_param_adsb_lib,
+        k_param_adsb,
     };
 
     AP_Int16 format_version;
