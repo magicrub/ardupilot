@@ -1,0 +1,6 @@
+# hw definition file for processing by chibios_hwdef.py
+# for SkyNode
+
+include ../fmuv5/hwdef.dat
+
+CAN_APP_NODE_NAME org.ardupilot.wannabe_pixhawk4
