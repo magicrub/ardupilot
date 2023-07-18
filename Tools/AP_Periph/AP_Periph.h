@@ -206,10 +206,13 @@ public:
         mavlink_message_t msg;
         mavlink_status_t status;
 #ifdef HAL_PERIPH_ENABLE_ADSB_OUT
-        AP_ADSB lib;
+        uint32_t update_last_ms;
         uint32_t last_status_msg_received_ms;
 #endif
     } adsb;
+#ifdef HAL_PERIPH_ENABLE_ADSB_OUT
+    AP_ADSB adsb_lib;
+#endif
 #endif
 
 #ifdef HAL_PERIPH_ENABLE_AIRSPEED

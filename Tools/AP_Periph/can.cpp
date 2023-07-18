@@ -402,7 +402,7 @@ static void handle_param_executeopcode(CanardInstance* ins, CanardRxTransfer* tr
         AP_Param::setup_object_defaults(&periph.rangefinder, periph.rangefinder.var_info);
 #endif
 #ifdef HAL_PERIPH_ENABLE_ADSB_OUT
-        AP_Param::setup_object_defaults(&periph.adsb.lib, periph.adsb.lib.var_info);
+        AP_Param::setup_object_defaults(&periph.adsb_lib, periph.adsb_lib.var_info);
 #endif
     }
 
@@ -568,7 +568,7 @@ static void handle_adsb_out_config(CanardInstance* ins, CanardRxTransfer* transf
     msg_mavlink.rfSelect = msg_can.rfSelect;
     msg_mavlink.ICAO = msg_can.ICAO;
     
-    periph.adsb.lib.handle_out_cfg(msg_mavlink);
+    periph.adsb_lib.handle_out_cfg(msg_mavlink);
 }
 
 static void handle_adsb_out_control(CanardInstance* ins, CanardRxTransfer* transfer)
@@ -585,7 +585,7 @@ static void handle_adsb_out_control(CanardInstance* ins, CanardRxTransfer* trans
     memcpy(msg_mavlink.flight_id, msg_can.flight_id, sizeof(msg_mavlink.flight_id));
     msg_mavlink.x_bit = msg_can.x_bit;
 
-    periph.adsb.lib.handle_out_control(msg_mavlink);
+    periph.adsb_lib.handle_out_control(msg_mavlink);
 }
 #endif // HAL_PERIPH_ENABLE_ADSB_OUT
 
