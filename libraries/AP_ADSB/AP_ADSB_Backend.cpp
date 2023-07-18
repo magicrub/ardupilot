@@ -38,11 +38,15 @@ bool AP_ADSB_Backend::init()
 {
 #if HAL_GCS_ENABLED
     _port = AP::serialmanager().find_serial(AP_SerialManager::SerialProtocol_ADSB, 0);
+    return (_port != nullptr);
 #elif defined(HAL_BUILD_AP_PERIPH)
     _port = hal.serial(periph.g.adsb_port);
+    if (_port == nullptr) {
+        return false;
+    }
+    _frontend.status_msg_received(false);
+    return true;
 #endif
-
-    return (_port != nullptr);
 }
 
 #endif // HAL_ADSB_ENABLED

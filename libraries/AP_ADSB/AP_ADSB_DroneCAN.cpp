@@ -58,6 +58,8 @@ bool AP_ADSB_DroneCAN::init()
             return false;
         }
     }
+
+    _frontend.status_msg_received(true);
     return true;
 }
 
