@@ -1032,7 +1032,7 @@ void AP_DroneCAN::gnss_send_yaw()
 void AP_DroneCAN::safety_state_send()
 {
     uint32_t now = AP_HAL::native_millis();
-    if (now - _last_safety_state_ms < 500) {
+    if (_last_safety_state_ms != 0 && now - _last_safety_state_ms < 10000) {
         // update at 2Hz
         return;
     }

@@ -76,9 +76,10 @@ private:
         uint32_t last_packet_Transponder_Control_ms;
         uint32_t last_packet_Transponder_Heartbeat_ms;
         uint32_t last_packet_Transponder_Ownship_ms;
+        bool has_seen_status;
+        bool has_seen_id;
+        bool has_seen_config;
     } run_state;
-
-    bool init_done;
 };
 #endif // HAL_ADSB_UCP_ENABLED
 

@@ -26,16 +26,16 @@ class AP_ADSB_DroneCAN : public AP_ADSB_Backend {
 public:
     using AP_ADSB_Backend::AP_ADSB_Backend;
 
-    void update() override {};
+    void update() override;
 
     bool init() override;
-
-    void send_out_config(const mavlink_uavionix_adsb_out_cfg_t &msg_mavlink);
-    void send_out_control(const mavlink_uavionix_adsb_out_control_t &msg_mavlink);
 
 private:
 
     static void handle_out_status(AP_DroneCAN *ap_dronecan, const CanardRxTransfer& transfer, const ardupilot_equipment_adsb_OutStatus& msg_can);
+
+    void send_out_config();
+    void send_out_control();
 };
 
 #endif // AP_ADSB_DRONECAN_ENABLED

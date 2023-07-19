@@ -33,8 +33,8 @@
 #endif
 
 #include <AP_NMEA_Output/AP_NMEA_Output.h>
-#if HAL_NMEA_OUTPUT_ENABLED && !(HAL_GCS_ENABLED && defined(HAL_PERIPH_ENABLE_GPS))
-    // Needs SerialManager + (AHRS or GPS)
+#if HAL_NMEA_OUTPUT_ENABLED && !(AP_SERIALMANAGER_ENABLED && defined(HAL_PERIPH_ENABLE_GPS))
+    // Needs SerialManager + GPS
     #error "AP_NMEA_Output requires Serial/GCS and either AHRS or GPS. Needs HAL_GCS_ENABLED and HAL_PERIPH_ENABLE_GPS"
 #endif
 
@@ -63,9 +63,10 @@
     #endif
 #endif
 
-#if defined(HAL_PERIPH_ENABLE_ADSB_OUT) && !defined(HAL_PERIPH_ENABLE_ADSB)
-#define HAL_PERIPH_ENABLE_ADSB
+#if defined(HAL_PERIPH_ENABLE_ADSB) && defined(HAL_PERIPH_ENABLE_ADSB_OUT)
+#error "HAL_PERIPH_ENABLE_ADSB and HAL_PERIPH_ENABLE_ADSB_OUT cannot both be enabled. Choose one".
 #endif
+
 
 #include "Parameters.h"
 
@@ -202,17 +203,20 @@ public:
     void adsb_init();
     void adsb_update();
     void can_send_ADSB(struct __mavlink_adsb_vehicle_t &msg);
+
     struct {
         mavlink_message_t msg;
         mavlink_status_t status;
-#ifdef HAL_PERIPH_ENABLE_ADSB_OUT
-        uint32_t update_last_ms;
-        uint32_t last_status_msg_received_ms;
-#endif
     } adsb;
-#ifdef HAL_PERIPH_ENABLE_ADSB_OUT
-    AP_ADSB adsb_lib;
 #endif
+
+#ifdef HAL_PERIPH_ENABLE_ADSB_OUT
+    void adsb_out_init();
+    void adsb_out_update();
+
+    AP_ADSB adsb_lib;
+    uint32_t adsb_update_last_ms;
+    uint32_t adsb_last_status_msg_received_ms;
 #endif
 
 #ifdef HAL_PERIPH_ENABLE_AIRSPEED

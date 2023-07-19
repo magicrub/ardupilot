@@ -209,8 +209,6 @@ private:
 
     void handle_out_status(const mavlink_uavionix_adsb_out_status_t& new_tx_status);
 
-    void detect_instance(uint8_t instance);
-
     Location  _my_loc;
 
     bool _init_failed;
@@ -239,6 +237,7 @@ private:
     struct {
         uint32_t    last_config_ms; // send once every 10s
         uint32_t    last_report_ms; // send at 5Hz
+        uint32_t    last_control_ms;
         uint32_t    last_status_msg_received_ms;
         int8_t      chan = -1; // channel that contains an ADS-b Transceiver. -1 means transceiver is not detected
         uint32_t    chan_last_ms;

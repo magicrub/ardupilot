@@ -47,9 +47,11 @@ void AP_ADSB_uAvionix_UCP::update()
         return;
     }
 
-    if (!init_done) {
-        init_done = true;
+    if (!run_state.has_seen_id) {
         request_msg(GDL90_ID_IDENTIFICATION);
+        return;
+    }
+    if (!run_state.has_seen_config) {
         request_msg(GDL90_ID_TRANSPONDER_CONFIG);
         return;
     }
@@ -139,6 +141,7 @@ void AP_ADSB_uAvionix_UCP::handle_msg(const GDL90_RX_MESSAGE &msg)
         // or update for the UCP protocol and will be transmitted upon request for the UCP-HD protocol.
         if (memcmp(&rx.decoded.identification, msg.raw, sizeof(rx.decoded.identification)) != 0) {
             memcpy(&rx.decoded.identification, msg.raw, sizeof(rx.decoded.identification));
+            run_state.has_seen_id = true;
 
             // Firmware Part Number (not null terminated, but null padded if part number is less than 15 characters).
             // Copy into a temporary string that is 1 char longer so we ensure it's null terminated
@@ -159,6 +162,7 @@ void AP_ADSB_uAvionix_UCP::handle_msg(const GDL90_RX_MESSAGE &msg)
 
     case GDL90_ID_TRANSPONDER_CONFIG:
         memcpy(&rx.decoded.transponder_config, msg.raw, sizeof(rx.decoded.transponder_config));
+        run_state.has_seen_config = true;
         break;
 
 #if AP_ADSB_UAVIONIX_UCP_CAPTURE_ALL_RX_PACKETS
@@ -184,6 +188,7 @@ void AP_ADSB_uAvionix_UCP::handle_msg(const GDL90_RX_MESSAGE &msg)
     case GDL90_ID_SENSOR_MESSAGE:
         memcpy(&rx.decoded.sensor_message, msg.raw, sizeof(rx.decoded.sensor_message));
         break;
+#endif // AP_ADSB_UAVIONIX_UCP_CAPTURE_ALL_RX_PACKETS
 
     case GDL90_ID_TRANSPONDER_STATUS:
         memcpy(&rx.decoded.transponder_status, msg.raw, sizeof(rx.decoded.transponder_status));
@@ -227,7 +232,8 @@ void AP_ADSB_uAvionix_UCP::handle_msg(const GDL90_RX_MESSAGE &msg)
 
         _frontend.out_state.tx_status.fault &= ~UAVIONIX_ADSB_OUT_STATUS_FAULT_STATUS_MESSAGE_UNAVAIL;
 
-        if (_frontend.out_state.last_status_msg_received_ms == 0) {
+        if (!run_state.has_seen_status) {
+            run_state.has_seen_status = true;
             // set initial control message contents to transponder defaults
             _frontend.out_state.ctrl.modeAEnabled = rx.decoded.transponder_status.modeAEnabled;
             _frontend.out_state.ctrl.modeCEnabled = rx.decoded.transponder_status.modeCEnabled;
@@ -238,7 +244,6 @@ void AP_ADSB_uAvionix_UCP::handle_msg(const GDL90_RX_MESSAGE &msg)
         }
         _frontend.status_msg_received(true);
         break;
-#endif // AP_ADSB_UAVIONIX_UCP_CAPTURE_ALL_RX_PACKETS
 
     case GDL90_ID_TRANSPONDER_CONTROL:
     case GDL90_ID_GPS_DATA:

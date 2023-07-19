@@ -22,6 +22,8 @@ class AP_ADSB_uAvionix_MAVLink : public AP_ADSB_Backend {
 public:
     using AP_ADSB_Backend::AP_ADSB_Backend;
 
+    bool init() override { return true; };
+
     void update() override;
 
 private:

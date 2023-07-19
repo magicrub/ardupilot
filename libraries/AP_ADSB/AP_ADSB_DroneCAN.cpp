@@ -25,6 +25,22 @@
 static Canard::Publisher<ardupilot_equipment_adsb_OutConfig>* dc_out_config[HAL_MAX_CAN_PROTOCOL_DRIVERS];
 static Canard::Publisher<ardupilot_equipment_adsb_OutControl>* dc_out_control[HAL_MAX_CAN_PROTOCOL_DRIVERS];
 
+void AP_ADSB_DroneCAN::update()
+{
+    const uint32_t now_ms = AP_HAL::millis();
+
+    if (_frontend.out_state.last_config_ms == 0 || now_ms - _frontend.out_state.last_config_ms >= 1000) {
+        _frontend.out_state.last_config_ms = now_ms;
+        send_out_config();
+    }
+
+    if (_frontend.out_state.last_control_ms == 0 || now_ms - _frontend.out_state.last_control_ms >= 1000) {
+        _frontend.out_state.last_control_ms = now_ms;
+        send_out_control();
+    }
+
+}
+
 bool AP_ADSB_DroneCAN::init()
 {
     const char* alloc_err_str = "ADSB: DroneCAN alloc failed";
@@ -89,20 +105,18 @@ void AP_ADSB_DroneCAN::handle_out_status(AP_DroneCAN *ap_dronecan, const CanardR
 }
 
 
-void AP_ADSB_DroneCAN::send_out_config(const mavlink_uavionix_adsb_out_cfg_t &msg_mavlink)
+void AP_ADSB_DroneCAN::send_out_config()
 {
     ardupilot_equipment_adsb_OutConfig msg_can {};
 
-    msg_can.ICAO = msg_mavlink.ICAO;
-    memcpy(msg_can.callsign, msg_mavlink.callsign, sizeof(msg_can.callsign));
-    msg_can.emitterType = msg_mavlink.emitterType;
-    msg_can.aircraftSize = msg_mavlink.aircraftSize;
-    msg_can.gpsOffsetLat = msg_mavlink.gpsOffsetLat;
-    msg_can.gpsOffsetLon = msg_mavlink.gpsOffsetLon;
-    msg_can.stallSpeed = msg_mavlink.stallSpeed;
-    msg_can.rfSelect = msg_mavlink.rfSelect;
-    msg_can.ICAO = msg_mavlink.ICAO;
-    
+    msg_can.ICAO = _frontend.out_state.cfg.ICAO_id;
+    msg_can.emitterType = _frontend.out_state.cfg.emitterType;
+    msg_can.aircraftSize = _frontend.out_state.cfg.lengthWidth;
+    msg_can.gpsOffsetLat = _frontend.out_state.cfg.gpsOffsetLat;
+    msg_can.gpsOffsetLon = _frontend.out_state.cfg.gpsOffsetLon;
+    msg_can.rfSelect = _frontend.out_state.cfg.rfSelect;
+    msg_can.stallSpeed = _frontend.out_state.cfg.stall_speed_cm;
+    memcpy(msg_can.callsign, _frontend.out_state.cfg.callsign, sizeof(msg_can.callsign));
     
     for (uint8_t i = 0; i < ARRAY_SIZE(dc_out_config); i++) {
         if (dc_out_config[i] != nullptr) {
@@ -111,16 +125,24 @@ void AP_ADSB_DroneCAN::send_out_config(const mavlink_uavionix_adsb_out_cfg_t &ms
     }
 }
 
-void AP_ADSB_DroneCAN::send_out_control(const mavlink_uavionix_adsb_out_control_t &msg_mavlink)
+void AP_ADSB_DroneCAN::send_out_control()
 {
     ardupilot_equipment_adsb_OutControl msg_can {};
 
-    msg_can.baroAltMSL = msg_mavlink.baroAltMSL;
-    msg_can.squawk = msg_mavlink.squawk;
-    msg_can.state = msg_mavlink.state;
-    msg_can.emergencyStatus = msg_mavlink.emergencyStatus;
-    memcpy(msg_can.flight_id, msg_mavlink.flight_id, sizeof(msg_can.flight_id));
-    msg_can.x_bit = msg_mavlink.x_bit;
+    msg_can.state |= (_frontend.out_state.ctrl.baroCrossChecked ? UAVIONIX_ADSB_OUT_CONTROL_STATE_EXTERNAL_BARO_CROSSCHECKED : 0);
+    msg_can.state |= (_frontend.out_state.ctrl.airGroundState ? UAVIONIX_ADSB_OUT_CONTROL_STATE_ON_GROUND : 0);
+    msg_can.state |= (_frontend.out_state.ctrl.identActive ? UAVIONIX_ADSB_OUT_CONTROL_STATE_IDENT_BUTTON_ACTIVE : 0);
+    msg_can.state |= (_frontend.out_state.ctrl.modeAEnabled ? UAVIONIX_ADSB_OUT_CONTROL_STATE_MODE_A_ENABLED : 0);
+    msg_can.state |= (_frontend.out_state.ctrl.modeCEnabled ? UAVIONIX_ADSB_OUT_CONTROL_STATE_MODE_C_ENABLED : 0);
+    msg_can.state |= (_frontend.out_state.ctrl.modeSEnabled ? UAVIONIX_ADSB_OUT_CONTROL_STATE_MODE_S_ENABLED : 0);
+    msg_can.state |= (_frontend.out_state.ctrl.es1090TxEnabled ? UAVIONIX_ADSB_OUT_CONTROL_STATE_1090ES_TX_ENABLED : 0);
+
+    msg_can.baroAltMSL = _frontend.out_state.ctrl.externalBaroAltitude_mm;
+    msg_can.squawk = _frontend.out_state.ctrl.squawkCode;
+    msg_can.emergencyStatus = _frontend.out_state.ctrl.emergencyState;
+    memcpy(msg_can.flight_id, _frontend.out_state.ctrl.callsign, sizeof(msg_can.flight_id));
+    msg_can.x_bit = _frontend.out_state.ctrl.x_bit;
+
 
     for (uint8_t i = 0; i < ARRAY_SIZE(dc_out_control); i++) {
         if (dc_out_control[i] != nullptr) {

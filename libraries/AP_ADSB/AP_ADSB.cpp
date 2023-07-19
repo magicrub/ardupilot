@@ -251,9 +251,10 @@ void AP_ADSB::init(void)
             _backend[i] = nullptr;
             continue;
         }
+
         // success
         detected_num_instances = i+1;
-        _type[i] = type; // cache the type so _type[] is non-None only for initialized backends
+        _type[i] = type; // cache this so _type[] is non-None only for initialized backends
     }
 
     if (detected_num_instances == 0) {
@@ -592,15 +593,15 @@ void AP_ADSB::handle_out_cfg(const mavlink_uavionix_adsb_out_cfg_t &packet)
     out_state.cfg.ICAO_id = packet.ICAO;
     out_state.cfg.ICAO_id_param.set(out_state.cfg.ICAO_id_param_prev = packet.ICAO & 0x00FFFFFFFF);
 
-    // May contain a non-null value at the end so accept it as-is with memcpy instead of strcpy
-    memcpy(out_state.cfg.callsign, packet.callsign, sizeof(out_state.cfg.callsign));
-
     out_state.cfg.emitterType.set(packet.emitterType);
     out_state.cfg.lengthWidth.set(packet.aircraftSize);
     out_state.cfg.gpsOffsetLat.set(packet.gpsOffsetLat);
     out_state.cfg.gpsOffsetLon.set(packet.gpsOffsetLon);
     out_state.cfg.rfSelect.set(packet.rfSelect);
     out_state.cfg.stall_speed_cm = packet.stallSpeed;
+
+    // May contain a non-null value at the end so accept it as-is with memcpy instead of strcpy
+    memcpy(out_state.cfg.callsign, packet.callsign, sizeof(out_state.cfg.callsign));
 
     // guard against string with non-null end char
     const char c = out_state.cfg.callsign[MAVLINK_MSG_UAVIONIX_ADSB_OUT_CFG_FIELD_CALLSIGN_LEN-1];
@@ -610,15 +611,6 @@ void AP_ADSB::handle_out_cfg(const mavlink_uavionix_adsb_out_cfg_t &packet)
 
     // send now
     out_state.last_config_ms = 0;
-
-#if AP_ADSB_DRONECAN_ENABLED
-    for (uint8_t i=0; i<detected_num_instances; i++) {
-        if (get_type(i) == AP_ADSB::Type::DroneCAN) {
-            ((AP_ADSB_DroneCAN *)_backend)->send_out_config(packet);
-            break;
-        }
-    }
-#endif
 }
 
 /*
@@ -640,14 +632,7 @@ void AP_ADSB::handle_out_control(const mavlink_uavionix_adsb_out_control_t &pack
     memcpy(out_state.ctrl.callsign, packet.flight_id, sizeof(out_state.ctrl.callsign));
     out_state.ctrl.x_bit = packet.x_bit;
 
-#if AP_ADSB_DRONECAN_ENABLED
-    for (uint8_t i=0; i<detected_num_instances; i++) {
-        if (get_type(i) == AP_ADSB::Type::DroneCAN) {
-            ((AP_ADSB_DroneCAN *)_backend)->send_out_control(packet);
-            break;
-        }
-    }
-#endif
+    out_state.last_control_ms = 0; // fwd now, if it applies
 }
 
 

@@ -117,7 +117,7 @@ public:
 #endif
 
 
-#ifdef HAL_PERIPH_ENABLE_ADSB
+#if defined(HAL_PERIPH_ENABLE_ADSB) || (defined(HAL_PERIPH_ENABLE_ADSB_OUT) && !HAL_GCS_ENABLED)
     AP_Int32 adsb_baudrate;
     AP_Int8 adsb_port;
 #endif

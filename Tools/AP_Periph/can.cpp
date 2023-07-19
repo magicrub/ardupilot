@@ -554,7 +554,7 @@ static void handle_allocation_response(CanardInstance* ins, CanardRxTransfer* tr
 static void handle_adsb_out_config(CanardInstance* ins, CanardRxTransfer* transfer)
 {
     ardupilot_equipment_adsb_OutConfig msg_can;
-    if (!ardupilot_equipment_adsb_OutConfig_decode(transfer, &msg_can)) {
+    if (ardupilot_equipment_adsb_OutConfig_decode(transfer, &msg_can)) {
         return;
     }
     mavlink_uavionix_adsb_out_cfg_t msg_mavlink {};
@@ -574,7 +574,7 @@ static void handle_adsb_out_config(CanardInstance* ins, CanardRxTransfer* transf
 static void handle_adsb_out_control(CanardInstance* ins, CanardRxTransfer* transfer)
 {
     ardupilot_equipment_adsb_OutControl msg_can;
-    if (!ardupilot_equipment_adsb_OutControl_decode(transfer, &msg_can)) {
+    if (ardupilot_equipment_adsb_OutControl_decode(transfer, &msg_can)) {
         return;
     }
     mavlink_uavionix_adsb_out_control_t msg_mavlink {};

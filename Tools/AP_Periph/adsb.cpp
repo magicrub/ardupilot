@@ -72,40 +72,6 @@ void AP_Periph_FW::adsb_update(void)
         return;
     }
 
-#ifdef HAL_PERIPH_ENABLE_ADSB_OUT
-    const uint32_t now_ms = AP_HAL::millis();
-    if (now_ms - adsb.update_last_ms >= 100) {
-        adsb.update_last_ms = now_ms;
-
-        adsb_lib.update(); // 10 Hz update
-
-        const uint32_t last_status_ms = adsb_lib.get_last_status_msg_received_ms();
-        if (adsb.last_status_msg_received_ms != last_status_ms) {
-            adsb.last_status_msg_received_ms = last_status_ms;
-            // the adsb library driver wants to send a status. This is usually done via gcs().send_message()
-
-            ardupilot_equipment_adsb_OutStatus msg_can {};
-            mavlink_uavionix_adsb_out_status_t msg_mavlink = adsb_lib.get_status();
-
-            msg_can.state = msg_mavlink.state;
-            msg_can.squawk = msg_mavlink.squawk;
-            msg_can.NIC_NACp = msg_mavlink.NIC_NACp;
-            msg_can.boardTemp = msg_mavlink.boardTemp;
-            msg_can.fault = msg_mavlink.fault;
-            memcpy(msg_can.flight_id, msg_mavlink.flight_id, sizeof(msg_can.flight_id));
-
-            uint8_t buffer[ARDUPILOT_EQUIPMENT_ADSB_OUTSTATUS_MAX_SIZE] {};
-            uint16_t total_size = ardupilot_equipment_adsb_OutStatus_encode(&msg_can, buffer, !periph.canfdout());
-
-            periph.canard_broadcast(ARDUPILOT_EQUIPMENT_ADSB_OUTSTATUS_SIGNATURE,
-                                    ARDUPILOT_EQUIPMENT_ADSB_OUTSTATUS_ID,
-                                    CANARD_TRANSFER_PRIORITY_LOW,
-                                    &buffer[0],
-                                    total_size);
-        }
-    }
-
-#else
     auto *uart = hal.serial(g.adsb_port);
     if (uart == nullptr) {
         return;
@@ -126,7 +92,6 @@ void AP_Periph_FW::adsb_update(void)
             }
         }
     }
-#endif
 }
 
 /*
@@ -186,5 +151,4 @@ void AP_Periph_FW::can_send_ADSB(struct __mavlink_adsb_vehicle_t &msg)
                     &buffer[0],
                     total_size);
 }
-
 #endif // HAL_PERIPH_ENABLE_ADSB

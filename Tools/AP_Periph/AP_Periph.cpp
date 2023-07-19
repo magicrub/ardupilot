@@ -174,6 +174,9 @@ void AP_Periph_FW::init()
 #ifdef HAL_PERIPH_ENABLE_ADSB
     adsb_init();
 #endif
+#ifdef HAL_PERIPH_ENABLE_ADSB_OUT
+    adsb_out_init();
+#endif
 
 #ifdef HAL_PERIPH_ENABLE_EFI
     if (efi.enabled() && g.efi_port >= 0) {
@@ -479,8 +482,13 @@ void AP_Periph_FW::update()
 #if (defined(HAL_PERIPH_NEOPIXEL_COUNT_WITHOUT_NOTIFY) && HAL_PERIPH_NEOPIXEL_COUNT_WITHOUT_NOTIFY == 8) || defined(HAL_PERIPH_ENABLE_NOTIFY)
     update_rainbow();
 #endif
+
 #ifdef HAL_PERIPH_ENABLE_ADSB
     adsb_update();
+#endif
+
+#ifdef HAL_PERIPH_ENABLE_ADSB_OUT
+    adsb_out_update();
 #endif
 }
 

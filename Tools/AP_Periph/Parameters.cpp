@@ -298,7 +298,7 @@ const AP_Param::Info AP_Periph_FW::var_info[] = {
     GOBJECT(rangefinder, "RNGFND", RangeFinder),
 #endif
 
-#ifdef HAL_PERIPH_ENABLE_ADSB
+#if defined(HAL_PERIPH_ENABLE_ADSB) || (defined(HAL_PERIPH_ENABLE_ADSB_OUT) && !HAL_GCS_ENABLED)
     // @Param: ADSB_BAUDRATE
     // @DisplayName: ADSB serial baudrate
     // @Description: ADSB serial baudrate.
@@ -316,14 +316,13 @@ const AP_Param::Info AP_Periph_FW::var_info[] = {
     // @User: Advanced
     // @RebootRequired: True
     GSCALAR(adsb_port, "ADSB_PORT", HAL_PERIPH_ADSB_PORT_DEFAULT),
+#endif
 
 #ifdef HAL_PERIPH_ENABLE_ADSB_OUT
     // @Group: ADSB_
     // @Path: ../libraries/AP_ADSB/AP_ADSB.cpp
-    GOBJECT(adsb_lib,                "ADSB_", AP_ADSB),
+    GOBJECT(adsb_lib, "ADSB_", AP_ADSB),
 #endif
-#endif
-
 
 #ifdef HAL_PERIPH_ENABLE_PWM_HARDPOINT
     // @Param: HARDPOINT_ID
@@ -439,11 +438,11 @@ const AP_Param::Info AP_Periph_FW::var_info[] = {
     // @Range: 1 255
     // @User: Advanced
     GSCALAR(sysid_this_mav,         "SYSID_THISMAV",  MAV_SYSTEM_ID),
+#endif
 
     // @Group: SERIAL
     // @Path: ../libraries/AP_SerialManager/AP_SerialManager.cpp
     GOBJECT(serial_manager, "SERIAL",   AP_SerialManager),
-#endif
 
 #if AP_SCRIPTING_ENABLED
     // @Group: SCR_
