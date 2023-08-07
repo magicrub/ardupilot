@@ -1,5 +1,6 @@
 -- This script is an example of saying hello.  A lot.
 -- Pick a random number to send back
+math = package.require("math")
 local number = math.random()
 
 function update() -- this is the loop which periodically runs
