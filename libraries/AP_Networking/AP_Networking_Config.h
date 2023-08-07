@@ -11,6 +11,11 @@
 #endif
 
 
+#ifndef AP_NETWORKING_SERIAL_ENABLED
+#define AP_NETWORKING_SERIAL_ENABLED AP_NETWORKING_ENABLED && HAL_GCS_ENABLED && (CONFIG_HAL_BOARD == HAL_BOARD_CHIBIOS)
+#endif
+
+
 // ---------------------------
 // Below are default params
 // ---------------------------
