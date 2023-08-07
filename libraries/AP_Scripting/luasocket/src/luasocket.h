@@ -24,8 +24,8 @@
 #endif
 #endif
 
-#include "lua.h"
-#include "lauxlib.h"
+#include "../../lua/src/lua.h"
+#include "../../lua/src/lauxlib.h"
 #include "compat.h"
 
 /*-------------------------------------------------------------------------*\

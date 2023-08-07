@@ -213,10 +213,9 @@
 #define LUA_CDIR	LUA_ROOT "lib/lua/" LUA_VDIR "/"
 #define LUA_PATH_DEFAULT  \
 		LUA_LDIR"?.lua;"  LUA_LDIR"?/init.lua;" \
-		"./?.lua;" "./?/init.lua"
-		LUA_CDIR"?.lua;"  LUA_CDIR"?/init.lua;" \
-		"./?.lua;" "./?/init.lua;" \
-		"@ROMFS/lua_modules/?.lua;" "@ROMFS/lua_modules/?/init.lua"
+        LUA_CDIR"?.lua;"  LUA_CDIR"?/init.lua;" \
+        "./?.lua;" "./?/init.lua;" \
+        "@ROMFS/lua_modules/?.lua;" "@ROMFS/lua_modules/?/init.lua"
 #define LUA_CPATH_DEFAULT \
 		LUA_CDIR"?.so;" LUA_CDIR"loadall.so;" "./?.so"
 #endif			/* } */
