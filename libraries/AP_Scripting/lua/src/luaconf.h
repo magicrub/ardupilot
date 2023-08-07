@@ -10,6 +10,7 @@
 
 #include <limits.h>
 #include <stddef.h>
+#include <AP_Scripting/lua_common_defs.h>
 
 /*
   don't support binary load() by default
