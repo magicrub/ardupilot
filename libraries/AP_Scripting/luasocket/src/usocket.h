@@ -9,6 +9,8 @@
 * BSD include files
 \*=========================================================================*/
 /* error codes */
+#include <AP_HAL/AP_HAL_Boards.h>
+
 #include <errno.h>
 /* close function */
 #include <unistd.h>
@@ -17,6 +19,7 @@
 /* struct sockaddr */
 #include <sys/types.h>
 /* socket function */
+#if CONFIG_HAL_BOARD != HAL_BOARD_CHIBIOS
 #include <sys/socket.h>
 /* struct timeval */
 #include <sys/time.h>
@@ -30,9 +33,21 @@
 /* TCP options (nagle algorithm disable) */
 #include <netinet/tcp.h>
 #include <net/if.h>
-
+#else
+#include <lwip/err.h>
+#include <lwip/sockets.h>
+#include <lwip/sys.h>
+#include <lwip/netdb.h>
+#include <lwip/dns.h>
+#include <lwip/inet.h>
+#include "unix_compat.h"
+#endif
 #ifndef SO_REUSEPORT
 #define SO_REUSEPORT SO_REUSEADDR
+#endif
+
+#if CONFIG_HAL_BOARD == HAL_BOARD_CHIBIOS
+#define SOCKET_SELECT
 #endif
 
 /* Some platforms use IPV6_JOIN_GROUP instead if
