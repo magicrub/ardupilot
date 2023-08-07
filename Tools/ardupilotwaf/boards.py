@@ -60,7 +60,20 @@ class Board:
         if cfg.options.enable_scripting:
             env.DEFINES.update(
                 AP_SCRIPTING_ENABLED = 1,
-            )
+                LUA_32BITS = 1,
+                )
+            
+            cfg.env.prepend_value('INCLUDES', [
+                    cfg.srcnode.find_dir('libraries/AP_Scripting/lua/src/').abspath(),
+                    ])
+            env.AP_LIBRARIES += [
+                'AP_Scripting',
+                'AP_Scripting/lua/src',
+                ]
+            if cfg.options.enable_luasocket:
+                env.AP_LIBRARIES += [
+                    'AP_Scripting/luasocket/src',
+                    ]
         elif cfg.options.disable_scripting:
             env.DEFINES.update(
                 AP_SCRIPTING_ENABLED = 0,
