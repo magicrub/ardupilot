@@ -149,6 +149,8 @@ private:
     AP_Networking_Backend *_drivers[AP_NETWORKING_MAX_INSTANCES];
 
     uint8_t     _num_instances;         // number of feature instances
+    struct lwipthread_opts *lwip_options;
+    uint8_t macaddr[6];
 
     void announce_address_changes();
 

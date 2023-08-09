@@ -334,13 +334,15 @@ void AP_Networking::init()
         addrMode = NET_ADDRESS_STATIC;
     }
 
-    struct lwipthread_opts netOptions = { (uint8_t *) localMACAddress,
-                                        _activeSettings.ip,
-                                        _activeSettings.nm,
-                                        _activeSettings.gw,
-                                        addrMode };
+    lwip_options = new lwipthread_opts;
+    memcpy(macaddr, localMACAddress, sizeof(macaddr));
+    lwip_options->macaddress = macaddr;
+    lwip_options->address = _activeSettings.ip;
+    lwip_options->netmask = _activeSettings.nm;
+    lwip_options->gateway = _activeSettings.gw;
+    lwip_options->addrMode = addrMode;
 
-    lwipInit(&netOptions);
+    lwipInit(lwip_options);
 #endif
 
     // create each instance
