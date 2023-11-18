@@ -64,6 +64,12 @@
   #define LWIP_IPV6 0
 #endif
 
+#ifndef LWIP_MDNS_RESPONDER
+#define LWIP_MDNS_RESPONDER             1
+#endif
+#ifndef LWIP_NUM_NETIF_CLIENT_DATA
+#define LWIP_NUM_NETIF_CLIENT_DATA      (LWIP_MDNS_RESPONDER)
+#endif
 /**
  * SYS_LIGHTWEIGHT_PROT==1: if you want inter-task protection for certain
  * critical regions during buffer allocation, deallocation and memory
@@ -253,7 +259,7 @@
  * (requires the LWIP_UDP option)
  */
 #ifndef MEMP_NUM_UDP_PCB
-#define MEMP_NUM_UDP_PCB                4
+#define MEMP_NUM_UDP_PCB                (4+LWIP_MDNS_RESPONDER)
 #endif
 
 /**

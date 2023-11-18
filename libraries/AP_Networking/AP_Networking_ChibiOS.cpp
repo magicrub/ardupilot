@@ -9,6 +9,7 @@
 #include <lwipthread.h>
 #include <lwip/udp.h>
 #include <lwip/ip_addr.h>
+#include <lwip/apps/mdns.h>
 
 extern const AP_HAL::HAL& hal;
 
@@ -121,6 +122,10 @@ bool AP_Networking_ChibiOS::init()
 
     lwipInit(lwip_options);
 
+#if defined(LWIP_MDNS_RESPONDER) && LWIP_MDNS_RESPONDER
+    mdns_resp_init();
+#endif
+
     return true;
 }
 
@@ -141,6 +146,18 @@ void AP_Networking_ChibiOS::update()
         activeSettings.nm = nm;
         activeSettings.last_change_ms = AP_HAL::millis();
     }
+
+    static uint32_t last_update_ms = 0;
+    if (last_update_ms == 0 && AP_HAL::millis() - last_update_ms > 3000) {
+        last_update_ms = AP_HAL::millis();
+
+        struct netif thisif = lwipGetNetIf();
+        //auto netif = lwipGetThisIf();
+        auto result = mdns_resp_add_netif(&thisif, "ardupilot", 60);
+
+        GCS_SEND_TEXT(MAV_SEVERITY_INFO, "mdns_resp_add_netif = %d, %d",(int)result, (int)&thisif);
+    }
+
 }
 
 #endif // AP_NETWORKING_BACKEND_CHIBIOS
