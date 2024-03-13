@@ -4,6 +4,8 @@
 #include <AP_HAL/AP_HAL.h>
 #include <AP_HAL/I2CDevice.h>
 
+#define ADS1115_CHANNELS_COUNT           6
+
 struct adc_report_s
 {
     uint8_t id;

@@ -93,7 +93,6 @@
 
 extern const AP_HAL::HAL &hal;
 
-#define ADS1115_CHANNELS_COUNT           6
 
 const uint8_t AP_ADC_ADS1115::_channels_number  = ADS1115_CHANNELS_COUNT;
 
