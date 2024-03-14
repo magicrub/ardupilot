@@ -14,6 +14,7 @@
 #include <AP_RangeFinder/AP_RangeFinder.h>
 #include <AP_Proximity/AP_Proximity.h>
 #include <AP_EFI/AP_EFI.h>
+#include <AP_DAC/AP_DAC_DACx0501.h>
 #include <AP_KDECAN/AP_KDECAN.h>
 #include <AP_MSP/AP_MSP.h>
 #include <AP_MSP/msp.h>
@@ -321,6 +322,10 @@ public:
 #ifdef HAL_PERIPH_ENABLE_EFI
     AP_EFI efi;
     uint32_t efi_update_ms;
+#endif
+
+#if AP_DAC_DACx0501_ENABLED
+    AP_DAC_DACx0501 dac;
 #endif
 
 #if AP_KDECAN_ENABLED

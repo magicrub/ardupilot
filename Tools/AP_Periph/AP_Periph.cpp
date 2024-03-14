@@ -200,6 +200,10 @@ void AP_Periph_FW::init()
     }
 #endif
 
+#if AP_DAC_DACx0501_ENABLED
+    dac.init();
+#endif
+
 #if AP_KDECAN_ENABLED
     kdecan.init();
 #endif

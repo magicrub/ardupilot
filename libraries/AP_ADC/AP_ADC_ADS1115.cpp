@@ -140,6 +140,8 @@ bool AP_ADC_ADS1115::init()
         _samples[i].data = -1.0f;
     }
 
+    _dev->set_retries(3);
+
     _dev->register_periodic_callback(100000, FUNCTOR_BIND_MEMBER(&AP_ADC_ADS1115::_update, void));
 
     return true;
