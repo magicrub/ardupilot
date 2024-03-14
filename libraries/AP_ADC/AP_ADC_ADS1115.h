@@ -4,8 +4,13 @@
 #include <AP_HAL/AP_HAL.h>
 #include <AP_HAL/I2CDevice.h>
 
+#ifndef AP_ADC_ADS1115_ENABLED
+#define AP_ADC_ADS1115_ENABLED 0
+#endif
+
 #define ADS1115_CHANNELS_COUNT           6
 
+#if AP_ADC_ADS1115_ENABLED
 struct adc_report_s
 {
     uint8_t id;
@@ -40,3 +45,4 @@ private:
 
     float _convert_register_data_to_mv(int16_t word) const;
 };
+#endif // AP_ADC_ADS1115_ENABLED

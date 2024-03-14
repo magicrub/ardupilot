@@ -91,6 +91,7 @@ public:
         k_param_serial_options,
         k_param_relay,
         k_param_temperature_msg_rate,
+        k_param_adc_send_rate,
     };
 
     AP_Int16 format_version;
@@ -199,6 +200,10 @@ public:
 #ifdef HAL_PERIPH_ENABLE_EFI
     AP_Int32 efi_baudrate;
     AP_Int8 efi_port;
+#endif
+
+#if AP_ADC_ADS1115_ENABLED
+    AP_Int32 adc_send_rate;
 #endif
 
 #if HAL_PERIPH_CAN_MIRROR

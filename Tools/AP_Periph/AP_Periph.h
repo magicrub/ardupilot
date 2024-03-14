@@ -56,6 +56,8 @@
 #endif
 #endif
 
+#include <AP_ADC/AP_ADC_ADS1115.h>
+
 #if defined(HAL_PERIPH_ENABLE_DEVICE_TEMPERATURE) && !AP_TEMPERATURE_SENSOR_ENABLED
     #error "HAL_PERIPH_ENABLE_DEVICE_TEMPERATURE requires AP_TEMPERATURE_SENSOR_ENABLED"
 #endif
@@ -227,6 +229,15 @@ public:
 #ifdef HAL_PERIPH_ENABLE_RPM
     AP_RPM rpm_sensor;
     uint32_t rpm_last_update_ms;
+#endif
+
+#if AP_ADC_ADS1115_ENABLED
+    struct {
+        AP_ADC_ADS1115 lib;
+        adc_report_s samples[ADS1115_CHANNELS_COUNT];
+        uint32_t last_update_ms;
+        uint32_t last_send_ms;
+    } adc;
 #endif
 
 #ifdef HAL_PERIPH_ENABLE_BATTERY

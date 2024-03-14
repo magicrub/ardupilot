@@ -2,6 +2,7 @@
 #include <AP_HAL/utility/sparse-endian.h>
 
 #include "AP_ADC_ADS1115.h"
+#if AP_ADC_ADS1115_ENABLED
 
 #define ADS1115_ADDRESS_ADDR_GND    0x48 // address pin low (GND)
 #define ADS1115_ADDRESS_ADDR_VDD    0x49 // address pin high (VCC)
@@ -227,3 +228,4 @@ void AP_ADC_ADS1115::_update()
     _channel_to_read = (_channel_to_read + 1) % _channels_number;
     _start_conversion(_channel_to_read);
 }
+#endif // AP_ADC_ADS1115_ENABLED

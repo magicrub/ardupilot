@@ -24,6 +24,7 @@
 #include <AP_HAL/AP_HAL_Boards.h>
 #include "AP_Periph.h"
 #include <stdio.h>
+#include <dronecan_msgs.h>
 
 #if CONFIG_HAL_BOARD == HAL_BOARD_CHIBIOS
 #include <AP_HAL_ChibiOS/hwdef/common/stm32_util.h>
@@ -178,6 +179,10 @@ void AP_Periph_FW::init()
 
 #ifdef HAL_PERIPH_ENABLE_RC_OUT
     rcout_init();
+#endif
+
+#if AP_ADC_ADS1115_ENABLED
+    adc.lib.init();
 #endif
 
 #ifdef HAL_PERIPH_ENABLE_ADSB
@@ -491,6 +496,46 @@ void AP_Periph_FW::update()
 
 #if AP_TEMPERATURE_SENSOR_ENABLED
     temperature_sensor.update();
+#endif
+
+#if AP_ADC_ADS1115_ENABLED
+    if (now - adc.last_update_ms >= 10) {
+        adc.last_update_ms = now;
+        IGNORE_RETURN(adc.lib.read(adc.samples, ARRAY_SIZE(adc.samples)));
+    }
+    if (g.adc_send_rate > 0 && now - adc.last_send_ms >= g.adc_send_rate) {
+        adc.last_send_ms = now;
+
+        ardupilot_equipment_power_BatteryCells pkt1 {};
+        pkt1.voltages.len = MIN(ARRAY_SIZE(adc.samples),ARRAY_SIZE(pkt1.voltages.data));
+        for (uint8_t i=0; i<pkt1.voltages.len; i++) {
+            pkt1.voltages.data[i] = adc.samples[i].data;
+        }
+
+        uint8_t buffer1[ARDUPILOT_EQUIPMENT_POWER_BATTERYCELLS_MAX_SIZE] {};
+        uint16_t total_size1 = ardupilot_equipment_power_BatteryCells_encode(&pkt1, buffer1, !periph.canfdout());
+        canard_broadcast(ARDUPILOT_EQUIPMENT_POWER_BATTERYCELLS_SIGNATURE,
+                        ARDUPILOT_EQUIPMENT_POWER_BATTERYCELLS_ID,
+                        CANARD_TRANSFER_PRIORITY_LOW,
+                        &buffer1[0],
+                        total_size1);
+
+
+
+        rb_ADC pkt2 {};
+        pkt2.voltages.len = MIN(ARRAY_SIZE(adc.samples),ARRAY_SIZE(pkt2.voltages.data));
+        for (uint8_t i=0; i<pkt2.voltages.len; i++) {
+            pkt2.voltages.data[i] = adc.samples[i].data;
+        }
+
+        uint8_t buffer2[RB_ADC_MAX_SIZE] {};
+        uint16_t total_size2 = rb_ADC_encode(&pkt2, buffer2, !periph.canfdout());
+        canard_broadcast(RB_ADC_SIGNATURE,
+                        RB_ADC_ID,
+                        CANARD_TRANSFER_PRIORITY_LOW,
+                        &buffer2[0],
+                        total_size2);
+    }
 #endif
 
 #ifdef HAL_PERIPH_ENABLE_RPM

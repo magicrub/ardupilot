@@ -510,6 +510,16 @@ const AP_Param::Info AP_Periph_FW::var_info[] = {
     GOBJECT(efi, "EFI", AP_EFI),
 #endif
 
+#if AP_ADC_ADS1115_ENABLED
+    // @Param: ADC_RATE
+    // @DisplayName: ADC Send Rate Interval
+    // @Description: ADC Send Rate Interval
+    // @Range: 0 2000
+    // @Increment: 1
+    // @Units: ms
+    GSCALAR(adc_send_rate, "ADC_RATE", 1),
+#endif
+
 #ifdef HAL_PERIPH_ENABLE_PROXIMITY
     // @Param: PRX_BAUDRATE
     // @DisplayName: Proximity Sensor serial baudrate
