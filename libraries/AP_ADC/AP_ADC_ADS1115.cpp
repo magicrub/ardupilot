@@ -215,7 +215,7 @@ void AP_ADC_ADS1115::_update()
     uint8_t config[2];
     be16_t val;
 
-    if (!_dev->read_registers(ADS1115_RA_CONFIG, config, sizeof(config))) {
+    if (!_dev->read_registers(ADS1115_RA_CONFIG, config, ARRAY_SIZE(config))) {
         error("_dev->read_registers failed in ADS1115");
         return;
     }
