@@ -9,8 +9,13 @@
 #define ADS1115_ADDRESS_ADDR_SDA    0x4A // address pin tied to SDA pin
 #define ADS1115_ADDRESS_ADDR_SCL    0x4B // address pin tied to SCL pin
 
+#ifndef ADS1115_I2C_ADDR
 #define ADS1115_I2C_ADDR            ADS1115_ADDRESS_ADDR_GND
+#endif
+
+#ifndef ADS1115_I2C_BUS
 #define ADS1115_I2C_BUS             1
+#endif
 
 #define ADS1115_RA_CONVERSION       0x00
 #define ADS1115_RA_CONFIG           0x01
