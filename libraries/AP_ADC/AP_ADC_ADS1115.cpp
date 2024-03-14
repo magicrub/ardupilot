@@ -135,6 +135,11 @@ bool AP_ADC_ADS1115::init()
 
     _gain = ADS1115_PGA_4P096;
 
+    // initialize the sample cache to ensure we know if it was populated with valid data
+    for (size_t i = 0; i < _channels_number; i++) {
+        _samples[i].data = -1.0f;
+    }
+
     _dev->register_periodic_callback(100000, FUNCTOR_BIND_MEMBER(&AP_ADC_ADS1115::_update, void));
 
     return true;

@@ -1,6 +1,0 @@
-#
-# ADC voltages
-#
-
-float32[<=10] voltages            # [Volt]
-
