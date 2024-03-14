@@ -18,13 +18,14 @@
 #pragma once
 
 #include "AP_HAL_ChibiOS.h"
+#include <AP_ADC/AP_ADC_ADS1115.h>
 
 // available ADC channels for allocation
 #define ANALOG_MAX_CHANNELS 16
 
 // physical ADC channels per ADC HAL driver
 // This is MCU dependent, currently STM32H7 has the highest number of ADC_INs i.e. 20
-#define HAL_MAX_ANALOG_IN_CHANNELS 20
+// #define HAL_MAX_ANALOG_IN_CHANNELS 20
 
 #ifndef HAL_NUM_ANALOG_INPUTS
 #if defined(HAL_ANALOG3_PINS) || HAL_WITH_MCU_MONITORING
@@ -127,6 +128,15 @@ private:
     static uint32_t sample_count[HAL_NUM_ANALOG_INPUTS];
 
     HAL_Semaphore _semaphore;
+
+#ifdef HAL_ANALOG4_PINS
+    struct {
+        AP_ADC_ADS1115 *adc;
+        // ChibiOS::AnalogSource *channels[ADS1115_CHANNELS_COUNT];
+        uint32_t last_update_timestamp;
+    } _ads1115;
+    void update_ads1115();
+#endif
 
 #if HAL_WITH_MCU_MONITORING
     uint16_t _mcu_monitor_sample_count;

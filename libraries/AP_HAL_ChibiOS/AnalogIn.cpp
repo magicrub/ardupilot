@@ -76,6 +76,10 @@ const AnalogIn::pin_info AnalogIn::pin_config[] = { HAL_ANALOG_PINS };
     const AnalogIn::pin_info AnalogIn::pin_config_2[] = { HAL_ANALOG2_PINS };
     #define ADC2_GRP1_NUM_CHANNELS ARRAY_SIZE(AnalogIn::pin_config_2)
 #endif
+#ifdef HAL_ANALOG4_PINS
+    const AnalogIn::pin_info AnalogIn::pin_config_4[] = { HAL_ANALOG4_PINS };
+    #define ADC4_GRP1_NUM_CHANNELS ARRAY_SIZE(AnalogIn::pin_config_4)
+#endif
 
 #if defined(HAL_ANALOG3_PINS) || HAL_WITH_MCU_MONITORING
 #if HAL_WITH_MCU_MONITORING
@@ -164,6 +168,14 @@ float AnalogSource::_pin_scaler(void)
         }
     }
 #endif
+#ifdef HAL_ANALOG4_PINS
+    for (uint8_t i=0; i<ADC4_GRP1_NUM_CHANNELS; i++) {
+        if (AnalogIn::pin_config_4[i].analog_pin == _pin && (_pin != ANALOG_INPUT_NONE)) {
+            scaling = AnalogIn::pin_config_4[i].scaling;
+            break;
+        }
+    }
+#endif
     return scaling;
 }
 
@@ -222,6 +234,14 @@ bool AnalogSource::set_pin(uint8_t pin)
 #ifdef HAL_ANALOG3_PINS
         for (uint8_t i=0; i<ADC3_GRP1_NUM_CHANNELS; i++) {
             if (AnalogIn::pin_config_3[i].analog_pin == pin) {
+                found_pin = true;
+                break;
+            }
+        }
+#endif
+#ifdef HAL_ANALOG4_PINS
+        for (uint8_t i=0; i<ADC4_GRP1_NUM_CHANNELS; i++) {
+            if (AnalogIn::pin_config_4[i].analog_pin == pin) {
                 found_pin = true;
                 break;
             }
@@ -287,6 +307,11 @@ uint8_t AnalogIn::get_pin_channel(uint8_t adc_index, uint8_t pin_index)
         osalDbgAssert(pin_index < ADC3_GRP1_NUM_CHANNELS, "invalid pin_index");
         return pin_config_3[pin_index].channel;
 #endif
+#ifdef HAL_ANALOG4_PINS
+    case 3:
+        osalDbgAssert(pin_index < ADC4_GRP1_NUM_CHANNELS, "invalid pin_index");
+        return pin_config_4[pin_index].channel;
+#endif
     };
     osalDbgAssert(false, "invalid adc_index");
     return 255;
@@ -304,6 +329,10 @@ uint8_t AnalogIn::get_analog_pin(uint8_t adc_index, uint8_t pin_index)
 #if defined(HAL_ANALOG3_PINS)
     case 2:
         return pin_config_3[pin_index].analog_pin;
+#endif
+#ifdef HAL_ANALOG4_PINS
+    case 3:
+        return pin_config_4[pin_index].analog_pin;
 #endif
     };
     osalDbgAssert(false, "invalid adc_index");
@@ -324,6 +353,10 @@ float AnalogIn::get_pin_scaling(uint8_t adc_index, uint8_t pin_index)
 #if defined(HAL_ANALOG3_PINS)
     case 2:
         return pin_config_3[pin_index].scaling;
+#endif
+#ifdef HAL_ANALOG4_PINS
+    case 3:
+        return pin_config_4[pin_index].scaling;
 #endif
     };
     osalDbgAssert(false, "invalid adc_index");
@@ -420,6 +453,10 @@ uint8_t AnalogIn::get_num_grp_channels(uint8_t index)
     case 2:
         return ADC3_GRP1_NUM_CHANNELS;
 #endif
+#ifdef HAL_ANALOG4_PINS
+    case 3:
+        return ADC4_GRP1_NUM_CHANNELS;
+#endif
     };
     osalDbgAssert(false, "invalid adc_index");
     return 0;
@@ -442,7 +479,37 @@ void AnalogIn::init()
 #if defined(HAL_ANALOG3_PINS)
     setup_adc(2);
 #endif
+
+#ifdef HAL_ANALOG4_PINS
+    _ads1115.adc = new AP_ADC_ADS1115();
+    if (_ads1115.adc != nullptr) {
+        _ads1115.adc->init();
+        hal.scheduler->register_timer_process(FUNCTOR_BIND_MEMBER(&AnalogIn::update_ads1115, void));
+    }
+#endif
 }
+
+#ifdef HAL_ANALOG4_PINS
+void AnalogIn::update_ads1115()
+{
+    if (AP_HAL::micros() - _ads1115.last_update_timestamp < 100000) {
+        return;
+    }
+
+    adc_report_s reports[ADS1115_CHANNELS_COUNT];
+    const size_t rc = _ads1115.adc->read(reports, ARRAY_SIZE(reports));
+    for (size_t i = 0; i < rc; i++) {
+        for (uint8_t j=0; j < rc; j++) {
+            ChibiOS::AnalogSource *source = _channels[j];
+
+            if (source != nullptr && reports[i].id == source->_pin) {
+                source->_value = reports[i].data * 0.001;
+            }
+        }
+    }
+    _ads1115.last_update_timestamp = AP_HAL::micros();
+}
+#endif // HAL_ANALOG4_PINS
 
 void AnalogIn::setup_adc(uint8_t index)
 {
