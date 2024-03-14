@@ -503,38 +503,60 @@ void AP_Periph_FW::update()
         adc.last_update_ms = now;
         IGNORE_RETURN(adc.lib.read(adc.samples, ARRAY_SIZE(adc.samples)));
     }
-    if (g.adc_send_rate > 0 && now - adc.last_send_ms >= g.adc_send_rate) {
-        adc.last_send_ms = now;
 
-        ardupilot_equipment_power_BatteryCells pkt1 {};
-        pkt1.voltages.len = MIN(ARRAY_SIZE(adc.samples),ARRAY_SIZE(pkt1.voltages.data));
-        for (uint8_t i=0; i<pkt1.voltages.len; i++) {
-            pkt1.voltages.data[i] = adc.samples[i].data;
+    if (g.adc_send_rate >= 1 || g.adc_send_rate == -1) {
+        const uint32_t last_sample_timestamp_ms = adc.lib.get_last_sample_timestamp_ms();
+        const bool new_sample_available = (adc.last_sample_timestamp_ms != last_sample_timestamp_ms) && adc.last_sample_timestamp_ms != 0;
+
+        if (g.adc_send_rate == -1) {
+            if (now - adc.last_debug_ms >= 1000) {
+                adc.last_debug_ms = now;
+                adc.last_sample_timestamp_ms = last_sample_timestamp_ms;
+
+                can_printf("ADC%s %.2f, %.2f, %.2f, %.2f, %.2f, %.2f",
+                    new_sample_available ? "" : " STALE",
+                    adc.samples[0].data,
+                    adc.samples[1].data,
+                    adc.samples[2].data,
+                    adc.samples[3].data,
+                    adc.samples[4].data,
+                    adc.samples[5].data);
+            }
+
+        } else if (new_sample_available && now - adc.last_send_ms >= g.adc_send_rate) {
+            adc.last_sample_timestamp_ms = last_sample_timestamp_ms;
+            adc.last_send_ms = now;
+
+            ardupilot_equipment_power_BatteryCells pkt1 {};
+            pkt1.voltages.len = MIN(ARRAY_SIZE(adc.samples),ARRAY_SIZE(pkt1.voltages.data));
+            for (uint8_t i=0; i<pkt1.voltages.len; i++) {
+                pkt1.voltages.data[i] = adc.samples[i].data;
+            }
+
+            uint8_t buffer1[ARDUPILOT_EQUIPMENT_POWER_BATTERYCELLS_MAX_SIZE] {};
+            uint16_t total_size1 = ardupilot_equipment_power_BatteryCells_encode(&pkt1, buffer1, !periph.canfdout());
+            canard_broadcast(ARDUPILOT_EQUIPMENT_POWER_BATTERYCELLS_SIGNATURE,
+                            ARDUPILOT_EQUIPMENT_POWER_BATTERYCELLS_ID,
+                            CANARD_TRANSFER_PRIORITY_LOW,
+                            &buffer1[0],
+                            total_size1);
+
+
+
+            rb_ADC pkt2 {};
+            pkt2.voltages.len = MIN(ARRAY_SIZE(adc.samples),ARRAY_SIZE(pkt2.voltages.data));
+            for (uint8_t i=0; i<pkt2.voltages.len; i++) {
+                pkt2.voltages.data[i] = adc.samples[i].data;
+            }
+
+            uint8_t buffer2[RB_ADC_MAX_SIZE] {};
+            uint16_t total_size2 = rb_ADC_encode(&pkt2, buffer2, !periph.canfdout());
+            canard_broadcast(RB_ADC_SIGNATURE,
+                            RB_ADC_ID,
+                            CANARD_TRANSFER_PRIORITY_LOW,
+                            &buffer2[0],
+                            total_size2);
         }
-
-        uint8_t buffer1[ARDUPILOT_EQUIPMENT_POWER_BATTERYCELLS_MAX_SIZE] {};
-        uint16_t total_size1 = ardupilot_equipment_power_BatteryCells_encode(&pkt1, buffer1, !periph.canfdout());
-        canard_broadcast(ARDUPILOT_EQUIPMENT_POWER_BATTERYCELLS_SIGNATURE,
-                        ARDUPILOT_EQUIPMENT_POWER_BATTERYCELLS_ID,
-                        CANARD_TRANSFER_PRIORITY_LOW,
-                        &buffer1[0],
-                        total_size1);
-
-
-
-        rb_ADC pkt2 {};
-        pkt2.voltages.len = MIN(ARRAY_SIZE(adc.samples),ARRAY_SIZE(pkt2.voltages.data));
-        for (uint8_t i=0; i<pkt2.voltages.len; i++) {
-            pkt2.voltages.data[i] = adc.samples[i].data;
-        }
-
-        uint8_t buffer2[RB_ADC_MAX_SIZE] {};
-        uint16_t total_size2 = rb_ADC_encode(&pkt2, buffer2, !periph.canfdout());
-        canard_broadcast(RB_ADC_SIGNATURE,
-                        RB_ADC_ID,
-                        CANARD_TRANSFER_PRIORITY_LOW,
-                        &buffer2[0],
-                        total_size2);
     }
 #endif
 

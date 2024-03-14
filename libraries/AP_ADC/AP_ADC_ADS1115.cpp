@@ -237,5 +237,7 @@ void AP_ADC_ADS1115::_update()
     /* select next channel */
     _channel_to_read = (_channel_to_read + 1) % _channels_number;
     _start_conversion(_channel_to_read);
+    
+    _last_sample_timestamp_ms = AP_HAL::millis();
 }
 #endif // AP_ADC_ADS1115_ENABLED

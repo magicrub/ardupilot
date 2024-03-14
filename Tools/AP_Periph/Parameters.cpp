@@ -517,7 +517,7 @@ const AP_Param::Info AP_Periph_FW::var_info[] = {
     // @Range: 0 2000
     // @Increment: 1
     // @Units: ms
-    GSCALAR(adc_send_rate, "ADC_RATE", 1),
+    GSCALAR(adc_send_rate, "ADC_RATE", 1000),
 #endif
 
 #ifdef HAL_PERIPH_ENABLE_PROXIMITY

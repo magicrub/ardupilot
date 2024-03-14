@@ -25,6 +25,7 @@ public:
 
     bool init();
     size_t read(adc_report_s *report, size_t length) const;
+    uint32_t get_last_sample_timestamp_ms() const { return _last_sample_timestamp_ms;}
 
     uint8_t get_channels_number() const
     {
@@ -39,6 +40,7 @@ private:
     uint16_t            _gain;
     int                 _channel_to_read;
     adc_report_s        *_samples;
+    uint32_t            _last_sample_timestamp_ms;
 
     void _update();
     bool _start_conversion(uint8_t channel);

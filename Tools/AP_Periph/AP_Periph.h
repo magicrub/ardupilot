@@ -237,6 +237,8 @@ public:
         adc_report_s samples[ADS1115_CHANNELS_COUNT];
         uint32_t last_update_ms;
         uint32_t last_send_ms;
+        uint32_t last_sample_timestamp_ms;
+        uint32_t last_debug_ms;
     } adc;
 #endif
 
