@@ -3,6 +3,7 @@
 
 #if AP_DAC_DACx0501_ENABLED
 #include <SRV_Channel/SRV_Channel.h>
+#include <AP_Math/AP_Math.h>
 
 extern const AP_HAL::HAL &hal;
 
@@ -74,7 +75,7 @@ void AP_DAC_DACx0501::init()
     }
 
     _dev->set_retries(3);
-    _dev->register_periodic_callback(20 * AP_USEC_PER_MSEC, FUNCTOR_BIND_MEMBER(&AP_DAC_DACx0501::thread, void));
+    _dev->register_periodic_callback(20 * 1000, FUNCTOR_BIND_MEMBER(&AP_DAC_DACx0501::thread, void));
 }
 
 void AP_DAC_DACx0501::thread()
