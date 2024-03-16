@@ -74,7 +74,15 @@ void AP_DAC_DACx0501::init()
         return;
     }
 
+    _dev->set_retries(10);
+    // Set gain to unity
+    uint8_t buf[3];
+    buf[0] = DACx0501_REG_GAIN;
+    buf[1] = 0;
+    buf[2] = 0;
+    UNUSED_RESULT(_dev->transfer(buf, sizeof(buf), nullptr, 0));
     _dev->set_retries(3);
+
     _dev->register_periodic_callback(20 * 1000, FUNCTOR_BIND_MEMBER(&AP_DAC_DACx0501::thread, void));
 }
 
