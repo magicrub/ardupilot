@@ -127,6 +127,9 @@ public:
       load a full file. Use delete to free the data
      */
     FileData *load_file(const char *filename);
+
+    // get_singleton for scripting
+    static AP_Filesystem *get_singleton(void);
     
 private:
     struct Backend {

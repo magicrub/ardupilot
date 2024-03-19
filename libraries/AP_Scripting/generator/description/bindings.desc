@@ -710,3 +710,10 @@ userdata uint32_t manual tofloat uint32_t_tofloat 0
 
 global manual dirlist lua_dirlist 1
 global manual remove lua_removefile 1
+
+include AP_Filesystem/AP_Filesystem.h
+include AP_Filesystem/AP_Filesystem_config.h
+singleton AP_Filesystem rename fs
+singleton AP_Filesystem method format boolean
+singleton AP_Filesystem method get_format_status uint8_t'skip_check
+

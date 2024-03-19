@@ -311,6 +311,12 @@ AP_Filesystem_Backend::FormatStatus AP_Filesystem::get_format_status(void) const
 #endif
 }
 
+// get_singleton for scripting
+AP_Filesystem *AP_Filesystem::get_singleton(void)
+{
+    return &fs;
+}
+
 namespace AP
 {
 AP_Filesystem &FS()
