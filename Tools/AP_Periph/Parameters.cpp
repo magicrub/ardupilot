@@ -550,6 +550,18 @@ const AP_Param::Info AP_Periph_FW::var_info[] = {
     GOBJECT(nmea, "NMEA_",   AP_NMEA_Output),
 #endif
 
+#if AP_DAC_DACx0501_ENABLED
+    // @Group: DAC_
+    // @Path: ../libraries/AP_DAC/AP_DAC_DACx0501.cpp
+    GOBJECT(dac, "DAC_",   AP_DAC_DACx0501),
+#endif
+
+#ifdef HAL_PERIPH_ENABLE_ADC
+    // @Group: ADC
+    // @Path: adc.cpp
+    GOBJECT(adc, "ADC_",  Periph_ADC),
+#endif
+
 #if AP_KDECAN_ENABLED
     // @Group: KDE_
     // @Path: ../libraries/AP_KDECAN/AP_KDECAN.cpp

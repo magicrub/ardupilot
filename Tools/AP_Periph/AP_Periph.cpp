@@ -180,6 +180,10 @@ void AP_Periph_FW::init()
     rcout_init();
 #endif
 
+#ifdef HAL_PERIPH_ENABLE_ADC
+    adc.init();
+#endif
+
 #ifdef HAL_PERIPH_ENABLE_ADSB
     adsb_init();
 #endif
@@ -193,6 +197,10 @@ void AP_Periph_FW::init()
             efi.init();
         }
     }
+#endif
+
+#if AP_DAC_DACx0501_ENABLED
+    dac.init();
 #endif
 
 #if AP_KDECAN_ENABLED
@@ -491,6 +499,10 @@ void AP_Periph_FW::update()
 
 #if AP_TEMPERATURE_SENSOR_ENABLED
     temperature_sensor.update();
+#endif
+
+#ifdef HAL_PERIPH_ENABLE_ADC
+    adc.update();
 #endif
 
 #ifdef HAL_PERIPH_ENABLE_RPM

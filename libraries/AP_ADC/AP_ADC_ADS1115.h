@@ -4,6 +4,13 @@
 #include <AP_HAL/AP_HAL.h>
 #include <AP_HAL/I2CDevice.h>
 
+#ifndef AP_ADC_ADS1115_ENABLED
+#define AP_ADC_ADS1115_ENABLED 0
+#endif
+
+#define ADS1115_CHANNELS_COUNT           6
+
+#if AP_ADC_ADS1115_ENABLED
 struct adc_report_s
 {
     uint8_t id;
@@ -18,6 +25,7 @@ public:
 
     bool init();
     size_t read(adc_report_s *report, size_t length) const;
+    uint32_t get_last_sample_timestamp_ms() const { return _last_sample_timestamp_ms;}
 
     uint8_t get_channels_number() const
     {
@@ -32,9 +40,11 @@ private:
     uint16_t            _gain;
     int                 _channel_to_read;
     adc_report_s        *_samples;
+    uint32_t            _last_sample_timestamp_ms;
 
     void _update();
     bool _start_conversion(uint8_t channel);
 
     float _convert_register_data_to_mv(int16_t word) const;
 };
+#endif // AP_ADC_ADS1115_ENABLED

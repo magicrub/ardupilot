@@ -14,6 +14,7 @@
 #include <AP_RangeFinder/AP_RangeFinder.h>
 #include <AP_Proximity/AP_Proximity.h>
 #include <AP_EFI/AP_EFI.h>
+#include <AP_DAC/AP_DAC_DACx0501.h>
 #include <AP_KDECAN/AP_KDECAN.h>
 #include <AP_MSP/AP_MSP.h>
 #include <AP_MSP/msp.h>
@@ -63,6 +64,10 @@
 #if HAL_NMEA_OUTPUT_ENABLED && !(HAL_GCS_ENABLED && defined(HAL_PERIPH_ENABLE_GPS))
     // Needs SerialManager + (AHRS or GPS)
     #error "AP_NMEA_Output requires Serial/GCS and either AHRS or GPS. Needs HAL_GCS_ENABLED and HAL_PERIPH_ENABLE_GPS"
+#endif
+
+#ifdef HAL_PERIPH_ENABLE_ADC
+#include "adc.h"
 #endif
 
 #if HAL_GCS_ENABLED
@@ -228,6 +233,10 @@ public:
     uint32_t rpm_last_update_ms;
 #endif
 
+#ifdef HAL_PERIPH_ENABLE_ADC
+    Periph_ADC adc;
+#endif
+
 #ifdef HAL_PERIPH_ENABLE_BATTERY
     void handle_battery_failsafe(const char* type_str, const int8_t action) { }
     AP_BattMonitor battery_lib{0, FUNCTOR_BIND_MEMBER(&AP_Periph_FW::handle_battery_failsafe, void, const char*, const int8_t), nullptr};
@@ -307,6 +316,10 @@ public:
 #ifdef HAL_PERIPH_ENABLE_EFI
     AP_EFI efi;
     uint32_t efi_update_ms;
+#endif
+
+#if AP_DAC_DACx0501_ENABLED
+    AP_DAC_DACx0501 dac;
 #endif
 
 #if AP_KDECAN_ENABLED

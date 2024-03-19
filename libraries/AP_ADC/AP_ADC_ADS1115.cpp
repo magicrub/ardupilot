@@ -2,14 +2,20 @@
 #include <AP_HAL/utility/sparse-endian.h>
 
 #include "AP_ADC_ADS1115.h"
+#if AP_ADC_ADS1115_ENABLED
 
 #define ADS1115_ADDRESS_ADDR_GND    0x48 // address pin low (GND)
 #define ADS1115_ADDRESS_ADDR_VDD    0x49 // address pin high (VCC)
 #define ADS1115_ADDRESS_ADDR_SDA    0x4A // address pin tied to SDA pin
 #define ADS1115_ADDRESS_ADDR_SCL    0x4B // address pin tied to SCL pin
 
+#ifndef ADS1115_I2C_ADDR
 #define ADS1115_I2C_ADDR            ADS1115_ADDRESS_ADDR_GND
+#endif
+
+#ifndef ADS1115_I2C_BUS
 #define ADS1115_I2C_BUS             1
+#endif
 
 #define ADS1115_RA_CONVERSION       0x00
 #define ADS1115_RA_CONFIG           0x01
@@ -93,7 +99,6 @@
 
 extern const AP_HAL::HAL &hal;
 
-#define ADS1115_CHANNELS_COUNT           6
 
 const uint8_t AP_ADC_ADS1115::_channels_number  = ADS1115_CHANNELS_COUNT;
 
@@ -129,6 +134,8 @@ bool AP_ADC_ADS1115::init()
     }
 
     _gain = ADS1115_PGA_4P096;
+
+    _dev->set_retries(3);
 
     _dev->register_periodic_callback(100000, FUNCTOR_BIND_MEMBER(&AP_ADC_ADS1115::_update, void));
 
@@ -205,7 +212,7 @@ void AP_ADC_ADS1115::_update()
     uint8_t config[2];
     be16_t val;
 
-    if (!_dev->read_registers(ADS1115_RA_CONFIG, config, sizeof(config))) {
+    if (!_dev->read_registers(ADS1115_RA_CONFIG, config, ARRAY_SIZE(config))) {
         error("_dev->read_registers failed in ADS1115");
         return;
     }
@@ -227,4 +234,7 @@ void AP_ADC_ADS1115::_update()
     /* select next channel */
     _channel_to_read = (_channel_to_read + 1) % _channels_number;
     _start_conversion(_channel_to_read);
+    
+    _last_sample_timestamp_ms = AP_HAL::millis();
 }
+#endif // AP_ADC_ADS1115_ENABLED

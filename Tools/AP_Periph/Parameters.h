@@ -91,6 +91,8 @@ public:
         k_param_serial_options,
         k_param_relay,
         k_param_temperature_msg_rate,
+        k_param_adc,
+        k_param_dac,
     };
 
     AP_Int16 format_version;

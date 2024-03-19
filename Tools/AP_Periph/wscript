@@ -66,6 +66,8 @@ def build(bld):
                      'AP_Logger',
                      'AC_PID',
                      'AP_BLHeli',
+                     'AP_ADC',
+                     'AP_DAC',
                      'AP_ESC_Telem',
                      'AP_Stats',
                      'AP_EFI',
