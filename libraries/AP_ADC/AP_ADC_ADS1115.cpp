@@ -1,5 +1,6 @@
 #include <AP_HAL/AP_HAL.h>
 #include <AP_HAL/utility/sparse-endian.h>
+#include <AP_Math/AP_Math.h>
 
 #include "AP_ADC_ADS1115.h"
 #if AP_ADC_ADS1115_ENABLED
@@ -104,19 +105,13 @@ const uint8_t AP_ADC_ADS1115::_channels_number  = ADS1115_CHANNELS_COUNT;
 
 /* Only two differential channels used */
 static const uint16_t mux_table[ADS1115_CHANNELS_COUNT] = {
-    ADS1115_MUX_P1_N3,
-    ADS1115_MUX_P2_N3,
-    ADS1115_MUX_P0_NG,
-    ADS1115_MUX_P1_NG,
-    ADS1115_MUX_P2_NG,
-    ADS1115_MUX_P3_NG
+    ADS1115_MUX_P0_NG, // AIN0: SE
+    ADS1115_MUX_P1_NG, // AIN1: SE
+    ADS1115_MUX_P2_N3, // AIN2,3: Diff
 };
 
 
 AP_ADC_ADS1115::AP_ADC_ADS1115()
-    : _dev{}
-    , _gain(ADS1115_PGA_4P096)
-    , _channel_to_read(0)
 {
     _samples = new adc_report_s[_channels_number];
 }
@@ -133,11 +128,14 @@ bool AP_ADC_ADS1115::init()
         return false;
     }
 
-    _gain = ADS1115_PGA_4P096;
+    _gain = ADS1115_PGA_2P048;
 
-    _dev->set_retries(3);
+    _dev->set_retries(2);
 
-    _dev->register_periodic_callback(100000, FUNCTOR_BIND_MEMBER(&AP_ADC_ADS1115::_update, void));
+    const float samples_per_second_per_channel_Hz = 50;
+    const float samples_per_second_per_channel_us = (1.0f/samples_per_second_per_channel_Hz) * AP_USEC_PER_SEC;
+    const uint32_t interval_us = samples_per_second_per_channel_us / ADS1115_CHANNELS_COUNT;
+    _dev->register_periodic_callback(interval_us, FUNCTOR_BIND_MEMBER(&AP_ADC_ADS1115::_update, void));
 
     return true;
 }

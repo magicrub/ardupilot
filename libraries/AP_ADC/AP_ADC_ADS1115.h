@@ -8,7 +8,7 @@
 #define AP_ADC_ADS1115_ENABLED 0
 #endif
 
-#define ADS1115_CHANNELS_COUNT           6
+#define ADS1115_CHANNELS_COUNT           3
 
 #if AP_ADC_ADS1115_ENABLED
 struct adc_report_s
