@@ -31,40 +31,70 @@ const AP_Param::GroupInfo Periph_ADC::var_info[] {
     // @Increment: 1
     // @Units: ms
     AP_GROUPINFO("ADC_RATE", 1, Periph_ADC, params.send_rate, 1000),
-        
+    
+    // @Group: GUIDED_
+    // @Path: ../libraries/AC_PID/AC_PID.cpp
+    AP_SUBGROUPINFO(pid, "PID_", 2, Periph_ADC, AC_PID),
+
+    // @Param: SRV_INDEX
+    // @DisplayName: SRV_INDEX
+    // @Description: SRV_INDEX
+    AP_GROUPINFO("SRV_INDEX", 3, Periph_ADC, params.servo_index, -1),
+
+
     AP_GROUPEND
 };
 
 void Periph_ADC::init()
 {
-    lib.init();
+    // this creates a thread in the background to read the ADC via I2C
+    adc_lib.init();
 }
 
 void Periph_ADC::update()
 {
     const uint32_t now_ms = AP_HAL::millis();
-    if (now_ms - _last_update_ms >= 10) {
-        _last_update_ms = now_ms;
-        IGNORE_RETURN(lib.read(_samples, ARRAY_SIZE(_samples)));
+    const float dt = (now_ms - _last_pid_update_ms) * 1e-3f;
+    _last_pid_update_ms = now_ms;
+
+
+    // get a new sample
+    const uint32_t last_sample_timestamp_ms = adc_lib.get_last_sample_timestamp_ms();
+    const bool new_sample_available = (last_sample_timestamp_ms != 0) && (last_sample_timestamp_ms != _last_sample_timestamp_ms);
+
+
+    // params.servo_index
+    float target_srv_in = 0;
+    const SRV_Channel *c = SRV_Channels::srv_channel(params.servo_index);
+    if (c != nullptr && c->valid_function()) {
+        target_srv_in = linear_interpolate(0, 5.0,  c->get_output_pwm(), c->get_output_min(), c->get_output_max());
     }
 
-    if (params.send_rate >= 1 || params.send_rate == -1) {
-        const uint32_t last_sample_timestamp_ms = lib.get_last_sample_timestamp_ms();
-        const bool new_sample_available = (last_sample_timestamp_ms != 0) && (last_sample_timestamp_ms != _last_sample_timestamp_ms);
+    float measurement_adc_in = adc_lib.read_by_channel(2);
+    const float output_dac_out = pid.update_all(target_srv_in, measurement_adc_in, dt);
 
-        if (params.send_rate == -1) {
+    periph.dac.set_output_voltage(output_dac_out);
+
+    // TODO: push to 4 other servo outputs but with true PWM output at 20kHz
+
+
+
+
+
+
+
+    // debug stuff
+    if (params.send_rate >= 1 || params.send_rate == -1) {
+    if (params.send_rate == -1) {
             if (now_ms - _last_debug_ms >= 1000) {
                 _last_debug_ms = now_ms;
                 _last_sample_timestamp_ms = last_sample_timestamp_ms;
 
-                can_printf("ADC%s %.2f, %.2f, %.2f, %.2f, %.2f, %.2f",
+                can_printf("ADC%s AN0SE:%.2f, AN1SE:%.2f, AN23DIF:%.2f",
                     new_sample_available ? "" : " STALE",
-                    _samples[0].data,
-                    _samples[1].data,
-                    _samples[2].data,
-                    _samples[3].data,
-                    _samples[4].data,
-                    _samples[5].data);
+                    adc_lib.read_by_channel(0),
+                    adc_lib.read_by_channel(1),
+                    adc_lib.read_by_channel(2));
             }
 
         } else if (new_sample_available && now_ms - _last_send_ms >= params.send_rate) {
@@ -72,9 +102,9 @@ void Periph_ADC::update()
             _last_send_ms = now_ms;
 
             ardupilot_equipment_power_BatteryCells pkt1 {};
-            pkt1.voltages.len = MIN(ARRAY_SIZE(_samples),ARRAY_SIZE(pkt1.voltages.data));
+            pkt1.voltages.len = MIN(ADS1115_CHANNELS_COUNT,ARRAY_SIZE(pkt1.voltages.data));
             for (uint8_t i=0; i<pkt1.voltages.len; i++) {
-                pkt1.voltages.data[i] = _samples[i].data;
+                pkt1.voltages.data[i] = adc_lib.read_by_channel(i);
             }
 
             uint8_t buffer1[ARDUPILOT_EQUIPMENT_POWER_BATTERYCELLS_MAX_SIZE] {};
@@ -88,9 +118,9 @@ void Periph_ADC::update()
 
 
             rb_ADC pkt2 {};
-            pkt2.voltages.len = MIN(ARRAY_SIZE(_samples),ARRAY_SIZE(pkt2.voltages.data));
+            pkt2.voltages.len = MIN(ADS1115_CHANNELS_COUNT,ARRAY_SIZE(pkt2.voltages.data));
             for (uint8_t i=0; i<pkt2.voltages.len; i++) {
-                pkt2.voltages.data[i] = _samples[i].data;
+                pkt2.voltages.data[i] = adc_lib.read_by_channel(i);
             }
 
             uint8_t buffer2[RB_ADC_MAX_SIZE] {};

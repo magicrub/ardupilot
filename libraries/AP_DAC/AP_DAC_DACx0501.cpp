@@ -46,11 +46,6 @@ const AP_Param::GroupInfo AP_DAC_DACx0501::var_info[] = {
     // @Description: I2C bus
     AP_GROUPINFO("BUS", 2, AP_DAC_DACx0501, params.i2c_bus, DACx0501_I2C_BUS),
 
-    // @Param: SRV_INDEX
-    // @DisplayName: SRV_INDEX
-    // @Description: SRV_INDEX
-    AP_GROUPINFO("SRV_INDEX", 3, AP_DAC_DACx0501, params.servo_index, -1),
-
     // @Param: BIT_RES
     // @DisplayName: BIT_RES
     // @Description: BIT_RESolution of the DAC.
@@ -64,6 +59,13 @@ const AP_Param::GroupInfo AP_DAC_DACx0501::var_info[] = {
     // @Incremenet: 0.01
     AP_GROUPINFO("GAIN", 5, AP_DAC_DACx0501, params.gain, 1),
 
+    // @Param: INITIAL
+    // @DisplayName: Initial Voltage
+    // @Description: Initial Voltage at boot
+    // @Range: 0.0 5.0
+    // @Incremenet: 0.01
+    AP_GROUPINFO("INITIAL", 6, AP_DAC_DACx0501, params.initial_voltage, 0),
+
     AP_GROUPEND
 };
 
@@ -73,6 +75,7 @@ void AP_DAC_DACx0501::init()
     if (!_dev) {
         return;
     }
+    target_voltage = params.initial_voltage.get();
 
     _dev->set_retries(10);
     // Set gain to unity
@@ -81,22 +84,19 @@ void AP_DAC_DACx0501::init()
     buf[1] = 0;
     buf[2] = 0;
     UNUSED_RESULT(_dev->transfer(buf, sizeof(buf), nullptr, 0));
-    _dev->set_retries(3);
+    _dev->set_retries(2);
 
-    _dev->register_periodic_callback(20 * 1000, FUNCTOR_BIND_MEMBER(&AP_DAC_DACx0501::thread, void));
+    const float samples_per_second_per_channel_Hz = 50;
+    const float interval_us = (1.0f/samples_per_second_per_channel_Hz) * AP_USEC_PER_SEC;
+    _dev->register_periodic_callback(interval_us, FUNCTOR_BIND_MEMBER(&AP_DAC_DACx0501::thread, void));
 }
 
 void AP_DAC_DACx0501::thread()
 {
-    const SRV_Channel *c = SRV_Channels::srv_channel(params.servo_index);
-    if (c == nullptr || !c->valid_function()) {
-        return;
-    }
-
     const uint16_t bit_resolution = constrain_int16(params.bit_resolution.get(), 12, 16);
     const uint16_t max_output = (1U << bit_resolution) - 1;
 
-    uint16_t value = linear_interpolate(0, max_output, c->get_output_pwm(), c->get_output_min(), c->get_output_max());
+    uint16_t value = linear_interpolate(0, max_output, target_voltage, get_voltage_min(), get_voltage_max());
     value *= MAX(0.01f, params.gain.get());
 
     uint8_t buf[3];

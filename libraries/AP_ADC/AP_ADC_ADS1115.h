@@ -2,7 +2,6 @@
 
 #include <inttypes.h>
 #include <AP_HAL/AP_HAL.h>
-#include <AP_HAL/I2CDevice.h>
 
 #ifndef AP_ADC_ADS1115_ENABLED
 #define AP_ADC_ADS1115_ENABLED 0
@@ -11,6 +10,10 @@
 #define ADS1115_CHANNELS_COUNT           3
 
 #if AP_ADC_ADS1115_ENABLED
+
+#include <AP_HAL/Semaphores.h>
+#include <AP_HAL/I2CDevice.h>
+
 struct adc_report_s
 {
     uint8_t id;
@@ -24,6 +27,7 @@ public:
     ~AP_ADC_ADS1115();
 
     bool init();
+    float read_by_channel(uint32_t id) const;
     size_t read(adc_report_s *report, size_t length) const;
     uint32_t get_last_sample_timestamp_ms() const { return _last_sample_timestamp_ms;}
 

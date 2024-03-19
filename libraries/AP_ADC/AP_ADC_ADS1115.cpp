@@ -155,14 +155,27 @@ bool AP_ADC_ADS1115::_start_conversion(uint8_t channel)
     return _dev->transfer((uint8_t *)&config, sizeof(config), nullptr, 0);
 }
 
+float AP_ADC_ADS1115::read_by_channel(uint32_t channel_id) const
+{
+    WITH_SEMAPHORE(_dev->get_semaphore());
+    for (uint32_t i = 0; i < _channels_number; i++) {
+        if (channel_id == _samples[i].id) {
+            return _samples[i].data;
+        }
+    }
+    return 0;
+}
+
 size_t AP_ADC_ADS1115::read(adc_report_s *report, size_t length) const
 {
-    for (size_t i = 0; i < length; i++) {
+    WITH_SEMAPHORE(_dev->get_semaphore());
+    const uint16_t len = MIN(length, _channels_number);
+    for (size_t i = 0; i < len; i++) {
         report[i].data = _samples[i].data;
         report[i].id = _samples[i].id;
     }
 
-    return length;
+    return len;
 }
 
 float AP_ADC_ADS1115::_convert_register_data_to_mv(int16_t word) const
@@ -224,8 +237,10 @@ void AP_ADC_ADS1115::_update()
         return;
     }
 
-    float sample = _convert_register_data_to_mv(be16toh(val));
+    const float sample = _convert_register_data_to_mv(be16toh(val));
+    _last_sample_timestamp_ms = AP_HAL::millis();
 
+    WITH_SEMAPHORE(_dev->get_semaphore());
     _samples[_channel_to_read].data = sample;
     _samples[_channel_to_read].id = _channel_to_read;
 
@@ -233,6 +248,5 @@ void AP_ADC_ADS1115::_update()
     _channel_to_read = (_channel_to_read + 1) % _channels_number;
     _start_conversion(_channel_to_read);
     
-    _last_sample_timestamp_ms = AP_HAL::millis();
 }
 #endif // AP_ADC_ADS1115_ENABLED
