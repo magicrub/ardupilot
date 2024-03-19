@@ -33,6 +33,7 @@ private:
     struct {
         AP_Int8 i2c_address;
         AP_Int8 i2c_bus;
+        AP_Int16 servo_index;
         AP_Int16 bit_resolution;
         AP_Float gain;
         AP_Float initial_voltage;

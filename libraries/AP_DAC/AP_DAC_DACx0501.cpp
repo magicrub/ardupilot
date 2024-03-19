@@ -46,22 +46,27 @@ const AP_Param::GroupInfo AP_DAC_DACx0501::var_info[] = {
     // @Description: I2C bus
     AP_GROUPINFO("BUS", 2, AP_DAC_DACx0501, params.i2c_bus, DACx0501_I2C_BUS),
 
+    // @Param: SRV_INDEX
+    // @DisplayName: Servo Index
+    // @Description: Servo Index to map to the DAC output
+    AP_GROUPINFO("SRV_INDEX", 3, AP_DAC_DACx0501, params.servo_index, -1),
+
     // @Param: BIT_RES
     // @DisplayName: BIT_RES
-    // @Description: BIT_RESolution of the DAC.
+    // @Description: BIT_RESolution of the DAC. This is decided by the part number
     // @Values: 12:12-bit, 14:14-bit, 16:16-bit
     AP_GROUPINFO("BIT_RES", 4, AP_DAC_DACx0501, params.bit_resolution, 12),
 
     // @Param: GAIN
-    // @DisplayName: GAIN
-    // @Description: GAIN
+    // @DisplayName: Gain
+    // @Description: Gain
     // @Range: 0.01 100
     // @Incremenet: 0.01
     AP_GROUPINFO("GAIN", 5, AP_DAC_DACx0501, params.gain, 1),
 
     // @Param: INITIAL
     // @DisplayName: Initial Voltage
-    // @Description: Initial Voltage at boot
+    // @Description: Initial Voltage at boot if there is no Servo input
     // @Range: 0.0 5.0
     // @Incremenet: 0.01
     AP_GROUPINFO("INITIAL", 6, AP_DAC_DACx0501, params.initial_voltage, 0),
@@ -95,14 +100,21 @@ void AP_DAC_DACx0501::thread()
 {
     const uint16_t bit_resolution = constrain_int16(params.bit_resolution.get(), 12, 16);
     const uint16_t max_output = (1U << bit_resolution) - 1;
+    float value_float = 0;
 
-    uint16_t value = linear_interpolate(0, max_output, target_voltage, get_voltage_min(), get_voltage_max());
-    value *= MAX(0.01f, params.gain.get());
+    const SRV_Channel *c = SRV_Channels::srv_channel(params.servo_index);
+    if (c != nullptr && c->valid_function()) {
+       value_float = linear_interpolate(0, max_output, c->get_output_pwm(), c->get_output_min(), c->get_output_max());
+    } else {
+        value_float = linear_interpolate(0, max_output, target_voltage, get_voltage_min(), get_voltage_max());
+    }
+
+    const uint16_t output_value = constrain_float(value_float * params.gain.get(), 0, UINT16_MAX);
 
     uint8_t buf[3];
     buf[0] = DACx0501_REG_DAC_DATA;
-    buf[1] = HIGHBYTE(value);
-    buf[2] = LOWBYTE(value);
+    buf[1] = HIGHBYTE(output_value);
+    buf[2] = LOWBYTE(output_value);
 
     UNUSED_RESULT(_dev->transfer(buf, sizeof(buf), nullptr, 0));
 }

@@ -15,10 +15,13 @@ public:
 
     void init();
     void update();
+    uint32_t get_true_pwm_mask() const { return (uint32_t)params.true_pwm_mask.get(); }
 
     static const struct AP_Param::GroupInfo var_info[];
 
 private:
+
+    void debug_print_stuff();
 
     AC_PID pid {
         // Initial Conditions
@@ -40,6 +43,11 @@ private:
     struct {
         AP_Int32 send_rate;
         AP_Int16 servo_index;
+        AP_Float debug;
+        AP_Float test_input;
+        AP_Int32 true_pwm_mask;
+        AP_Float pwm_min_duty;
+        AP_Float pwm_max_duty;
     } params;
 
     AP_ADC_ADS1115 adc_lib;

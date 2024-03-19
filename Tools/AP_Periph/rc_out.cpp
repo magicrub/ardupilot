@@ -60,6 +60,12 @@ void AP_Periph_FW::rcout_init()
         }
     }
 
+#ifdef HAL_PERIPH_ENABLE_ADC
+    if (adc.get_true_pwm_mask() != 0) {
+        esc_mask = adc.get_true_pwm_mask();
+    }
+#endif
+
     // run this once and at 1Hz to configure aux and esc ranges
     rcout_init_1Hz();
 
