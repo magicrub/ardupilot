@@ -72,6 +72,7 @@ public:
         _singleton = this;
     }
 
+
     /* Do not allow copies */
     CLASS_NO_COPY(AP_Vehicle);
 
