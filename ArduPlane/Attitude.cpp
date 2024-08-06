@@ -18,8 +18,8 @@ float Plane::get_speed_scaler(void)
             speed_scaler = 2.0;
         }
         // ensure we have scaling over the full configured airspeed
-        float scale_min = MIN(0.5, (0.5 * aparm.airspeed_min) / g.scaling_speed);
-        float scale_max = MAX(2.0, (1.5 * aparm.airspeed_max) / g.scaling_speed);
+        float scale_min = 0.8;
+        float scale_max = 1.2;
         speed_scaler = constrain_float(speed_scaler, scale_min, scale_max);
 
         if (quadplane.in_vtol_mode() && hal.util->get_soft_armed()) {
@@ -95,6 +95,19 @@ void Plane::stabilize_roll(float speed_scaler)
         if (ahrs.roll_sensor < 0) nav_roll_cd -= 36000;
     }
 
+    if (!fly_inverted() && !righting_mode && labs(ahrs.roll_sensor) > 9500) {
+        gcs().send_text(MAV_SEVERITY_INFO, "Auto righting start roll=%d pitch=%d",
+                        int(ahrs.roll_sensor/100),
+                        int(ahrs.pitch_sensor/100));
+        righting_mode = true;
+    }
+    if (righting_mode && labs(ahrs.roll_sensor) < 6000) {
+        gcs().send_text(MAV_SEVERITY_INFO, "Auto righting done roll=%d pitch=%d",
+                        int(ahrs.roll_sensor/100),
+                        int(ahrs.pitch_sensor/100));
+        righting_mode = false;
+    }
+
     bool disable_integrator = false;
     if (control_mode == &mode_stabilize && channel_roll->get_control_in() != 0) {
         disable_integrator = true;
@@ -123,9 +136,43 @@ void Plane::stabilize_pitch(float speed_scaler)
     if (control_mode == &mode_stabilize && channel_pitch->get_control_in() != 0) {
         disable_integrator = true;
     }
-    SRV_Channels::set_output_scaled(SRV_Channel::k_elevator, pitchController.get_servo_out(demanded_pitch - ahrs.pitch_sensor, 
-                                                                                           speed_scaler, 
-                                                                                           disable_integrator));
+
+    if (righting_mode) {
+        // try to put nose down 45 degrees
+        nav_pitch_cd = demanded_pitch = -4500;
+    }
+
+    auto elev_scaled = pitchController.get_servo_out(demanded_pitch - ahrs.pitch_sensor,
+                                                     speed_scaler,
+                                                     disable_integrator);
+
+    /*
+      special fixed rate flare code for SA-PGB
+     */
+    static bool started_flare;
+    if (!TECS_controller.does_aoa_flare() && landing.is_flaring()) {
+        static uint32_t flare_start_ms;
+        static uint32_t flare_start_I;
+        const uint32_t now_ms = AP_HAL::millis();
+        if (!started_flare) {
+            started_flare = true;
+            flare_start_ms = now_ms;
+            flare_start_I = pitchController.get_pid_info().I;
+        }
+        const float t = (now_ms - flare_start_ms) * 0.001;
+        const float flare_rate = 15.0; // elevator degrees/s for 45 degree elevator
+        const int32_t elev_flare = constrain_int32((flare_start_I + t*flare_rate) * 100, -4500, 4500);
+        elev_scaled = MAX(elev_flare, elev_scaled);
+    } else {
+        started_flare = false;
+        float elevator_increment_deg;
+        if (landing.is_flaring() && TECS_controller.get_flare_elevator_ff(elevator_increment_deg)) {
+            elev_scaled += (int32_t)(100.0f * elevator_increment_deg);
+            elev_scaled = MIN(elev_scaled, 4500);
+        }
+    }
+
+    SRV_Channels::set_output_scaled(SRV_Channel::k_elevator, elev_scaled);
 }
 
 /*
@@ -583,6 +630,10 @@ void Plane::calc_nav_roll()
 {
     int32_t commanded_roll = nav_controller->nav_roll_cd();
 
+    if (g2.lim_roll_auto > 0) {
+        commanded_roll = constrain_int32(commanded_roll, -g2.lim_roll_auto*100, g2.lim_roll_auto*100);
+    }
+
     // Received an external msg that guides roll in the last 3 seconds?
     if (control_mode->is_guided_mode() &&
             plane.guided_state.last_forced_rpy_ms.x > 0 &&
@@ -633,6 +684,7 @@ void Plane::calc_nav_roll()
 void Plane::adjust_nav_pitch_throttle(void)
 {
     int8_t throttle = throttle_percentage();
+    throttle = MIN(throttle, aparm.throttle_max);
     if (throttle >= 0 && throttle < aparm.throttle_cruise && flight_stage != AP_Vehicle::FixedWing::FLIGHT_VTOL) {
         float p = (aparm.throttle_cruise - throttle) / (float)aparm.throttle_cruise;
         nav_pitch_cd -= g.stab_pitch_down * 100.0f * p;

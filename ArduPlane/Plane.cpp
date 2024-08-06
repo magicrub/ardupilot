@@ -32,3 +32,6 @@ Plane::Plane(void)
 
 Plane plane;
 AP_Vehicle& vehicle = plane;
+
+AP_Vehicle::FixedWing *aparm_ptr = &plane.aparm;
+

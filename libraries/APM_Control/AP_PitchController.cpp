@@ -208,22 +208,10 @@ int32_t AP_PitchController::_get_rate_out(float desired_rate, float scaler, bool
     _pid_info.D = rate_error * gains.D * scaler;
 
     if (dt > 0 && _slew_rate_max > 0) {
-        // Calculate the slew rate amplitude produced by the unmodified D term
-
-        // calculate a low pass filtered slew rate
-        float Dterm_slew_rate = _slew_rate_filter.apply(((_pid_info.D - _last_pid_info_D)/ delta_time), delta_time);
-
-        // rectify and apply a decaying envelope filter
-        float alpha = 1.0f - constrain_float(delta_time/_slew_rate_tau, 0.0f , 1.0f);
-        _slew_rate_amplitude = fmaxf(fabsf(Dterm_slew_rate), alpha * _slew_rate_amplitude);
-        _slew_rate_amplitude = fminf(_slew_rate_amplitude, 10.0f*_slew_rate_max);
-
-        // Calculate and apply the D gain adjustment
-        _pid_info.Dmod = _D_gain_modifier = _slew_rate_max / fmaxf(_slew_rate_amplitude, _slew_rate_max);
-        _pid_info.D *= _D_gain_modifier;
+        _pid_info.Dmod = _slew_limiter.modifier(_pid_info.D, delta_time);
+        _pid_info.slew_rate = _slew_limiter.get_slew_rate();
+        _pid_info.D *= _pid_info.Dmod;
     }
-
-    _last_pid_info_D = _pid_info.D;
 
     _last_out = _pid_info.D + _pid_info.FF + _pid_info.P;
 

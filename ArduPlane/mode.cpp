@@ -21,6 +21,8 @@ bool Mode::enter()
     // reset landing check
     plane.auto_state.checked_for_autoland = false;
 
+    plane.auto_state.started_landing = false;
+
     // zero locked course
     plane.steer_state.locked_course_err = 0;
 
@@ -63,6 +65,9 @@ bool Mode::enter()
     // assume non-VTOL mode
     plane.auto_state.vtol_mode = false;
     plane.auto_state.vtol_loiter = false;
+
+    plane.auto_state.emergency_land = false;
+    plane.auto_state.land_alt_amsl = -1;
 
     bool enter_result = _enter();
 

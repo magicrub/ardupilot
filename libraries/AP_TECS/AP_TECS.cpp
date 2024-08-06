@@ -262,7 +262,28 @@ const AP_Param::GroupInfo AP_TECS::var_info[] = {
     // @Range: -5.0 0.0
     // @User: Advanced
     AP_GROUPINFO("PTCH_FF_K", 30, AP_TECS, _pitch_ff_k, 0.0),
-    
+
+    // @Param: FLARE_AOA
+    // @DisplayName: Angle of attack target during flare.
+    // @Description: During the flare, TECS will adjust the target pitch angle to be TECS_FLARE_AOA degrees above the flight path angle. The rate at which the AOA demand is applied is controlled by TECS_FLARE_TIME. The maximum pitch angle target is limited by TECS_LAND_PMAX. Set to 0 to disable this feature and use the normal TECS flare pitch demand algorithm. 
+    // @Range: 0 30.0
+    // @User: Advanced
+    AP_GROUPINFO("FLARE_AOA", 31, AP_TECS, _flare_aoa_deg, 0.0),
+
+    // @Param: FLARE_TIME
+    // @DisplayName: Angle of attack target slew time during flare.
+    // @Description: Controls the time required for TECS to slew the demanded pitch angle from the starting value to a value TECS_FLARE_AOA above.
+    // @Range: 0.0 5.0
+    // @User: Advanced
+    AP_GROUPINFO("FLARE_TIME", 32, AP_TECS, _flare_aoa_time, 1.0),
+
+    // @Param: FLARE_ELEV
+    // @DisplayName: Gain from flare AoA to elevator.
+    // @Description: Sets the gain from demanded angle of attack in flare to an additional elevator deflection. Use this to compensate for the pitch stability that requires additional elevator to trim at higher angles of attack.
+    // @Range: 0 5.0
+    // @User: Advanced
+    AP_GROUPINFO("FLARE_ELEV", 33, AP_TECS, _flare_aoa_elev_gain_ff, 0.0),
+
     AP_GROUPEND
 };
 
@@ -460,7 +481,7 @@ void AP_TECS::_update_speed_demand(void)
     _TAS_dem_adj = constrain_float(_TAS_dem_adj, _TASmin, _TASmax);
 }
 
-void AP_TECS::_update_height_demand(void)
+void AP_TECS::_update_height_demand(float hgt_afe)
 {
     // Apply 2 point moving average to demanded height
     _hgt_dem = 0.5f * (_hgt_dem + _hgt_dem_in_old);
@@ -494,27 +515,31 @@ void AP_TECS::_update_height_demand(void)
     // configured sink rate and adjust the demanded height to
     // be kinematically consistent with the height rate.
     if (_landing.is_flaring()) {
-        _integSEB_state = 0;
         if (_flare_counter == 0) {
+            // starting the flare
             _hgt_rate_dem = _climb_rate;
             _land_hgt_dem = _hgt_dem_adj;
+
+            flare.sink_rate_start = - _climb_rate;
+            flare.height_flare_start = hgt_afe;
+            flare.target_height = hgt_afe;
         }
 
-        // adjust the flare sink rate to increase/decrease as your travel further beyond the land wp
-        float land_sink_rate_adj = _land_sink + _land_sink_rate_change*_distance_beyond_land_wp;
-
-        // bring it in over 1s to prevent overshoot
-        if (_flare_counter < 10) {
-            _hgt_rate_dem = _hgt_rate_dem * 0.8f - 0.2f * land_sink_rate_adj;
-            _flare_counter++;
-        } else {
-            _hgt_rate_dem = - land_sink_rate_adj;
-        }
-        _land_hgt_dem += 0.1f * _hgt_rate_dem;
+        // linear interpolation of sink rate as we approach the ground
+        const float end_height = 5;
+        _hgt_rate_dem = linear_interpolate(-_land_sink, -flare.sink_rate_start,
+                                           hgt_afe,
+                                           end_height, flare.height_flare_start);
+        flare.target_height += _DT * _hgt_rate_dem;
+        _land_hgt_dem = flare.target_height;
         _hgt_dem_adj = _land_hgt_dem;
+
+        _flare_counter++;
     } else {
         _hgt_rate_dem = (_hgt_dem_adj - _hgt_dem_adj_last) / 0.1f;
         _flare_counter = 0;
+
+        memset(&flare, 0, sizeof(flare));
     }
 
     // for landing approach we will predict ahead by the time constant
@@ -535,6 +560,12 @@ void AP_TECS::_update_height_demand(void)
     }
     _hgt_dem_adj_last = _hgt_dem_adj;
     _hgt_dem_adj = new_hgt_dem;
+
+    if (_landing.is_flaring()) {
+        // when flaring don't run the height tracking, only do the
+        // sink rate control
+        _hgt_dem_adj = _height;
+    }
 }
 
 void AP_TECS::_detect_underspeed(void)
@@ -827,7 +858,10 @@ void AP_TECS::_update_pitch(void)
     } else if ( _flags.underspeed || _flight_stage == AP_Vehicle::FixedWing::FLIGHT_TAKEOFF || _flight_stage == AP_Vehicle::FixedWing::FLIGHT_ABORT_LAND || _flags.is_gliding) {
         SKE_weighting = 2.0f;
     } else if (_flags.is_doing_auto_land) {
-        if (_spdWeightLand < 0) {
+        if (_landing.is_flaring()) {
+            // we don't want to track airspeed in the flare
+            SKE_weighting = 0.0;
+        } else if (_spdWeightLand < 0) {
             // use sliding scale from normal weight down to zero at landing
             float scaled_weight = _spdWeight * (1.0f - constrain_float(_path_proportion,0,1));
             SKE_weighting = constrain_float(scaled_weight, 0.0f, 2.0f);
@@ -925,6 +959,38 @@ void AP_TECS::_update_pitch(void)
 
     // Constrain pitch demand
     _pitch_dem = constrain_float(_pitch_dem_unc, _PITCHminf, _PITCHmaxf);
+
+    // Handle the special case where the flare is performed by adjusting pitch demand to achieve
+    // an angle of attack target.
+    Vector3f vel_NED;
+    if (!_landing.is_flaring()) {
+        _pitch_dem_at_flare_entry = _pitch_dem;
+        _flare_elevator_increment = 0.0f;
+    } else if (is_positive(_flare_aoa_deg) && _ahrs.get_velocity_NED(vel_NED)) {
+        float flare_aoa_dem_deg;
+        if (is_positive(_flare_aoa_time)) {
+            flare_aoa_dem_deg = (_DT / _flare_aoa_time)  * _flare_counter;
+            flare_aoa_dem_deg = MIN(flare_aoa_dem_deg, _flare_aoa_deg);
+        } else {
+            flare_aoa_dem_deg = _flare_aoa_deg;
+        }
+        _flare_elevator_increment = flare_aoa_dem_deg * _flare_aoa_elev_gain_ff;
+        const float flight_path_angle = atan2f(-vel_NED.z, sqrtf(sq(vel_NED.x) + sq(vel_NED.y)));
+        _pitch_dem = flight_path_angle + radians(flare_aoa_dem_deg);
+        _pitch_dem = constrain_float(_pitch_dem, _pitch_dem_at_flare_entry, _PITCHmaxf);
+
+        AP::logger().Write(
+            "TECF",
+            "TimeUS,duration,aoa_dem,fpa,elev_ff",
+            "s----",
+            "F0000",
+            "Qffff",
+            AP_HAL::micros64(),
+            (double)_flare_aoa_time,
+            (double)flare_aoa_dem_deg,
+            (double)degrees(flight_path_angle),
+            (double)_flare_elevator_increment);
+    }
 
     // Rate limit the pitch demand to comply with specified vertical
     // acceleration limit
@@ -1069,6 +1135,10 @@ void AP_TECS::update_pitch_throttle(int32_t hgt_dem_cm,
 
         // and allow zero throttle
         _THRminf = 0;
+
+        // and set target height to current height
+        _hgt_dem_adj = _height;
+
     } else if (_landing.is_on_approach() && (-_climb_rate) > _land_sink) {
         // constrain the pitch in landing as we get close to the flare
         // point. Use a simple linear limit from 15 meters after the
@@ -1087,6 +1157,15 @@ void AP_TECS::update_pitch_throttle(int32_t hgt_dem_cm,
                      time_to_flare, hgt_afe, _PITCHminf, pitch_limit_cd*0.01f, _climb_rate);
 #endif
             _PITCHminf = MAX(_PITCHminf, pitch_limit_cd*0.01f);
+        }
+        if (_landing.is_preflaring() && _landing.get_preflare_pitch_cd() != 0) {
+            // in preflare use min pitch from LAND_PF_PITCH_CD
+            _PITCHminf = MAX(_PITCHminf, _landing.get_preflare_pitch_cd() * 0.01f);
+            // and use max pitch from TECS_LAND_PMAX
+            if (_land_pitch_max != 0) {
+                // note that this allows a flare pitch outside the normal TECS auto limits
+                _PITCHmaxf = MAX(_PITCHmaxf, _land_pitch_max);
+            }
         }
     }
 
@@ -1137,7 +1216,7 @@ void AP_TECS::update_pitch_throttle(int32_t hgt_dem_cm,
     _update_speed_demand();
 
     // Calculate the height demand
-    _update_height_demand();
+    _update_height_demand(hgt_afe);
 
     // Detect underspeed condition
     _detect_underspeed();
@@ -1162,6 +1241,7 @@ void AP_TECS::update_pitch_throttle(int32_t hgt_dem_cm,
 
     if (_options & OPTION_GLIDER_ONLY) {
         _flags.badDescent = false;        
+        _flags.underspeed = false;
     }
 
     // Calculate pitch demand

@@ -49,7 +49,7 @@ public:
 
     int32_t target_bearing_cd(void) const override;
     float turn_distance(float wp_radius) const override;
-    float turn_distance(float wp_radius, float turn_angle) const override;
+    float turn_distance(float wp_radius, float turn_angle, float roll_limit_deg) const override;
     float loiter_radius (const float loiter_radius) const override;
     void update_waypoint(const struct Location &prev_WP, const struct Location &next_WP, float dist_min = 0.0f) override;
     void update_loiter(const struct Location &center_WP, float radius, int8_t loiter_direction) override;

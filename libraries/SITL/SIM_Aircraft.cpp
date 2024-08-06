@@ -33,6 +33,7 @@
 #include <AP_Logger/AP_Logger.h>
 #include <AP_Param/AP_Param.h>
 #include <AP_Declination/AP_Declination.h>
+#include <AP_Baro/AP_Baro.h>
 
 using namespace SITL;
 
@@ -141,7 +142,12 @@ float Aircraft::hagl() const
 */
 bool Aircraft::on_ground() const
 {
-    return hagl() <= 0.001f;  // prevent bouncing around ground
+    return hagl() <= 0.001f && !waiting_to_launch();  // prevent bouncing around ground
+}
+
+bool Aircraft::waiting_to_launch() const
+{
+    return (launch_start_ms == 0);
 }
 
 /*
@@ -574,14 +580,23 @@ void Aircraft::update_dynamics(const Vector3f &rot_accel)
     // velocity relative to airmass in body frame
     velocity_air_bf = dcm.transposed() * velocity_air_ef;
 
-    // airspeed
-    airspeed = velocity_air_ef.length();
+    update_eas_airspeed();
 
-    // airspeed as seen by a fwd pitot tube (limited to 120m/s)
-    airspeed_pitot = constrain_float(velocity_air_bf * Vector3f(1.0f, 0.0f, 0.0f), 0.0f, 120.0f);
+    // constrain states to match ground or launching platform
+    if (waiting_to_launch()) {
+        float r, p, y;
+        dcm.to_euler(&r, &p, &y);
+        dcm.from_euler(0.0f, radians(3.0f), y);
+        // X, Y movement tracks launching plane movement
+        const float launch_speed = 60.0f;
+        velocity_ef.x = launch_speed * MIN((((float)time_now_us - 10E6f) / 30E6f), 1.0f) * cosf(y);
+        velocity_ef.y = launch_speed * MIN((((float)time_now_us - 10E6f) / 30E6f), 1.0f) * sinf(y);
+        velocity_ef.z = 0.0f;
+        gyro.zero();
+        position.z = -3000.0f;
+        use_smoothing = true;
 
-    // constrain height to the ground
-    if (on_ground()) {
+    } else if (on_ground()) {
         if (!was_on_ground && AP_HAL::millis() - last_ground_contact_ms > 1000) {
             gcs().send_text(MAV_SEVERITY_INFO, "SIM Hit ground at %f m/s", velocity_ef.z);
             last_ground_contact_ms = AP_HAL::millis();
@@ -804,16 +819,26 @@ void Aircraft::smooth_sensors(void)
 
 /*
   return a filtered servo input as a value from -1 to 1
-  servo is assumed to be 1000 to 2000, trim at 1500
+  input value is a float from -1 to 1
  */
-float Aircraft::filtered_idx(float v, uint8_t idx)
+float Aircraft::filtered_idx(float v, uint8_t idx, float dt)
 {
     if (sitl->servo_speed <= 0) {
         return v;
     }
-    const float cutoff = 1.0f / (2 * M_PI * sitl->servo_speed);
-    servo_filter[idx].set_cutoff_frequency(cutoff);
-    return servo_filter[idx].apply(v, frame_time_us * 1.0e-6f);
+    if (dt <= 0) {
+        dt = frame_time_us * 1.0e-6f;
+    }
+    /*
+      apply a rate limiter followed by a low-pass filter
+     */
+    v = constrain_float(v, -1, 1);
+    const float cutoff = 50.0 / sitl->servo_speed;
+    float last_value = servo_filter[idx].get();
+    float max_change = dt / sitl->servo_speed;
+    v = constrain_float(v, last_value-max_change, last_value+max_change);
+    servo_filter[idx].set_cutoff_frequency(1.0/dt,cutoff);
+    return servo_filter[idx].apply(v, dt);
 }
 
 
@@ -821,20 +846,20 @@ float Aircraft::filtered_idx(float v, uint8_t idx)
   return a filtered servo input as a value from -1 to 1
   servo is assumed to be 1000 to 2000, trim at 1500
  */
-float Aircraft::filtered_servo_angle(const struct sitl_input &input, uint8_t idx)
+float Aircraft::filtered_servo_angle(const struct sitl_input &input, uint8_t idx, float dt)
 {
-    const float v = (input.servos[idx] - 1500)/500.0f;
-    return filtered_idx(v, idx);
+    const float v = (constrain_float(input.servos[idx],1000,2000) - 1500)/500.0f;
+    return constrain_float(filtered_idx(v, idx, dt), -1, 1);
 }
 
 /*
   return a filtered servo input as a value from 0 to 1
   servo is assumed to be 1000 to 2000
  */
-float Aircraft::filtered_servo_range(const struct sitl_input &input, uint8_t idx)
+float Aircraft::filtered_servo_range(const struct sitl_input &input, uint8_t idx, float dt)
 {
-    const float v = (input.servos[idx] - 1000)/1000.0f;
-    return filtered_idx(v, idx);
+    const float v = (constrain_float(input.servos[idx],1000,2000) - 1000)/1000.0f;
+    return constrain_float(filtered_idx(v, idx, dt), 0, 1);
 }
 
 // extrapolate sensors by a given delta time in seconds
@@ -1012,4 +1037,38 @@ void Aircraft::add_twist_forces(Vector3f &rot_accel)
         sitl->twist.start_ms = 0;
         sitl->twist.t = 0;
     }
+}
+
+/*
+  update EAS airspeed and pitot speed
+ */
+void Aircraft::update_eas_airspeed()
+{
+    const float air_density_ratio = AP::baro().get_air_density_ratio();
+    air_density = SSL_AIR_DENSITY * air_density_ratio;
+    airspeed = velocity_air_ef.length() * sqrtf(air_density_ratio);
+
+    /*
+      airspeed as seen by a fwd pitot tube (limited to 120m/s)
+    */
+    airspeed_pitot = airspeed;
+
+    // calculate angle between the local flow vector and a pitot tube aligned with the X body axis
+    const float pitot_aoa =  atan2f(sqrtf(sq(velocity_air_bf.y) + sq(velocity_air_bf.z)), velocity_air_bf.x);
+
+    /*
+      assume the pitot can correctly capture airspeed up to 20 degrees off the nose
+      and follows a cose law outside that range
+    */
+    const float max_pitot_aoa = radians(20);
+    if (pitot_aoa > radians(90)) {
+        airspeed_pitot = 0;
+    } else if (pitot_aoa > max_pitot_aoa) {
+        const float gain_factor = M_PI_2 / (radians(90) - max_pitot_aoa);
+        airspeed_pitot *= cosf((pitot_aoa - max_pitot_aoa) * gain_factor);
+    }
+
+    // limit to speed common pitot setups can measure
+    const float airspeed_eas_max = 120.0;
+    airspeed_pitot = constrain_float(airspeed_pitot, 0.0f, airspeed_eas_max);
 }

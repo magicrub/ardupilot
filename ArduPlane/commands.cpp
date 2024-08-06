@@ -111,6 +111,24 @@ void Plane::update_home()
     if (hal.util->was_watchdog_armed()) {
         return;
     }
+    if (g2.home_reset_threshold == -2) {
+        // special case for init using GPS height and terrain data,
+        // allowing for arming while not on the ground
+        float terrain_amsl;
+        Location loc;
+        if (gps.status() >= AP_GPS::GPS_OK_FIX_3D &&
+            terrain.height_amsl(current_loc, terrain_amsl, false) &&
+            ahrs.get_position(loc) &&
+            !ahrs.home_is_locked()) {
+            barometer.update_calibration();
+            ahrs.resetHeightDatum();
+            loc.alt = terrain_amsl * 100;
+            if (!AP::ahrs().set_home(loc)) {
+                // silently fail
+            }
+        }
+        return;
+    }
     if ((g2.home_reset_threshold == -1) ||
         ((g2.home_reset_threshold > 0) &&
          (fabsf(barometer.get_altitude()) > g2.home_reset_threshold))) {

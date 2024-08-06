@@ -164,8 +164,9 @@ protected:
     Vector3f velocity_air_bf;            // velocity relative to airmass, body frame
     Vector3f position;                   // meters, NED from origin
     float mass;                          // kg
+    float air_density = SSL_AIR_DENSITY; // Kg/m^3
     float external_payload_mass = 0.0f;  // kg
-    Vector3f accel_body;                 // m/s/s NED, body frame
+    Vector3f accel_body;                 // m/s/s body frame specific forces
     float airspeed;                      // m/s, apparent airspeed
     float airspeed_pitot;                // m/s, apparent airspeed, as seen by fwd pitot tube
     float battery_voltage = -1.0f;
@@ -199,6 +200,7 @@ protected:
     Vector3f mag_bf;  // local earth magnetic field vector in Gauss, earth frame
 
     uint64_t time_now_us;
+    uint64_t launch_start_ms;
 
     const float gyro_noise;
     const float accel_noise;
@@ -237,6 +239,8 @@ protected:
 
     virtual bool on_ground() const;
 
+    bool waiting_to_launch() const;
+
     // returns height above ground level in metres
     float hagl() const;  // metres
 
@@ -272,9 +276,9 @@ protected:
     void update_wind(const struct sitl_input &input);
 
     // return filtered servo input as -1 to 1 range
-    float filtered_idx(float v, uint8_t idx);
-    float filtered_servo_angle(const struct sitl_input &input, uint8_t idx);
-    float filtered_servo_range(const struct sitl_input &input, uint8_t idx);
+    float filtered_idx(float v, uint8_t idx, float dt=0);
+    float filtered_servo_angle(const struct sitl_input &input, uint8_t idx, float dt=0);
+    float filtered_servo_range(const struct sitl_input &input, uint8_t idx, float dt=0);
 
     // extrapolate sensors by a given delta time in seconds
     void extrapolate_sensors(float delta_time);
@@ -287,6 +291,9 @@ protected:
 
     // get local thermal updraft
     float get_local_updraft(Vector3f currentPos);
+
+    // update EAS speeds
+    void update_eas_airspeed();
 
 private:
     uint64_t last_time_us = 0;
@@ -304,7 +311,7 @@ private:
         Location location;
     } smoothing;
 
-    LowPassFilterFloat servo_filter[4];
+    LowPassFilterFloat servo_filter[16];
 
     Buzzer *buzzer;
     Sprayer *sprayer;

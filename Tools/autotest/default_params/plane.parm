@@ -1,18 +1,9 @@
-EK2_ENABLE      1
 ALT_CTRL_ALG    2
 BATT_MONITOR    4
 LOG_BITMASK	65535
-TRIM_ARSPD_CM   2200
 TRIM_PITCH_CD   0
 TRIM_THROTTLE   50
-LIM_PITCH_MIN   -2000
-LIM_PITCH_MAX   2500
-LIM_ROLL_CD     6500
-LAND_PITCH_CD   100
-LAND_FLARE_SEC  5
 ARSPD_USE       1
-ARSPD_FBW_MAX   30
-ARSPD_FBW_MIN   10
 KFF_RDDRMIX     0.5
 THR_MAX		100
 RC1_MAX         2000
@@ -48,18 +39,6 @@ FLTMODE4        5
 FLTMODE5        2
 FLTMODE6        0
 FLTMODE_CH      8
-WP_LOITER_RAD   80
-WP_RADIUS       50
-RLL2SRV_D        0.2
-RLL2SRV_I        0.3
-RLL2SRV_P        2.5
-RLL2SRV_RMAX     0
-RLL2SRV_TCONST   0.5
-PTCH2SRV_D       0.2
-PTCH2SRV_I       0.3
-PTCH2SRV_P       2.5
-PTCH2SRV_RLL     1
-NAVL1_PERIOD     15
 ACRO_LOCKING     1
 # we need small INS_ACC offsets so INS is recognised as being calibrated
 INS_ACCOFFS_X   0.001
@@ -75,3 +54,92 @@ INS_ACC2SCAL_X   1.001
 INS_ACC2SCAL_Y   1.001
 INS_ACC2SCAL_Z   1.001
 INS_GYR_CAL      0
+
+LAND_FLARE_ALT         30
+LAND_FLARE_SEC          4
+LAND_PF_ALT            60
+LAND_PF_ARSPD          50
+LAND_PF_PITCH_CD     -300
+LAND_PF_SEC            10
+LAND_PITCH_CD           0
+LIM_PITCH_MAX        3000
+LIM_PITCH_MIN       -2000
+LIM_ROLL_AUTO          40
+
+RLL2SRV_D               0.5000
+RLL2SRV_FF              0.3200
+RLL2SRV_I               0.1800
+RLL2SRV_IMAX         4000
+RLL2SRV_P               0
+RLL2SRV_RMAX           40
+RLL2SRV_SRMAX          68
+RLL2SRV_TCONST          1.2
+
+PTCH2SRV_D              0.3
+PTCH2SRV_FF             0.4140
+PTCH2SRV_I              0.4000
+PTCH2SRV_IMAX        4500
+PTCH2SRV_P              0
+PTCH2SRV_RLL            0.5000
+PTCH2SRV_RMAX_DN       40
+PTCH2SRV_RMAX_UP       40
+PTCH2SRV_SRMAX         68
+PTCH2SRV_TCONST         1.0
+
+MIXING_GAIN             1
+NAVL1_PERIOD           25
+
+# front right elevon
+SERVO1_FUNCTION        17
+SERVO1_MAX           2000
+SERVO1_MIN           1000
+SERVO1_TRIM          1500
+
+# rear left elevon
+SERVO2_FUNCTION        86
+SERVO2_MAX           2000
+SERVO2_MIN           1000
+SERVO2_TRIM          1500
+SERVO2_REVERSED         1
+
+# front left elevon
+SERVO3_FUNCTION        16
+SERVO3_MAX           2000
+SERVO3_MIN           1000
+SERVO3_TRIM          1500
+
+# rear right elevon
+SERVO4_FUNCTION        87
+SERVO4_MAX           2000
+SERVO4_MIN           1000
+SERVO4_TRIM          1500
+SERVO4_REVERSED         1
+
+SERVO7_FUNCTION         1
+
+STALL_PREVENTION        0
+
+TECS_LAND_ARSPD        52
+TECS_LAND_PMAX         14
+TECS_LAND_SINK          1
+TECS_LAND_SPDWGT        1
+TECS_LAND_SRC           0.2000
+TECS_LAND_TCONST        5
+TECS_OPTIONS            1
+TECS_PITCH_MAX         -6
+TECS_PITCH_MIN        -12
+TECS_SINK_MAX          15
+TECS_SINK_MIN          10
+
+TRIM_ARSPD_CM        6300
+WP_LOITER_RAD         300
+WP_RADIUS             600
+
+ARSPD_FBW_MAX          67
+ARSPD_FBW_MIN          43
+
+LOG_DISARMED            1
+
+AHRS_EKF_TYPE          10
+
+SIM_SPEEDUP             2

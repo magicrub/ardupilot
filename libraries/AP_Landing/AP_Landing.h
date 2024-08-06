@@ -73,6 +73,7 @@ public:
     void check_if_need_to_abort(const AP_Vehicle::FixedWing::Rangefinder_State &rangefinder_state);
     bool request_go_around(void);
     bool is_flaring(void) const;
+    bool is_preflaring(void) const;
     bool is_on_approach(void) const;
     bool is_ground_steering_allowed(void) const;
     bool is_throttle_suppressed(void) const;
@@ -96,6 +97,7 @@ public:
     static const struct AP_Param::GroupInfo var_info[];
     
     int16_t get_pitch_cd(void) const { return pitch_cd; }
+    int16_t get_preflare_pitch_cd(void) const { return preflare_pitch_cd; }
     float get_flare_sec(void) const { return flare_sec; }
     int8_t get_disarm_delay(void) const { return disarm_delay; }
     int8_t get_then_servos_neutral(void) const { return then_servos_neutral; }
@@ -111,6 +113,10 @@ public:
 
     // landing altitude offset (meters)
     float alt_offset;
+
+    float get_preflare_alt(void) const {
+        return pre_flare_alt;
+    }
 
 private:
     struct {
@@ -147,6 +153,7 @@ private:
     AP_Landing_Deepstall deepstall;
 
     AP_Int16 pitch_cd;
+    AP_Int16 preflare_pitch_cd;
     AP_Float flare_alt;
     AP_Float flare_sec;
     AP_Float pre_flare_airspeed;
@@ -169,6 +176,7 @@ private:
         SLOPE_STAGE_PREFLARE,
         SLOPE_STAGE_FINAL
     } type_slope_stage;
+    float type_slope_height;
 
     struct {
         // once landed, post some landing statistics to the GCS
@@ -192,6 +200,7 @@ private:
     void type_slope_log(void) const;
     bool type_slope_is_complete(void) const;
     bool type_slope_is_flaring(void) const;
+    bool type_slope_is_preflaring(void) const;
     bool type_slope_is_on_approach(void) const;
     bool type_slope_is_expecting_impact(void) const;
     bool type_slope_is_throttle_suppressed(void) const;

@@ -101,6 +101,18 @@ public:
         return _hgt_rate_dem;
     }
 
+    bool does_aoa_flare(void) {
+        return is_positive(_flare_aoa_deg);
+    }
+
+    bool get_flare_elevator_ff (float &elevator_increment_deg) {
+        if (does_aoa_flare()) {
+            elevator_increment_deg = _flare_elevator_increment;
+            return true;
+        }
+        return false;
+    }
+
     // set path_proportion
     void set_path_proportion(float path_proportion) override {
         _path_proportion = constrain_float(path_proportion, 0.0f, 1.0f);
@@ -189,6 +201,11 @@ private:
 
     AP_Float _pitch_ff_v0;
     AP_Float _pitch_ff_k;
+    AP_Float _flare_aoa_deg;
+    AP_Float _flare_aoa_time;
+    AP_Float _flare_aoa_elev_gain_ff;
+
+    float _pitch_dem_at_flare_entry;
 
     // temporary _pitch_max_limit. Cleared on each loop. Clear when >= 90
     int8_t _pitch_max_limit = 90;
@@ -338,7 +355,7 @@ private:
     float _DT;
 
     // counter for demanded sink rate on land final
-    uint8_t _flare_counter;
+    uint32_t _flare_counter;
 
     // slew height demand lag filter value when transition to land
     float hgt_dem_lag_filter_slew;
@@ -373,7 +390,7 @@ private:
     void _update_speed_demand(void);
 
     // Update the demanded height
-    void _update_height_demand(void);
+    void _update_height_demand(float hgt_afe);
 
     // Detect an underspeed condition
     void _detect_underspeed(void);
@@ -407,4 +424,13 @@ private:
 
     // current time constant
     float timeConstant(void) const;
+
+    // additional elevator demanded during the flare manoeuvre
+    float _flare_elevator_increment;
+
+    struct {
+        float sink_rate_start;
+        float height_flare_start;
+        float target_height;
+    } flare;
 };

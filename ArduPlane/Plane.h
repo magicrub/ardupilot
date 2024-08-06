@@ -163,10 +163,11 @@ public:
 
     Plane(void);
 
-private:
-
     // key aircraft parameters passed to multiple libraries
     AP_Vehicle::FixedWing aparm;
+    
+private:
+
 
     // Global parameters are all contained within the 'g' and 'g2' classes.
     Parameters g;
@@ -305,6 +306,7 @@ private:
 
     // last time we ran roll/pitch stabilization
     uint32_t last_stabilize_ms;
+    bool righting_mode;
     
     // Failsafe
     struct {
@@ -509,6 +511,18 @@ private:
 
         // how much correction have we added for terrain data
         float terrain_correction;
+
+        // highest barometric altitude seen (for ALTITUDE_WAIT)
+        float highest_baro_alt;
+
+        // have we started an emergency landing?
+        bool started_landing;
+
+        bool emergency_land;
+        float land_alt_amsl = -1;
+
+        uint32_t started_3D_fix_ms;
+        uint32_t arming_time_ms;
     } auto_state;
 
     struct {
@@ -1079,6 +1093,8 @@ private:
     bool soaring_exit_heading_aligned() const;
     void soaring_restore_mode(const char *reason, ModeReason modereason);
 #endif
+
+    bool in_auto_land(void);
 
     // reverse_thrust.cpp
     bool reversed_throttle;

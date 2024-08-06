@@ -25,6 +25,7 @@
 #include <GCS_MAVLink/GCS.h>
 #include <AP_GPS/AP_GPS.h>
 #include <AP_Baro/AP_Baro.h>
+#include <AP_Vehicle/AP_Vehicle.h>
 
 extern const AP_HAL::HAL& hal;
 
@@ -418,7 +419,7 @@ AP_AHRS_DCM::_yaw_gain(void) const
 // return true if we have and should use GPS
 bool AP_AHRS_DCM::have_gps(void) const
 {
-    if (AP::gps().status() <= AP_GPS::NO_FIX || !_gps_use) {
+    if (AP::gps().status() <= AP_GPS::NO_FIX || _gps_use == AHRS_GPSUse::Disable) {
         return false;
     }
     return true;
@@ -1030,13 +1031,19 @@ AP_AHRS_DCM::euler_angles(void)
 // dead-reckoning or GPS
 bool AP_AHRS_DCM::get_position(struct Location &loc) const
 {
+    const AP_GPS &_gps = AP::gps();
     loc.lat = _last_lat;
     loc.lng = _last_lng;
-    loc.alt = AP::baro().get_altitude() * 100 + _home.alt;
+    if (_gps_use == AHRS_GPSUse::Enable_3D && _gps.status() >= AP_GPS::GPS_OK_FIX_3D) {
+        loc.alt = _gps.location().alt;
+    } else if (_gps_use == AHRS_GPSUse::Enable_3D && _dead_reckon_baro) {
+        loc.alt = (AP::baro().get_altitude() + _dead_reckon_basealt) * 100;
+    } else {
+        loc.alt = AP::baro().get_altitude() * 100 + _home.alt;
+    }
     loc.relative_alt = 0;
     loc.terrain_alt = 0;
     loc.offset(_position_offset_north, _position_offset_east);
-    const AP_GPS &_gps = AP::gps();
     if (_flags.fly_forward && _have_position) {
         float gps_delay_sec = 0;
         _gps.get_lag(gps_delay_sec);
@@ -1045,10 +1052,19 @@ bool AP_AHRS_DCM::get_position(struct Location &loc) const
     return _have_position;
 }
 
+extern AP_Vehicle::FixedWing *aparm_ptr;
+
 // return an airspeed estimate if available
 bool AP_AHRS_DCM::airspeed_estimate(float &airspeed_ret) const
 {
-    return airspeed_estimate(_airspeed?_airspeed->get_primary():0, airspeed_ret);
+    bool ret = airspeed_estimate(_airspeed?_airspeed->get_primary():0, airspeed_ret);
+    const AP_GPS &_gps = AP::gps();
+    if (aparm_ptr != nullptr && _gps.status() >= AP_GPS::GPS_OK_FIX_3D) {
+        if (_gps.ground_speed() > aparm_ptr->airspeed_min*0.5) {
+            airspeed_ret = constrain_float(airspeed_ret, aparm_ptr->airspeed_min, aparm_ptr->airspeed_max);
+        }
+    }
+    return ret;
 }
 
 // return an airspeed estimate from a specific airspeed sensor instance if available
@@ -1117,7 +1133,13 @@ bool AP_AHRS_DCM::set_home(const Location &loc)
 //  a relative ground position to home in meters, Down
 void AP_AHRS_DCM::get_relative_position_D_home(float &posD) const
 {
-    posD = -AP::baro().get_altitude();
+    const auto &gps = AP::gps();
+    if (_home_is_set && _gps_use == AHRS_GPSUse::Enable_3D && gps.status() >= AP_GPS::GPS_OK_FIX_3D) {
+        const Location &loc = gps.location();
+        posD = -(loc.alt - _home.alt) * 0.01;
+    } else {
+        posD = -AP::baro().get_altitude();
+    }
 }
 
 /*
@@ -1142,3 +1164,19 @@ bool AP_AHRS_DCM::get_velocity_NED(Vector3f &vec) const
     return true;
 }
 
+/*
+  init speed and position for initial dead-reckoning support
+ */
+void AP_AHRS_DCM::init_posvel(float speed, const Location &loc)
+{
+    _last_velocity.z = 0;
+    _last_velocity.x = cosf(yaw) * speed;
+    _last_velocity.y = sinf(yaw) * speed;
+    _last_lat = loc.lat;
+    _last_lng = loc.lng;
+    _position_offset_east = _position_offset_north = 0;
+    _have_position = true;
+    _dead_reckon_baro = true;
+    _dead_reckon_basealt = loc.alt*0.01;
+    AP::baro().update_calibration();
+}
