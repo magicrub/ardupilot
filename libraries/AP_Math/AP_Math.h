@@ -294,3 +294,7 @@ Vector3f get_vel_correction_for_sensor_offset(const Vector3f &sensor_offset_bf, 
 void fill_nanf(float *f, uint16_t count);
 #endif
 
+/*
+  calculate a low pass filter alpha value
+ */
+float calc_lowpass_alpha_dt(float dt, float cutoff_freq);

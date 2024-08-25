@@ -93,7 +93,7 @@ bool AP_Landing::type_slope_verify_land(const Location &prev_WP_loc, Location &n
 
     if ((on_approach_stage && below_flare_alt) ||
         (on_approach_stage && below_flare_sec && (wp_proportion > 0.5)) ||
-        (!rangefinder_state_in_range && wp_proportion >= 1) ||
+        //(!rangefinder_state_in_range && wp_proportion >= 1) ||
         probably_crashed) {
 
         if (type_slope_stage != SLOPE_STAGE_FINAL) {
@@ -127,10 +127,11 @@ bool AP_Landing::type_slope_verify_land(const Location &prev_WP_loc, Location &n
             aparm.min_gndspeed_cm.load();
             aparm.throttle_cruise.load();
         }
-    } else if (type_slope_stage == SLOPE_STAGE_APPROACH && pre_flare_airspeed > 0) {
+    } else if (type_slope_stage <= SLOPE_STAGE_APPROACH && pre_flare_airspeed > 0) {
         bool reached_pre_flare_alt = pre_flare_alt > 0 && (height <= pre_flare_alt);
         bool reached_pre_flare_sec = pre_flare_sec > 0 && (height <= sink_rate * pre_flare_sec);
         if (reached_pre_flare_alt || reached_pre_flare_sec) {
+            gcs().send_text(MAV_SEVERITY_INFO, "Preflare alt %.1fm %.1fs", height, height/sink_rate);
             type_slope_stage = SLOPE_STAGE_PREFLARE;
         }
     }
@@ -288,7 +289,7 @@ void AP_Landing::type_slope_setup_landing_glide_slope(const Location &prev_WP_lo
     }
 
     // time before landing that we will flare
-    float flare_time = aim_height / SpdHgt_Controller->get_land_sinkrate();
+    float flare_time = aim_height / MAX(SpdHgt_Controller->get_land_sinkrate(),0.1);
 
     // distance to flare is based on ground speed, adjusted as we
     // get closer. This takes into account the wind
@@ -377,9 +378,14 @@ bool AP_Landing::type_slope_is_flaring(void) const
     return (type_slope_stage == SLOPE_STAGE_FINAL);
 }
 
+bool AP_Landing::type_slope_is_preflaring(void) const
+{
+    return (type_slope_stage == SLOPE_STAGE_PREFLARE);
+}
+
 bool AP_Landing::type_slope_is_on_approach(void) const
 {
-    return (type_slope_stage == SLOPE_STAGE_APPROACH ||
+    return (type_slope_stage <= SLOPE_STAGE_APPROACH ||
             type_slope_stage == SLOPE_STAGE_PREFLARE);
 }
 

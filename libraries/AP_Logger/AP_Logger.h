@@ -307,6 +307,7 @@ public:
         float D;
         float FF;
         float Dmod;
+        float slew_rate;
     };
 
     void Write_PID(uint8_t msg_type, const PID_Info &info);

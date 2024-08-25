@@ -120,6 +120,9 @@ public:
 
     bool get_velocity_NED(Vector3f &vec) const override;
 
+    // initialse position and speed for when we have no GPS lock
+    void init_posvel(float speed, const Location &loc);
+
 private:
     float _ki;
     float _ki_yaw;
@@ -211,4 +214,7 @@ private:
 
     // time when DCM was last reset
     uint32_t _last_startup_ms;
+
+    bool _dead_reckon_baro;
+    float _dead_reckon_basealt;
 };

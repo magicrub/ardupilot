@@ -316,6 +316,9 @@ public:
     // set and save the ALT_M_NSE parameter value
     void set_alt_measurement_noise(float noise) override;
 
+    // return true if EKF innovations are bad
+    bool EKF_innovations_bad(void) const;
+
     // these are only out here so vehicles can reference them for parameters
 #if HAL_NAVEKF2_AVAILABLE
     NavEKF2 EKF2;
@@ -338,6 +341,8 @@ private:
 #endif
     };
     EKFType active_EKF_type(void) const;
+
+    EKFType _last_ekf_type;
 
     bool always_use_EKF() const {
         return _ekf_flags & FLAG_ALWAYS_USE_EKF;

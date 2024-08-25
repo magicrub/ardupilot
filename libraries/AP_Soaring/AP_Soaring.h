@@ -57,8 +57,8 @@ class SoaringController {
     float _thermalability;
     float _expected_sink;
 
-    LowPassFilter<float> _position_x_filter;
-    LowPassFilter<float> _position_y_filter;
+    LowPassFilter<float> _position_x_filter{1/60.0};
+    LowPassFilter<float> _position_y_filter{1/60.0};
 
 protected:
     AP_Int8 soar_active;
