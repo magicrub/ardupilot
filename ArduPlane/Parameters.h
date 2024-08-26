@@ -31,7 +31,7 @@ public:
     //////////////////////////////////////////////////////////////////
     // STOP!!! DO NOT CHANGE THIS VALUE UNTIL YOU FULLY UNDERSTAND THE
     // COMMENTS ABOVE. IF UNSURE, ASK ANOTHER DEVELOPER!!!
-    static const uint16_t k_format_version = 13;
+    static const uint16_t k_format_version = 120;
     //////////////////////////////////////////////////////////////////
 
 
@@ -586,6 +586,8 @@ public:
 
     // min initial climb in RTL
     AP_Int16        rtl_climb_min;
+
+    AP_Float lim_roll_auto;
 };
 
 extern const AP_Param::Info var_info[];

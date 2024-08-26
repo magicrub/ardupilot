@@ -200,6 +200,20 @@ bool AP_Arming_Plane::arm(const AP_Arming::Method method, const bool do_arming_c
 
     gcs().send_text(MAV_SEVERITY_INFO, "Throttle armed");
 
+    plane.auto_state.arming_time_ms = AP_HAL::millis();
+    plane.auto_state.emergency_land = false;
+    plane.auto_state.land_alt_amsl = -1;
+
+    if (plane.gps.status() < AP_GPS::GPS_OK_FIX_3D) {
+        AP_Mission::Mission_Command cmd;
+        uint16_t idx;
+        if (plane.mission.find_command(MAV_CMD_DO_LAND_START, 0, idx, cmd) &&
+            cmd.content.location.change_alt_frame(Location::AltFrame::ABSOLUTE)) {
+            gcs().send_text(MAV_SEVERITY_INFO, "Init location to DO_LAND_START");
+            plane.ahrs.init_posvel(plane.aparm.airspeed_cruise_cm*0.01, cmd.content.location);
+        }
+    }
+
     return true;
 }
 

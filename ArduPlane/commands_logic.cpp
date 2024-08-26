@@ -207,7 +207,11 @@ Return true if we do not recognize the command so that we move on to the next co
 
 bool Plane::verify_command(const AP_Mission::Mission_Command& cmd)        // Returns true if command complete
 {
-    switch(cmd.id) {
+    uint16_t id = cmd.id;
+    if (in_auto_land()) {
+        id = MAV_CMD_NAV_LAND;
+    }
+    switch(id) {
 
     case MAV_CMD_NAV_TAKEOFF:
         if (quadplane.is_vtol_takeoff(cmd.id)) {
@@ -232,6 +236,15 @@ bool Plane::verify_command(const AP_Mission::Mission_Command& cmd)        // Ret
             // correction as otherwise we will flare early on rising
             // ground
             height -= auto_state.terrain_correction;
+
+            // to cope with lidar failure we also check GPS height
+            if (!is_equal(auto_state.land_alt_amsl,-1.0f) &&
+                gps.status() >= AP_GPS::GPS_OK_FIX_3D &&
+                AP_HAL::millis() - auto_state.started_3D_fix_ms > 10000) {
+                const float gps_margin = 15.0;
+                float gps_alt = (gps.location().alt*0.01 - auto_state.land_alt_amsl) + gps_margin;
+                height = MIN(gps_alt, height);
+            }
             return landing.verify_land(prev_WP_loc, next_WP_loc, current_loc,
                 height, auto_state.sink_rate, auto_state.wp_proportion, auto_state.last_flying_ms, arming.is_armed(), is_flying(), rangefinder_state.in_range);
         }
@@ -354,6 +367,7 @@ void Plane::do_takeoff(const AP_Mission::Mission_Command& cmd)
 
 void Plane::do_nav_wp(const AP_Mission::Mission_Command& cmd)
 {
+    auto_state.started_landing = false;
     set_next_WP(cmd.content.location);
 }
 
@@ -491,6 +505,7 @@ void Plane::do_altitude_wait(const AP_Mission::Mission_Command& cmd)
 {
     // set all servos to trim until we reach altitude or descent speed
     auto_state.idle_mode = true;
+    auto_state.highest_baro_alt = barometer.get_altitude();
 }
 
 void Plane::do_loiter_to_alt(const AP_Mission::Mission_Command& cmd)
@@ -632,7 +647,8 @@ bool Plane::verify_nav_wp(const AP_Mission::Mission_Command& cmd)
         // allow user to override acceptance radius
         acceptance_distance_m = cmd_acceptance_distance;
     } else if (cmd_passby == 0) {
-        acceptance_distance_m = nav_controller->turn_distance(g.waypoint_radius, auto_state.next_turn_angle);
+        float roll_limit = is_positive(g2.lim_roll_auto)?g2.lim_roll_auto:aparm.roll_limit_cd*0.01;
+        acceptance_distance_m = nav_controller->turn_distance(g.waypoint_radius, auto_state.next_turn_angle, roll_limit*0.75);
     } else {
 
     }
@@ -812,13 +828,31 @@ bool Plane::verify_continue_and_change_alt()
  */
 bool Plane::verify_altitude_wait(const AP_Mission::Mission_Command &cmd)
 {
-    if (current_loc.alt > cmd.content.altitude_wait.altitude*100.0f) {
+    if (!is_zero(cmd.content.altitude_wait.altitude) &&
+        current_loc.alt > cmd.content.altitude_wait.altitude*100.0f) {
         gcs().send_text(MAV_SEVERITY_INFO,"Reached altitude");
         return true;
     }
-    if (auto_state.sink_rate > cmd.content.altitude_wait.descent_rate) {
+    if (cmd.content.altitude_wait.descent_rate > 0 && auto_state.sink_rate > cmd.content.altitude_wait.descent_rate) {
         gcs().send_text(MAV_SEVERITY_INFO, "Reached descent rate %.1f m/s", (double)auto_state.sink_rate);
         return true;        
+    }
+
+    float baro_alt = barometer.get_altitude();
+    if (cmd.content.altitude_wait.alt_change > 0) {
+        if (auto_state.highest_baro_alt - baro_alt > cmd.content.altitude_wait.alt_change) {
+            gcs().send_text(MAV_SEVERITY_INFO, "Dropped %.1fm", auto_state.highest_baro_alt - baro_alt);
+            return true;
+        }
+    }
+    auto_state.highest_baro_alt = MAX(auto_state.highest_baro_alt, baro_alt);
+
+    float aspeed;
+    if (cmd.content.altitude_wait.airspeed > 0 && ahrs.airspeed_estimate(aspeed)) {
+        if (aspeed >= cmd.content.altitude_wait.airspeed) {
+            gcs().send_text(MAV_SEVERITY_INFO, "Reached airspeed %.1fm/s", aspeed);
+            return true;
+        }
     }
 
     // if requested, wiggle servos
