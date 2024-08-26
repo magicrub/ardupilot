@@ -124,7 +124,6 @@ void AP_Scripting::init(void) {
     if (AP::FS().mkdir(dir_name)) {
         if (errno != EEXIST) {
             gcs().send_text(MAV_SEVERITY_INFO, "Lua: failed to create (%s)", dir_name);
-            return;
         }
     }
 
