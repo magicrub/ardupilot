@@ -27,6 +27,7 @@
 #include <AP_InternalError/AP_InternalError.h>
 #include <AP_Notify/AP_Notify.h>
 #include <AP_Vehicle/AP_Vehicle_Type.h>
+#include <GCS_MAVLink/GCS.h>
 
 #if AP_AHRS_NAVEKF_AVAILABLE
 
@@ -148,6 +149,23 @@ void AP_AHRS_NavEKF::update(bool skip_ins_update)
 #endif
     }
 
+    if ((_ekf_type == 2 || _ekf_type == 3) && _ekf2_started && _ekf3_started) {
+        const float score2 = EKF2.errorScore();
+        const float score3 = EKF3.errorScore();
+        nav_filter_status filt_state2;
+        nav_filter_status filt_state3;
+        EKF2.getFilterStatus(-1,filt_state2);
+        EKF3.getFilterStatus(-1,filt_state3);
+        if (_ekf_type == 3 && score2 > 0 && filt_state2.flags.using_gps && ((score2+0.2) < 0.5 * score3 || !filt_state3.flags.using_gps)) {
+            gcs().send_text(MAV_SEVERITY_WARNING, "Switching to EKF2 %.1f %.1f", score2, score3);
+            _ekf_type.set_and_notify(2);
+        }
+        if (_ekf_type == 2 && score3 > 0 && filt_state3.flags.using_gps && ((score3+0.2) < 0.5 * score2 || !filt_state2.flags.using_gps)) {
+            gcs().send_text(MAV_SEVERITY_WARNING, "Switching to EKF3 %.1f %.1f", score2, score3);
+            _ekf_type.set_and_notify(3);
+        }
+    }
+
 #if AP_MODULE_SUPPORTED
     // call AHRS_update hook if any
     AP_Module::call_hook_AHRS_update(*this);
@@ -168,6 +186,12 @@ void AP_AHRS_NavEKF::update(bool skip_ins_update)
     // update NMEA output
     update_nmea_out();
 #endif
+
+    EKFType _active_type = active_EKF_type();
+    if (_active_type != _last_ekf_type) {
+        _last_ekf_type = _active_type;
+        gcs().send_text(MAV_SEVERITY_WARNING, "Switched to EKF%u", unsigned(_active_type));
+    }
 }
 
 void AP_AHRS_NavEKF::update_DCM(bool skip_ins_update)
@@ -1119,7 +1143,7 @@ void AP_AHRS_NavEKF::get_relative_position_D_home(float &posD) const
     float originD;
     if (!get_relative_position_D_origin(originD) ||
         !get_origin(originLLH)) {
-        posD = -AP::baro().get_altitude();
+        AP_AHRS_DCM::get_relative_position_D_home(posD);
         return;
     }
 
@@ -1249,10 +1273,10 @@ AP_AHRS_NavEKF::EKFType AP_AHRS_NavEKF::active_EKF_type(void) const
             get_filter_status(filt_state);
         }
 #endif
-        if (hal.util->get_soft_armed() &&
+        if (AP::gps().status() >= AP_GPS::GPS_OK_FIX_3D &&
             (!filt_state.flags.using_gps ||
-             !filt_state.flags.horiz_pos_abs) &&
-            AP::gps().status() >= AP_GPS::GPS_OK_FIX_3D) {
+             !filt_state.flags.horiz_pos_abs ||
+             EKF_innovations_bad())) {
             // if the EKF is not fusing GPS or doesn't have a 2D fix
             // and we have a 3D lock, then plane and rover would
             // prefer to use the GPS position from DCM. This is a
@@ -2355,6 +2379,52 @@ void AP_AHRS_NavEKF::set_alt_measurement_noise(float noise)
 #if HAL_NAVEKF3_AVAILABLE
     EKF3.set_baro_alt_noise(noise);
 #endif
+}
+
+
+/*
+  return true if current EKF innovations are very bad
+ */
+bool AP_AHRS_NavEKF::EKF_innovations_bad(void) const
+{
+    Vector3f velInnov, posInnov, magInnov;
+    float tasInnov, yawInnov;
+    Vector3f ekf_eulers;
+    switch (ekf_type()) {
+    case EKFType::NONE:
+        return false;
+#if HAL_NAVEKF2_AVAILABLE
+    case EKFType::TWO: {
+        EKF2.getInnovations(-1, velInnov, posInnov, magInnov, tasInnov, yawInnov);
+        EKF2.getEulerAngles(-1, ekf_eulers);
+        break;
+    }
+#endif
+#if HAL_NAVEKF3_AVAILABLE
+    case EKFType::THREE: {
+        EKF3.getInnovations(-1, velInnov, posInnov, magInnov, tasInnov, yawInnov);
+        EKF3.getEulerAngles(-1, ekf_eulers);
+        break;
+    }
+#endif
+#if CONFIG_HAL_BOARD == HAL_BOARD_SITL
+    case EKFType::SITL:
+        return false;
+#endif
+    }
+    if (velInnov.length() > 10 || posInnov.length() > 50) {
+        // too much velocity or position error from sensors
+        return true;
+    }
+    const Matrix3f &dcm = AP_AHRS_DCM::get_rotation_body_to_ned();
+    float dcm_roll, dcm_pitch, dcm_yaw;
+    dcm.to_euler(&dcm_roll, &dcm_pitch, &dcm_yaw);
+    const float max_angle_err = radians(20);
+    if (fabsf(dcm_roll - ekf_eulers.x) > max_angle_err ||
+        fabsf(dcm_pitch - ekf_eulers.y) > max_angle_err) {
+        return true;
+    }
+    return false;
 }
 
 #endif // AP_AHRS_NAVEKF_AVAILABLE
