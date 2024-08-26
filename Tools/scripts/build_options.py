@@ -389,6 +389,7 @@ BUILD_OPTIONS = [
     Feature('Airspeed Drivers', 'MSP_AIRSPEED', 'AP_AIRSPEED_MSP_ENABLED', 'ENABLE MSP AIRSPEED', 0, 'AIRSPEED,MSP,OSD'),
     Feature('Airspeed Drivers', 'NMEA_AIRSPEED', 'AP_AIRSPEED_NMEA_ENABLED', 'ENABLE NMEA AIRSPEED', 0, 'AIRSPEED'),
     Feature('Airspeed Drivers', 'SDP3X', 'AP_AIRSPEED_SDP3X_ENABLED', 'ENABLE SDP3X AIRSPEED', 0, 'AIRSPEED'),
+    Feature('Airspeed Drivers', 'SYNTHETIC', 'AP_AIRSPEED_SYNTHETIC_ENABLED', 'ENABLE SYNTHETIC AIRSPEED', 0, 'AIRSPEED'),
     Feature('Airspeed Drivers', 'DRONECAN_ASPD', 'AP_AIRSPEED_DRONECAN_ENABLED', 'ENABLE DroneCAN AIRSPEED', 0, 'AIRSPEED,DroneCAN'),   # NOQA: E501
 
     Feature('Actuators', 'Volz', 'AP_VOLZ_ENABLED', 'Enable Volz Protocol', 0, None),
