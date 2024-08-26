@@ -1177,7 +1177,7 @@ const AP_Param::GroupInfo ParametersG2::var_info[] = {
     // @Param: FLIGHT_OPTIONS
     // @DisplayName: Flight mode options
     // @Description: Flight mode specific options
-    // @Bitmask: 0:Rudder mixing in direct flight modes only (Manual / Stabilize / Acro),1:Use centered throttle in Cruise or FBWB to indicate trim airspeed, 2:Disable attitude check for takeoff arming, 3:Force target airspeed to trim airspeed in Cruise or FBWB
+    // @Bitmask: 0:Rudder mixing in direct flight modes only (Manual / Stabilize / Acro),1:Use centered throttle in Cruise or FBWB to indicate trim airspeed, 2:Disable attitude check for takeoff arming, 3:Force target airspeed to trim airspeed in Cruise or FBWB, 4:Auto land at low alt
     // @User: Advanced
     AP_GROUPINFO("FLIGHT_OPTIONS", 13, ParametersG2, flight_options, 0),
 
@@ -1294,6 +1294,15 @@ const AP_Param::GroupInfo ParametersG2::var_info[] = {
     // @Path: ../libraries/AC_PID/AC_PID.cpp
     AP_SUBGROUPINFO(guidedHeading, "GUIDED_", 28, ParametersG2, AC_PID),
 #endif // OFFBOARD_GUIDED == ENABLED
+
+    // @Param: LIM_ROLL_AUTO
+    // @DisplayName: Roll limit for AUTO modes
+    // @Description: This is the limit for roll when under auto control. If zero then LIM_ROLL_CD is used
+    // @Range: 0 80
+    // @Increment: 1
+    // @User: Advanced
+    // @Units: Degrees
+    AP_GROUPINFO("LIM_ROLL_AUTO", 29, ParametersG2, lim_roll_auto, 0),
 
     AP_GROUPEND
 };
