@@ -83,12 +83,27 @@ template float safe_sqrt<float>(const float v);
 template float safe_sqrt<double>(const double v);
 
 /*
+  replacement for std::swap() needed for STM32
+ */
+static void swap_float(float &f1, float &f2)
+{
+    float tmp = f1;
+    f1 = f2;
+    f2 = tmp;
+}
+
+/*
  * linear interpolation based on a variable in a range
  */
 float linear_interpolate(float low_output, float high_output,
                          float var_value,
                          float var_low, float var_high)
 {
+    if (var_low > var_high) {
+        // support either polarity
+        swap_float(var_low, var_high);
+        swap_float(low_output, high_output);
+    }
     if (var_value <= var_low) {
         return low_output;
     }
@@ -382,3 +397,15 @@ void fill_nanf(float *f, uint16_t count)
     }
 }
 #endif
+
+/*
+  calculate a low pass filter alpha value
+ */
+float calc_lowpass_alpha_dt(float dt, float cutoff_freq)
+{
+    if (dt <= 0.0f || cutoff_freq <= 0.0f) {
+        return 1.0;
+    }
+    float rc = 1.0f/(M_2PI*cutoff_freq);
+    return constrain_float(dt/(dt+rc), 0.0f, 1.0f);
+}
