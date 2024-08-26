@@ -158,3 +158,6 @@ template <typename T> void BIT_CLEAR (T& value, uint8_t bitnumber) noexcept {
      static_assert(std::is_integral<T>::value, "Integral required.");
      ((value) &= ~((T)(1U) << (bitnumber)));
  }
+
+// used to forbid copy of objects
+#define CLASS_NO_COPY(c) c(const c &other) = delete; c &operator=(const c&) = delete
