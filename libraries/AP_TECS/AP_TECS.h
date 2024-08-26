@@ -338,7 +338,7 @@ private:
     float _DT;
 
     // counter for demanded sink rate on land final
-    uint8_t _flare_counter;
+    uint32_t _flare_counter;
 
     // slew height demand lag filter value when transition to land
     float hgt_dem_lag_filter_slew;
@@ -373,7 +373,7 @@ private:
     void _update_speed_demand(void);
 
     // Update the demanded height
-    void _update_height_demand(void);
+    void _update_height_demand(float hgt_afe);
 
     // Detect an underspeed condition
     void _detect_underspeed(void);
@@ -407,4 +407,10 @@ private:
 
     // current time constant
     float timeConstant(void) const;
+
+    struct {
+        float sink_rate_start;
+        float height_flare_start;
+        float target_height;
+    } flare;
 };
