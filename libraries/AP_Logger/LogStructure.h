@@ -777,6 +777,7 @@ struct PACKED log_PID {
     float   D;
     float   FF;
     float   Dmod;
+    float   slew_rate;
 };
 
 struct PACKED log_Current {
@@ -1344,10 +1345,10 @@ struct PACKED log_PSC {
 #define MAG_UNITS "sGGGGGGGGG-s"
 #define MAG_MULTS "FCCCCCCCCC-F"
 
-#define PID_LABELS "TimeUS,Tar,Act,Err,P,I,D,FF,Dmod"
-#define PID_FMT    "Qffffffff"
-#define PID_UNITS  "s--------"
-#define PID_MULTS  "F--------"
+#define PID_LABELS "TimeUS,Tar,Act,Err,P,I,D,FF,Dmod,SRate"
+#define PID_FMT    "Qfffffffff"
+#define PID_UNITS  "s---------"
+#define PID_MULTS  "F---------"
 
 #define QUAT_LABELS "TimeUS,C,Q1,Q2,Q3,Q4"
 #define QUAT_FMT    "QBffff"
@@ -2012,6 +2013,7 @@ struct PACKED log_PSC {
 // @Field: D: derivative part of PID
 // @Field: FF: controller feed-forward portion of response
 // @Field: Dmod: scaler applied to D gain to reduce limit cycling
+// @Field: SRate: slew rate
 
 // @LoggerMessage: PM
 // @Description: autopilot system performance and general data dumping ground
