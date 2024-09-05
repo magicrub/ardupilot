@@ -50,6 +50,7 @@ struct float_array {
 };
 
 class StratoBlimp;
+class SA_GD2000;
 class Glider;
 
 struct sitl_fdm {
@@ -318,6 +319,10 @@ public:
 #if AP_SIM_STRATOBLIMP_ENABLED
         StratoBlimp *stratoblimp_ptr;
 #endif
+#if AP_SIM_SA_GD2000_ENABLED
+        SA_GD2000 *sa_gd2000_ptr;
+#endif
+
 #if AP_SIM_SHIP_ENABLED
         ShipSim shipsim;
 #endif

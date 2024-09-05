@@ -38,6 +38,7 @@
 #endif // SFML_JOYSTICK
 
 #include "SIM_StratoBlimp.h"
+#include "SIM_SA_GD2000.h"
 #include "SIM_Glider.h"
 
 extern const AP_HAL::HAL& hal;
@@ -1261,6 +1262,12 @@ const AP_Param::GroupInfo SIM::ModelParm::var_info[] = {
     // @Group: SLUP_
     // @Path: ./SIM_SlungPayload.cpp
     AP_SUBGROUPINFO(slung_payload_sim, "SLUP_", 4, SIM::ModelParm, SlungPayloadSim),
+#endif
+
+#if AP_SIM_SA_GD2000_ENABLED
+    // @Group: GD2K_
+    // @Path: ./SIM_SA_GD2000.cpp
+    AP_SUBGROUPPTR(sa_gd2000_ptr, "GD2K_",  5, SIM::ModelParm, SA_GD2000),
 #endif
 
     AP_GROUPEND
