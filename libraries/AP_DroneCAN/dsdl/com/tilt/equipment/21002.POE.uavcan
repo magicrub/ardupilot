@@ -1,0 +1,17 @@
+#
+# TILT POE stats
+#
+
+uint8 poe_id
+
+float16 output_voltage   # [Volt]
+float16 output_current   # [Amp]
+float16 output_power     # [Watt]
+float16 temperature      # [Celcius]
+
+
+uint8 status            # Health Status
+uint8 STATUS_INIT       = 0
+uint8 STATUS_ENABLED    = 1
+uint8 STATUS_FAILURE    = 2
+uint8 STATUS_OVERTEMP   = 3

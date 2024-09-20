@@ -1368,6 +1368,26 @@ void AP_DroneCAN::handle_traffic_report(const CanardRxTransfer& transfer, const 
 }
 
 /*
+  handle tilt poe
+ */
+void AP_DroneCAN::handle_tilt_poe(const CanardRxTransfer& transfer, const com_tilt_equipment_POE& msg)
+{
+#if HAL_LOGGING_ENABLED
+    AP::logger().WriteStreaming(
+        "TPOE",
+        "TimeUS,Id,Volt,Cur,Pow,Temp,Status",
+        "QBffffB",
+        AP_HAL::micros64(),
+        msg.poe_id,
+        msg.output_voltage,
+        msg.output_current,
+        msg.output_power,
+        msg.temperature,
+        msg.status);
+#endif
+}
+
+/*
   handle actuator status message
  */
 void AP_DroneCAN::handle_actuator_status(const CanardRxTransfer& transfer, const uavcan_equipment_actuator_Status& msg)
