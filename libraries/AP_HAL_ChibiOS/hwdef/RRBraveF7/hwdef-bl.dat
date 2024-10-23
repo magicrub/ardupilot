@@ -1,0 +1,51 @@
+# hw definition file for processing by chibios_pins.py
+# for Rotor Riot Brave F7 bootloader
+
+# MCU class and specific type
+MCU STM32F7xx STM32F722xx
+
+# board ID for firmware load
+APJ_BOARD_ID 1325
+
+# crystal frequency, setup to use external oscillator
+OSCILLATOR_HZ 8000000
+
+define STM32_LSECLK   32768U
+define STM32_LSEDRV   (3U << 3U)
+
+FLASH_SIZE_KB 512
+
+# bootloader starts at zero offset
+FLASH_RESERVE_START_KB 0
+
+# the location where the bootloader will put the firmware
+FLASH_BOOTLOADER_LOAD_KB 96
+
+
+# order of UARTs (and USB)
+SERIAL_ORDER OTG1
+
+# PA10 IO-debug-console
+PA11 OTG_FS_DM OTG1
+PA12 OTG_FS_DP OTG1
+
+PA13 JTMS-SWDIO SWD
+PA14 JTCK-SWCLK SWD
+
+PC13 BUZZER OUTPUT LOW PULLDOWN
+
+PC14 LED_BOOTLOADER OUTPUT LOW
+define HAL_LED_ON 1
+
+# Motors for esc init
+PA9  PWMOUT1 OUTPUT LOW
+PA8  PWMOUT2 OUTPUT LOW
+PC9  PWMOUT3 OUTPUT LOW
+PC8  PWMOUT4 OUTPUT LOW
+PB5  PWMOUT5 OUTPUT LOW
+PB4  PWMOUT6 OUTPUT LOW
+
+# Add CS pins to ensure they are high in bootloader
+PB12 MAX7456_CS CS
+PA4  GYRO_CS CS
+PA15 EEPROM_CS CS
