@@ -321,16 +321,22 @@ public:
 
     void trajectory_exit();
     bool trajectory_start();
-    AP_Mission::Mission_Command trajectory_to_mission_cmd(const uint8_t index = 0) const;
+    AP_Mission::Mission_Command trajectory_to_mission_cmd() const;
     std::list<Location> trajectory;
 
 protected:
+
+    enum class SubMode: uint8_t {
+        Waypoint,
+        Trajectory,
+    };
 
     bool _enter() override;
     bool _pre_arm_checks(size_t buflen, char *buffer) const override { return true; }
 
 private:
     float active_radius_m;
+    SubMode _guided_mode;
 
     void navigate_trajectory();
 };

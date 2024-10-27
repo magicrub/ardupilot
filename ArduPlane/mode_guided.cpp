@@ -21,12 +21,13 @@ bool ModeGuided::_enter()
 #endif
 
     // set guided radius to WP_LOITER_RAD on mode change.
-    // active_radius_m = 0;
+    active_radius_m = 0;
 
-    // reset the trajectory state
+    // reset the subMode states
+    _guided_mode = SubMode::Waypoint;
     trajectory_exit();
-
     plane.set_guided_WP(loc);
+
     return true;
 }
 
@@ -99,24 +100,33 @@ void ModeGuided::update()
     } else {
         // TECS control
         plane.calc_throttle();
-
     }
-
 }
 
 void ModeGuided::navigate()
 {
-    if (!trajectory.empty()) {
-        navigate_trajectory();
-    } else {
-        // typical case
+    switch (_guided_mode) {
+    case SubMode::Waypoint:
         plane.update_loiter(active_radius_m);
+        break;
+
+    case SubMode::Trajectory:
+        navigate_trajectory();
+        break;
+
+    default:
+        gcs().send_text(MAV_SEVERITY_WARNING, "Unknown GUIDED SubMode %u", (unsigned)_guided_mode);
+        _guided_mode = SubMode::Waypoint;
+        break;
     }
 }
 
 void ModeGuided::navigate_trajectory()
 {
+#if 0
+    // DEBUG: set param BRD_SERIAL_NUM to 1 to enable crosstrack
     plane.auto_state.next_wp_crosstrack = (AP::boardConfig()->get_serial_number() == 1);
+#endif
 
     const AP_Mission::Mission_Command mission_cmd = trajectory_to_mission_cmd();
 
@@ -134,47 +144,31 @@ void ModeGuided::navigate_trajectory()
 
     trajectory.pop_front();
 
+    // trajectory_start() will initialize the next trajectory point.
     if (!trajectory_start()) {
-        // we just reached the last point or something went wrong
-        // act as if we just entered Guided and loiter around the last waypoint
+        // We just reached the last point or something went wrong.
+        // Act as if we just entered Guided and loiter around the last waypoint
         plane.set_guided_WP(mission_cmd.content.location);
+        _guided_mode = SubMode::Waypoint;
     }
 }
 
 bool ModeGuided::trajectory_start()
 {
     if (trajectory.empty()) {
-        trajectory_exit(); // this changes the loiter point so maybe we dont' want this?
-        return false;
-    }
-
-    AP_Mission::Mission_Command mission_cmd;
-
-#if 0
-    // verify that all mission items are NAV commands
-    for (uint8_t i = 0; i < trajectory.size(); i++) {
-        mission_cmd = trajectory_to_mission_cmd(i);
-        if (!plane.mission.is_nav_cmd(mission_cmd)) {
-            // if it's not a nav command what are we doing anyway!?!?!?
-            trajectory_exit();
-            return false;
-        }
-    }
-#endif
-
-    mission_cmd = trajectory_to_mission_cmd();
-
-    if (!plane.mission.is_nav_cmd(mission_cmd)) {
-        // if it's not a nav command what are we doing anyway!?!?!?
         trajectory_exit();
         return false;
     }
 
+    const AP_Mission::Mission_Command mission_cmd = trajectory_to_mission_cmd();
+
     if (!plane.start_command(mission_cmd)) {
-        trajectory_exit();  // start failed, start loitering where we're at
+        // start failed, start loitering where we're at
+        trajectory_exit();
         return false;
     }
 
+    _guided_mode = SubMode::Trajectory;
     return true;
 }
 
@@ -184,42 +178,17 @@ void ModeGuided::trajectory_exit()
     trajectory.clear();
 
     plane.set_guided_WP(plane.current_loc);
+
+    _guided_mode = SubMode::Waypoint;
 }
 
-AP_Mission::Mission_Command ModeGuided::trajectory_to_mission_cmd(const uint8_t index) const
+AP_Mission::Mission_Command ModeGuided::trajectory_to_mission_cmd() const
 {
     AP_Mission::Mission_Command mission_cmd {};
 
-    if (index >= trajectory.size()) {
-        return mission_cmd;
-    }
-
-#if 0
-    // Support for FUll Mission items as stated in the mavlink spec for trajectory_representation_waypoints
-
-    // mavlink_mission_item_int_t mavlink_packet = {};
-
-
-    // mavlink_packet.seq = 0;
-    // mavlink_packet.command = MAV_CMD_NAV_WAYPOINT;
-    // mavlink_packet.param2 = 1;  // acceptance radius in meters
-    // mavlink_packet.param3 = 0;  // pass by distance in meters
-
-    // mavlink_packet.x = trajectory.loc[index].lat;
-    // mavlink_packet.y = trajectory.loc[index].lng;
-    // mavlink_packet.z = trajectory.loc[index].alt;
-
-    // // uint16_t acp = 1;       // acceptance radius in meters is held in low p1
-    // // uint16_t passby = 0;    
-    // // mission_cmd.p1 = (passby << 8) | (acp & 0x00FF);
-
-    // mavlink_int_to_mission_cmd(mavlink_packet, mission_cmd);
-
-#else
     mission_cmd.id = MAV_CMD_NAV_WAYPOINT;
     mission_cmd.p1 = 1;  // acceptance radius in meters is lowest, no pass by distance
     mission_cmd.content.location = trajectory.front();
-#endif
 
     return mission_cmd;
 }
@@ -233,6 +202,9 @@ bool ModeGuided::handle_guided_request(Location target_loc)
     }
 
     plane.set_guided_WP(target_loc);
+
+    // use waypoint navigation sub-mode
+    _guided_mode = SubMode::Waypoint;
 
     return true;
 }
