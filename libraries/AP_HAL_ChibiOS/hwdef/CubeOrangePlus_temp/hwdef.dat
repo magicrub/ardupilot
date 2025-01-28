@@ -1,0 +1,6 @@
+# hw definition file for processing by chibios_hwdef.py
+
+include ../CubeOrangePlus/hwdef.dat
+
+define AP_TEMPERATURE_SENSOR_ENABLED 1
+define AP_TEMPERATURE_SENSOR_MAX_INSTANCES 9
