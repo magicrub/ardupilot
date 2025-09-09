@@ -192,7 +192,6 @@ bool AP_ExternalAHRS_SBG::send_sbgMessage(AP_HAL::UARTDriver *_uart, const sbgMe
     buffer[buffer_len-1] = SBG_PACKET_ETX;
 
     const uint32_t bytes_sent = _uart->write(buffer, buffer_len);
-    _uart->flush();
     return (bytes_sent == buffer_len);
 }
 
@@ -340,7 +339,6 @@ void AP_ExternalAHRS_SBG::handle_msg(const sbgMessage &msg)
     bool updated_ins = false;
     bool updated_mag = false;
     bool updated_airspeed = false;
-    bool handled_message = true;
 
     {
         WITH_SEMAPHORE(state.sem);
@@ -397,7 +395,7 @@ void AP_ExternalAHRS_SBG::handle_msg(const sbgMessage &msg)
                 updated_gps = true;
                 break;
             
-            case SBG_ECOM_LOG_IMU_SHORT: // 44
+            case SBG_ECOM_LOG_IMU_SHORT:
                 safe_copy_msg_to_object((uint8_t*)&cached.sbg.sbgEComLogImuShort, sizeof(cached.sbg.sbgEComLogImuShort), msg.data, msg.len);
 
                 {
@@ -470,7 +468,6 @@ void AP_ExternalAHRS_SBG::handle_msg(const sbgMessage &msg)
                 break;
 
             case SBG_ECOM_LOG_GPS1_VEL: // 13
-            case SBG_ECOM_LOG_GPS2_VEL: // 16
                 safe_copy_msg_to_object((uint8_t*)&cached.sbg.sbgLogGpsVel, sizeof(cached.sbg.sbgLogGpsVel), msg.data, msg.len);
 
                 cached.sensors.gps_data.ms_tow = cached.sbg.sbgLogGpsVel.timeOfWeek;
@@ -484,7 +481,6 @@ void AP_ExternalAHRS_SBG::handle_msg(const sbgMessage &msg)
                 break;
 
             case SBG_ECOM_LOG_GPS1_POS: // 14
-            case SBG_ECOM_LOG_GPS2_POS: // 17
                 safe_copy_msg_to_object((uint8_t*)&cached.sbg.sbgLogGpsPos, sizeof(cached.sbg.sbgLogGpsPos), msg.data, msg.len);
 
                 cached.sensors.gps_data.ms_tow = cached.sbg.sbgLogGpsPos.timeOfWeek;
@@ -530,7 +526,6 @@ void AP_ExternalAHRS_SBG::handle_msg(const sbgMessage &msg)
                 break;
 
             default:
-                handled_message = false;
                 // GCS_SEND_TEXT(MAV_SEVERITY_INFO, "SBG: unhandled ID=%u, CLASS=%u, LEN=%u", (unsigned)msg.msgid, (unsigned)msg.msgclass, (unsigned)msg.len);
                 return;
         } // switch msgid
@@ -582,10 +577,6 @@ void AP_ExternalAHRS_SBG::handle_msg(const sbgMessage &msg)
         cached.sensors.ins_data.gyro = state.gyro;
         cached.sensors.ins_ms = now_ms;
         AP::ins().handle_external(cached.sensors.ins_data);
-    }
-
-    if (handled_message) {
-        last_received_ms = now_ms;
     }
 }
 
@@ -690,7 +681,7 @@ bool AP_ExternalAHRS_SBG::send_MagData(AP_HAL::UARTDriver *_uart)
         mag_data_log.status |= (SBG_ECOM_MAG_MAG_X_BIT | SBG_ECOM_MAG_MAG_Y_BIT | SBG_ECOM_MAG_MAG_Z_BIT | SBG_ECOM_MAG_MAGS_IN_RANGE | SBG_ECOM_MAG_CALIBRATION_OK);
     }
 
-    const sbgMessage msg = sbgMessage(SBG_ECOM_LOG_MAG, SBG_ECOM_CLASS_LOG_ECOM_0, (uint8_t*)&mag_data_log, sizeof(mag_data_log));
+    const sbgMessage msg = sbgMessage(SBG_ECOM_CLASS_LOG_ECOM_0, SBG_ECOM_LOG_MAG, (uint8_t*)&mag_data_log, sizeof(mag_data_log));
     return send_sbgMessage(_uart, msg);
 }
 #endif // AP_COMPASS_ENABLED
@@ -698,7 +689,7 @@ bool AP_ExternalAHRS_SBG::send_MagData(AP_HAL::UARTDriver *_uart)
 bool AP_ExternalAHRS_SBG::send_AirData(AP_HAL::UARTDriver *_uart)
 {
     SbgLogAirData air_data_log {};
-    air_data_log.timeStamp = 0;
+    air_data_log.timeStamp = AP_HAL::micros();
     air_data_log.status |= SBG_ECOM_AIR_DATA_TIME_IS_DELAY;
 
 #if AP_BARO_ENABLED
@@ -727,7 +718,7 @@ bool AP_ExternalAHRS_SBG::send_AirData(AP_HAL::UARTDriver *_uart)
     }
 #endif // AP_AIRSPEED_ENABLED
 
-    const sbgMessage msg = sbgMessage(SBG_ECOM_LOG_AIR_DATA, SBG_ECOM_CLASS_LOG_ECOM_0, (uint8_t*)&air_data_log, sizeof(air_data_log));
+    const sbgMessage msg = sbgMessage(SBG_ECOM_CLASS_LOG_ECOM_0, SBG_ECOM_LOG_AIR_DATA, (uint8_t*)&air_data_log, sizeof(air_data_log));
     return send_sbgMessage(_uart, msg);
 }
 
