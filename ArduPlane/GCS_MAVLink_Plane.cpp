@@ -106,6 +106,58 @@ uint8_t GCS_MAVLINK_Plane::base_mode() const
 
 uint32_t GCS_Plane::custom_mode() const
 {
+    if (option_is_enabled(GCS::Option::PX4_COMPATIBILITY_MODE)) {
+        switch (plane.control_mode->mode_number()) {
+        case Mode::Number::CRUISE:
+        case Mode::Number::INITIALISING:
+        case Mode::Number::MANUAL:
+        case Mode::Number::TRAINING:
+        case Mode::Number::ACRO:
+        case Mode::Number::STABILIZE:
+        case Mode::Number::FLY_BY_WIRE_A:
+        case Mode::Number::AUTOTUNE:
+#if HAL_QUADPLANE_ENABLED
+#if QAUTOTUNE_ENABLED
+        case Mode::Number::QAUTOTUNE:
+#endif
+        case Mode::Number::QSTABILIZE:
+        case Mode::Number::QACRO:
+#endif
+        case Mode::Number::THERMAL:
+            return 0; // manual
+
+        case Mode::Number::FLY_BY_WIRE_B:
+            return 1; // altitude
+
+        case Mode::Number::GUIDED:
+            return 2; // offboard
+
+        case Mode::Number::CIRCLE:
+        case Mode::Number::LOITER:
+#if HAL_QUADPLANE_ENABLED
+        case Mode::Number::QHOVER:
+        case Mode::Number::QLOITER:
+#endif
+            return 4; // hold
+
+        case Mode::Number::AUTO:
+        case Mode::Number::AVOID_ADSB:
+            return 5; // mission
+
+        case Mode::Number::TAKEOFF:
+        case Mode::Number::RTL:
+#if MODE_AUTOLAND_ENABLED
+        case Mode::Number::AUTOLAND:
+#endif
+#if HAL_QUADPLANE_ENABLED
+        case Mode::Number::QRTL:
+        case Mode::Number::LOITER_ALT_QLAND:
+        case Mode::Number::QLAND:
+#endif
+            return 6; // return
+        }
+    }
+
     return plane.control_mode->mode_number();
 }
 
