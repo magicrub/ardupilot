@@ -66,6 +66,12 @@ MAV_MISSION_RESULT MissionItemProtocol_Waypoints::complete(const GCS_MAVLINK &_l
 
 MAV_MISSION_RESULT MissionItemProtocol_Waypoints::get_item(uint16_t seq, mavlink_mission_item_int_t &ret_packet)
 {
+    if (gcs().option_is_enabled(GCS::Option::PX4_COMPATIBILITY_MODE)) {
+        // PX4 mission starts at 0 whereas ArduPilot HOME is 0, and mission starts at 1
+        // so in PX4 compatibility mode if we're asking for 0 we mean ArduPilot's 1
+        seq++;
+    }
+
     if (seq != 0 && // always allow HOME to be read
         seq >= mission.num_commands()) {
         return MAV_MISSION_INVALID_SEQUENCE;
@@ -106,6 +112,11 @@ MAV_MISSION_RESULT MissionItemProtocol_Waypoints::replace_item(const mavlink_mis
     const MAV_MISSION_RESULT res = AP_Mission::mavlink_int_to_mission_cmd(mission_item_int, cmd);
     if (res != MAV_MISSION_ACCEPTED) {
         return res;
+    }
+    if (gcs().option_is_enabled(GCS::Option::PX4_COMPATIBILITY_MODE)) {
+        // PX4 mission starts at 0 whereas ArduPilot HOME is 0, and mission starts at 1
+        // so in PX4 compatibility mode if we're asking for 0 we mean ArduPilot's 1
+        cmd.index++;
     }
 
     // sanity check for DO_JUMP command

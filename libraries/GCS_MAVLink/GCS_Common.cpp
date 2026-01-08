@@ -2892,11 +2892,15 @@ void GCS_MAVLINK::handle_set_mode(const mavlink_message_t &msg)
 /*
   code common to both SET_MODE mavlink message and command long set_mode msg
 */
-MAV_RESULT GCS_MAVLINK::_set_mode_common(const uint8_t _base_mode, const uint32_t _custom_mode)
+MAV_RESULT GCS_MAVLINK::_set_mode_common(const uint8_t _base_mode, uint32_t _custom_mode)
 {
     // only accept custom modes because there is no easy mapping from Mavlink flight modes to AC flight modes
 #if AP_VEHICLE_ENABLED
     if ((_base_mode & MAV_MODE_FLAG_CUSTOM_MODE_ENABLED) != 0) {
+        if (gcs().option_is_enabled(GCS::Option::PX4_COMPATIBILITY_MODE)) {
+            _custom_mode = convert_px4_mode_to_ardupilot_mode(_base_mode, _custom_mode);
+        }
+
         if (!AP::vehicle()->set_mode(_custom_mode, ModeReason::GCS_COMMAND)) {
             // often we should be returning DENIED rather than FAILED
             // here.  Perhaps a "has_mode" callback on AP_::vehicle()
@@ -2926,6 +2930,77 @@ MAV_RESULT GCS_MAVLINK::_set_mode_common(const uint8_t _base_mode, const uint32_
 
     // Command is invalid (is supported but has invalid parameters)
     return MAV_RESULT_DENIED;
+}
+
+uint8_t GCS_MAVLINK::convert_px4_mode_to_ardupilot_mode(const uint8_t base_mode, const uint32_t custom_mode)
+{
+
+//         base_mode, _custom_mode
+// MANUAL,      
+// STABILIZED,  
+// ACRO,        
+// RATTITUDE,   
+// POSCTL,      81 (0x51), 65536 (0x10000)
+// ALTCTL,      81 (0x51), 131072 (0x20000)
+// LOITER,      
+// MISSION,     
+// RTL,         
+// LAND,        
+// RTGS,        
+// FOLLOWME,    
+// OFFBOARD,    
+// TAKEOFF,     
+
+
+// QGC:
+// manual
+// altitude
+// offboard
+// position
+// hold
+// mission
+// return
+// followme
+
+// https://github.com/ArduPilot/pymavlink/blob/master/mavutil.py#L2537-L2572
+// def interpret_px4_mode(base_mode, custom_mode):
+//     custom_main_mode = (custom_mode & 0xFF0000)   >> 16
+//     custom_sub_mode  = (custom_mode & 0xFF000000) >> 24
+
+//     if base_mode & mavlink.MAV_MODE_FLAG_MANUAL_INPUT_ENABLED != 0: #manual modes
+//         if custom_main_mode == PX4_CUSTOM_MAIN_MODE_MANUAL:
+//             return "MANUAL"
+//         elif custom_main_mode == PX4_CUSTOM_MAIN_MODE_ACRO:
+//             return "ACRO"
+//         elif custom_main_mode == PX4_CUSTOM_MAIN_MODE_RATTITUDE:
+//             return "RATTITUDE"
+//         elif custom_main_mode == PX4_CUSTOM_MAIN_MODE_STABILIZED:
+//             return "STABILIZED"
+//         elif custom_main_mode == PX4_CUSTOM_MAIN_MODE_ALTCTL:
+//             return "ALTCTL"
+//         elif custom_main_mode == PX4_CUSTOM_MAIN_MODE_POSCTL:
+//             return "POSCTL"
+//     elif (base_mode & auto_mode_flags) == auto_mode_flags: #auto modes
+//         if custom_main_mode & PX4_CUSTOM_MAIN_MODE_AUTO != 0:
+//             if custom_sub_mode == PX4_CUSTOM_SUB_MODE_AUTO_MISSION:
+//                 return "MISSION"
+//             elif custom_sub_mode == PX4_CUSTOM_SUB_MODE_AUTO_TAKEOFF:
+//                 return "TAKEOFF"
+//             elif custom_sub_mode == PX4_CUSTOM_SUB_MODE_AUTO_LOITER:
+//                 return "LOITER"
+//             elif custom_sub_mode == PX4_CUSTOM_SUB_MODE_AUTO_FOLLOW_TARGET:
+//                 return "FOLLOWME"
+//             elif custom_sub_mode == PX4_CUSTOM_SUB_MODE_AUTO_RTL:
+//                 return "RTL"
+//             elif custom_sub_mode == PX4_CUSTOM_SUB_MODE_AUTO_LAND:
+//                 return "LAND"
+//             elif custom_sub_mode == PX4_CUSTOM_SUB_MODE_AUTO_RTGS:
+//                 return "RTGS"
+//             elif custom_sub_mode == PX4_CUSTOM_SUB_MODE_OFFBOARD:
+//                 return "OFFBOARD"
+//     return "UNKNOWN"
+
+    return 0;
 }
 
 #if AP_OPTICALFLOW_ENABLED
@@ -3163,7 +3238,7 @@ void GCS_MAVLINK::send_heartbeat() const
     mavlink_msg_heartbeat_send(
         chan,
         gcs().frame_type(),
-        MAV_AUTOPILOT_ARDUPILOTMEGA,
+        gcs().option_is_enabled(GCS::Option::PX4_COMPATIBILITY_MODE) ? MAV_AUTOPILOT_PX4 : MAV_AUTOPILOT_ARDUPILOTMEGA,
         base_mode(),
         gcs().custom_mode(),
         system_status());
@@ -7495,7 +7570,7 @@ void GCS_MAVLINK::send_high_latency2() const
     mavlink_msg_high_latency2_send(chan, 
         AP_HAL::millis(), //[ms] Timestamp (milliseconds since boot or Unix epoch)
         gcs().frame_type(), // Type of the MAV (quadrotor, helicopter, etc.)
-        MAV_AUTOPILOT_ARDUPILOTMEGA, // Autopilot type / class. Use MAV_AUTOPILOT_INVALID for components that are not flight controllers.
+        gcs().option_is_enabled(GCS::Option::PX4_COMPATIBILITY_MODE) ? MAV_AUTOPILOT_PX4 : MAV_AUTOPILOT_ARDUPILOTMEGA, // Autopilot type / class. Use MAV_AUTOPILOT_INVALID for components that are not flight controllers.
         gcs().custom_mode(), // A bitfield for use for autopilot-specific flags (2 byte version).
         global_position_current.lat, // [degE7] Latitude
         global_position_current.lng, // [degE7] Longitude

@@ -827,7 +827,8 @@ private:
     };
     void log_mavlink_stats();
 
-    MAV_RESULT _set_mode_common(const uint8_t base_mode, const uint32_t custom_mode);
+    MAV_RESULT _set_mode_common(const uint8_t base_mode, uint32_t custom_mode);
+    uint8_t convert_px4_mode_to_ardupilot_mode(const uint8_t base_mode, const uint32_t custom_mode);
 
     // send a (textual) message to the GCS that a received message has
     // been deprecated
@@ -1225,6 +1226,7 @@ public:
 
     enum class Option {
       GCS_SYSID_ENFORCE = (1U << 0),
+      PX4_COMPATIBILITY_MODE = (1U << 1)
     };
     bool option_is_enabled(Option option) const {
         return (mav_options & (uint16_t)option) != 0;
