@@ -54,6 +54,38 @@ uint8_t GCS_MAVLINK_Rover::base_mode() const
 
 uint32_t GCS_Rover::custom_mode() const
 {
+    if (option_is_enabled(GCS::Option::PX4_COMPATIBILITY_MODE)) {
+        switch (rover.control_mode->mode_number()) {
+        case Mode::Number::ACRO:
+        case Mode::Number::CIRCLE:
+        case Mode::Number::INITIALISING:
+#if MODE_DOCK_ENABLED
+        case Mode::Number::DOCK:
+#endif
+        case Mode::Number::MANUAL:
+        case Mode::Number::STEERING:
+        case Mode::Number::SIMPLE:
+            return 0; // manual
+
+        case Mode::Number::GUIDED:
+            return 2; // offboard
+
+        case Mode::Number::LOITER:
+        case Mode::Number::HOLD:
+            return 4; // hold
+
+        case Mode::Number::AUTO:
+            return 5; // mission
+
+        case Mode::Number::SMART_RTL:
+        case Mode::Number::RTL:
+            return 6; // return
+
+        case Mode::Number::FOLLOW:
+            return 7; // followme
+        }
+    }
+
     return (uint32_t)rover.control_mode->mode_number();
 }
 
