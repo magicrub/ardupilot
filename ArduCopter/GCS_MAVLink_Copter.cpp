@@ -61,6 +61,52 @@ uint8_t GCS_MAVLINK_Copter::base_mode() const
 
 uint32_t GCS_Copter::custom_mode() const
 {
+    if (option_is_enabled(GCS::Option::PX4_COMPATIBILITY_MODE)) {
+        switch (copter.flightmode->mode_number()) {
+        case Mode::Number::ACRO:
+        case Mode::Number::STABILIZE:
+        case Mode::Number::CIRCLE:
+        case Mode::Number::DRIFT:
+        case Mode::Number::SPORT:
+        case Mode::Number::FLIP:
+        case Mode::Number::ZIGZAG:
+        case Mode::Number::SYSTEMID:
+        case Mode::Number::AUTOROTATE:
+        case Mode::Number::TURTLE:
+        case Mode::Number::AUTOTUNE:
+        case Mode::Number::THROW:
+            return 0; // manual
+
+        case Mode::Number::ALT_HOLD:
+            return 1; // altitude
+
+        case Mode::Number::GUIDED:
+        case Mode::Number::GUIDED_NOGPS:
+            return 2; // offboard
+
+        case Mode::Number::POSHOLD:
+            return 3; // position
+
+        case Mode::Number::LOITER:
+        case Mode::Number::FLOWHOLD:
+        case Mode::Number::BRAKE:
+            return 4; // hold
+
+        case Mode::Number::AUTO:
+        case Mode::Number::AVOID_ADSB:
+            return 5; // mission
+
+        case Mode::Number::SMART_RTL:
+        case Mode::Number::AUTO_RTL:
+        case Mode::Number::RTL:
+        case Mode::Number::LAND:
+            return 6; // return
+
+        case Mode::Number::FOLLOW:
+            return 7; // followme
+        }
+    }
+
     return (uint32_t)copter.flightmode->mode_number();
 }
 
