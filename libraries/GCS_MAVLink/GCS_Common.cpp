@@ -2935,6 +2935,7 @@ MAV_RESULT GCS_MAVLINK::_set_mode_common(const uint8_t _base_mode, uint32_t _cus
 uint8_t GCS_MAVLINK::convert_px4_mode_to_ardupilot_mode(const uint8_t base_mode, const uint32_t custom_mode)
 {
 
+    #if 0
 //         base_mode, _custom_mode
 // MANUAL,      
 // STABILIZED,  
@@ -2962,45 +2963,79 @@ uint8_t GCS_MAVLINK::convert_px4_mode_to_ardupilot_mode(const uint8_t base_mode,
 // return
 // followme
 
-// https://github.com/ArduPilot/pymavlink/blob/master/mavutil.py#L2537-L2572
-// def interpret_px4_mode(base_mode, custom_mode):
-//     custom_main_mode = (custom_mode & 0xFF0000)   >> 16
-//     custom_sub_mode  = (custom_mode & 0xFF000000) >> 24
+// # Custom mode definitions from PX4
+enum class PX4_CUSTOM_MAIN_MODE : uint32_t {
+    MANUAL     = 1,
+    ALTCTL     = 2,
+    POSCTL     = 3,
+    AUTO       = 4,
+    ACRO       = 5,
+    OFFBOARD   = 6,
+    STABILIZED = 7,
+    RATTITUDE  = 8,
+};
 
-//     if base_mode & mavlink.MAV_MODE_FLAG_MANUAL_INPUT_ENABLED != 0: #manual modes
-//         if custom_main_mode == PX4_CUSTOM_MAIN_MODE_MANUAL:
-//             return "MANUAL"
-//         elif custom_main_mode == PX4_CUSTOM_MAIN_MODE_ACRO:
-//             return "ACRO"
-//         elif custom_main_mode == PX4_CUSTOM_MAIN_MODE_RATTITUDE:
-//             return "RATTITUDE"
-//         elif custom_main_mode == PX4_CUSTOM_MAIN_MODE_STABILIZED:
-//             return "STABILIZED"
-//         elif custom_main_mode == PX4_CUSTOM_MAIN_MODE_ALTCTL:
-//             return "ALTCTL"
-//         elif custom_main_mode == PX4_CUSTOM_MAIN_MODE_POSCTL:
-//             return "POSCTL"
-//     elif (base_mode & auto_mode_flags) == auto_mode_flags: #auto modes
-//         if custom_main_mode & PX4_CUSTOM_MAIN_MODE_AUTO != 0:
-//             if custom_sub_mode == PX4_CUSTOM_SUB_MODE_AUTO_MISSION:
-//                 return "MISSION"
-//             elif custom_sub_mode == PX4_CUSTOM_SUB_MODE_AUTO_TAKEOFF:
-//                 return "TAKEOFF"
-//             elif custom_sub_mode == PX4_CUSTOM_SUB_MODE_AUTO_LOITER:
-//                 return "LOITER"
-//             elif custom_sub_mode == PX4_CUSTOM_SUB_MODE_AUTO_FOLLOW_TARGET:
-//                 return "FOLLOWME"
-//             elif custom_sub_mode == PX4_CUSTOM_SUB_MODE_AUTO_RTL:
-//                 return "RTL"
-//             elif custom_sub_mode == PX4_CUSTOM_SUB_MODE_AUTO_LAND:
-//                 return "LAND"
-//             elif custom_sub_mode == PX4_CUSTOM_SUB_MODE_AUTO_RTGS:
-//                 return "RTGS"
-//             elif custom_sub_mode == PX4_CUSTOM_SUB_MODE_OFFBOARD:
-//                 return "OFFBOARD"
-//     return "UNKNOWN"
+enum class PX4_CUSTOM_SUB_MODE : uint32_t{
+    OFFBOARD            = 0,
+    AUTO_READY          = 1,
+    AUTO_TAKEOFF        = 2,
+    AUTO_LOITER         = 3,
+    AUTO_MISSION        = 4,
+    AUTO_RTL            = 5,
+    AUTO_LAND           = 6,
+    AUTO_RTGS           = 7,
+    AUTO_FOLLOW_TARGET  = 8,
+};
 
-    return 0;
+#define PX4_AUTO_MODE_FLAGS (MAV_MODE_FLAG_AUTO_ENABLED | MAV_MODE_FLAG_STABILIZE_ENABLED | MAV_MODE_FLAG_GUIDED_ENABLED)
+
+// from https://github.com/ArduPilot/pymavlink/blob/master/mavutil.py#L2537-L2572
+    const uint32_t custom_main_mode = (custom_mode & 0xFF0000) >> 16;
+    const uint32_t custom_sub_mode  = (custom_mode & 0xFF000000) >> 24;
+
+    if ((base_mode & MAV_MODE_FLAG_MANUAL_INPUT_ENABLED) != 0) {
+        // #manual modes
+        if (custom_main_mode == PX4_CUSTOM_MAIN_MODE::MANUAL) {
+            return 1;
+        } else if (custom_main_mode == PX4_CUSTOM_MAIN_MODE::ACRO) {
+            return 1;
+        } else if (custom_main_mode == PX4_CUSTOM_MAIN_MODE::RATTITUDE) {
+            return 1;
+        } else if (custom_main_mode == PX4_CUSTOM_MAIN_MODE::STABILIZED) {
+            return 1;
+        } else if (custom_main_mode == PX4_CUSTOM_MAIN_MODE::ALTCTL) {
+            return 1;
+        } else if (custom_main_mode == PX4_CUSTOM_MAIN_MODE::POSCTL) {
+            return 1;
+        }
+    } else if (((base_mode & PX4_AUTO_MODE_FLAGS) == PX4_AUTO_MODE_FLAGS) && ((custom_main_mode & PX4_CUSTOM_MAIN_MODE::AUTO) != 0)) {
+        // #auto modes
+            if (custom_sub_mode == PX4_CUSTOM_SUB_MODE::AUTO_MISSION) {
+                return 1;
+            } else if (custom_sub_mode == PX4_CUSTOM_SUB_MODE::AUTO_TAKEOFF) {
+                return 1;
+            } else if (custom_sub_mode == PX4_CUSTOM_SUB_MODE::AUTO_LOITER) {
+                return 1;
+            } else if (custom_sub_mode == PX4_CUSTOM_SUB_MODE::AUTO_FOLLOW_TARGET) {
+                return 1;
+            } else if (custom_sub_mode == PX4_CUSTOM_SUB_MODE::AUTO_RTL) {
+                return 1;
+            } else if (custom_sub_mode == PX4_CUSTOM_SUB_MODE::AUTO_LAND) {
+                return 1;
+            } else if (custom_sub_mode == PX4_CUSTOM_SUB_MODE::AUTO_RTGS) {
+                return 1;
+            } else if (custom_sub_mode == PX4_CUSTOM_SUB_MODE::OFFBOARD) {
+                return 1;
+            }
+        }
+    }
+
+// #if APM_BUILD_COPTER_OR_HELI
+// #elif APM_BUILD_TYPE(APM_BUILD_ArduPlane)
+// #elif APM_BUILD_TYPE(APM_BUILD_Rover)
+// #endif
+#endif
+    return (uint8_t)custom_mode;
 }
 
 #if AP_OPTICALFLOW_ENABLED
