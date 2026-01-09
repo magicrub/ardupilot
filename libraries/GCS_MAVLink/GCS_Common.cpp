@@ -36,6 +36,7 @@
 #include <AP_RangeFinder/AP_RangeFinder_Backend.h>
 #include <AP_Airspeed/AP_Airspeed.h>
 #include <AP_Camera/AP_Camera.h>
+#include "AP_Button/AP_Button.h"
 #include <AP_Gripper/AP_Gripper.h>
 #include <AC_Sprayer/AC_Sprayer.h>
 #include <AP_BLHeli/AP_BLHeli.h>
@@ -7514,6 +7515,10 @@ void GCS_MAVLINK::handle_manual_control(const mavlink_message_t &msg)
     uint32_t tnow = AP_HAL::millis();
 
     handle_manual_control_axes(packet, tnow);
+
+#if HAL_BUTTON_MAVLINK_MANUAL_CONTROL_BUTTONS_ENABLED
+    AP::button().handle_manual_control_buttons(packet.buttons, packet.buttons2);
+#endif // HAL_BUTTON_MAVLINK_MANUAL_CONTROL_BUTTONS_ENABLED
 
     // a manual control message is considered to be a 'heartbeat'
     // from the ground station for failsafe purposes
