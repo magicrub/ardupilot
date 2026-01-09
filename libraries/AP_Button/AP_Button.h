@@ -24,6 +24,11 @@
 
 #include <AP_HAL/AP_HAL.h>
 #include <AP_Param/AP_Param.h>
+#include <RC_Channel/RC_Channel.h>
+
+#ifndef HAL_BUTTON_MAVLINK_MANUAL_CONTROL_BUTTONS_ENABLED
+#define HAL_BUTTON_MAVLINK_MANUAL_CONTROL_BUTTONS_ENABLED AP_RC_CHANNEL_ENABLED
+#endif
 
 // allow buttons for up to 4 pins
 #define AP_BUTTON_NUM_PINS 4
@@ -48,6 +53,8 @@ public:
         return _singleton;
     }
 
+    void handle_manual_control_buttons(const uint16_t buttons, const uint16_t buttons2);
+
     // get state of a button
     // used by scripting
     bool get_button_state(uint8_t number);
@@ -71,6 +78,13 @@ private:
     }
 
     AP_Int16 pin_func[AP_BUTTON_NUM_PINS];  // from the RC_Channel functions
+
+#if HAL_BUTTON_MAVLINK_MANUAL_CONTROL_BUTTONS_ENABLED
+    // aux functions for mavlink manual_control buttons
+    AP_Int16 manual_control_joystick_button_aux_function[32];
+    AP_Int32 manual_control_joystick_button_init_at_boot_bitmask;
+    uint32_t button_state_prev;
+#endif
 
     // number of seconds to send change notifications
     AP_Int16 report_send_time;

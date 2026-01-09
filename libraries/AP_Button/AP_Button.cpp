@@ -20,7 +20,6 @@
 
 #include <GCS_MAVLink/GCS_MAVLink.h>
 #include <GCS_MAVLink/GCS.h>
-#include <RC_Channel/RC_Channel.h>
 
 // very crude debounce method
 #define DEBOUNCE_MS 50
@@ -126,6 +125,50 @@ const AP_Param::GroupInfo AP_Button::var_info[] = {
     // @DisplayName: Button Pin 4 RC Channel function
     AP_GROUPINFO("FUNC4",  13, AP_Button, pin_func[3], (uint16_t)RC_Channel::AUX_FUNC::DO_NOTHING),
 
+
+
+#if HAL_BUTTON_MAVLINK_MANUAL_CONTROL_BUTTONS_ENABLED
+    // @Param: JS1_FUNC
+    // @CopyFieldsFrom: RC1_OPTION
+    // @DisplayName: Joystick Button Pin 1 RC Channel function
+    // @Description: Auxiliary RC Options function executed on joystick button from MANUAL_CONTROL mavlink msg
+    // @User: Standard
+    AP_GROUPINFO("JS1_FUNC",  20, AP_Button, manual_control_joystick_button_aux_function[0], (uint16_t)RC_Channel::AUX_FUNC::DO_NOTHING),
+    AP_GROUPINFO("JS2_FUNC",  21, AP_Button, manual_control_joystick_button_aux_function[1], (uint16_t)RC_Channel::AUX_FUNC::DO_NOTHING),
+    AP_GROUPINFO("JS3_FUNC",  22, AP_Button, manual_control_joystick_button_aux_function[2], (uint16_t)RC_Channel::AUX_FUNC::DO_NOTHING),
+    AP_GROUPINFO("JS4_FUNC",  23, AP_Button, manual_control_joystick_button_aux_function[3], (uint16_t)RC_Channel::AUX_FUNC::DO_NOTHING),
+    AP_GROUPINFO("JS5_FUNC",  24, AP_Button, manual_control_joystick_button_aux_function[4], (uint16_t)RC_Channel::AUX_FUNC::DO_NOTHING),
+    AP_GROUPINFO("JS6_FUNC",  25, AP_Button, manual_control_joystick_button_aux_function[5], (uint16_t)RC_Channel::AUX_FUNC::DO_NOTHING),
+    AP_GROUPINFO("JS7_FUNC",  26, AP_Button, manual_control_joystick_button_aux_function[6], (uint16_t)RC_Channel::AUX_FUNC::DO_NOTHING),
+    AP_GROUPINFO("JS8_FUNC",  27, AP_Button, manual_control_joystick_button_aux_function[7], (uint16_t)RC_Channel::AUX_FUNC::DO_NOTHING),
+    AP_GROUPINFO("JS9_FUNC",  28, AP_Button, manual_control_joystick_button_aux_function[8], (uint16_t)RC_Channel::AUX_FUNC::DO_NOTHING),
+    AP_GROUPINFO("JS10_FUNC",  29, AP_Button, manual_control_joystick_button_aux_function[9], (uint16_t)RC_Channel::AUX_FUNC::DO_NOTHING),
+    AP_GROUPINFO("JS11_FUNC",  30, AP_Button, manual_control_joystick_button_aux_function[10], (uint16_t)RC_Channel::AUX_FUNC::DO_NOTHING),
+    AP_GROUPINFO("JS12_FUNC",  31, AP_Button, manual_control_joystick_button_aux_function[11], (uint16_t)RC_Channel::AUX_FUNC::DO_NOTHING),
+    AP_GROUPINFO("JS13_FUNC",  32, AP_Button, manual_control_joystick_button_aux_function[12], (uint16_t)RC_Channel::AUX_FUNC::DO_NOTHING),
+    AP_GROUPINFO("JS14_FUNC",  33, AP_Button, manual_control_joystick_button_aux_function[13], (uint16_t)RC_Channel::AUX_FUNC::DO_NOTHING),
+    AP_GROUPINFO("JS15_FUNC",  34, AP_Button, manual_control_joystick_button_aux_function[14], (uint16_t)RC_Channel::AUX_FUNC::DO_NOTHING),
+    AP_GROUPINFO("JS16_FUNC",  35, AP_Button, manual_control_joystick_button_aux_function[15], (uint16_t)RC_Channel::AUX_FUNC::DO_NOTHING),
+    AP_GROUPINFO("JS17_FUNC",  36, AP_Button, manual_control_joystick_button_aux_function[16], (uint16_t)RC_Channel::AUX_FUNC::DO_NOTHING),
+    AP_GROUPINFO("JS18_FUNC",  37, AP_Button, manual_control_joystick_button_aux_function[17], (uint16_t)RC_Channel::AUX_FUNC::DO_NOTHING),
+    AP_GROUPINFO("JS19_FUNC",  38, AP_Button, manual_control_joystick_button_aux_function[18], (uint16_t)RC_Channel::AUX_FUNC::DO_NOTHING),
+    AP_GROUPINFO("JS20_FUNC",  39, AP_Button, manual_control_joystick_button_aux_function[19], (uint16_t)RC_Channel::AUX_FUNC::DO_NOTHING),
+    AP_GROUPINFO("JS21_FUNC",  40, AP_Button, manual_control_joystick_button_aux_function[20], (uint16_t)RC_Channel::AUX_FUNC::DO_NOTHING),
+    AP_GROUPINFO("JS22_FUNC",  41, AP_Button, manual_control_joystick_button_aux_function[21], (uint16_t)RC_Channel::AUX_FUNC::DO_NOTHING),
+    AP_GROUPINFO("JS23_FUNC",  42, AP_Button, manual_control_joystick_button_aux_function[22], (uint16_t)RC_Channel::AUX_FUNC::DO_NOTHING),
+    AP_GROUPINFO("JS24_FUNC",  43, AP_Button, manual_control_joystick_button_aux_function[23], (uint16_t)RC_Channel::AUX_FUNC::DO_NOTHING),
+    AP_GROUPINFO("JS25_FUNC",  44, AP_Button, manual_control_joystick_button_aux_function[24], (uint16_t)RC_Channel::AUX_FUNC::DO_NOTHING),
+    AP_GROUPINFO("JS26_FUNC",  45, AP_Button, manual_control_joystick_button_aux_function[25], (uint16_t)RC_Channel::AUX_FUNC::DO_NOTHING),
+    AP_GROUPINFO("JS27_FUNC",  46, AP_Button, manual_control_joystick_button_aux_function[26], (uint16_t)RC_Channel::AUX_FUNC::DO_NOTHING),
+    AP_GROUPINFO("JS28_FUNC",  47, AP_Button, manual_control_joystick_button_aux_function[27], (uint16_t)RC_Channel::AUX_FUNC::DO_NOTHING),
+    AP_GROUPINFO("JS29_FUNC",  48, AP_Button, manual_control_joystick_button_aux_function[28], (uint16_t)RC_Channel::AUX_FUNC::DO_NOTHING),
+    AP_GROUPINFO("JS30_FUNC",  49, AP_Button, manual_control_joystick_button_aux_function[29], (uint16_t)RC_Channel::AUX_FUNC::DO_NOTHING),
+    AP_GROUPINFO("JS31_FUNC",  50, AP_Button, manual_control_joystick_button_aux_function[30], (uint16_t)RC_Channel::AUX_FUNC::DO_NOTHING),
+    AP_GROUPINFO("JS32_FUNC",  51, AP_Button, manual_control_joystick_button_aux_function[31], (uint16_t)RC_Channel::AUX_FUNC::DO_NOTHING),
+
+    AP_GROUPINFO("JS_INIT_BM",  52, AP_Button, manual_control_joystick_button_init_at_boot_bitmask, 0),
+#endif // HAL_BUTTON_MAVLINK_MANUAL_CONTROL_BUTTONS_ENABLED
+
     AP_GROUPEND    
 };
 
@@ -155,6 +198,14 @@ void AP_Button::update(void)
 
     if (!initialised) {
         initialised = true;
+
+#if HAL_BUTTON_MAVLINK_MANUAL_CONTROL_BUTTONS_ENABLED
+        if (manual_control_joystick_button_init_at_boot_bitmask.get() != 0) {
+             // force all buttons to be seen as changed at first call
+            button_state_prev = manual_control_joystick_button_init_at_boot_bitmask.get(); // set these bits as 1 so they detect a change
+            handle_manual_control_buttons(0,0);
+        }
+#endif // HAL_BUTTON_MAVLINK_MANUAL_CONTROL_BUTTONS_ENABLED
 
         // get initial mask
         last_mask = get_mask();
@@ -401,6 +452,39 @@ bool AP_Button::arming_checks(size_t buflen, char *buffer) const
     }
     return true;
 }
+
+#if HAL_BUTTON_MAVLINK_MANUAL_CONTROL_BUTTONS_ENABLED
+void AP_Button::handle_manual_control_buttons(const uint16_t buttons, const uint16_t buttons2)
+{
+    if (!enable) {
+        return;
+    }
+
+    const uint32_t button_state = (uint32_t(buttons2) << 16) | uint32_t(buttons);
+    if (button_state == button_state_prev) {
+        // no change on any buttons
+        return;
+    }
+
+    for (uint8_t i=0; i<ARRAY_SIZE(manual_control_joystick_button_aux_function); i++) {
+        const uint32_t mask = (1U << i);
+        if ((button_state & mask) == (button_state_prev & mask)) {
+            // no change on this button
+            continue;
+        }
+        const RC_Channel::AUX_FUNC aux_func = (RC_Channel::AUX_FUNC)manual_control_joystick_button_aux_function[i].get();
+        if (aux_func == RC_Channel::AUX_FUNC::DO_NOTHING) {
+            // no function configured, nothing to do
+            continue;
+        }
+        const RC_Channel::AuxSwitchPos position = ((button_state & mask) != 0) ? RC_Channel::AuxSwitchPos::HIGH : RC_Channel::AuxSwitchPos::LOW;
+        rc().run_aux_function(aux_func, position, RC_Channel::AuxFuncTrigger::Source::MAVLINK, i);
+    }
+
+    // store previous state. This must be done at the end so we know what changed
+    button_state_prev = button_state;
+}
+#endif // HAL_BUTTON_MAVLINK_MANUAL_CONTROL_BUTTONS_ENABLED
 
 namespace AP {
 
