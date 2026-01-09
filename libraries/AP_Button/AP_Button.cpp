@@ -466,19 +466,33 @@ void AP_Button::handle_manual_control_buttons(const uint16_t buttons, const uint
         return;
     }
 
+    GCS_SEND_TEXT(MAV_SEVERITY_DEBUG, "Got Button msg with a button change");
+
     for (uint8_t i=0; i<ARRAY_SIZE(manual_control_joystick_button_aux_function); i++) {
         const uint32_t mask = (1U << i);
         if ((button_state & mask) == (button_state_prev & mask)) {
             // no change on this button
             continue;
         }
+        
         const RC_Channel::AUX_FUNC aux_func = (RC_Channel::AUX_FUNC)manual_control_joystick_button_aux_function[i].get();
+        const RC_Channel::AuxSwitchPos position = ((button_state & mask) != 0) ? RC_Channel::AuxSwitchPos::HIGH : RC_Channel::AuxSwitchPos::LOW;
         if (aux_func == RC_Channel::AUX_FUNC::DO_NOTHING) {
             // no function configured, nothing to do
+
+            GCS_SEND_TEXT(MAV_SEVERITY_DEBUG, "Btn_JS %u, Pos %u, Func NONE",
+                      unsigned(i+1),
+                      (unsigned)position);
             continue;
         }
-        const RC_Channel::AuxSwitchPos position = ((button_state & mask) != 0) ? RC_Channel::AuxSwitchPos::HIGH : RC_Channel::AuxSwitchPos::LOW;
+
         rc().run_aux_function(aux_func, position, RC_Channel::AuxFuncTrigger::Source::MAVLINK, i);
+
+        GCS_SEND_TEXT(MAV_SEVERITY_DEBUG, "Btn_JS %u, Pos %u, Func %u",
+                      unsigned(i+1),
+                      (unsigned)position,
+                      (unsigned)aux_func);
+
     }
 
     // store previous state. This must be done at the end so we know what changed
