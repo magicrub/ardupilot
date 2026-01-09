@@ -658,6 +658,12 @@ private:
                   "_failsafe_priorities is missing the sentinel");
 
 
+    int8_t      boom1_color_prev = -1;
+    int8_t      boom2_color_prev = -1;
+    int8_t      boom3_color_prev = -1;
+    int8_t      boom4_color_prev = -1;
+    int8_t      boom_brt_prev = -1;
+    float int_bits_to_float(const uint32_t bits);
 
     // AP_State.cpp
     void set_auto_armed(bool b);

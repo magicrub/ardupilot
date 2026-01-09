@@ -663,6 +663,33 @@ const AP_Param::Info Copter::var_info[] = {
     GSCALAR(throw_altitude_ascend, "THROW_ALT_ACSND", 3.0),
 #endif
 
+    // @Param: BOOM1_COLOR
+    // @DisplayName: BOOM1_COLOR
+    // @Description: BOOM1_COLOR
+    // @User: Advanced
+    GSCALAR(boom1_color, "BOOM1_COLOR", 0),
+    // @Param: BOOM2_COLOR
+    // @DisplayName: BOOM2_COLOR
+    // @Description: BOOM2_COLOR
+    // @User: Advanced
+    GSCALAR(boom2_color, "BOOM2_COLOR", 0),
+    // @Param: BOOM3_COLOR
+    // @DisplayName: BOOM3_COLOR
+    // @Description: BOOM3_COLOR
+    // @User: Advanced
+    GSCALAR(boom3_color, "BOOM3_COLOR", 0),
+    // @Param: BOOM4_COLOR
+    // @DisplayName: BOOM4_COLOR
+    // @Description: BOOM4_COLOR
+    // @User: Advanced
+    GSCALAR(boom4_color, "BOOM4_COLOR", 0),
+    // @Param: BOOM_BRT
+    // @DisplayName: BOOM_BRT
+    // @Description: BOOM_BRT
+    // @User: Advanced
+    GSCALAR(boom_brt, "BOOM_BRT", 0),
+
+    
 #if OSD_ENABLED || OSD_PARAM_ENABLED
     // @Group: OSD
     // @Path: ../libraries/AP_OSD/AP_OSD.cpp

@@ -385,6 +385,12 @@ public:
         k_param_throw_altitude_descend,
         k_param_throw_altitude_ascend,
 
+        k_param_boom1_color = 313,
+        k_param_boom2_color = 314,
+        k_param_boom3_color = 315,
+        k_param_boom4_color = 316,
+        k_param_boom_brt = 317,
+
         // the k_param_* space is 9-bits in size
         // 511: reserved
     };
@@ -466,6 +472,12 @@ public:
     AP_Float         throw_altitude_descend;    // target altitude (meters) to descend during a drop, (must be positive)
     AP_Float         throw_altitude_ascend;     // target altitude (meters) to ascend during a throw upwards, (must be positive)
 #endif
+
+    AP_Int8          boom1_color;
+    AP_Int8          boom2_color;
+    AP_Int8          boom3_color;
+    AP_Int8          boom4_color;
+    AP_Int8          boom_brt;
 
     AP_Int16                rc_speed; // speed of fast RC Channels in Hz
 

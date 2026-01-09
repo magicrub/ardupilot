@@ -755,6 +755,87 @@ void Copter::three_hz_loop()
 
     // check if avoidance should be enabled based on alt
     low_alt_avoidance();
+
+
+#if 0
+    // const uint8_t param_type = AP_PARAM_INT8; // AP_PARAM_GROUP = 6
+    if (boom1_color_prev != g.boom1_color.get()) {
+        boom1_color_prev = g.boom1_color.get();
+        // gcs().send_parameter_value("BOOM1_COLOR", param_type, boom1_color_prev);
+
+        for (uint8_t i=0; i<gcs().num_gcs(); i++) {
+            mavlink_msg_param_value_send(
+                (mavlink_channel_t)i,
+                "BOOM1_COLOR",
+                int_bits_to_float(boom1_color_prev),
+                6, //AP_PARAM_GROUP,
+                903,
+                16);
+            }
+
+    }
+    if (boom2_color_prev != g.boom2_color.get()) {
+        boom2_color_prev = g.boom2_color.get();
+        // gcs().send_parameter_value("BOOM2_COLOR", param_type, boom2_color_prev);
+
+        for (uint8_t i=0; i<gcs().num_gcs(); i++) {
+            mavlink_msg_param_value_send(
+                (mavlink_channel_t)i,
+                "BOOM2_COLOR",
+                int_bits_to_float(boom2_color_prev),
+                6, //AP_PARAM_GROUP,
+                903,
+                17);
+        }
+    }
+    if (boom3_color_prev != g.boom3_color.get()) {
+        boom3_color_prev = g.boom3_color.get();
+        // gcs().send_parameter_value("BOOM3_COLOR", param_type, boom3_color_prev);
+        for (uint8_t i=0; i<gcs().num_gcs(); i++) {
+            mavlink_msg_param_value_send(
+                (mavlink_channel_t)i,
+                "BOOM3_COLOR",
+                int_bits_to_float(boom3_color_prev),
+                6, //AP_PARAM_GROUP,
+                903,
+                18);
+        }
+
+    }
+    if (boom4_color_prev != g.boom4_color.get()) {
+        boom4_color_prev = g.boom4_color.get();
+        // gcs().send_parameter_value("BOOM4_COLOR", param_type, boom4_color_prev);
+        for (uint8_t i=0; i<gcs().num_gcs(); i++) {
+            mavlink_msg_param_value_send(
+                (mavlink_channel_t)i,
+                "BOOM4_COLOR",
+                int_bits_to_float(boom4_color_prev),
+                6, //AP_PARAM_GROUP,
+                903,
+                19);
+        }
+    }
+    if (boom_brt_prev != g.boom_brt.get()) {
+        boom_brt_prev = g.boom_brt.get();
+        // gcs().send_parameter_value("BOOM_BRT", param_type, boom_brt_prev);
+        for (uint8_t i=0; i<gcs().num_gcs(); i++) {
+            mavlink_msg_param_value_send(
+                (mavlink_channel_t)i,
+                "BOOM_BRT",
+                int_bits_to_float(boom_brt_prev),
+                6, //AP_PARAM_GROUP,
+                903,
+                20);
+        }
+    }
+#endif
+
+}
+
+float Copter::int_bits_to_float(const uint32_t bits) {
+    float target;
+    memcpy(&target, &bits, sizeof(float));
+    return target;
 }
 
 // ap_value calculates a 32-bit bitmask representing various pieces of
