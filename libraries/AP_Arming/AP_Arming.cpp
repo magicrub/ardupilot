@@ -1344,6 +1344,7 @@ bool AP_Arming::can_checks(bool report)
                     }
                     break;
                 }
+                case AP_CAN::Protocol::FFAX_CAN:
                 case AP_CAN::Protocol::EFI_NWPMU:
                 case AP_CAN::Protocol::None:
                 case AP_CAN::Protocol::Scripting:
