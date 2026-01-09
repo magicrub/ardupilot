@@ -667,27 +667,27 @@ const AP_Param::Info Copter::var_info[] = {
     // @DisplayName: BOOM1_COLOR
     // @Description: BOOM1_COLOR
     // @User: Advanced
-    GSCALAR(boom1_color, "BOOM1_COLOR", 0),
+    GSCALAR(boom1_color, "BOOM1_COLOR", 1),
     // @Param: BOOM2_COLOR
     // @DisplayName: BOOM2_COLOR
     // @Description: BOOM2_COLOR
     // @User: Advanced
-    GSCALAR(boom2_color, "BOOM2_COLOR", 0),
+    GSCALAR(boom2_color, "BOOM2_COLOR", 1),
     // @Param: BOOM3_COLOR
     // @DisplayName: BOOM3_COLOR
     // @Description: BOOM3_COLOR
     // @User: Advanced
-    GSCALAR(boom3_color, "BOOM3_COLOR", 0),
+    GSCALAR(boom3_color, "BOOM3_COLOR", 1),
     // @Param: BOOM4_COLOR
     // @DisplayName: BOOM4_COLOR
     // @Description: BOOM4_COLOR
     // @User: Advanced
-    GSCALAR(boom4_color, "BOOM4_COLOR", 0),
+    GSCALAR(boom4_color, "BOOM4_COLOR", 1),
     // @Param: BOOM_BRT
     // @DisplayName: BOOM_BRT
     // @Description: BOOM_BRT
     // @User: Advanced
-    GSCALAR(boom_brt, "BOOM_BRT", 0),
+    GSCALAR(boom_brt, "BOOM_BRT", 15),
 
     
 #if OSD_ENABLED || OSD_PARAM_ENABLED
