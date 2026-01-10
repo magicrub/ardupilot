@@ -30,26 +30,43 @@ AP_FreeflyAltaX_CAN::AP_FreeflyAltaX_CAN() : CANSensor("ALTA_X")
     hal.scheduler->thread_create(FUNCTOR_BIND_MEMBER(&AP_FreeflyAltaX_CAN::thread, void), "alta_X_can", 2048, AP_HAL::Scheduler::PRIORITY_CAN, 0);
 }
 
-void AP_FreeflyAltaX_CAN::send_init_messages()
-{
-    const uint8_t frames[][5] = {
-        {0x4C, 0x00, 0x80, 0x00, 0x08},
-        {0x55, 0x00, 0x80, 0x00, 0x08},
-        {0x77, 0x00, 0x70, 0x00, 0x08}};
-
-    for (uint8_t i=0; i<3; i++) {
-        AP_HAL::CANFrame frame = AP_HAL::CANFrame(0x010, frames[i], 5);
-        write_frame(frame, 1000);
-    }
-}
-
 void AP_FreeflyAltaX_CAN::thread()
 {
+    uint32_t send_init_msg_last_ms = 0;
+    bool needs_init = true;
+
     hal.scheduler->delay(1000);
-    send_init_messages();
 
     while(true) {
-        hal.scheduler->delay(100);
+        hal.scheduler->delay(20);
+
+        const uint32_t now_ms = AP_HAL::millis();
+
+        if (!needs_init) {
+            // check for timesouts which should trigger a re-init
+            WITH_SEMAPHORE(sem);
+            for (uint8_t i=0; i<ARRAY_SIZE(timestamp_ms); i++) {
+                if (now_ms - timestamp_ms[i] > 500) {
+                    needs_init = true;
+                }
+            }
+        }
+
+        if (needs_init && (now_ms - send_init_msg_last_ms >= 1000)) {
+            // send init messages but keep it rate limited
+            send_init_msg_last_ms = now_ms;
+            needs_init = false;
+
+            const uint8_t init_frames[][5] = {
+                {0x4C, 0x00, 0x80, 0x00, 0x08},
+                {0x55, 0x00, 0x80, 0x00, 0x08},
+                {0x77, 0x00, 0x70, 0x00, 0x08}};
+
+            for (uint8_t i=0; i<3; i++) {
+                AP_HAL::CANFrame frame = AP_HAL::CANFrame(0x010, init_frames[i], 5);
+                write_frame(frame, 1000);
+            }
+        } // if init
 
         for (uint8_t i=1; i<=4; i++) {
             uint8_t data[1] = {i};
@@ -74,15 +91,25 @@ void AP_FreeflyAltaX_CAN::handle_frame(AP_HAL::CANFrame &frame)
 // RX    22:32:15.207698    NFD         04D    01 15 B3 01 AA 02 43 00
 // RX    22:32:15.207698    NFD         04E    51 07 B0 00 00 00 00 00
 
-    const uint8_t idx = (frame.data[0] & 0x0F) - 1;
 
-    TelemetryData t;
+    const uint8_t idx = (frame.data[0] & 0x0F) - 1;
+    if (idx >= ARRAY_SIZE(timestamp_ms)) {
+        return;
+    }
+
+    const uint32_t now_ms = AP_HAL::millis();
+    WITH_SEMAPHORE(sem);
+
+    timestamp_ms[idx] = now_ms;
+
     if (frame.id == 0x04D) {
-        t.voltage = float(UINT16_VALUE(frame.data[2], frame.data[3])) * 0.001f;
+        const float data = float(UINT16_VALUE(frame.data[2], frame.data[3])) * 0.001f;
+        const TelemetryData t { .voltage = data };
         update_telem_data(idx, t, AP_ESC_Telem_Backend::TelemetryType::VOLTAGE);
 
     } else if (frame.id == 0x04E) {
-        t.current = float(UINT16_VALUE(frame.data[1], frame.data[2])) * 0.001f;
+        const float data = float(UINT16_VALUE(frame.data[1], frame.data[2])) * 0.001f;
+        const TelemetryData t { .current = data };
         update_telem_data(idx, t, AP_ESC_Telem_Backend::TelemetryType::CURRENT);
     }
 }

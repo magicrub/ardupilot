@@ -7,10 +7,11 @@
 #include <AP_CANManager/AP_CANSensor.h>
 #include <AP_ESC_Telem/AP_ESC_Telem_Backend.h>
 
-class AP_FreeflyAltaX_CAN : public CANSensor
-#if HAL_WITH_ESC_TELEM
-, public AP_ESC_Telem_Backend
-#endif
+
+#define AP_FREEFLY_ALTA_X_ESC_COUNT_MAX 4
+
+
+class AP_FreeflyAltaX_CAN : public CANSensor, public AP_ESC_Telem_Backend
 {
 public:
     AP_FreeflyAltaX_CAN();
@@ -18,7 +19,10 @@ public:
 
 private:
     void thread();
-    void send_init_messages();
+
+    uint32_t timestamp_ms[AP_FREEFLY_ALTA_X_ESC_COUNT_MAX];
+
+    HAL_Semaphore sem;
 };
 
 class AP_FreeflyAltaX
