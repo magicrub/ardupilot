@@ -45,23 +45,23 @@ void AP_FreeflyAltaX_CAN::send_init_msg()
 
 void AP_FreeflyAltaX_CAN::check_timeouts_for_re_init()
 {
-    const uint32_t now_ms = AP_HAL::millis();
+    bool send_init = false;
 
-    WITH_SEMAPHORE(sem);
-    for (uint8_t i=0; i<ARRAY_SIZE(esc_feedback_timestamp_ms); i++) {
-        if (now_ms - esc_feedback_timestamp_ms[i] < AP_FREEFLY_ALTA_X_CAN_ESC_FEEDBACK_TIMEOUT_AND_REINIT_INTERVAL_MS) {
-            // no timeout for this ESC, we're getting data (or we're backing off after an init)
-            continue;
+    {
+        const uint32_t now_ms = AP_HAL::millis();
+        WITH_SEMAPHORE(sem);
+        for (uint8_t i=0; i<ARRAY_SIZE(esc); i++) {
+            if (now_ms - esc[i].timestamp_ms < AP_FREEFLY_ALTA_X_CAN_ESC_FEEDBACK_TIMEOUT_AND_REINIT_INTERVAL_MS) {
+                // no timeout for this ESC, we're getting data (or we're backing off after an init)
+                continue;
+            }
+            send_init = true;
+            esc[i].is_healthy = false;
         }
+    }
 
-        // Re-use the same timer as if we received data so we don't constantly re-init.
-        // Set all timers so we don't get staggered re-inits for multiple ESCs
-        for (uint8_t j=0; j<ARRAY_SIZE(esc_feedback_timestamp_ms); j++) {
-            esc_feedback_timestamp_ms[j] = now_ms;
-        }
-
+    if (send_init) {
         send_init_msg();
-        return; // only need to re-init once if any ESC timed out
     }
 }
 
@@ -75,7 +75,7 @@ void AP_FreeflyAltaX_CAN::thread()
         check_timeouts_for_re_init();
 
         // Send get-feedback msg to each ESCs
-        for (uint8_t i=1; i<=ARRAY_SIZE(esc_feedback_timestamp_ms); i++) {
+        for (uint8_t i=1; i<=ARRAY_SIZE(esc); i++) {
             const uint8_t data[1] = {i}; // NOTE: value is 1-indexed motor index
             AP_HAL::CANFrame frame = AP_HAL::CANFrame(0x02A, data, 1);
             write_frame(frame, 1000);
@@ -101,7 +101,7 @@ void AP_FreeflyAltaX_CAN::handle_frame(AP_HAL::CANFrame &frame)
 // RX    22:32:15.207698    NFD         04E    51 07 B0 00 00 00 00 00
 
     const uint8_t esc_index = (frame.data[0] & 0x0F) - 1;
-    if (esc_index >= ARRAY_SIZE(esc_feedback_timestamp_ms)) {
+    if (esc_index >= ARRAY_SIZE(esc)) {
         return;
     }
 
@@ -118,14 +118,15 @@ void AP_FreeflyAltaX_CAN::handle_frame(AP_HAL::CANFrame &frame)
         update_telem_data(esc_index, t, AP_ESC_Telem_Backend::TelemetryType::CURRENT);
 
     } else {
-        // don't set timestamp for unhandled frames
+        // don't set timestamp/health for unhandled frames
         return;
     }
 
     {
         const uint32_t now_ms = AP_HAL::millis(); // fetching the time outside the semaphore to minimize time spent inside
         WITH_SEMAPHORE(sem);
-        esc_feedback_timestamp_ms[esc_index] = now_ms;
+        esc[esc_index].is_healthy = true;
+        esc[esc_index].timestamp_ms = now_ms;
     }
 }
 #endif // AP_FREEFLY_ALTA_X_ENABLED
