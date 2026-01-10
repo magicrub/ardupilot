@@ -69,7 +69,7 @@
 #include <AP_CheckFirmware/AP_CheckFirmware.h>
 #include <Filter/LowPassFilter.h>
 #include <AP_KDECAN/AP_KDECAN.h>
-#include <AP_FreeflyAltaX_CAN/AP_FreeflyAltaX_CAN.h>
+#include <AP_FreeflyAltaX/AP_FreeflyAltaX.h>
 #include <Filter/AP_Filter.h>
 #include <AP_Stats/AP_Stats.h>              // statistics library
 #include <AP_DDS/AP_DDS_config.h>
@@ -479,7 +479,9 @@ protected:
     AP_KDECAN kdecan;
 #endif
 
-    AP_FreeflyAltaX_CAN freefly_altax_can;
+#if AP_Freefly_Alta_X_ENABLED
+    AP_FreeflyAltaX freeflyAltaX;
+#endif // AP_Freefly_Alta_X_ENABLED
 
 #if AP_FENCE_ENABLED
     AC_Fence fence;

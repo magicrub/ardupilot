@@ -501,7 +501,9 @@ void AP_Vehicle::setup()
     kdecan.init();
 #endif
 
-    freefly_altax_can.init();
+#if AP_Freefly_Alta_X_ENABLED
+    freeflyAltaX.init();
+#endif // AP_Freefly_Alta_X_ENABLED
 
 #if AP_AIS_ENABLED
     ais.init();

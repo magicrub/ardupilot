@@ -1,11 +1,15 @@
-#include "AP_FreeflyAltaX_CAN.h"
+
+#include "AP_FreeflyAltaX_config.h"
+
+#if AP_Freefly_Alta_X_ENABLED
+#include "AP_FreeflyAltaX.h"
 #include <AP_HAL/AP_HAL.h>
 #include <AP_Common/AP_Common.h>
 
 extern const AP_HAL::HAL& hal;
 
 
-void AP_FreeflyAltaX_CAN::init()
+void AP_FreeflyAltaX::init()
 {
     if (_driver != nullptr) {
         // only allow one instance
@@ -13,23 +17,21 @@ void AP_FreeflyAltaX_CAN::init()
     }
 
     for (uint8_t i = 0; i < HAL_NUM_CAN_IFACES; i++) {
-        if (CANSensor::get_driver_type(i) == AP_CAN::Protocol::FFAX_CAN) {
-            _driver = NEW_NOTHROW AP_FreeflyAltaX_CAN_driver();
+        if (CANSensor::get_driver_type(i) == AP_CAN::Protocol::FreeflyAltaX) {
+            _driver = NEW_NOTHROW AP_FreeflyAltaX_CAN();
             return;
         }
     }
 }
 
-AP_FreeflyAltaX_CAN_driver::AP_FreeflyAltaX_CAN_driver() : CANSensor("FFAX_CAN")
+AP_FreeflyAltaX_CAN::AP_FreeflyAltaX_CAN() : CANSensor("ALTA_X")
 {
-    register_driver(AP_CAN::Protocol::FFAX_CAN);
-    hal.scheduler->thread_create(FUNCTOR_BIND_MEMBER(&AP_FreeflyAltaX_CAN_driver::thread, void), "ffax_can", 2048, AP_HAL::Scheduler::PRIORITY_CAN, 0);
+    register_driver(AP_CAN::Protocol::FreeflyAltaX);
+    hal.scheduler->thread_create(FUNCTOR_BIND_MEMBER(&AP_FreeflyAltaX_CAN::thread, void), "alta_X_can", 2048, AP_HAL::Scheduler::PRIORITY_CAN, 0);
 }
 
-void AP_FreeflyAltaX_CAN_driver::thread()
+void AP_FreeflyAltaX_CAN::send_init_messages()
 {
-    hal.scheduler->delay(1000);
-
     const uint8_t frames[][5] = {
         {0x4C, 0x00, 0x80, 0x00, 0x08},
         {0x55, 0x00, 0x80, 0x00, 0x08},
@@ -39,6 +41,12 @@ void AP_FreeflyAltaX_CAN_driver::thread()
         AP_HAL::CANFrame frame = AP_HAL::CANFrame(0x010, frames[i], 5);
         write_frame(frame, 1000);
     }
+}
+
+void AP_FreeflyAltaX_CAN::thread()
+{
+    hal.scheduler->delay(1000);
+    send_init_messages();
 
     while(true) {
         hal.scheduler->delay(100);
@@ -52,7 +60,7 @@ void AP_FreeflyAltaX_CAN_driver::thread()
 }
 
 
-void AP_FreeflyAltaX_CAN_driver::handle_frame(AP_HAL::CANFrame &frame)
+void AP_FreeflyAltaX_CAN::handle_frame(AP_HAL::CANFrame &frame)
 {
     if (frame.isExtended()) {
         return;
@@ -78,3 +86,4 @@ void AP_FreeflyAltaX_CAN_driver::handle_frame(AP_HAL::CANFrame &frame)
         update_telem_data(idx, t, AP_ESC_Telem_Backend::TelemetryType::CURRENT);
     }
 }
+#endif // AP_Freefly_Alta_X_ENABLED

@@ -20,7 +20,7 @@ SOURCE_EXTS = [
 COMMON_VEHICLE_DEPENDENT_CAN_LIBRARIES = [
     'AP_CANManager',
     'AP_KDECAN',
-    'AP_FreeflyAltaX_CAN',
+    'AP_FreeflyAltaX',
     'AP_PiccoloCAN',
     'AP_PiccoloCAN/piccolo_protocol',
 ]
