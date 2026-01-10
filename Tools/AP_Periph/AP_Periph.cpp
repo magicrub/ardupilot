@@ -223,6 +223,10 @@ void AP_Periph_FW::init()
     kdecan.init();
 #endif
 
+#if AP_FREEFLY_ALTA_X_ENABLED
+    freefly_alta_x.init();
+#endif
+
 #if AP_PERIPH_AIRSPEED_ENABLED
 #if (CONFIG_HAL_BOARD == HAL_BOARD_CHIBIOS) && (HAL_USE_I2C == TRUE)
     const bool pins_enabled = ChibiOS::I2CBus::check_select_pins(0x01);
