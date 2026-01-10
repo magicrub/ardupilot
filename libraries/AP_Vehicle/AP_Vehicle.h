@@ -479,9 +479,9 @@ protected:
     AP_KDECAN kdecan;
 #endif
 
-#if AP_Freefly_Alta_X_ENABLED
+#if AP_FREEFLY_ALTA_X_ENABLED
     AP_FreeflyAltaX freeflyAltaX;
-#endif // AP_Freefly_Alta_X_ENABLED
+#endif // AP_FREEFLY_ALTA_X_ENABLED
 
 #if AP_FENCE_ENABLED
     AC_Fence fence;

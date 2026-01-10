@@ -501,10 +501,6 @@ void AP_Vehicle::setup()
     kdecan.init();
 #endif
 
-#if AP_Freefly_Alta_X_ENABLED
-    freeflyAltaX.init();
-#endif // AP_Freefly_Alta_X_ENABLED
-
 #if AP_AIS_ENABLED
     ais.init();
 #endif
@@ -535,6 +531,10 @@ void AP_Vehicle::setup()
 #if AP_RPM_ENABLED
     rpm_sensor.init();
 #endif
+
+#if AP_FREEFLY_ALTA_X_ENABLED
+    freeflyAltaX.init();
+#endif // AP_FREEFLY_ALTA_X_ENABLED
 
 #if AP_ARMING_ENABLED
     AP::arming().init();
