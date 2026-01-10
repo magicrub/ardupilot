@@ -1,0 +1,5 @@
+# Bi-directional dshot version of CubeOrange
+
+include ../CubeOrangePlus/hwdef.dat
+
+define AP_FREEFLY_ALTA_X_ENABLED 1
