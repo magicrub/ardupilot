@@ -22,7 +22,7 @@ public:
             }
         }
         return count;
-    };
+    }
 
     bool esc_healthy(const uint8_t index) const { return (index < AP_FREEFLY_ALTA_X_ESC_COUNT_MAX) ? esc[index].is_healthy : false; };
 
@@ -33,7 +33,7 @@ public:
             }
         }
         return true;
-    };
+    }
 
 private:
     void thread();
