@@ -6,8 +6,9 @@
 
 extern const AP_HAL::HAL& hal;
 
-#define AP_FREEFLY_ALTA_X_CAN_ESC_FEEDBACK_TIMEOUT_AND_REINIT_INTERVAL_MS 1000
-#define AP_FREEFLY_ALTA_X_CAN_ESC_SEND_INTERVAL_MS 20 // 50 Hz
+#define AP_FREEFLY_ALTA_X_CAN_ESC_FEEDBACK_TIMEOUT_MS 1000
+#define AP_FREEFLY_ALTA_X_CAN_ESC_REINIT_INTERVAL_MS 5000
+#define AP_FREEFLY_ALTA_X_CAN_ESC_SEND_INTERVAL_MS 100 // 50 Hz
 
 void AP_FreeflyAltaX::init()
 {
@@ -43,25 +44,24 @@ void AP_FreeflyAltaX_CAN::send_init_msg()
     }
 }
 
-void AP_FreeflyAltaX_CAN::check_timeouts_for_re_init()
+void AP_FreeflyAltaX_CAN::check_timeouts_and_re_init_as_needed()
 {
     bool send_init = false;
+    const uint32_t now_ms = AP_HAL::millis();
 
     {
-        const uint32_t now_ms = AP_HAL::millis();
         WITH_SEMAPHORE(sem);
         for (uint8_t i=0; i<ARRAY_SIZE(esc); i++) {
-            if (now_ms - esc[i].timestamp_ms < AP_FREEFLY_ALTA_X_CAN_ESC_FEEDBACK_TIMEOUT_AND_REINIT_INTERVAL_MS) {
-                // no timeout for this ESC, we're getting data (or we're backing off after an init)
-                continue;
+            if (now_ms - esc[i].timestamp_ms > AP_FREEFLY_ALTA_X_CAN_ESC_FEEDBACK_TIMEOUT_MS) {
+                esc[i].is_healthy = false;
+                send_init = true;
             }
-            send_init = true;
-            esc[i].is_healthy = false;
         }
     }
 
-    if (send_init) {
+    if (send_init && now_ms - init_last_ms > AP_FREEFLY_ALTA_X_CAN_ESC_REINIT_INTERVAL_MS) {
         send_init_msg();
+        init_last_ms = now_ms;
     }
 }
 
@@ -72,7 +72,7 @@ void AP_FreeflyAltaX_CAN::thread()
 
         // Check for rx timeouts to trigger a re-init at runtime. At boot
         // all timestamps are zero so this triggers the bootup init
-        check_timeouts_for_re_init();
+        check_timeouts_and_re_init_as_needed();
 
         // Send get-feedback msg to each ESCs
         for (uint8_t i=1; i<=ARRAY_SIZE(esc); i++) {

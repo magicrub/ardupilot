@@ -38,13 +38,14 @@ public:
 private:
     void thread();
     void send_init_msg();
-    void check_timeouts_for_re_init();
+    void check_timeouts_and_re_init_as_needed();
 
     struct {
         uint32_t timestamp_ms;
         bool is_healthy;
     } esc[AP_FREEFLY_ALTA_X_ESC_COUNT_MAX];
 
+    uint32_t init_last_ms;
 
     HAL_Semaphore sem;
 };
