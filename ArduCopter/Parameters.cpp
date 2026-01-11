@@ -689,6 +689,17 @@ const AP_Param::Info Copter::var_info[] = {
     // @User: Advanced
     GSCALAR(boom_brt, "BOOM_BRT", 15),
 
+// _HASH_CHECK,-0.008370735 -> 0xbc092568 -> 3154716008
+// _HASH_CHECK,2.396101e+37 -> 0x7d9035c8 -> 2106602952
+
+// GSCALAR(px4_param_1, "BAT_N_CELLS", 12),
+// GSCALAR(px4_param_2, "MAV_REMOTE_ID_SN", -794955318.0),
+// GSCALAR(px4_param_3, "LND_FLIGHT_T_LO", -1520521549.0),
+// GSCALAR(px4_param_4, "CBRK_IO_SAFETY", 22027.0),
+// GSCALAR(px4_param_5, "CBRK_ENGINEFAIL", 284953.0),
+// GSCALAR(px4_param_6, "CBRK_FLIGHTTERM", 121212.0),
+// GSCALAR(px4_param_7, "SYS_AUTOSTART", 4512.0),
+// GSCALAR(px4_param_8, "HASH_CHECK", 0), // -0.008370735
     
 #if OSD_ENABLED || OSD_PARAM_ENABLED
     // @Group: OSD

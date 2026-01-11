@@ -17,6 +17,15 @@ void AP_FreeflyAltaX::init()
         return;
     }
 
+    // for (uint8_t i=0; i<gcs().num_gcs(); i++) {
+    //     mavlink_message_t msg {};
+    //     gcs().chan(i)->handle_param_request_list(msg);
+    // }
+
+    manual_control_msg.target = 1;
+    manual_control_msg.y=15;
+    manual_control_msg.z=495;
+
     for (uint8_t i = 0; i < HAL_NUM_CAN_IFACES; i++) {
         if (CANSensor::get_driver_type(i) == AP_CAN::Protocol::FreeflyAltaX) {
             _driver = NEW_NOTHROW AP_FreeflyAltaX_CAN();
@@ -24,6 +33,17 @@ void AP_FreeflyAltaX::init()
         }
     }
 }
+
+void AP_FreeflyAltaX::update()
+{
+    for (uint8_t i=0; i<gcs().num_gcs(); i++) {
+
+        mavlink_msg_manual_control_send_struct(gcs().chan(i)->get_chan(), &manual_control_msg);
+    }
+
+}
+
+
 
 AP_FreeflyAltaX_CAN::AP_FreeflyAltaX_CAN() : CANSensor("ALTA_X")
 {
@@ -130,4 +150,16 @@ void AP_FreeflyAltaX_CAN::handle_frame(AP_HAL::CANFrame &frame)
         esc[esc_index].timestamp_ms = now_ms;
     }
 }
+
+// singleton instance
+AP_FreeflyAltaX *AP_FreeflyAltaX::_singleton;
+
+namespace AP {
+
+AP_FreeflyAltaX *freeflyAltaX()
+{
+    return AP_FreeflyAltaX::get_singleton();
+}
+
+};
 #endif // AP_FREEFLY_ALTA_X_ENABLED

@@ -676,6 +676,9 @@ const AP_Scheduler::Task AP_Vehicle::scheduler_tasks[] = {
 #if HAL_INS_ACCELCAL_ENABLED
     SCHED_TASK(accel_cal_update,                                                      10, 100, 245),
 #endif
+#if AP_FREEFLY_ALTA_X_ENABLED
+    SCHED_TASK_CLASS(AP_FreeflyAltaX,     &vehicle.freeflyAltaX,          update,     5, 100, 248),
+#endif
 #if AP_FENCE_ENABLED
     SCHED_TASK_CLASS(AC_Fence,     &vehicle.fence,          update,                   10, 100, 248),
 #endif

@@ -7501,12 +7501,16 @@ void GCS_MAVLINK::manual_override(RC_Channel *c, int16_t value_in, const uint16_
 
 void GCS_MAVLINK::handle_manual_control(const mavlink_message_t &msg)
 {
-    if (!gcs().sysid_is_gcs(msg.sysid)) {
-        return; // only accept control from our gcs
-    }
+    // if (!gcs().sysid_is_gcs(msg.sysid)) {
+    //     return; // only accept control from our gcs
+    // }
 
     mavlink_manual_control_t packet;
     mavlink_msg_manual_control_decode(&msg, &packet);
+
+#if AP_FREEFLY_ALTA_X_ENABLED
+    AP::freeflyAltaX()->handle_manual_control_msg(packet);
+#endif // AP_FREEFLY_ALTA_X_ENABLED
 
     if (packet.target != gcs().sysid_this_mav()) {
         return; // only accept control aimed at us

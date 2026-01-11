@@ -390,6 +390,14 @@ public:
         k_param_boom3_color = 315,
         k_param_boom4_color = 316,
         k_param_boom_brt = 317,
+        // k_param_px4_param_1,
+        // k_param_px4_param_2,
+        // k_param_px4_param_3,
+        // k_param_px4_param_4,
+        // k_param_px4_param_5,
+        // k_param_px4_param_6,
+        // k_param_px4_param_7,
+        // k_param_px4_param_8,
 
         // the k_param_* space is 9-bits in size
         // 511: reserved
@@ -473,11 +481,21 @@ public:
     AP_Float         throw_altitude_ascend;     // target altitude (meters) to ascend during a throw upwards, (must be positive)
 #endif
 
-    AP_Int8          boom1_color;
-    AP_Int8          boom2_color;
-    AP_Int8          boom3_color;
-    AP_Int8          boom4_color;
-    AP_Int8          boom_brt;
+    AP_Int32         boom1_color;
+    AP_Int32         boom2_color;
+    AP_Int32         boom3_color;
+    AP_Int32         boom4_color;
+    AP_Int32         boom_brt;
+
+    // AP_Float         px4_param_1;
+    // AP_Float         px4_param_2;
+    // AP_Float         px4_param_3;
+    // AP_Float         px4_param_4;
+    // AP_Float         px4_param_5;
+    // AP_Float         px4_param_6;
+    // AP_Float         px4_param_7;
+    // AP_Float         px4_param_8;
+
 
     AP_Int16                rc_speed; // speed of fast RC Channels in Hz
 
