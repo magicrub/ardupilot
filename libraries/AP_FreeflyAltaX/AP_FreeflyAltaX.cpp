@@ -105,16 +105,17 @@ void AP_FreeflyAltaX_CAN::handle_frame(AP_HAL::CANFrame &frame)
         return;
     }
 
+#define UINT16_to_float(index1, index2) (float(UINT16_VALUE(frame.data[index1], frame.data[index2])))
+
     if (frame.id == 0x04D) {
-        // Voltage
-        const float data = float(UINT16_VALUE(frame.data[2], frame.data[3])) * 0.001f;
-        const TelemetryData t { .voltage = data };
+        // Voltage and RPM
+        const TelemetryData t { .voltage = UINT16_to_float(2,3) * 0.001f };
         update_telem_data(esc_index, t, AP_ESC_Telem_Backend::TelemetryType::VOLTAGE);
+        update_rpm(esc_index, UINT16_to_float(4,5) * 0.1f);
 
     } else if (frame.id == 0x04E) {
         // Current
-        const float data = float(UINT16_VALUE(frame.data[1], frame.data[2])) * 0.001f;
-        const TelemetryData t { .current = data };
+        const TelemetryData t { .current = UINT16_to_float(1,2) * 0.01f };
         update_telem_data(esc_index, t, AP_ESC_Telem_Backend::TelemetryType::CURRENT);
 
     } else {
