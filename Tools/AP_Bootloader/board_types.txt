@@ -337,7 +337,7 @@ AP_HW_HWH7                           1223
 
 AP_HW_ATLAS_CONTROL                  1227
 AP_HW_MatekH7A3_Wing                 1228
-
+AP_HW_FreeflyIO                      1229
 
 
 # IDs 1231-1240 reserved for YARI Robotics

@@ -1,0 +1,115 @@
+# hw definition file for processing by chibios_pins.py
+
+# MCU class and specific type
+MCU STM32F303 STM32F303xE
+
+# bootloader starts firmware at 22k + 4k (STORAGE_FLASH)
+FLASH_RESERVE_START_KB 26
+
+# store parameters in pages 11 and 12
+STORAGE_FLASH_PAGE 11
+define HAL_STORAGE_SIZE 800
+
+# board ID. See Tools/AP_Bootloader/board_types.txt
+APJ_BOARD_ID AP_HW_FreeflyIO
+
+# setup build for a peripheral firmware
+env AP_PERIPH 1
+
+# crystal frequency
+OSCILLATOR_HZ 0 # It's actually 16MHz, but we run the system at 0 for now
+
+define CH_CFG_ST_FREQUENCY 1000
+define CH_CFG_ST_TIMEDELTA 0
+
+# assume the 512k flash part for now
+FLASH_SIZE_KB 512
+
+
+define CAN_APP_NODE_NAME "FreeflyIO"
+
+# a LED to flash
+#PA4 LED OUTPUT LOW
+
+define HAL_CAN_POOL_SIZE 6000
+
+SERIAL_ORDER USART3
+PB10 USART3_TX USART3
+PB11 USART3_RX USART3
+
+# analog input
+# PA5 VIN5 ADC1
+define HAL_USE_ADC FALSE
+define STM32_ADC_USE_ADC1 FALSE
+define HAL_DISABLE_ADC_DRIVER TRUE
+
+define SERIAL_BUFFERS_SIZE 512
+define PORT_INT_REQUIRED_STACK 64
+
+#define HAL_NO_RCOUT_THREAD
+
+define DMA_RESERVE_SIZE 0
+
+
+# MAIN_STACK is stack of initial thread and of ISRs
+MAIN_STACK 0x300
+
+# PROCESS_STACK controls stack for main thread
+PROCESS_STACK 0xA00
+
+# enable CAN support
+PA11 CAN_RX CAN
+PA12 CAN_TX CAN
+
+# debugger support
+PA13 JTMS-SWDIO SWD
+PA14 JTCK-SWCLK SWD
+
+define HAL_USE_I2C FALSE
+
+define HAL_UART_MIN_TX_SIZE 256
+define HAL_UART_MIN_RX_SIZE 128
+
+define HAL_UART_STACK_SIZE 0x300
+
+define STORAGE_THD_WA_SIZE 512
+define IO_THD_WA_SIZE      512
+
+
+define HAL_DEVICE_THREAD_STACK 0x200
+
+define AP_PARAM_MAX_EMBEDDED_PARAM 512
+
+# setup for 4 PWM
+PB9 TIM17_CH1 TIM17 PWM(1) GPIO(1)  # L2 Red
+PB8 TIM16_CH1 TIM16 PWM(2) GPIO(2)  # L3 Green
+PB7 TIM3_CH4 TIM3 PWM(3) GPIO(3)    # L3 Blue
+PB6 TIM16_CH1N TIM16 PWM(4) GPIO(4) # L3 Red
+PB5 TIM3_CH2 TIM3 PWM(5) GPIO(5)    # L1 Red
+PB4 TIM3_CH1 TIM3 PWM(6) GPIO(6)    # L1 Blue
+PB3 TIM2_CH2 TIM2 PWM(7) GPIO(7)    # L1 Green
+
+PA9 TIM1_CH2 TIM1 PWM(8) GPIO(8)   # L4 Green
+PB15 TIM1_CH3N TIM1 PWM(8) GPIO(9)  # L4 Blue
+PB14 TIM1_CH2N TIM1 PWM(8) GPIO(10)  # L4 Red
+PC3 TIM1_CH4 TIM1 PWM(8) GPIO(11)   # L2 Blue
+PC2 TIM1_CH3 TIM1 PWM(8) GPIO(12)   # L2 Green
+
+# keep ROMFS uncompressed as we don't have enough RAM
+# to uncompress the bootloader at runtime
+env ROMFS_UNCOMPRESSED True
+
+# reduce the number of CAN RX Buffer
+define HAL_CAN_RX_QUEUE_SIZE 64
+
+define HAL_MONITOR_THREAD_ENABLED 1
+
+define HAL_SCHEDULER_LOOP_DELAY_ENABLED 1
+define HAL_MONITOR_THREAD_ENABLED 1
+
+
+# Features
+define AP_PERIPH_RC_OUT_ENABLED 1
+define AP_PERIPH_NOTIFY_ENABLED 1
+define AP_PERIPH_RELAY_ENABLED 1
+
