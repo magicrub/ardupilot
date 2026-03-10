@@ -53,6 +53,7 @@
 #include <AP_Servo_Telem/AP_Servo_Telem.h>
 #include <AP_GyroFFT/AP_GyroFFT.h>
 #include <AP_Networking/AP_Networking.h>
+#include <AP_WebServer/AP_WebServer.h>
 #include <AP_VisualOdom/AP_VisualOdom.h>
 #include <AP_VideoTX/AP_VideoTX.h>
 #include <AP_MSP/AP_MSP.h>
@@ -449,6 +450,10 @@ protected:
 
 #if AP_NETWORKING_ENABLED
     AP_Networking networking;
+#endif
+
+#if AP_WEBSERVER_ENABLED
+    AP_WebServer webserver;
 #endif
 
 #if HAL_EFI_ENABLED

@@ -292,6 +292,11 @@ const AP_Param::GroupInfo AP_Vehicle::var_info[] = {
     AP_SUBGROUPINFO(rpm_sensor, "RPM", 32, AP_Vehicle, AP_RPM),
 #endif
 
+#if AP_WEBSERVER_ENABLED
+    // @Group: WEB_
+    // @Path: ../AP_WebServer/AP_WebServer.cpp
+    AP_SUBGROUPINFO(webserver, "WEB_", 33, AP_Vehicle, AP_WebServer),
+#endif
     AP_GROUPEND
 };
 
@@ -386,6 +391,10 @@ void AP_Vehicle::setup()
 
 #if AP_NETWORKING_ENABLED
     networking.init();
+#endif
+
+#if AP_WEBSERVER_ENABLED
+    webserver.init();
 #endif
 
 #if AP_SCHEDULER_ENABLED
